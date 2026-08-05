@@ -1,0 +1,59 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --sage:#7a9e7e; --gold:#c4a35a; --cream:#faf8f3; --bark:#5c4a3a; }
+  .phone .screen{ background: var(--cream); font-family:-apple-system,"Helvetica Neue",sans-serif; }
+  .top{ padding:20px 20px 4px; text-align:center; }
+  .top h1{ font-family:Georgia,serif; font-weight:400; font-size:23px; color:#332a22; }
+  .ring{ width:170px; height:170px; margin:14px auto 8px; border-radius:50%;
+    background: conic-gradient(var(--sage) 0deg 154deg, #e6e0d3 154deg 360deg);
+    display:flex; align-items:center; justify-content:center; box-shadow:0 8px 24px rgba(122,158,126,0.25); }
+  .ring .inner{ width:130px; height:130px; border-radius:50%; background:var(--cream);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.06) inset; }
+  .ring .inner b{ font-size:27px; color:#332a22; }
+  .ring .inner span{ font-size:10.5px; color:#8a8177; text-transform:uppercase; letter-spacing:.08em; }
+  .list{ padding:14px 22px 0; display:flex; flex-direction:column; gap:10px; }
+  .item{ background:#fff; border-radius:14px; padding:13px 15px; display:flex; align-items:center; gap:10px; box-shadow:0 3px 12px rgba(0,0,0,0.07); }
+  .item .c{ width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; background: linear-gradient(155deg,#8fb193,var(--sage)); flex-shrink:0; }
+  .item.pending .c{ background:#e6e0d3; color:#a89f8f; }
+  .item b{ font-size:12.5px; color:#332a22; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 05 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Guest Experience App</div>
+    <h1>A 7-day program,<br>guests can actually follow.</h1>
+    <p>Daily protocol, progress ring and reminders — turns a printed schedule into something guests check each morning.</p>
+  </div>
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#332a22;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="top" style="padding-top:36px;"><h1>Detox Program</h1></div>
+      <div class="ring"><div class="inner"><b>Day 3</b><span>of 7</span></div></div>
+      <div class="list">
+        <div class="item"><div class="c">✓</div><b>Morning lemon water</b></div>
+        <div class="item"><div class="c">✓</div><b>Sunrise yoga</b></div>
+        <div class="item"><div class="c">✓</div><b>Detox green juice</b></div>
+        <div class="item pending"><div class="c">·</div><b>Evening sauna</b></div>
+      </div>
+    </div>
+  </div>
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Guest Experience App</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

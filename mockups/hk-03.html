@@ -1,0 +1,63 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --mint:#7fbfae; --hkbg:#12100f; --hktile:#1c1a18; }
+  .phone .screen{ background: var(--hkbg); font-family:-apple-system,"Helvetica Neue",sans-serif; color:#eae6df; }
+  .top{ padding:44px 20px 14px; }
+  .top .k{ font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:#8f887c; font-weight:600; }
+  .top h1{ font-size:20px; font-weight:700; margin-top:6px; }
+  .list{ padding:6px 18px; display:flex; flex-direction:column; gap:10px; }
+  .item{ background:var(--hktile); border-radius:14px; padding:13px 14px; display:flex; align-items:center; gap:12px; }
+  .item .num{ width:26px; height:26px; border-radius:50%; background:#2a2622; color:#8f887c; font-size:11px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .item.done .num{ background: var(--mint); color:#0d1a16; }
+  .item .txt{ flex:1; }
+  .item .txt b{ font-size:13.5px; display:block; }
+  .item .txt span{ font-size:10.5px; color:#8f887c; }
+  .badge{ font-size:9.5px; padding:4px 9px; border-radius:20px; font-weight:700; letter-spacing:.02em; }
+  .badge.light{ background:rgba(127,191,174,0.18); color:var(--mint); }
+  .badge.deep{ background:rgba(226,181,59,0.18); color:#e2b53b; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 03 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Housekeeping App</div>
+    <h1>Today's rooms,<br>already in order.</h1>
+    <p>The list order comes straight from the manager — light and deep clean badges set automatically.</p>
+  </div>
+
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#eae6df;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="top">
+        <div class="k">Team A · 5 of 8 done</div>
+        <h1>Today's Rooms</h1>
+      </div>
+      <div class="list">
+        <div class="item done"><div class="num">✓</div><div class="txt"><b>Room 101</b><span>Completed 09:20</span></div><div class="badge light">Light</div></div>
+        <div class="item done"><div class="num">✓</div><div class="txt"><b>Room 102</b><span>Completed 09:45</span></div><div class="badge light">Light</div></div>
+        <div class="item"><div class="num">3</div><div class="txt"><b>Room 214</b><span>In progress</span></div><div class="badge deep">Deep</div></div>
+        <div class="item"><div class="num">4</div><div class="txt"><b>Room 215</b><span>Not started</span></div><div class="badge light">Light</div></div>
+        <div class="item"><div class="num">5</div><div class="txt"><b>Room 220</b><span>Not started</span></div><div class="badge deep">Deep</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Housekeeping App</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

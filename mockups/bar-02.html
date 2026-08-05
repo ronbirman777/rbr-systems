@@ -1,0 +1,84 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --purple:#6b55af; --purple2:#8e6bbf; --gold:#c9a84c; --cream:#f5f0e8; --sand:#f0ece6; --ink:#2c2825; }
+  .phone .screen{ background: var(--cream); font-family:-apple-system,"Helvetica Neue",sans-serif; }
+  .top{ background: linear-gradient(155deg,#7d63c2,var(--purple)); padding:36px 20px 18px; color:#fff; }
+  .top .k{ font-size:10px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; font-weight:700; }
+  .top h1{ font-size:23px; font-weight:800; margin-top:6px; }
+  .tabs{ display:flex; gap:8px; padding:14px 16px 6px; }
+  .tab{ font-size:11px; padding:9px 15px; border-radius:20px; background:#fff; color:#7a7268; font-weight:700; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+  .tab.on{ background: linear-gradient(155deg,#7d63c2,var(--purple)); color:#fff; box-shadow:0 4px 12px rgba(107,85,175,0.4); }
+  .list{ padding:8px 16px; display:flex; flex-direction:column; gap:10px; }
+  .row{ background:#fff; border-radius:16px; padding:15px; box-shadow:0 4px 14px rgba(0,0,0,0.07); }
+  .row .head{ display:flex; align-items:center; justify-content:space-between; }
+  .row .head b{ font-size:14.5px; color:var(--ink); }
+  .row .head .bal{ font-size:16px; font-weight:800; color:var(--purple); }
+  .row .sub{ font-size:11px; color:#948c80; margin-top:4px; }
+  .row .bar{ margin-top:11px; height:6px; border-radius:6px; background:#ece7dc; overflow:hidden; }
+  .row .bar i{ display:block; height:100%; background: linear-gradient(90deg,var(--gold),var(--purple2)); }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 02 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Bar &amp; Room-Charge System</div>
+    <h1>Room balances,<br>at a glance.</h1>
+    <p>No more paper tabs — every room's running total, visible to staff in real time.</p>
+  </div>
+
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#fff;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="top">
+        <div class="k">Today · Live</div>
+        <h1>Rooms</h1>
+      </div>
+      <div class="tabs">
+        <div class="tab">Tracking</div>
+        <div class="tab on">Rooms</div>
+        <div class="tab">Reports</div>
+      </div>
+      <div class="list">
+        <div class="row">
+          <div class="head"><b>Room 214</b><div class="bal">฿1,120</div></div>
+          <div class="sub">6 orders today</div>
+          <div class="bar"><i style="width:72%"></i></div>
+        </div>
+        <div class="row">
+          <div class="head"><b>Room 308</b><div class="bal">฿460</div></div>
+          <div class="sub">3 orders today</div>
+          <div class="bar"><i style="width:38%"></i></div>
+        </div>
+        <div class="row">
+          <div class="head"><b>Room 112</b><div class="bal">฿980</div></div>
+          <div class="sub">5 orders today</div>
+          <div class="bar"><i style="width:63%"></i></div>
+        </div>
+        <div class="row">
+          <div class="head"><b>Room 221</b><div class="bal">฿300</div></div>
+          <div class="sub">2 orders today</div>
+          <div class="bar"><i style="width:22%"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Bar &amp; Room-Charge System</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

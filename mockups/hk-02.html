@@ -1,0 +1,75 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --mint:#7fbfae; --hkbg:#12100f; --hktile:#1c1a18; }
+  .phone .screen{ background: var(--hkbg); font-family:-apple-system,"Helvetica Neue",sans-serif; color:#eae6df; }
+  .top{ padding:44px 20px 14px; }
+  .top .k{ font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:#8f887c; font-weight:600; }
+  .top h1{ font-size:20px; font-weight:700; margin-top:6px; }
+  .list{ padding:6px 18px; display:flex; flex-direction:column; gap:10px; }
+  .item{ background:var(--hktile); border-radius:14px; padding:13px 14px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 6px rgba(0,0,0,0.25) inset; }
+  .item .txt{ flex:1; }
+  .item .txt b{ font-size:13.5px; display:block; }
+  .item .txt span{ font-size:10.5px; color:#8f887c; }
+  .item .acts{ display:flex; gap:8px; }
+  .item .acts div{ width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
+  .ok{ background: rgba(127,191,174,0.18); color:var(--mint); }
+  .no{ background: rgba(214,110,110,0.18); color:#e08787; }
+  .neutral{ background:#262320; color:#6b655c; }
+  .cta{ margin:20px 18px 0; background: linear-gradient(150deg,var(--mint),#5aa08d); color:#0d1a16; text-align:center; font-weight:800; font-size:13px; letter-spacing:.04em; text-transform:uppercase; padding:15px 0; border-radius:14px; box-shadow:0 8px 20px rgba(127,191,174,0.3); }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 02 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Housekeeping App</div>
+    <h1>Checklist first,<br>"mark cleaned" second.</h1>
+    <p>Every line needs a ✓ or ✗ before staff can continue. Exit photos are required before a room can close.</p>
+  </div>
+
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#eae6df;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="top">
+        <div class="k">Room 214 · Deep Clean</div>
+        <h1>Checklist</h1>
+      </div>
+      <div class="list">
+        <div class="item"><div class="txt"><b>Bathroom sanitized</b><span>Confirmed 08:14</span></div>
+          <div class="acts"><div class="ok">✓</div></div>
+        </div>
+        <div class="item"><div class="txt"><b>Linens changed</b><span>Confirmed 08:16</span></div>
+          <div class="acts"><div class="ok">✓</div></div>
+        </div>
+        <div class="item"><div class="txt"><b>Minibar restocked</b><span>Reported — missing stock</span></div>
+          <div class="acts"><div class="no">✗</div></div>
+        </div>
+        <div class="item"><div class="txt"><b>Floors &amp; surfaces</b><span>Awaiting review</span></div>
+          <div class="acts"><div class="neutral">·</div></div>
+        </div>
+        <div class="item"><div class="txt"><b>Exit photos attached</b><span>2 of 2 uploaded</span></div>
+          <div class="acts"><div class="ok">✓</div></div>
+        </div>
+      </div>
+      <div class="cta">Mark cleaned</div>
+    </div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Housekeeping App</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

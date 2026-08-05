@@ -1,0 +1,68 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --jade:#14796a; --jade2:#29c4a9; --jadedark:#0c3f39; --gold:#c4a35b; --cream:#fcf6f2; --sand:#f1e7db; --ink:#1c1b19; }
+  .phone .screen{ background: var(--cream); font-family:-apple-system,"Helvetica Neue",sans-serif; }
+  .mnav{ height:56px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; background:#fff; }
+  .mnav .logo{ font-weight:800; letter-spacing:.1em; font-size:12px; color:var(--jadedark); text-transform:uppercase; }
+  .mnav .burger{ display:flex; flex-direction:column; gap:4px; }
+  .mnav .burger div{ width:18px; height:2px; background:var(--jadedark); border-radius:2px; }
+  .hero{ height:400px; position:relative; overflow:hidden;
+    background: radial-gradient(circle at 80% 15%, rgba(41,196,169,0.35), transparent 55%), linear-gradient(160deg,#1c8f7c,#0c3f39 80%); }
+  .hero .txt{ position:absolute; left:24px; bottom:30px; color:#fff; }
+  .hero .k{ font-size:10px; letter-spacing:.22em; color:var(--gold); text-transform:uppercase; margin-bottom:12px; font-weight:700; }
+  .hero h1{ font-weight:800; text-transform:uppercase; font-size:30px; line-height:1.1; }
+  .hero .btn{ margin-top:18px; display:inline-block; background:var(--gold); color:#1c1b19; font-weight:700; font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:11px 20px; border-radius:6px; }
+  .strip{ display:flex; gap:10px; padding:16px; }
+  .strip .c{ flex:1; background:#fff; border-radius:12px; padding:12px; text-align:center; box-shadow:0 3px 10px rgba(0,0,0,0.06); }
+  .strip .c b{ display:block; font-size:11.5px; color:var(--jadedark); }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 07 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Booking Website</div>
+    <h1>Built mobile-first —<br>most guests never open a laptop.</h1>
+    <p>Same booking flow, same live data, tuned for a thumb and a small screen.</p>
+  </div>
+
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#fff;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="mnav" style="padding-top:38px; height:76px;">
+        <div class="logo">RBR Retreat</div>
+        <div class="burger"><div></div><div></div><div></div></div>
+      </div>
+      <div class="hero">
+        <div class="txt">
+          <div class="k">Wellness Retreat</div>
+          <h1>Come back<br>to yourself</h1>
+          <div class="btn">Check availability</div>
+        </div>
+      </div>
+      <div class="strip">
+        <div class="c"><b>Yoga &amp; TTC</b></div>
+        <div class="c"><b>Detox</b></div>
+        <div class="c"><b>Spa</b></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Booking Website</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

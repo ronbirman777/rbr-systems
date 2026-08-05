@@ -1,0 +1,65 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --mint:#7fbfae; --hkbg:#12100f; --hktile:#1c1a18; }
+  .phone .screen{ background: var(--hkbg); font-family:-apple-system,"Helvetica Neue",sans-serif; color:#eae6df; }
+  .top{ padding:44px 20px 14px; }
+  .top .k{ font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:#8f887c; font-weight:600; }
+  .top h1{ font-size:20px; font-weight:700; margin-top:6px; }
+  .grid{ padding:6px 18px; display:grid; grid-template-columns:repeat(4,1fr); gap:9px; }
+  .rm{ aspect-ratio:1; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
+  .rm.clean{ background:rgba(127,191,174,0.18); color:var(--mint); }
+  .rm.dirty{ background:rgba(214,110,110,0.16); color:#e08787; }
+  .rm.progress{ background:rgba(226,181,59,0.18); color:#e2b53b; }
+  .legend{ display:flex; gap:16px; padding:16px 20px 0; }
+  .legend div{ display:flex; align-items:center; gap:6px; font-size:10.5px; color:#8f887c; }
+  .legend i{ width:9px; height:9px; border-radius:3px; display:block; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 05 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Housekeeping App</div>
+    <h1>Reception sees<br>every room, live.</h1>
+    <p>No radio call needed to know if a room is ready — the front desk view updates itself.</p>
+  </div>
+
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#eae6df;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="top">
+        <div class="k">All Rooms · Live</div>
+        <h1>Reception View</h1>
+      </div>
+      <div class="grid">
+        <div class="rm clean">101</div><div class="rm clean">102</div><div class="rm dirty">103</div><div class="rm clean">104</div>
+        <div class="rm progress">105</div><div class="rm clean">106</div><div class="rm clean">107</div><div class="rm dirty">108</div>
+        <div class="rm clean">109</div><div class="rm progress">110</div><div class="rm clean">111</div><div class="rm clean">112</div>
+        <div class="rm dirty">113</div><div class="rm clean">114</div><div class="rm clean">115</div><div class="rm clean">116</div>
+      </div>
+      <div class="legend">
+        <div><i style="background:var(--mint)"></i>Clean</div>
+        <div><i style="background:#e2b53b"></i>In progress</div>
+        <div><i style="background:#d66e6e"></i>Needs cleaning</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Housekeeping App</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

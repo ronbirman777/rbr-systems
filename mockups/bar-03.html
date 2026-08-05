@@ -1,0 +1,76 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --purple:#6b55af; --purple2:#8e6bbf; --gold:#c9a84c; --cream:#f5f0e8; --sand:#f0ece6; --ink:#2c2825; }
+  .phone .screen{ background: var(--cream); font-family:-apple-system,"Helvetica Neue",sans-serif; }
+  .top{ background: linear-gradient(155deg,#7d63c2,var(--purple)); padding:36px 20px 18px; color:#fff; }
+  .top .k{ font-size:10px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; font-weight:700; }
+  .top h1{ font-size:23px; font-weight:800; margin-top:6px; }
+  .tabs{ display:flex; gap:8px; padding:14px 16px 6px; }
+  .tab{ font-size:11px; padding:9px 15px; border-radius:20px; background:#fff; color:#7a7268; font-weight:700; }
+  .tab.on{ background: linear-gradient(155deg,#7d63c2,var(--purple)); color:#fff; box-shadow:0 4px 12px rgba(107,85,175,0.4); }
+  .summary{ margin:10px 16px 0; background:#fff; border-radius:16px; padding:16px; box-shadow:0 4px 14px rgba(0,0,0,0.07); }
+  .summary .big{ font-size:26px; font-weight:800; color:var(--purple); }
+  .summary .lbl{ font-size:11px; color:#948c80; margin-top:2px; }
+  .chart{ display:flex; align-items:flex-end; gap:8px; height:70px; margin-top:16px; }
+  .chart i{ flex:1; border-radius:5px 5px 0 0; background: linear-gradient(180deg,var(--purple2),var(--purple)); }
+  .list{ padding:12px 16px 0; display:flex; flex-direction:column; gap:9px; }
+  .row{ background:#fff; border-radius:12px; padding:11px 14px; display:flex; justify-content:space-between; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+  .row b{ font-size:12.5px; color:var(--ink); }
+  .row span{ font-size:11px; color:var(--purple); font-weight:700; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 03 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Bar &amp; Room-Charge System</div>
+    <h1>Revenue by hour,<br>without an export.</h1>
+    <p>Managers see today's numbers and top sellers live, no spreadsheet at midnight.</p>
+  </div>
+
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#fff;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="top">
+        <div class="k">Today · Live</div>
+        <h1>Reports</h1>
+      </div>
+      <div class="tabs">
+        <div class="tab">Tracking</div>
+        <div class="tab">Rooms</div>
+        <div class="tab on">Reports</div>
+      </div>
+      <div class="summary">
+        <div class="big">฿8,240</div>
+        <div class="lbl">Revenue today · 41 orders</div>
+        <div class="chart">
+          <i style="height:30%"></i><i style="height:50%"></i><i style="height:35%"></i>
+          <i style="height:70%"></i><i style="height:90%"></i><i style="height:60%"></i><i style="height:45%"></i>
+        </div>
+      </div>
+      <div class="list">
+        <div class="row"><b>Passionfruit Mocktail</b><span>18 sold</span></div>
+        <div class="row"><b>Fresh Coconut</b><span>14 sold</span></div>
+        <div class="row"><b>Detox Green Juice</b><span>11 sold</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Bar &amp; Room-Charge System</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

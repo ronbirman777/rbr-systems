@@ -1,0 +1,72 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --mint:#7fbfae; --hkbg:#12100f; --hktile:#1c1a18; }
+  .phone .screen{ background: var(--hkbg); font-family:-apple-system,"Helvetica Neue",sans-serif; color:#eae6df; }
+  .wrap{ padding:52px 26px 0; text-align:center; }
+  .langs{ display:flex; justify-content:center; gap:8px; margin-bottom:24px; }
+  .lang{ width:38px; height:38px; border-radius:50%; background:var(--hktile); font-size:11px; display:flex; align-items:center; justify-content:center; color:#a39d92; font-weight:600; }
+  .lang.on{ background:#eae6df; color:#12100f; font-weight:700; }
+  .icon{ width:60px; height:60px; border-radius:18px; background: linear-gradient(150deg,var(--mint),#4f8a78); margin:0 auto 18px; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 20px rgba(127,191,174,0.3); }
+  h1{ font-size:19px; font-weight:700; }
+  .sub{ font-size:12px; color:#8f887c; margin-top:6px; }
+  .dots{ display:flex; justify-content:center; gap:14px; margin:22px 0 26px; }
+  .dots i{ width:11px; height:11px; border-radius:50%; border:1.5px solid #4a453e; display:block; }
+  .dots i.on{ background:var(--mint); border-color:var(--mint); box-shadow:0 0 10px rgba(127,191,174,0.6); }
+  .keypad{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:0 22px; }
+  .key{ background:var(--hktile); border-radius:14px; height:56px; display:flex; align-items:center; justify-content:center; font-size:17px; font-weight:600; color:#eae6df; box-shadow:0 2px 6px rgba(0,0,0,0.3) inset, 0 1px 0 rgba(255,255,255,0.03); }
+  .key.enter{ background: linear-gradient(150deg,var(--mint),#5aa08d); color:#0d1a16; font-weight:800; box-shadow:0 6px 16px rgba(127,191,174,0.35); }
+  .key.sub2{ color:#8f887c; font-size:13px; font-weight:600; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 01 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Housekeeping App</div>
+    <h1>No names,<br>no passwords — just a PIN.</h1>
+    <p>Housekeeping teams sign in with a 4-digit code. Each team only ever sees their own rooms.</p>
+  </div>
+
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#eae6df;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="wrap">
+        <div class="langs">
+          <div class="lang on">EN</div>
+          <div class="lang">ไทย</div>
+          <div class="lang">MM</div>
+        </div>
+        <div class="icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#0d1a16" stroke-width="2"><path d="M4 20c2-6 6-9 8-9s6 3 8 9"/><circle cx="12" cy="7" r="3"/></svg>
+        </div>
+        <h1>Team sign-in</h1>
+        <div class="sub">Enter your team PIN</div>
+        <div class="dots"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+      </div>
+      <div class="keypad">
+        <div class="key">1</div><div class="key">2</div><div class="key">3</div>
+        <div class="key">4</div><div class="key">5</div><div class="key">6</div>
+        <div class="key">7</div><div class="key">8</div><div class="key">9</div>
+        <div class="key sub2">Clear</div><div class="key">0</div><div class="key enter">Enter</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Housekeeping App</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

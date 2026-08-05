@@ -1,0 +1,63 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --sage:#7a9e7e; --gold:#c4a35a; --cream:#faf8f3; --bark:#5c4a3a; }
+  .phone .screen{ background: var(--cream); font-family:-apple-system,"Helvetica Neue",sans-serif; }
+  .top{ padding:20px 20px 12px; }
+  .top h1{ font-family:Georgia,serif; font-weight:400; font-size:26px; color:#332a22; }
+  .profile{ margin:0 20px; background:#fff; border-radius:20px; padding:22px; box-shadow:0 4px 16px rgba(0,0,0,0.09); text-align:center; }
+  .avatar{ width:66px; height:66px; border-radius:50%; margin:0 auto 12px; background:linear-gradient(150deg,#a8c9be,#4f7a6e); box-shadow:0 4px 10px rgba(0,0,0,0.15); }
+  .profile b{ font-size:16.5px; color:#332a22; display:block; }
+  .profile span{ font-size:12px; color:#8a8177; }
+  .qr{ width:120px; height:120px; margin:18px auto 4px; border-radius:14px; background:
+    repeating-linear-gradient(90deg,#332a22 0 6px, transparent 6px 12px),
+    repeating-linear-gradient(0deg,#332a22 0 6px, transparent 6px 12px);
+    background-blend-mode:multiply; background-color:#fff; opacity:.85; box-shadow:0 2px 8px rgba(0,0,0,0.08) inset; }
+  .rows{ padding:16px 20px 0; display:flex; flex-direction:column; gap:10px; }
+  .row{ display:flex; justify-content:space-between; background:#fff; border-radius:12px; padding:13px 15px; box-shadow:0 2px 10px rgba(0,0,0,0.06); }
+  .row span{ font-size:11.5px; color:#8a8177; }
+  .row b{ font-size:12.5px; color:#332a22; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 06 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Guest Experience App</div>
+    <h1>Check-in with a QR code,<br>not a form.</h1>
+    <p>Room number, stay dates and a scannable pass — the front desk line disappears.</p>
+  </div>
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#332a22;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="top" style="padding-top:36px;"><h1>My Stay</h1></div>
+      <div class="profile">
+        <div class="avatar"></div>
+        <b>Bungalow 12</b>
+        <span>Aug 3 — Aug 10</span>
+        <div class="qr"></div>
+      </div>
+      <div class="rows">
+        <div class="row"><span>Program</span><b>7-Day Detox</b></div>
+        <div class="row"><span>Dietary note</span><b>Vegan</b></div>
+        <div class="row"><span>Checkout</span><b>11:00 AM</b></div>
+      </div>
+    </div>
+  </div>
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Guest Experience App</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

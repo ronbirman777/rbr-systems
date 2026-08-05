@@ -1,0 +1,91 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --amber:#c17a4a; --amber2:#e0a26a; --amberdark:#7a4a28; --gold:#c4a35b; --cream:#fcf6f0; --sand:#f1e6d9; --ink:#2c2419; }
+  .phone .screen, .laptop .screen{ background: var(--cream); font-family:-apple-system,"Helvetica Neue",sans-serif; }
+  .nav{ height:58px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:#fff; box-shadow:0 1px 0 rgba(0,0,0,0.05); }
+  .nav .logo{ font-weight:800; letter-spacing:.12em; font-size:14px; color:var(--amberdark); text-transform:uppercase; }
+  .nav .cta{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; background:var(--amber); color:#fff; padding:10px 18px; border-radius:6px; font-weight:700; }
+  .pagehead{ padding:20px 28px 12px; }
+  .pagehead .k{ font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--amber); font-weight:700; }
+  .pagehead h1{ font-weight:800; font-size:21px; color:var(--amberdark); margin-top:6px; }
+  .stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; padding:0 28px; }
+  .stat{ background:#fff; border-radius:12px; padding:14px 16px; box-shadow:0 4px 12px rgba(0,0,0,0.06); }
+  .stat b{ font-size:19px; color:var(--amberdark); display:block; }
+  .stat span{ font-size:10px; color:#9a8f7d; text-transform:uppercase; letter-spacing:.04em; }
+  .split{ display:flex; gap:18px; padding:16px 28px 0; }
+  .chartcard{ flex:1.2; background:#fff; border-radius:14px; padding:16px 18px; box-shadow:0 4px 12px rgba(0,0,0,0.06); }
+  .chartcard .h{ font-size:11px; font-weight:700; color:#9a8f7d; text-transform:uppercase; letter-spacing:.04em; margin-bottom:12px; }
+  .chart{ display:flex; align-items:flex-end; gap:7px; height:80px; }
+  .chart i{ flex:1; border-radius:4px 4px 0 0; background:linear-gradient(180deg,var(--amber2),var(--amber)); }
+  .tablecard{ flex:1; background:#fff; border-radius:14px; padding:16px 18px; box-shadow:0 4px 12px rgba(0,0,0,0.06); }
+  .tablecard .h{ font-size:11px; font-weight:700; color:#9a8f7d; text-transform:uppercase; letter-spacing:.04em; margin-bottom:10px; }
+  .prow{ display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--sand); }
+  .prow:first-of-type{ border-top:none; }
+  .prow .av{ width:26px; height:26px; border-radius:50%; flex-shrink:0; }
+  .prow b{ font-size:11.5px; color:var(--ink); flex:1; }
+  .prow span{ font-size:9.5px; padding:3px 8px; border-radius:20px; font-weight:700; }
+  .prow span.paid{ background:rgba(122,158,126,0.18); color:#4c6b4f; }
+  .prow span.pending{ background:rgba(226,181,59,0.18); color:#a3791f; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 02 / 02</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Retreat Organizer</div>
+    <h1>Participant data,<br>without a spreadsheet.</h1>
+    <p>Sign-ups, payments and rosters in one dashboard — the same data that used to live across six different tabs.</p>
+  </div>
+
+  <div class="laptop" style="top:600px; left:110px;">
+    <div class="lid">
+      <div class="browserbar">
+        <div class="dot" style="background:#ff5f56"></div>
+        <div class="dot" style="background:#ffbd2e"></div>
+        <div class="dot" style="background:#27c93f"></div>
+        <div class="url">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b6b6b" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>
+          rbr-retreat.com/organizer/200h-ttc
+        </div>
+      </div>
+      <div class="screen">
+        <div class="nav"><div class="logo">RBR Organizer</div><div class="cta">Export list</div></div>
+        <div class="pagehead"><div class="k">200H Yoga Teacher Training · Feb 10–17</div><h1>Participant Dashboard</h1></div>
+        <div class="stats">
+          <div class="stat"><b>23</b><span>Registered</span></div>
+          <div class="stat"><b>฿552,000</b><span>Revenue</span></div>
+          <div class="stat"><b>19</b><span>Paid in full</span></div>
+          <div class="stat"><b>14</b><span>Countries</span></div>
+        </div>
+        <div class="split">
+          <div class="chartcard">
+            <div class="h">Sign-ups over time</div>
+            <div class="chart">
+              <i style="height:15%"></i><i style="height:25%"></i><i style="height:20%"></i><i style="height:40%"></i>
+              <i style="height:55%"></i><i style="height:45%"></i><i style="height:70%"></i><i style="height:90%"></i>
+              <i style="height:65%"></i><i style="height:100%"></i>
+            </div>
+          </div>
+          <div class="tablecard">
+            <div class="h">Recent sign-ups</div>
+            <div class="prow"><div class="av" style="background:linear-gradient(150deg,#e0a26a,#a15f30)"></div><b>M. Larsen</b><span class="paid">Paid</span></div>
+            <div class="prow"><div class="av" style="background:linear-gradient(150deg,#a8c9be,#4f7a6e)"></div><b>S. Okafor</b><span class="paid">Paid</span></div>
+            <div class="prow"><div class="av" style="background:linear-gradient(150deg,#c3b3c9,#6d5375)"></div><b>J. Dubois</b><span class="pending">Deposit</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="base"></div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Retreat Organizer</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

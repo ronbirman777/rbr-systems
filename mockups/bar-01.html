@@ -1,0 +1,84 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --purple:#6b55af; --purple2:#8e6bbf; --gold:#c9a84c; --cream:#f5f0e8; --sand:#f0ece6; --ink:#2c2825; }
+  .phone .screen{ background: var(--cream); font-family:-apple-system,"Helvetica Neue",sans-serif; }
+  .top{ background: linear-gradient(155deg,#7d63c2,var(--purple)); padding:36px 20px 18px; color:#fff; }
+  .top .k{ font-size:10px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; font-weight:700; }
+  .top h1{ font-size:23px; font-weight:800; margin-top:6px; }
+  .tabs{ display:flex; gap:8px; padding:14px 16px 6px; }
+  .tab{ font-size:11px; padding:9px 15px; border-radius:20px; background:#fff; color:#7a7268; font-weight:700; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+  .tab.on{ background: linear-gradient(155deg,#7d63c2,var(--purple)); color:#fff; box-shadow:0 4px 12px rgba(107,85,175,0.4); }
+  .list{ padding:8px 16px; display:flex; flex-direction:column; gap:10px; }
+  .row{ background:#fff; border-radius:16px; padding:13px 14px; box-shadow:0 4px 14px rgba(0,0,0,0.07); display:flex; align-items:center; gap:12px; }
+  .row .rm{ width:42px; height:42px; border-radius:12px; background: linear-gradient(155deg,#8e6bbf,var(--purple)); color:#fff; font-weight:800; font-size:12px; display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 4px 10px rgba(107,85,175,0.3); }
+  .row .mid{ flex:1; }
+  .row .mid b{ font-size:13.5px; color:var(--ink); display:block; }
+  .row .mid span{ font-size:11px; color:#948c80; }
+  .row .amt{ font-size:13.5px; font-weight:800; color:var(--purple); }
+  .row .time{ font-size:9.5px; color:#b0a897; display:block; text-align:right; margin-top:2px; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 01 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Bar &amp; Room-Charge System</div>
+    <h1>Every drink,<br>tracked to the room.</h1>
+    <p>Bar staff log orders in two taps — the charge lands on the guest's folio automatically.</p>
+  </div>
+
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#fff;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="top">
+        <div class="k">Today · Live</div>
+        <h1>Tracking</h1>
+      </div>
+      <div class="tabs">
+        <div class="tab on">Tracking</div>
+        <div class="tab">Rooms</div>
+        <div class="tab">Reports</div>
+      </div>
+      <div class="list">
+        <div class="row"><div class="rm">214</div>
+          <div class="mid"><b>Passionfruit Mocktail ×2</b><span>Room 214</span></div>
+          <div><div class="amt">฿240</div><span class="time">2 min ago</span></div>
+        </div>
+        <div class="row"><div class="rm">308</div>
+          <div class="mid"><b>Fresh Coconut ×1</b><span>Room 308</span></div>
+          <div><div class="amt">฿90</div><span class="time">6 min ago</span></div>
+        </div>
+        <div class="row"><div class="rm">112</div>
+          <div class="mid"><b>Detox Green Juice ×3</b><span>Room 112</span></div>
+          <div><div class="amt">฿330</div><span class="time">14 min ago</span></div>
+        </div>
+        <div class="row"><div class="rm">221</div>
+          <div class="mid"><b>Iced Herbal Tea ×2</b><span>Room 221</span></div>
+          <div><div class="amt">฿180</div><span class="time">21 min ago</span></div>
+        </div>
+        <div class="row"><div class="rm">305</div>
+          <div class="mid"><b>Sparkling Water ×4</b><span>Room 305</span></div>
+          <div><div class="amt">฿160</div><span class="time">33 min ago</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Bar &amp; Room-Charge System</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

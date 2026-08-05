@@ -1,0 +1,67 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --sage:#7a9e7e; --gold:#c4a35a; --cream:#faf8f3; --bark:#5c4a3a; }
+  .phone .screen{ background: var(--cream); font-family:-apple-system,"Helvetica Neue",sans-serif; }
+  .top{ padding:20px 20px 8px; }
+  .top h1{ font-family:Georgia,serif; font-weight:400; font-size:26px; color:#332a22; }
+  .mealtabs{ display:flex; gap:8px; padding:6px 20px 14px; }
+  .mt{ font-size:11px; padding:9px 15px; border-radius:20px; background:#fff; color:#8a8177; font-weight:600; box-shadow:0 2px 6px rgba(0,0,0,0.05); }
+  .mt.on{ background: linear-gradient(155deg,#8fb193,var(--sage)); color:#fff; box-shadow:0 4px 10px rgba(122,158,126,0.4); }
+  .list{ padding:0 20px; display:flex; flex-direction:column; gap:12px; }
+  .dish{ background:#fff; border-radius:16px; padding:14px 16px; box-shadow:0 3px 14px rgba(0,0,0,0.08); }
+  .dish .row{ display:flex; justify-content:space-between; align-items:center; }
+  .dish b{ font-size:14.5px; color:#332a22; }
+  .dish .tags{ display:flex; gap:6px; margin-top:8px; }
+  .tag{ font-size:9.5px; padding:4px 9px; border-radius:20px; background:rgba(122,158,126,0.15); color:#4c6b4f; font-weight:700; letter-spacing:.02em; }
+  .tag.veg{ background:rgba(196,163,90,0.18); color:#8a6a2c; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 04 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Guest Experience App</div>
+    <h1>Today's menu,<br>with every allergy tag.</h1>
+    <p>The kitchen updates it once — vegan, gluten-free and dietary notes show automatically for every guest.</p>
+  </div>
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#332a22;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="top" style="padding-top:36px;"><h1>Dining</h1></div>
+      <div class="mealtabs">
+        <div class="mt">Breakfast</div><div class="mt on">Lunch</div><div class="mt">Dinner</div>
+      </div>
+      <div class="list">
+        <div class="dish"><div class="row"><b>Green Papaya Salad</b></div>
+          <div class="tags"><span class="tag veg">Vegan</span><span class="tag">GF</span></div>
+        </div>
+        <div class="dish"><div class="row"><b>Grilled Reef Fish</b></div>
+          <div class="tags"><span class="tag">GF</span></div>
+        </div>
+        <div class="dish"><div class="row"><b>Coconut Detox Soup</b></div>
+          <div class="tags"><span class="tag veg">Vegan</span></div>
+        </div>
+        <div class="dish"><div class="row"><b>Pad Thai — Tofu</b></div>
+          <div class="tags"><span class="tag veg">Vegan</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Guest Experience App</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

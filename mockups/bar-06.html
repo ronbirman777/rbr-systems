@@ -1,0 +1,64 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --purple:#6b55af; --purple2:#8e6bbf; --gold:#c9a84c; --cream:#f5f0e8; --sand:#f0ece6; --ink:#2c2825; }
+  .phone .screen{ background: var(--cream); font-family:-apple-system,"Helvetica Neue",sans-serif; }
+  .top{ background: linear-gradient(155deg,#7d63c2,var(--purple)); padding:36px 20px 18px; color:#fff; }
+  .top .k{ font-size:10px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; font-weight:700; }
+  .top h1{ font-size:23px; font-weight:800; margin-top:6px; }
+  .stats{ display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:16px; }
+  .stat{ background:#fff; border-radius:16px; padding:15px; box-shadow:0 4px 12px rgba(0,0,0,0.06); }
+  .stat b{ font-size:22px; color:var(--purple); display:block; }
+  .stat span{ font-size:10.5px; color:#948c80; text-transform:uppercase; letter-spacing:.05em; }
+  .list{ padding:0 16px; display:flex; flex-direction:column; gap:9px; }
+  .row{ background:#fff; border-radius:12px; padding:11px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+  .row .av{ width:30px; height:30px; border-radius:50%; background:linear-gradient(150deg,var(--purple2),var(--purple)); flex-shrink:0; }
+  .row b{ font-size:12.5px; color:var(--ink); flex:1; }
+  .row span{ font-size:11px; color:var(--purple); font-weight:700; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 06 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Bar &amp; Room-Charge System</div>
+    <h1>Shift totals,<br>ready before the handover.</h1>
+    <p>Each bartender's orders and totals, closed out automatically at shift change.</p>
+  </div>
+
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#fff;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="top">
+        <div class="k">Shift · 08:00–16:00</div>
+        <h1>Shift Summary</h1>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>4,120฿</b><span>Total sales</span></div>
+        <div class="stat"><b>29</b><span>Orders</span></div>
+      </div>
+      <div class="list">
+        <div class="row"><div class="av"></div><b>Nina</b><span>16 orders</span></div>
+        <div class="row"><div class="av"></div><b>Tam</b><span>9 orders</span></div>
+        <div class="row"><div class="av"></div><b>Ploy</b><span>4 orders</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Bar &amp; Room-Charge System</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

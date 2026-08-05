@@ -1,0 +1,261 @@
+/* RBR — shared canvas + device-frame system for Instagram case-study mockups */
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --rbr-bg: #15120f;
+  --rbr-bg2: #1c1712;
+  --rbr-gold: #c9a35b;
+  --rbr-gold-soft: rgba(201,163,91,0.35);
+  --rbr-cream: #f4ede0;
+  --rbr-cream-dim: rgba(244,237,224,0.62);
+}
+
+html, body {
+  width: 1080px;
+  height: 1350px;
+  overflow: hidden;
+  background: var(--rbr-bg);
+  font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.canvas {
+  width: 1080px;
+  height: 1350px;
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(201,163,91,0.10), transparent 42%),
+    radial-gradient(circle at 88% 92%, rgba(201,163,91,0.07), transparent 45%),
+    linear-gradient(160deg, var(--rbr-bg2) 0%, var(--rbr-bg) 60%);
+  color: var(--rbr-cream);
+}
+
+/* faint corner frame */
+.canvas::before {
+  content: "";
+  position: absolute;
+  inset: 40px;
+  border: 1px solid rgba(201,163,91,0.18);
+  pointer-events: none;
+}
+
+.brandbar {
+  position: absolute;
+  top: 64px;
+  left: 72px;
+  right: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wordmark {
+  font-weight: 800;
+  font-size: 26px;
+  letter-spacing: 0.14em;
+  color: var(--rbr-cream);
+}
+.wordmark span {
+  color: var(--rbr-gold);
+}
+
+.kicker {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--rbr-gold);
+  text-align: right;
+}
+
+.headline {
+  position: absolute;
+  top: 150px;
+  left: 72px;
+  right: 72px;
+}
+.headline h1 {
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 44px;
+  line-height: 1.15;
+  color: var(--rbr-cream);
+  max-width: 640px;
+}
+.headline p {
+  margin-top: 14px;
+  font-size: 18px;
+  color: var(--rbr-cream-dim);
+  max-width: 560px;
+  line-height: 1.5;
+}
+
+.footerbar {
+  position: absolute;
+  bottom: 64px;
+  left: 72px;
+  right: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.footerbar .tag {
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rbr-cream-dim);
+}
+.footerbar .idx {
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  color: var(--rbr-gold);
+  font-weight: 700;
+}
+.hairline {
+  position: absolute;
+  bottom: 118px;
+  left: 72px;
+  right: 72px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--rbr-gold-soft), transparent);
+}
+
+/* ============ PHONE FRAME ============ */
+.phone {
+  position: absolute;
+  width: 356px;
+  height: 730px;
+  border-radius: 46px;
+  background: linear-gradient(155deg,#1a1a1c,#0b0b0c 60%);
+  box-shadow:
+    0 50px 90px rgba(0,0,0,0.6),
+    0 18px 40px rgba(0,0,0,0.35),
+    0 0 0 1px rgba(255,255,255,0.06) inset,
+    0 0 60px rgba(201,163,91,0.06);
+  padding: 14px;
+}
+.phone .screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 34px;
+  overflow: hidden;
+  position: relative;
+  background: #fff;
+}
+.phone .notch {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120px;
+  height: 26px;
+  background: #0b0b0c;
+  border-radius: 14px;
+  z-index: 5;
+}
+
+/* ============ LAPTOP FRAME ============ */
+.laptop {
+  position: absolute;
+  width: 860px;
+}
+.laptop .lid {
+  background: #0b0b0c;
+  border-radius: 16px 16px 0 0;
+  padding: 16px 16px 0 16px;
+  box-shadow: 0 40px 90px rgba(0,0,0,0.55);
+}
+.laptop .browserbar {
+  height: 34px;
+  background: #dcdcdc;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 10px;
+}
+.laptop .browserbar .dot {
+  width: 9px; height: 9px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.laptop .browserbar .url {
+  flex: 1;
+  height: 20px;
+  background: #eeeeee;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 10.5px;
+  color: #6b6b6b;
+  font-family: -apple-system, sans-serif;
+  gap: 6px;
+}
+.laptop .browserbar .url svg { flex-shrink: 0; }
+.laptop .screen {
+  width: 100%;
+  height: 480px;
+  overflow: hidden;
+  background: #fff;
+  position: relative;
+}
+.laptop .base {
+  height: 20px;
+  background: linear-gradient(#1a1a1a, #0b0b0c);
+  border-radius: 0 0 10px 10px;
+  margin: 0 -18px;
+}
+.laptop .base::after {
+  content: "";
+  display: block;
+  width: 140px;
+  height: 6px;
+  background: #050505;
+  border-radius: 0 0 6px 6px;
+  margin: 0 auto;
+}
+
+/* ============ STATUS BAR (inside device screen) ============ */
+.statusbar {
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px 0 26px;
+  font-size: 13px;
+  font-weight: 700;
+  position: relative;
+  z-index: 6;
+}
+.statusbar .icons { display: flex; align-items: center; gap: 5px; }
+
+/* ============ RICHER PHOTO PLACEHOLDER ============ */
+.photoblob { position: relative; overflow: hidden; }
+.photoblob::after {
+  content: "";
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 26% 22%, rgba(255,255,255,0.38), transparent 52%),
+    radial-gradient(circle at 82% 88%, rgba(0,0,0,0.22), transparent 60%);
+}
+
+/* ============ EDITORIAL HEADLINE ACCENT ============ */
+.headline .eyebrow {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--rbr-gold);
+  margin-bottom: 16px;
+}
+.headline .eyebrow::before {
+  content: "";
+  display: inline-block;
+  width: 22px; height: 1px;
+  background: var(--rbr-gold);
+  margin-right: 10px;
+  vertical-align: middle;
+}

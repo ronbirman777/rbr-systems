@@ -1,0 +1,94 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --amber:#c17a4a; --amber2:#e0a26a; --amberdark:#7a4a28; --gold:#c4a35b; --cream:#fcf6f0; --sand:#f1e6d9; --ink:#2c2419; }
+  .phone .screen, .laptop .screen{ background: var(--cream); font-family:-apple-system,"Helvetica Neue",sans-serif; }
+  .nav{ height:58px; display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:#fff; box-shadow:0 1px 0 rgba(0,0,0,0.05); }
+  .nav .logo{ font-weight:800; letter-spacing:.12em; font-size:14px; color:var(--amberdark); text-transform:uppercase; }
+  .nav .cta{ font-size:11px; letter-spacing:.08em; text-transform:uppercase; background:var(--amber); color:#fff; padding:10px 18px; border-radius:6px; font-weight:700; box-shadow:0 4px 10px rgba(193,122,74,0.3); }
+  .pagehead{ padding:22px 28px 14px; display:flex; align-items:center; justify-content:space-between; }
+  .pagehead .k{ font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--amber); font-weight:700; }
+  .pagehead h1{ font-weight:800; font-size:22px; color:var(--amberdark); margin-top:8px; }
+  .newbtn{ font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; background:var(--amberdark); color:#fff; padding:10px 16px; border-radius:8px; }
+  .list{ padding:0 28px; display:flex; flex-direction:column; gap:12px; }
+  .row{ background:#fff; border-radius:14px; padding:16px 18px; box-shadow:0 4px 14px rgba(0,0,0,0.06); display:flex; align-items:center; gap:18px; }
+  .row .dates{ width:86px; flex-shrink:0; }
+  .row .dates b{ font-size:14px; color:var(--ink); display:block; }
+  .row .dates span{ font-size:10.5px; color:#9a8f7d; }
+  .row .info{ flex:1; }
+  .row .info b{ font-size:14.5px; color:var(--ink); display:block; }
+  .row .info span{ font-size:11px; color:#9a8f7d; }
+  .row .cap{ width:120px; }
+  .row .cap .bar{ height:6px; border-radius:6px; background:var(--sand); overflow:hidden; }
+  .row .cap .bar i{ display:block; height:100%; background:linear-gradient(90deg,var(--gold),var(--amber)); }
+  .row .cap span{ font-size:10.5px; color:#9a8f7d; margin-top:5px; display:block; }
+  .status{ font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; padding:6px 12px; border-radius:20px; }
+  .status.open{ background:rgba(193,122,74,0.16); color:var(--amber); }
+  .status.full{ background:rgba(122,158,126,0.18); color:#4c6b4f; }
+  .status.soon{ background:rgba(226,181,59,0.18); color:#a3791f; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 01 / 02</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Retreat Organizer</div>
+    <h1>Every retreat,<br>on one calendar.</h1>
+    <p>Dates, capacity and status for every upcoming retreat — built for a teacher running six programs a year without an assistant.</p>
+  </div>
+
+  <div class="laptop" style="top:600px; left:110px;">
+    <div class="lid">
+      <div class="browserbar">
+        <div class="dot" style="background:#ff5f56"></div>
+        <div class="dot" style="background:#ffbd2e"></div>
+        <div class="dot" style="background:#27c93f"></div>
+        <div class="url">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#6b6b6b" stroke-width="2"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/></svg>
+          rbr-retreat.com/organizer
+        </div>
+      </div>
+      <div class="screen">
+        <div class="nav"><div class="logo">RBR Organizer</div><div class="cta">+ New Retreat</div></div>
+        <div class="pagehead"><div><div class="k">2026 Season</div><h1>Upcoming Retreats</h1></div></div>
+        <div class="list">
+          <div class="row">
+            <div class="dates"><b>Feb 10–17</b><span>7 nights</span></div>
+            <div class="info"><b>200H Yoga Teacher Training</b><span>Koh-style Wellness Retreat</span></div>
+            <div class="cap"><div class="bar"><i style="width:92%"></i></div><span>23 / 25 spots</span></div>
+            <div class="status full">Nearly Full</div>
+          </div>
+          <div class="row">
+            <div class="dates"><b>Mar 3–9</b><span>6 nights</span></div>
+            <div class="info"><b>Detox &amp; Reset Retreat</b><span>Koh-style Wellness Retreat</span></div>
+            <div class="cap"><div class="bar"><i style="width:58%"></i></div><span>14 / 24 spots</span></div>
+            <div class="status open">Open</div>
+          </div>
+          <div class="row">
+            <div class="dates"><b>Apr 14–21</b><span>7 nights</span></div>
+            <div class="info"><b>Breathwork Intensive</b><span>Koh-style Wellness Retreat</span></div>
+            <div class="cap"><div class="bar"><i style="width:20%"></i></div><span>4 / 20 spots</span></div>
+            <div class="status open">Open</div>
+          </div>
+          <div class="row">
+            <div class="dates"><b>May 5–12</b><span>7 nights</span></div>
+            <div class="info"><b>300H Advanced TTC</b><span>Koh-style Wellness Retreat</span></div>
+            <div class="cap"><div class="bar"><i style="width:8%"></i></div><span>2 / 25 spots</span></div>
+            <div class="status soon">Early Bird</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="base"></div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Retreat Organizer</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --mint:#7fbfae; --hkbg:#12100f; --hktile:#1c1a18; }
+  .phone .screen{ background: var(--hkbg); font-family:-apple-system,"Helvetica Neue",sans-serif; color:#eae6df; position:relative; }
+  .dim{ position:absolute; inset:0; background:rgba(0,0,0,0.6); z-index:1; }
+  .bgtop{ padding:44px 20px 14px; }
+  .bgtop .k{ font-size:10px; letter-spacing:.18em; text-transform:uppercase; color:#8f887c; font-weight:600; }
+  .bgtop h1{ font-size:20px; font-weight:700; margin-top:6px; }
+  .bglist{ padding:6px 18px; display:flex; flex-direction:column; gap:10px; }
+  .bgitem{ background:var(--hktile); border-radius:14px; padding:13px 14px; height:20px; }
+  .modal{ position:absolute; left:16px; right:16px; bottom:20px; background:var(--hktile); border-radius:20px; padding:20px; box-shadow:0 20px 40px rgba(0,0,0,0.5); }
+  .modal .title{ font-size:15px; font-weight:700; margin-bottom:4px; }
+  .modal .sub{ font-size:11px; color:#8f887c; margin-bottom:16px; }
+  .photos{ display:flex; gap:10px; margin-bottom:16px; }
+  .photos .p{ width:64px; height:64px; border-radius:12px; }
+  .photos .add{ width:64px; height:64px; border-radius:12px; border:1.5px dashed #4a453e; display:flex; align-items:center; justify-content:center; color:#6b655c; font-size:22px; }
+  .area{ height:60px; background:#262320; border-radius:12px; margin-bottom:14px; }
+  .urgency{ display:flex; gap:8px; margin-bottom:16px; }
+  .u{ flex:1; text-align:center; padding:9px 0; border-radius:10px; background:#262320; font-size:11px; color:#8f887c; font-weight:600; }
+  .u.on{ background:rgba(214,110,110,0.22); color:#e08787; }
+  .send{ background: linear-gradient(150deg,var(--mint),#5aa08d); color:#0d1a16; text-align:center; font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.04em; padding:14px 0; border-radius:12px; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 04 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Housekeeping App</div>
+    <h1>A broken minibar,<br>reported in ten seconds.</h1>
+    <p>Photo, description, urgency — the manager gets pinged before the guest even notices.</p>
+  </div>
+
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#eae6df; z-index:2;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="bgtop" style="padding-top:36px;">
+        <div class="k">Room 214 · Deep Clean</div>
+        <h1>Checklist</h1>
+      </div>
+      <div class="bglist">
+        <div class="bgitem"></div>
+        <div class="bgitem"></div>
+        <div class="bgitem"></div>
+      </div>
+      <div class="dim"></div>
+      <div class="modal" style="z-index:2;">
+        <div class="title">Report an Issue</div>
+        <div class="sub">Room 214 · Minibar restocked</div>
+        <div class="photos">
+          <div class="p photoblob" style="background:linear-gradient(150deg,#3a4a44,#1c2622)"></div>
+          <div class="add">+</div>
+        </div>
+        <div class="area"></div>
+        <div class="urgency">
+          <div class="u">Low</div><div class="u on">Urgent</div><div class="u">Later</div>
+        </div>
+        <div class="send">Send to manager</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Housekeeping App</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

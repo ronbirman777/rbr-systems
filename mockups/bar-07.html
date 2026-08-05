@@ -1,0 +1,58 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="shared.css">
+<style>
+  :root{ --purple:#6b55af; --purple2:#8e6bbf; --gold:#c9a84c; --cream:#f5f0e8; --sand:#f0ece6; --ink:#2c2825; }
+  .phone .screen{ background: var(--cream); font-family:-apple-system,"Helvetica Neue",sans-serif; }
+  .top{ background: linear-gradient(155deg,#7d63c2,var(--purple)); padding:36px 20px 18px; color:#fff; }
+  .top .k{ font-size:10px; letter-spacing:.18em; text-transform:uppercase; opacity:.8; font-weight:700; }
+  .top h1{ font-size:23px; font-weight:800; margin-top:6px; }
+  .list{ padding:16px; display:flex; flex-direction:column; gap:10px; }
+  .row{ background:#fff; border-radius:14px; padding:13px 14px; display:flex; align-items:center; gap:12px; box-shadow:0 3px 12px rgba(0,0,0,0.06); border-left:3px solid #e2b53b; }
+  .row.crit{ border-left-color:#d66e6e; }
+  .row .ic{ width:34px; height:34px; border-radius:10px; background:rgba(226,181,59,0.18); display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+  .row.crit .ic{ background:rgba(214,110,110,0.18); }
+  .row .info b{ font-size:13px; color:var(--ink); display:block; }
+  .row .info span{ font-size:11px; color:#948c80; }
+</style></head>
+<body>
+<div class="canvas">
+  <div class="brandbar">
+    <div class="wordmark">RB<span>R</span></div>
+    <div class="kicker">Case Study 07 / 07</div>
+  </div>
+  <div class="headline">
+    <div class="eyebrow">Bar &amp; Room-Charge System</div>
+    <h1>Low stock,<br>flagged before it runs out.</h1>
+    <p>Inventory drops with every order — the bar manager knows before a guest hears "we're out."</p>
+  </div>
+
+  <div class="phone" style="top:530px; left:362px;">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="statusbar" style="position:absolute; top:0; left:0; right:0; color:#fff;">
+        <div>9:41</div>
+        <div class="icons">
+          <svg width="16" height="11" viewBox="0 0 16 11" fill="none"><rect x="0" y="6" width="3" height="5" rx=".5" fill="currentColor"/><rect x="4.5" y="4" width="3" height="7" rx=".5" fill="currentColor"/><rect x="9" y="2" width="3" height="9" rx=".5" fill="currentColor"/><rect x="13.5" y="0" width="2.5" height="11" rx=".5" fill="currentColor" opacity=".4"/></svg>
+          <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x=".5" y=".5" width="19" height="10" rx="2.5" stroke="currentColor"/><rect x="2" y="2" width="14" height="7" rx="1.2" fill="currentColor"/><rect x="20.5" y="3.5" width="1.5" height="4" rx=".7" fill="currentColor"/></svg>
+        </div>
+      </div>
+      <div class="top">
+        <div class="k">3 alerts</div>
+        <h1>Inventory</h1>
+      </div>
+      <div class="list">
+        <div class="row crit"><div class="ic">⚠</div><div class="info"><b>Fresh Coconut</b><span>4 left · reorder today</span></div></div>
+        <div class="row"><div class="ic">◔</div><div class="info"><b>Passionfruit Puree</b><span>11 left · order soon</span></div></div>
+        <div class="row"><div class="ic">◔</div><div class="info"><b>Sparkling Water</b><span>18 left · order soon</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hairline"></div>
+  <div class="footerbar">
+    <div class="tag">Bar &amp; Room-Charge System</div>
+    <div class="idx">RBR · DataFrame &amp; Systems Solutions</div>
+  </div>
+</div>
+</body></html>

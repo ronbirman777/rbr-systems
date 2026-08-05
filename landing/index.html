@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RBR — DataFrame &amp; Systems Solutions</title>
+<meta name="description" content="Internal software for hospitality & wellness businesses — guest apps, staff tools, booking sites and point-of-sale, built and branded per property.">
+<style>
+  :root{
+    --bg:#07070a; --bg2:#0c0c11; --panel:#111117; --panel-hi:#16161e;
+    --line:rgba(255,255,255,0.08); --line-hi:rgba(255,255,255,0.14);
+    --text:#f2f1f6; --text-dim:rgba(242,241,246,0.6); --text-faint:rgba(242,241,246,0.38);
+    --gold:#e0b463; --violet:#8f7cff; --teal:#4fd6c2; --pink:#ff8fb1;
+    --sage:#8fc79a; --jade:#3fd1b8; --purple:#a992e0; --mint:#7fdcc4;
+    --radius:20px;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html{ scroll-behavior:smooth; }
+  body{
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    line-height:1.5; -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  }
+  img{ max-width:100%; display:block; }
+  a{ color:inherit; }
+  .wrap{ max-width:1240px; margin:0 auto; padding:0 32px; }
+
+  /* ---------- BACKDROP ---------- */
+  .backdrop{ position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+  .blob{ position:absolute; border-radius:50%; filter:blur(90px); opacity:0.35; }
+  .blob1{ width:640px; height:640px; top:-220px; left:-160px; background: radial-gradient(circle, var(--violet), transparent 70%); }
+  .blob2{ width:560px; height:560px; top:200px; right:-200px; background: radial-gradient(circle, var(--teal), transparent 70%); opacity:0.25; }
+  .blob3{ width:480px; height:480px; bottom:-160px; left:30%; background: radial-gradient(circle, var(--gold), transparent 70%); opacity:0.18; }
+  .grain{ position:absolute; inset:0; opacity:0.035; background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 3px 3px; }
+
+  main{ position:relative; z-index:1; }
+
+  /* ---------- NAV ---------- */
+  nav{ position:sticky; top:0; z-index:50; }
+  nav .inner{ backdrop-filter: blur(16px) saturate(160%); background:rgba(7,7,10,0.6); border-bottom:1px solid var(--line); }
+  nav .wrap{ display:flex; align-items:center; justify-content:space-between; height:76px; }
+  .wordmark{ font-weight:800; font-size:19px; letter-spacing:-0.01em; display:flex; align-items:center; gap:9px; }
+  .wordmark .dot{ width:9px; height:9px; border-radius:3px; background:linear-gradient(135deg,var(--violet),var(--teal)); flex-shrink:0; }
+  nav .links{ display:flex; gap:36px; }
+  nav .links a{ color:var(--text-dim); text-decoration:none; font-size:13.5px; font-weight:600; transition:color .15s; }
+  nav .links a:hover{ color:var(--text); }
+  nav .cta{ background:var(--text); color:#07070a; font-weight:700; font-size:13px; padding:11px 20px; border-radius:100px; text-decoration:none; transition:transform .15s; }
+  nav .cta:hover{ transform:translateY(-1px); }
+
+  /* ---------- HERO ---------- */
+  header.hero{ padding:90px 0 60px; position:relative; }
+  .pill{ display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; color:var(--text-dim); background:var(--panel); border:1px solid var(--line); padding:8px 16px 8px 8px; border-radius:100px; margin-bottom:32px; }
+  .pill .dot2{ width:7px; height:7px; border-radius:50%; background:var(--teal); box-shadow:0 0 10px var(--teal); }
+  h1.display{ font-weight:800; font-size:clamp(38px,5.6vw,72px); line-height:1.04; letter-spacing:-0.025em; max-width:900px; }
+  h1.display .grad{ background:linear-gradient(100deg,var(--violet),var(--teal) 55%,var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  header.hero p.lede{ margin-top:26px; font-size:19px; color:var(--text-dim); max-width:600px; line-height:1.6; }
+  .herobtns{ display:flex; gap:14px; margin-top:38px; flex-wrap:wrap; }
+  .btn-primary{ background:var(--text); color:#07070a; font-weight:700; font-size:14px; padding:16px 28px; border-radius:100px; text-decoration:none; transition:transform .15s, box-shadow .15s; }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 12px 30px rgba(255,255,255,0.15); }
+  .btn-ghost{ border:1px solid var(--line-hi); color:var(--text); font-weight:700; font-size:14px; padding:16px 28px; border-radius:100px; text-decoration:none; transition:background .15s; }
+  .btn-ghost:hover{ background:var(--panel); }
+
+  .heroshot{ margin-top:76px; position:relative; border-radius:24px; overflow:hidden; border:1px solid var(--line-hi); box-shadow:0 60px 120px -30px rgba(0,0,0,0.7); }
+  .heroshot::after{ content:""; position:absolute; inset:0; background:linear-gradient(180deg, transparent 55%, rgba(7,7,10,0.9)); pointer-events:none; }
+  .heroshot img{ width:100%; display:block; }
+  .heroshot-caption{ position:absolute; left:32px; bottom:28px; z-index:2; }
+  .heroshot-caption .k{ font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--teal); margin-bottom:6px; }
+  .heroshot-caption h3{ font-size:22px; font-weight:800; }
+
+  .stripstats{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; margin-top:64px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
+  .stripstats div{ background:var(--bg); padding:26px 24px; }
+  .stripstats div b{ font-size:30px; font-weight:800; display:block; letter-spacing:-0.02em; }
+  .stripstats div span{ font-size:12.5px; color:var(--text-faint); }
+
+  /* ---------- SECTION HEADS ---------- */
+  section{ padding:120px 0; position:relative; }
+  .sectionhead{ max-width:640px; margin:0 auto 64px; text-align:center; }
+  .sectionhead .k{ font-size:12.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--teal); margin-bottom:16px; }
+  .sectionhead h2{ font-weight:800; font-size:clamp(28px,3.4vw,42px); letter-spacing:-0.02em; line-height:1.15; }
+  .sectionhead p{ margin-top:16px; color:var(--text-dim); font-size:16px; line-height:1.6; }
+
+  /* ---------- BENTO WORK GRID ---------- */
+  .bento{ display:grid; grid-template-columns:repeat(6,1fr); gap:20px; }
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:32px; position:relative; overflow:hidden; transition:transform .25s ease, border-color .25s ease;
+    animation: fadeUp .6s ease backwards;
+  }
+  .card:hover{ border-color:var(--line-hi); transform:translateY(-4px); }
+  .card.big{ grid-column:span 4; }
+  .card.small{ grid-column:span 2; }
+  .card .glow{ position:absolute; width:280px; height:280px; border-radius:50%; filter:blur(70px); opacity:0.22; top:-100px; right:-100px; pointer-events:none; }
+  .card .tag{ display:inline-block; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:6px 12px; border-radius:100px; margin-bottom:18px; position:relative; z-index:1; }
+  .card h3{ font-size:23px; font-weight:800; letter-spacing:-0.01em; line-height:1.25; margin-bottom:12px; position:relative; z-index:1; }
+  .card p{ color:var(--text-dim); font-size:14.5px; line-height:1.65; margin-bottom:22px; position:relative; z-index:1; }
+  .card .shots{ display:flex; gap:12px; margin-top:auto; position:relative; z-index:1; }
+  .card .shots a{ flex:1; border-radius:12px; overflow:hidden; border:1px solid var(--line); }
+  .card .shots img{ transition:transform .35s ease; }
+  .card .shots a:hover img{ transform:scale(1.05); }
+  .card .worklink{ margin-top:22px; display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:700; text-decoration:none; position:relative; z-index:1; }
+  .card .worklink svg{ width:14px; height:14px; transition:transform .15s; }
+  .card .worklink:hover svg{ transform:translateX(3px); }
+
+  /* ---------- FEATURE ROWS (dense list under bento) ---------- */
+  .checklist{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin-top:20px; }
+  .checkitem{ background:var(--bg); padding:20px 22px; font-size:13.5px; color:var(--text-dim); display:flex; gap:10px; align-items:flex-start; }
+  .checkitem svg{ flex-shrink:0; margin-top:2px; }
+
+  /* ---------- TESTIMONIALS ---------- */
+  .tgrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
+  @media (max-width: 1080px){ .tgrid{ grid-template-columns:repeat(2,1fr); } }
+  .tcard{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:30px; transition:transform .25s ease, border-color .25s ease; animation: fadeUp .6s ease backwards; }
+  .tcard:hover{ border-color:var(--line-hi); }
+  @keyframes fadeUp{ from{ opacity:0; transform:translateY(20px); } to{ opacity:1; transform:translateY(0); } }
+  .bento .card:nth-child(1){ animation-delay:.02s; } .bento .card:nth-child(2){ animation-delay:.08s; }
+  .bento .card:nth-child(3){ animation-delay:.14s; } .bento .card:nth-child(4){ animation-delay:.2s; } .bento .card:nth-child(5){ animation-delay:.26s; }
+  .tgrid .tcard:nth-child(1){ animation-delay:.02s; } .tgrid .tcard:nth-child(2){ animation-delay:.08s; }
+  .tgrid .tcard:nth-child(3){ animation-delay:.14s; } .tgrid .tcard:nth-child(4){ animation-delay:.2s; }
+  .stars{ display:flex; gap:3px; margin-bottom:18px; }
+  .stars svg{ width:15px; height:15px; }
+  .tcard p{ font-size:14.5px; line-height:1.7; color:var(--text); margin-bottom:24px; min-height:150px; }
+  .tcard .who{ display:flex; align-items:center; gap:12px; }
+  .tcard .av{ width:40px; height:40px; border-radius:50%; flex-shrink:0; }
+  .tcard .who b{ font-size:13.5px; display:block; }
+  .tcard .who span{ font-size:12px; color:var(--text-faint); }
+  .disclaimer{ margin:36px auto 0; font-size:12.5px; color:var(--text-faint); max-width:640px; text-align:center; line-height:1.6; }
+
+  /* ---------- CTA ---------- */
+  .ctacard{
+    text-align:center; padding:90px 48px; border-radius:32px; position:relative; overflow:hidden;
+    background: linear-gradient(160deg, var(--panel-hi), var(--panel));
+    border:1px solid var(--line-hi);
+  }
+  .ctacard .glow{ position:absolute; width:600px; height:600px; border-radius:50%; background:radial-gradient(circle, var(--violet), transparent 70%); opacity:0.25; top:-260px; left:50%; transform:translateX(-50%); filter:blur(60px); pointer-events:none; }
+  .ctacard h2{ font-weight:800; font-size:clamp(28px,4vw,44px); letter-spacing:-0.02em; max-width:640px; margin:0 auto 20px; position:relative; }
+  .ctacard p{ color:var(--text-dim); font-size:16px; max-width:480px; margin:0 auto 36px; position:relative; }
+  .ctacard .herobtns{ justify-content:center; position:relative; }
+
+  footer{ border-top:1px solid var(--line); padding:44px 0; position:relative; z-index:1; }
+  footer .wrap{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+  footer .flinks{ display:flex; gap:28px; }
+  footer .flinks a{ color:var(--text-dim); font-size:13px; text-decoration:none; }
+  footer .flinks a:hover{ color:var(--text); }
+  footer .fnote{ font-size:12px; color:var(--text-faint); margin-top:16px; }
+
+  @media (max-width: 860px){
+    .stripstats{ grid-template-columns:repeat(2,1fr); }
+    .bento{ grid-template-columns:1fr; }
+    .card.big, .card.small{ grid-column:span 1; }
+    .tgrid{ grid-template-columns:1fr; }
+    .checklist{ grid-template-columns:1fr; }
+    nav .links{ display:none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="backdrop">
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+  <div class="blob blob3"></div>
+  <div class="grain"></div>
+</div>
+
+<main>
+<nav>
+  <div class="inner">
+    <div class="wrap">
+      <div class="wordmark"><span class="dot"></span>RBR</div>
+      <div class="links">
+        <a href="#work">Work</a>
+        <a href="#testimonials">Testimonials</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <a class="cta" href="#contact">Start a project</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="pill"><span class="dot2"></span>Now booking Q1 builds</div>
+    <h1 class="display">Internal software for businesses that run on <span class="grad">more than one screen.</span></h1>
+    <p class="lede">We design and build the systems hospitality &amp; wellness brands actually operate on — guest apps, staff tools, booking sites and point-of-sale — branded, connected, and boringly reliable.</p>
+    <div class="herobtns">
+      <a class="btn-primary" href="#contact">Start a project →</a>
+      <a class="btn-ghost" href="#work">See the work</a>
+    </div>
+
+    <div class="heroshot">
+      <img src="images/app-01.png" alt="RBR guest experience app">
+      <div class="heroshot-caption">
+        <div class="k">Guest Experience App</div>
+        <h3>The app that runs the whole stay</h3>
+      </div>
+    </div>
+
+    <div class="stripstats">
+      <div><b>5</b><span>Systems shipped</span></div>
+      <div><b>30</b><span>Screens designed</span></div>
+      <div><b>1</b><span>Team, start to finish</span></div>
+      <div><b>&lt;1min</b><span>Guest booking flow</span></div>
+    </div>
+  </div>
+</header>
+
+<section id="work">
+  <div class="wrap">
+    <div class="sectionhead">
+      <div class="k">Selected Work</div>
+      <h2>Five systems, one property.</h2>
+      <p>Everything below is a real build — guest-facing, staff-facing and management-facing — shown here under a demo brand while the client stays private.</p>
+    </div>
+
+    <div class="bento">
+      <div class="card big" data-reveal>
+        <div class="glow" style="background:radial-gradient(circle, var(--sage), transparent 70%);"></div>
+        <div class="tag" style="background:rgba(143,199,154,0.16); color:var(--sage);">Guest Experience App</div>
+        <h3>The app that runs the whole stay.</h3>
+        <p>Schedule, dining, treatments, check-in and live updates — one calm PWA guests actually open every morning.</p>
+        <div class="shots">
+          <a href="images/app-01.png" target="_blank"><img src="images/app-01.png" alt="Guest app home"></a>
+          <a href="images/app-03.png" target="_blank"><img src="images/app-03.png" alt="Guest app treatments"></a>
+          <a href="images/app-05.png" target="_blank"><img src="images/app-05.png" alt="Guest app detox tracker"></a>
+        </div>
+        <a class="worklink" style="color:var(--sage);" href="#contact">Discuss a similar build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+
+      <div class="card small" data-reveal>
+        <div class="glow" style="background:radial-gradient(circle, var(--jade), transparent 70%);"></div>
+        <div class="tag" style="background:rgba(63,209,184,0.16); color:var(--jade);">Booking Website</div>
+        <h3>Feels like the stay, not a template.</h3>
+        <p>Live pricing and a direct booking flow — no commission, mobile-first.</p>
+        <div class="shots">
+          <a href="images/web-01.png" target="_blank"><img src="images/web-01.png" alt="Website homepage"></a>
+        </div>
+        <a class="worklink" style="color:var(--jade);" href="#contact">Discuss a build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+
+      <div class="card small" data-reveal>
+        <div class="glow" style="background:radial-gradient(circle, var(--purple), transparent 70%);"></div>
+        <div class="tag" style="background:rgba(169,146,224,0.16); color:var(--purple);">Bar &amp; Room-Charge</div>
+        <h3>Every drink, tracked to the room.</h3>
+        <p>Two taps to order — the charge lands on the folio automatically.</p>
+        <div class="shots">
+          <a href="images/bar-01.png" target="_blank"><img src="images/bar-01.png" alt="Bar tracking screen"></a>
+        </div>
+        <a class="worklink" style="color:var(--purple);" href="#contact">Discuss a build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+
+      <div class="card small" data-reveal>
+        <div class="glow" style="background:radial-gradient(circle, var(--mint), transparent 70%);"></div>
+        <div class="tag" style="background:rgba(127,220,196,0.16); color:var(--mint);">Housekeeping App</div>
+        <h3>No names, no passwords — just a PIN.</h3>
+        <p>Teams sign in with a 4-digit code and work a checklist. Every clean is timed automatically, so managers see average clean time and completion rate per team — not just a to-do list.</p>
+        <div class="shots">
+          <a href="images/hk-01.png" target="_blank"><img src="images/hk-01.png" alt="Housekeeping login"></a>
+        </div>
+        <a class="worklink" style="color:var(--mint);" href="#contact">Discuss a similar build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+
+      <div class="card big" data-reveal>
+        <div class="glow" style="background:radial-gradient(circle, var(--amber2,#e0a26a), transparent 70%);"></div>
+        <div class="tag" style="background:rgba(224,162,106,0.18); color:#e0a26a;">Retreat Organizer</div>
+        <h3>Every retreat, on one calendar.</h3>
+        <p>Built for a solo organizer running several retreats a year — schedule, capacity and participant data in one dashboard instead of six spreadsheet tabs.</p>
+        <div class="shots">
+          <a href="images/retreat-01.png" target="_blank"><img src="images/retreat-01.png" alt="Retreat organizer calendar"></a>
+          <a href="images/retreat-02.png" target="_blank"><img src="images/retreat-02.png" alt="Retreat organizer participant dashboard"></a>
+        </div>
+        <a class="worklink" style="color:#e0a26a;" href="#contact">Discuss a similar build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+
+    <div class="checklist">
+      <div class="checkitem"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Built and branded per property — never a generic template</div>
+      <div class="checkitem"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Guest, staff and admin systems that share one source of data</div>
+      <div class="checkitem"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Live from day one — no six-month enterprise rollout</div>
+    </div>
+  </div>
+</section>
+
+<section id="testimonials">
+  <div class="wrap">
+    <div class="sectionhead">
+      <div class="k">From The Teams Who Use It</div>
+      <h2>Built for the people who run the floor.</h2>
+      <p>Feedback from the roles closest to daily operations on the demo property above.</p>
+    </div>
+
+    <div class="tgrid">
+      <div class="tcard" data-reveal>
+        <div class="stars">
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+        </div>
+        <p>"Before this, shift handover meant three radio calls and a guess at who cleaned what. Now every team sees exactly their rooms, and nothing gets marked done without photos. Reports that used to take a manager an hour now update themselves."</p>
+        <div class="who">
+          <div class="av" style="background:linear-gradient(150deg,#7fdcc4,#3fa88f);"></div>
+          <div><b>Housekeeping Supervisor</b><span>RBR Retreat</span></div>
+        </div>
+      </div>
+
+      <div class="tcard" data-reveal>
+        <div class="stars">
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+        </div>
+        <p>"The whole point of hiring outside was that our team stops being the bottleneck for every schedule change. Now guests open the app and just know — what's on today, what moved, what's for dinner. Front desk calls dropped almost immediately."</p>
+        <div class="who">
+          <div class="av" style="background:linear-gradient(150deg,#8fc79a,#4f7a56);"></div>
+          <div><b>Guest Relations Manager</b><span>RBR Retreat</span></div>
+        </div>
+      </div>
+
+      <div class="tcard" data-reveal>
+        <div class="stars">
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+        </div>
+        <p>"We used to run housekeeping, the bar and reception off three different habits — a notebook, a group chat and memory. Getting it onto one system that actually matches how each team works, without forcing them into generic software, was the hard part. That's what they solved."</p>
+        <div class="who">
+          <div class="av" style="background:linear-gradient(150deg,#a992e0,#6b55af);"></div>
+          <div><b>Operations Manager</b><span>RBR Retreat</span></div>
+        </div>
+      </div>
+
+      <div class="tcard" data-reveal>
+        <div class="stars">
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
+        </div>
+        <p>"I used to run every retreat out of three spreadsheets and a notes app — capacity, payments, who still owed a deposit. Now I open one dashboard and see all of it, per retreat. I run more retreats per year with less admin time than before, and I actually trust the numbers now."</p>
+        <div class="who">
+          <div class="av" style="background:linear-gradient(150deg,#e0a26a,#a15f30);"></div>
+          <div><b>Retreat Organizer &amp; Founder</b><span>RBR Retreat</span></div>
+        </div>
+      </div>
+    </div>
+
+    <p class="disclaimer">Illustrative feedback from the demo case study above, written to reflect the kind of operational impact these systems are designed for — shown while the site collects its first real client testimonials.</p>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="wrap">
+    <div class="ctacard">
+      <div class="glow"></div>
+      <div class="k" style="text-align:center;">Let's Talk</div>
+      <h2>Have an operation that outgrew its spreadsheet?</h2>
+      <p>We design and build the internal software — guest apps, staff tools, booking sites and back-office systems — for hospitality and wellness businesses that need something built for how they actually work.</p>
+      <div class="herobtns">
+        <a class="btn-primary" href="https://instagram.com" target="_blank" rel="noopener">Message us on Instagram →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="wordmark"><span class="dot"></span>RBR</div>
+    <div class="flinks">
+      <a href="#work">Work</a>
+      <a href="#testimonials">Testimonials</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </div>
+  <div class="wrap"><div class="fnote">RBR · DataFrame &amp; Systems Solutions — internal software for hospitality &amp; wellness businesses.</div></div>
+</footer>
+</main>
+
+</body>
+</html>
