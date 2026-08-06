@@ -41,6 +41,8 @@
   nav .wrap{ display:flex; align-items:center; justify-content:space-between; height:76px; }
   .wordmark{ font-weight:800; font-size:19px; letter-spacing:-0.01em; display:flex; align-items:center; gap:9px; }
   .wordmark .dot{ width:9px; height:9px; border-radius:3px; background:linear-gradient(135deg,var(--violet),var(--teal)); flex-shrink:0; }
+  .wordmark .navtag{ font-weight:600; font-size:12.5px; letter-spacing:0; color:var(--text-faint); padding-left:12px; margin-left:3px; border-left:1px solid var(--line-hi); white-space:nowrap; }
+  @media (max-width:640px){ .wordmark .navtag{ display:none; } }
   nav .links{ display:flex; gap:36px; }
   nav .links a{ color:var(--text-dim); text-decoration:none; font-size:13.5px; font-weight:600; transition:color .15s; }
   nav .links a:hover{ color:var(--text); }
@@ -94,9 +96,9 @@
   .card h3{ font-size:23px; font-weight:800; letter-spacing:-0.01em; line-height:1.25; margin-bottom:12px; position:relative; z-index:1; }
   .card p{ color:var(--text-dim); font-size:14.5px; line-height:1.65; margin-bottom:22px; position:relative; z-index:1; }
   .card .shots{ display:flex; gap:12px; margin-top:auto; position:relative; z-index:1; }
-  .card .shots a{ flex:1; border-radius:12px; overflow:hidden; border:1px solid var(--line); }
-  .card .shots img{ transition:transform .35s ease; }
-  .card .shots a:hover img{ transform:scale(1.05); }
+  .card .shots .shot{ flex:1; border-radius:12px; overflow:hidden; border:1px solid var(--line); padding:0; background:none; cursor:pointer; display:block; }
+  .card .shots img{ transition:transform .35s ease; width:100%; }
+  .card .shots .shot:hover img{ transform:scale(1.05); }
   .card .worklink{ margin-top:22px; display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:700; text-decoration:none; position:relative; z-index:1; }
   .card .worklink svg{ width:14px; height:14px; transition:transform .15s; }
   .card .worklink:hover svg{ transform:translateX(3px); }
@@ -151,6 +153,35 @@
     .checklist{ grid-template-columns:1fr; }
     nav .links{ display:none; }
   }
+
+  /* ---------- LIGHTBOX ---------- */
+  .lightbox{
+    position:fixed; inset:0; z-index:200; display:none; align-items:center; justify-content:center;
+    background:rgba(4,4,6,0.88); backdrop-filter:blur(8px); padding:70px 24px;
+  }
+  .lightbox.open{ display:flex; }
+  .lb-inner{ display:flex; flex-direction:column; align-items:center; gap:18px; max-width:min(880px,94vw); width:100%; }
+  .lb-stage{
+    position:relative; width:100%; max-height:72vh; aspect-ratio:1080/1350;
+    border-radius:28px; overflow:hidden; background:var(--panel); border:1px solid var(--line-hi);
+    box-shadow:0 60px 140px -20px rgba(0,0,0,0.85); cursor:grab; touch-action:pan-y;
+  }
+  .lb-stage.dragging{ cursor:grabbing; }
+  .lb-stage img{ display:block; width:100%; height:100%; object-fit:contain; user-select:none; -webkit-user-drag:none; pointer-events:none; }
+  .lb-close, .lb-arrow{
+    position:absolute; z-index:5; border-radius:50%; background:rgba(255,255,255,0.08);
+    border:1px solid var(--line-hi); color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:background .15s;
+  }
+  .lb-close:hover, .lb-arrow:hover{ background:rgba(255,255,255,0.18); }
+  .lb-close{ top:-52px; right:0; width:38px; height:38px; font-size:15px; }
+  .lb-arrow{ top:50%; transform:translateY(-50%); width:48px; height:48px; font-size:20px; }
+  .lb-prev{ left:14px; } .lb-next{ right:14px; }
+  @media (max-width:640px){ .lb-close{ top:-46px; } .lb-arrow{ width:40px; height:40px; } .lb-prev{ left:8px; } .lb-next{ right:8px; } }
+  .lb-meta{ display:flex; align-items:center; gap:14px; color:var(--text-dim); font-size:13px; font-weight:600; }
+  .lb-dots{ display:flex; gap:6px; align-items:center; }
+  .lb-dots i{ width:6px; height:6px; border-radius:50%; background:var(--line-hi); display:block; transition:.2s; }
+  .lb-dots i.on{ background:var(--text); width:18px; border-radius:3px; }
 </style>
 </head>
 <body>
@@ -166,7 +197,7 @@
 <nav>
   <div class="inner">
     <div class="wrap">
-      <div class="wordmark"><span class="dot"></span>RBR</div>
+      <div class="wordmark"><span class="dot"></span>RBR<span class="navtag">DataFrame &amp; Systems Solutions</span></div>
       <div class="links">
         <a href="#work">Work</a>
         <a href="#testimonials">Testimonials</a>
@@ -219,9 +250,9 @@
         <h3>The app that runs the whole stay.</h3>
         <p>Schedule, dining, treatments, check-in and live updates — one calm PWA guests actually open every morning.</p>
         <div class="shots">
-          <a href="images/app-01.png" target="_blank"><img src="images/app-01.png" alt="Guest app home"></a>
-          <a href="images/app-03.png" target="_blank"><img src="images/app-03.png" alt="Guest app treatments"></a>
-          <a href="images/app-05.png" target="_blank"><img src="images/app-05.png" alt="Guest app detox tracker"></a>
+          <button type="button" class="shot" data-product="app" data-index="1"><img src="images/app-01.png" alt="Guest app home"></button>
+          <button type="button" class="shot" data-product="app" data-index="3"><img src="images/app-03.png" alt="Guest app treatments"></button>
+          <button type="button" class="shot" data-product="app" data-index="5"><img src="images/app-05.png" alt="Guest app detox tracker"></button>
         </div>
         <a class="worklink" style="color:var(--sage);" href="#contact">Discuss a similar build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
@@ -232,7 +263,7 @@
         <h3>Feels like the stay, not a template.</h3>
         <p>Live pricing and a direct booking flow — no commission, mobile-first.</p>
         <div class="shots">
-          <a href="images/web-01.png" target="_blank"><img src="images/web-01.png" alt="Website homepage"></a>
+          <button type="button" class="shot" data-product="web" data-index="1"><img src="images/web-01.png" alt="Website homepage"></button>
         </div>
         <a class="worklink" style="color:var(--jade);" href="#contact">Discuss a build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
@@ -243,7 +274,7 @@
         <h3>Every drink, tracked to the room.</h3>
         <p>Two taps to order — the charge lands on the folio automatically.</p>
         <div class="shots">
-          <a href="images/bar-01.png" target="_blank"><img src="images/bar-01.png" alt="Bar tracking screen"></a>
+          <button type="button" class="shot" data-product="bar" data-index="1"><img src="images/bar-01.png" alt="Bar tracking screen"></button>
         </div>
         <a class="worklink" style="color:var(--purple);" href="#contact">Discuss a build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
@@ -254,7 +285,7 @@
         <h3>No names, no passwords — just a PIN.</h3>
         <p>Teams sign in with a 4-digit code and work a checklist. Every clean is timed automatically, so managers see average clean time and completion rate per team — not just a to-do list.</p>
         <div class="shots">
-          <a href="images/hk-01.png" target="_blank"><img src="images/hk-01.png" alt="Housekeeping login"></a>
+          <button type="button" class="shot" data-product="hk" data-index="1"><img src="images/hk-01.png" alt="Housekeeping login"></button>
         </div>
         <a class="worklink" style="color:var(--mint);" href="#contact">Discuss a similar build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
@@ -265,8 +296,8 @@
         <h3>Every retreat, on one calendar.</h3>
         <p>Built for a solo organizer running several retreats a year — schedule, capacity and participant data in one dashboard instead of six spreadsheet tabs.</p>
         <div class="shots">
-          <a href="images/retreat-01.png" target="_blank"><img src="images/retreat-01.png" alt="Retreat organizer calendar"></a>
-          <a href="images/retreat-02.png" target="_blank"><img src="images/retreat-02.png" alt="Retreat organizer participant dashboard"></a>
+          <button type="button" class="shot" data-product="retreat" data-index="1"><img src="images/retreat-01.png" alt="Retreat organizer calendar"></button>
+          <button type="button" class="shot" data-product="retreat" data-index="2"><img src="images/retreat-02.png" alt="Retreat organizer participant dashboard"></button>
         </div>
         <a class="worklink" style="color:#e0a26a;" href="#contact">Discuss a similar build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
@@ -380,6 +411,120 @@
   <div class="wrap"><div class="fnote">RBR · DataFrame &amp; Systems Solutions — internal software for hospitality &amp; wellness businesses.</div></div>
 </footer>
 </main>
+
+<div class="lightbox" id="lightbox" aria-hidden="true">
+  <div class="lb-inner">
+    <div class="lb-stage" id="lbStage">
+      <button type="button" class="lb-close" id="lbClose" aria-label="Close">✕</button>
+      <button type="button" class="lb-arrow lb-prev" id="lbPrev" aria-label="Previous screen">‹</button>
+      <button type="button" class="lb-arrow lb-next" id="lbNext" aria-label="Next screen">›</button>
+      <img id="lbImg" src="" alt="">
+    </div>
+    <div class="lb-meta">
+      <span id="lbTitle"></span>
+      <div class="lb-dots" id="lbDots"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var PRODUCTS = {
+    app: { count: 7, label: 'Guest Experience App' },
+    web: { count: 7, label: 'Booking Website' },
+    bar: { count: 7, label: 'Bar & Room-Charge System' },
+    hk: { count: 7, label: 'Housekeeping App' },
+    retreat: { count: 2, label: 'Retreat Organizer' }
+  };
+
+  var lb = document.getElementById('lightbox');
+  var stage = document.getElementById('lbStage');
+  var img = document.getElementById('lbImg');
+  var title = document.getElementById('lbTitle');
+  var dotsWrap = document.getElementById('lbDots');
+  var current = { product: null, index: 1 };
+
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+  function srcFor(p, i){ return 'images/' + p + '-' + pad(i) + '.png'; }
+
+  function render(){
+    var meta = PRODUCTS[current.product];
+    img.src = srcFor(current.product, current.index);
+    img.alt = meta.label + ' — screen ' + current.index;
+    title.textContent = meta.label + '  ·  ' + current.index + ' / ' + meta.count;
+    dotsWrap.innerHTML = '';
+    for (var i = 1; i <= meta.count; i++){
+      var d = document.createElement('i');
+      if (i === current.index) d.className = 'on';
+      dotsWrap.appendChild(d);
+    }
+  }
+
+  function open(product, index){
+    current.product = product;
+    current.index = index;
+    render();
+    lb.classList.add('open');
+    lb.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function close(){
+    lb.classList.remove('open');
+    lb.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  function go(delta){
+    var meta = PRODUCTS[current.product];
+    current.index = ((current.index - 1 + delta) % meta.count + meta.count) % meta.count + 1;
+    render();
+  }
+
+  document.querySelectorAll('.shot').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      open(btn.getAttribute('data-product'), parseInt(btn.getAttribute('data-index'), 10));
+    });
+  });
+
+  document.getElementById('lbClose').addEventListener('click', close);
+  document.getElementById('lbPrev').addEventListener('click', function(){ go(-1); });
+  document.getElementById('lbNext').addEventListener('click', function(){ go(1); });
+  lb.addEventListener('click', function(e){ if (e.target === lb) close(); });
+  document.addEventListener('keydown', function(e){
+    if (!lb.classList.contains('open')) return;
+    if (e.key === 'Escape') close();
+    if (e.key === 'ArrowLeft') go(-1);
+    if (e.key === 'ArrowRight') go(1);
+  });
+
+  var dragging = false, startX = 0, deltaX = 0;
+  stage.addEventListener('pointerdown', function(e){
+    if (e.target.closest('.lb-close, .lb-arrow')) return;
+    dragging = true; startX = e.clientX; deltaX = 0;
+    stage.classList.add('dragging');
+    stage.setPointerCapture(e.pointerId);
+  });
+  stage.addEventListener('pointermove', function(e){
+    if (!dragging) return;
+    deltaX = e.clientX - startX;
+    img.style.transform = 'translateX(' + deltaX + 'px)';
+    img.style.opacity = String(1 - Math.min(Math.abs(deltaX) / 500, 0.5));
+  });
+  function endDrag(){
+    if (!dragging) return;
+    dragging = false;
+    stage.classList.remove('dragging');
+    img.style.transform = '';
+    img.style.opacity = '';
+    if (deltaX > 60) go(-1);
+    else if (deltaX < -60) go(1);
+    deltaX = 0;
+  }
+  stage.addEventListener('pointerup', endDrag);
+  stage.addEventListener('pointercancel', endDrag);
+})();
+</script>
 
 </body>
 </html>

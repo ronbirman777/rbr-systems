@@ -1,2 +1,5 @@
 .DS_Store
 *.png.bak
+
+# Local Netlify folder
+.netlify
