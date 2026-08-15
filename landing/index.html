@@ -3,526 +3,659 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RBR — DataFrame &amp; Systems Solutions</title>
-<meta name="description" content="Internal software for hospitality & wellness businesses — guest apps, staff tools, booking sites and point-of-sale, built and branded per property.">
+<title>RBR — Retreats By Ron</title>
+<meta name="description" content="Custom digital experiences for retreats, healing spaces and conscious communities — beautiful technology that helps your guests stay connected, informed and present.">
 <style>
   :root{
-    --bg:#07070a; --bg2:#0c0c11; --panel:#111117; --panel-hi:#16161e;
-    --line:rgba(255,255,255,0.08); --line-hi:rgba(255,255,255,0.14);
-    --text:#f2f1f6; --text-dim:rgba(242,241,246,0.6); --text-faint:rgba(242,241,246,0.38);
-    --gold:#e0b463; --violet:#8f7cff; --teal:#4fd6c2; --pink:#ff8fb1;
-    --sage:#8fc79a; --jade:#3fd1b8; --purple:#a992e0; --mint:#7fdcc4;
-    --radius:20px;
+    --cream:#FBF9F5; --sage:#8A9A86; --forest:#1B2E24; --white:#FFFFFF;
+    --sage-soft:rgba(138,154,134,0.16); --sage-soft2:rgba(138,154,134,0.28);
+    --forest-soft:rgba(27,46,36,0.06); --line:rgba(27,46,36,0.12); --line-2:rgba(27,46,36,0.18);
+    --ink:#1B2E24; --ink-dim:rgba(27,46,36,0.64); --ink-faint:rgba(27,46,36,0.42);
+    --cream-dim:rgba(251,249,245,0.72);
+    --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+    --sans: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --maxw: 1320px;
   }
   *{ box-sizing:border-box; margin:0; padding:0; }
   html{ scroll-behavior:smooth; }
   body{
-    background: var(--bg); color: var(--text);
-    font-family: -apple-system, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    line-height:1.5; -webkit-font-smoothing:antialiased; overflow-x:hidden;
+    background:var(--cream); color:var(--ink); font-family:var(--sans);
+    line-height:1.55; -webkit-font-smoothing:antialiased; overflow-x:hidden;
   }
   img{ max-width:100%; display:block; }
-  a{ color:inherit; }
-  .wrap{ max-width:1240px; margin:0 auto; padding:0 32px; }
+  a{ color:inherit; text-decoration:none; }
+  button{ font-family:inherit; }
+  .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 40px; }
+  @media (max-width:640px){ .wrap{ padding:0 22px; } }
+  .kicker{ font-family:var(--sans); font-size:12px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:var(--sage); }
+  .kicker.on-dark{ color:#c9d4c4; }
+  .statement{ font-family:var(--serif); font-weight:400; font-size:clamp(28px,3.6vw,44px); line-height:1.18; letter-spacing:-0.01em; color:var(--ink); }
+  .statement.on-dark{ color:var(--cream); }
+  section{ padding:130px 0; position:relative; }
+  @media (max-width:860px){ section{ padding:88px 0; } }
+  @keyframes fadeUp{ from{ opacity:0; transform:translateY(22px);} to{ opacity:1; transform:translateY(0);} }
+  @media (prefers-reduced-motion: reduce){ *{ animation:none !important; transition:none !important; } }
 
-  /* ---------- BACKDROP ---------- */
-  .backdrop{ position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
-  .blob{ position:absolute; border-radius:50%; filter:blur(90px); opacity:0.35; }
-  .blob1{ width:640px; height:640px; top:-220px; left:-160px; background: radial-gradient(circle, var(--violet), transparent 70%); }
-  .blob2{ width:560px; height:560px; top:200px; right:-200px; background: radial-gradient(circle, var(--teal), transparent 70%); opacity:0.25; }
-  .blob3{ width:480px; height:480px; bottom:-160px; left:30%; background: radial-gradient(circle, var(--gold), transparent 70%); opacity:0.18; }
-  .grain{ position:absolute; inset:0; opacity:0.035; background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 3px 3px; }
+  /* ================= HEADER ================= */
+  header{ position:fixed; top:0; left:0; right:0; z-index:200; padding:26px 0; transition:background .3s ease, padding .3s ease, border-color .3s ease, backdrop-filter .3s ease; }
+  header .wrap{ display:flex; align-items:center; justify-content:space-between; }
+  header.scrolled{ padding:16px 0; background:rgba(251,249,245,0.86); backdrop-filter:blur(14px) saturate(160%); border-bottom:1px solid var(--line); }
+  .logo{ display:flex; flex-direction:column; line-height:1.1; }
+  .logo .mark{ font-family:var(--serif); font-size:22px; font-weight:400; letter-spacing:.02em; color:var(--forest); }
+  .logo .sub{ font-size:9.5px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--ink-faint); margin-top:2px; }
+  nav.mainnav{ display:flex; gap:34px; }
+  nav.mainnav a{ font-size:13px; font-weight:600; letter-spacing:.03em; color:var(--ink-dim); transition:color .15s; }
+  nav.mainnav a:hover{ color:var(--forest); }
+  .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; font-size:12.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:14px 26px; border-radius:100px; transition:transform .18s ease, box-shadow .18s ease, background .18s ease; border:1px solid transparent; cursor:pointer; }
+  .btn-forest{ background:var(--forest); color:var(--cream); }
+  .btn-forest:hover{ transform:translateY(-2px); box-shadow:0 14px 28px -8px rgba(27,46,36,0.45); }
+  .btn-outline{ background:transparent; color:var(--forest); border-color:var(--line-2); }
+  .btn-outline:hover{ background:var(--forest-soft); }
+  .btn-cream{ background:var(--cream); color:var(--forest); }
+  .btn-cream:hover{ transform:translateY(-2px); box-shadow:0 14px 28px -8px rgba(0,0,0,0.35); }
+  .btn-sage{ background:var(--sage-soft); color:var(--forest); }
+  .btn-sage:hover{ background:var(--sage-soft2); }
+  header .btn{ padding:12px 22px; }
+  .burger{ display:none; width:40px; height:40px; border-radius:50%; align-items:center; justify-content:center; background:var(--sage-soft); border:none; cursor:pointer; }
+  .burger span{ display:block; width:16px; height:1.5px; background:var(--forest); position:relative; }
+  .burger span::before, .burger span::after{ content:""; position:absolute; left:0; width:16px; height:1.5px; background:var(--forest); }
+  .burger span::before{ top:-5px; } .burger span::after{ top:5px; }
 
-  main{ position:relative; z-index:1; }
+  .mobilemenu{ position:fixed; inset:0; z-index:300; background:var(--forest); display:none; flex-direction:column; padding:26px 26px 40px; }
+  .mobilemenu.open{ display:flex; }
+  .mobilemenu .mtop{ display:flex; justify-content:space-between; align-items:center; }
+  .mobilemenu .logo .mark{ color:var(--cream); }
+  .mobilemenu .logo .sub{ color:rgba(251,249,245,0.55); }
+  .mobilemenu .mclose{ width:40px; height:40px; border-radius:50%; background:rgba(251,249,245,0.1); border:none; color:var(--cream); font-size:16px; cursor:pointer; }
+  .mobilemenu nav{ display:flex; flex-direction:column; gap:6px; margin-top:60px; flex:1; }
+  .mobilemenu nav a{ font-family:var(--serif); font-size:32px; color:var(--cream); padding:14px 0; border-bottom:1px solid rgba(251,249,245,0.12); }
+  .mobilemenu .mcta{ margin-top:20px; }
 
-  /* ---------- NAV ---------- */
-  nav{ position:sticky; top:0; z-index:50; }
-  nav .inner{ backdrop-filter: blur(16px) saturate(160%); background:rgba(7,7,10,0.6); border-bottom:1px solid var(--line); }
-  nav .wrap{ display:flex; align-items:center; justify-content:space-between; height:76px; }
-  .wordmark{ font-weight:800; font-size:19px; letter-spacing:-0.01em; display:flex; align-items:center; gap:9px; }
-  .wordmark .dot{ width:9px; height:9px; border-radius:3px; background:linear-gradient(135deg,var(--violet),var(--teal)); flex-shrink:0; }
-  .wordmark .navtag{ font-weight:600; font-size:12.5px; letter-spacing:0; color:var(--text-faint); padding-left:12px; margin-left:3px; border-left:1px solid var(--line-hi); white-space:nowrap; }
-  @media (max-width:640px){ .wordmark .navtag{ display:none; } }
-  nav .links{ display:flex; gap:36px; }
-  nav .links a{ color:var(--text-dim); text-decoration:none; font-size:13.5px; font-weight:600; transition:color .15s; }
-  nav .links a:hover{ color:var(--text); }
-  nav .cta{ background:var(--text); color:#07070a; font-weight:700; font-size:13px; padding:11px 20px; border-radius:100px; text-decoration:none; transition:transform .15s; }
-  nav .cta:hover{ transform:translateY(-1px); }
-
-  /* ---------- HERO ---------- */
-  header.hero{ padding:90px 0 60px; position:relative; }
-  .pill{ display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; color:var(--text-dim); background:var(--panel); border:1px solid var(--line); padding:8px 16px 8px 8px; border-radius:100px; margin-bottom:32px; }
-  .pill .dot2{ width:7px; height:7px; border-radius:50%; background:var(--teal); box-shadow:0 0 10px var(--teal); }
-  h1.display{ font-weight:800; font-size:clamp(38px,5.6vw,72px); line-height:1.04; letter-spacing:-0.025em; max-width:900px; }
-  h1.display .grad{ background:linear-gradient(100deg,var(--violet),var(--teal) 55%,var(--gold)); -webkit-background-clip:text; background-clip:text; color:transparent; }
-  header.hero p.lede{ margin-top:26px; font-size:19px; color:var(--text-dim); max-width:600px; line-height:1.6; }
-  .herobtns{ display:flex; gap:14px; margin-top:38px; flex-wrap:wrap; }
-  .btn-primary{ background:var(--text); color:#07070a; font-weight:700; font-size:14px; padding:16px 28px; border-radius:100px; text-decoration:none; transition:transform .15s, box-shadow .15s; }
-  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 12px 30px rgba(255,255,255,0.15); }
-  .btn-ghost{ border:1px solid var(--line-hi); color:var(--text); font-weight:700; font-size:14px; padding:16px 28px; border-radius:100px; text-decoration:none; transition:background .15s; }
-  .btn-ghost:hover{ background:var(--panel); }
-
-  .heroshot{ margin-top:76px; position:relative; border-radius:24px; overflow:hidden; border:1px solid var(--line-hi); box-shadow:0 60px 120px -30px rgba(0,0,0,0.7); }
-  .heroshot::after{ content:""; position:absolute; inset:0; background:linear-gradient(180deg, transparent 55%, rgba(7,7,10,0.9)); pointer-events:none; }
-  .heroshot img{ width:100%; display:block; }
-  .heroshot-caption{ position:absolute; left:32px; bottom:28px; z-index:2; }
-  .heroshot-caption .k{ font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--teal); margin-bottom:6px; }
-  .heroshot-caption h3{ font-size:22px; font-weight:800; }
-
-  .stripstats{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; margin-top:64px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; }
-  .stripstats div{ background:var(--bg); padding:26px 24px; }
-  .stripstats div b{ font-size:30px; font-weight:800; display:block; letter-spacing:-0.02em; }
-  .stripstats div span{ font-size:12.5px; color:var(--text-faint); }
-
-  /* ---------- SECTION HEADS ---------- */
-  section{ padding:120px 0; position:relative; }
-  .sectionhead{ max-width:640px; margin:0 auto 64px; text-align:center; }
-  .sectionhead .k{ font-size:12.5px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--teal); margin-bottom:16px; }
-  .sectionhead h2{ font-weight:800; font-size:clamp(28px,3.4vw,42px); letter-spacing:-0.02em; line-height:1.15; }
-  .sectionhead p{ margin-top:16px; color:var(--text-dim); font-size:16px; line-height:1.6; }
-
-  /* ---------- BENTO WORK GRID ---------- */
-  .bento{ display:grid; grid-template-columns:repeat(6,1fr); gap:20px; }
-  .card{
-    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
-    padding:32px; position:relative; overflow:hidden; transition:transform .25s ease, border-color .25s ease;
-    animation: fadeUp .6s ease backwards;
+  @media (max-width:920px){
+    nav.mainnav{ display:none; }
+    header .btn-forest{ display:none; }
+    .burger{ display:flex; }
   }
-  .card:hover{ border-color:var(--line-hi); transform:translateY(-4px); }
-  .card.big{ grid-column:span 4; }
-  .card.small{ grid-column:span 2; }
-  .card .glow{ position:absolute; width:280px; height:280px; border-radius:50%; filter:blur(70px); opacity:0.22; top:-100px; right:-100px; pointer-events:none; }
-  .card .tag{ display:inline-block; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:6px 12px; border-radius:100px; margin-bottom:18px; position:relative; z-index:1; }
-  .card h3{ font-size:23px; font-weight:800; letter-spacing:-0.01em; line-height:1.25; margin-bottom:12px; position:relative; z-index:1; }
-  .card p{ color:var(--text-dim); font-size:14.5px; line-height:1.65; margin-bottom:22px; position:relative; z-index:1; }
-  .card .shots{ display:flex; gap:12px; margin-top:auto; position:relative; z-index:1; }
-  .card .shots .shot{ flex:1; border-radius:12px; overflow:hidden; border:1px solid var(--line); padding:0; background:none; cursor:pointer; display:block; }
-  .card .shots img{ transition:transform .35s ease; width:100%; }
-  .card .shots .shot:hover img{ transform:scale(1.05); }
-  .card .worklink{ margin-top:22px; display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:700; text-decoration:none; position:relative; z-index:1; }
-  .card .worklink svg{ width:14px; height:14px; transition:transform .15s; }
-  .card .worklink:hover svg{ transform:translateX(3px); }
 
-  /* ---------- FEATURE ROWS (dense list under bento) ---------- */
-  .checklist{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; margin-top:20px; }
-  .checkitem{ background:var(--bg); padding:20px 22px; font-size:13.5px; color:var(--text-dim); display:flex; gap:10px; align-items:flex-start; }
-  .checkitem svg{ flex-shrink:0; margin-top:2px; }
+  /* ================= HERO ================= */
+  .hero{ padding:210px 0 100px; position:relative; overflow:hidden; }
+  .hero-bg{ position:absolute; inset:0; z-index:0; pointer-events:none; }
+  .hero-bg .blob{ position:absolute; border-radius:50%; filter:blur(70px); }
+  .hero-bg .b1{ width:520px; height:520px; top:-180px; right:-140px; background:radial-gradient(circle, var(--sage-soft2), transparent 70%); }
+  .hero-bg .b2{ width:420px; height:420px; bottom:-120px; left:-160px; background:radial-gradient(circle, var(--sage-soft), transparent 70%); }
+  .hero-bg svg{ position:absolute; opacity:.5; }
+  .hero .wrap{ position:relative; z-index:1; }
+  .hero-head{ max-width:780px; margin:0 auto; text-align:center; }
+  .hero h1{ font-family:var(--serif); font-weight:400; font-size:clamp(38px,6.2vw,68px); line-height:1.08; letter-spacing:-0.01em; color:var(--forest); }
+  .hero p.lede{ margin:26px auto 0; max-width:560px; font-size:17.5px; color:var(--ink-dim); line-height:1.7; }
+  .hero-ctas{ display:flex; gap:14px; justify-content:center; margin-top:38px; flex-wrap:wrap; }
 
-  /* ---------- TESTIMONIALS ---------- */
-  .tgrid{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
-  @media (max-width: 1080px){ .tgrid{ grid-template-columns:repeat(2,1fr); } }
-  .tcard{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:30px; transition:transform .25s ease, border-color .25s ease; animation: fadeUp .6s ease backwards; }
-  .tcard:hover{ border-color:var(--line-hi); }
-  @keyframes fadeUp{ from{ opacity:0; transform:translateY(20px); } to{ opacity:1; transform:translateY(0); } }
-  .bento .card:nth-child(1){ animation-delay:.02s; } .bento .card:nth-child(2){ animation-delay:.08s; }
-  .bento .card:nth-child(3){ animation-delay:.14s; } .bento .card:nth-child(4){ animation-delay:.2s; } .bento .card:nth-child(5){ animation-delay:.26s; }
-  .tgrid .tcard:nth-child(1){ animation-delay:.02s; } .tgrid .tcard:nth-child(2){ animation-delay:.08s; }
-  .tgrid .tcard:nth-child(3){ animation-delay:.14s; } .tgrid .tcard:nth-child(4){ animation-delay:.2s; }
-  .stars{ display:flex; gap:3px; margin-bottom:18px; }
-  .stars svg{ width:15px; height:15px; }
-  .tcard p{ font-size:14.5px; line-height:1.7; color:var(--text); margin-bottom:24px; min-height:150px; }
+  .phonestage{ position:relative; margin-top:96px; height:560px; display:flex; align-items:center; justify-content:center; }
+  @media (max-width:760px){ .phonestage{ height:420px; margin-top:60px; } }
+  .pm{ position:absolute; width:236px; aspect-ratio:9/19.4; border-radius:40px; background:linear-gradient(160deg,#20241f,#0d0f0e); padding:9px; box-shadow:0 50px 90px -30px rgba(27,46,36,0.5), 0 16px 32px -14px rgba(27,46,36,0.32); animation:fadeUp .7s ease backwards, float 7s ease-in-out infinite; }
+  .pm .island{ position:absolute; top:16px; left:50%; transform:translateX(-50%); width:66px; height:18px; background:#0d0f0e; border-radius:10px; z-index:6; }
+  .pm-screen{ width:100%; height:100%; border-radius:32px; overflow:hidden; background:var(--cream); position:relative; font-size:11px; }
+  .pm.pm-l{ left:calc(50% - 300px); top:34px; transform:rotate(-7deg); animation-delay:.1s, .4s; z-index:1; opacity:.96; }
+  .pm.pm-r{ left:calc(50% + 64px); top:34px; transform:rotate(7deg); animation-delay:.2s, .8s; z-index:1; opacity:.96; }
+  .pm.pm-c{ left:calc(50% - 118px); top:0; z-index:2; width:250px; }
+  @keyframes float{ 0%,100%{ transform:translateY(0) rotate(var(--r,0deg)); } 50%{ transform:translateY(-14px) rotate(var(--r,0deg)); } }
+  .pm.pm-l{ --r:-7deg; } .pm.pm-r{ --r:7deg; }
+  @media (max-width:760px){
+    .pm{ width:186px; }
+    .pm.pm-c{ width:198px; left:calc(50% - 99px); top:0; }
+    .pm.pm-l{ left:calc(50% - 150px); top:44px; }
+    .pm.pm-r{ left:calc(50% - 20px); top:44px; }
+  }
+
+  /* mini phone UI kit */
+  .pmtop{ padding:26px 14px 8px; }
+  .pmtop .d{ font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); }
+  .pmtop h4{ font-family:var(--serif); font-size:16px; color:var(--forest); font-weight:400; margin-top:2px; }
+  .pmlist{ padding:6px 12px; display:flex; flex-direction:column; gap:7px; }
+  .pmrow{ background:var(--white); border-radius:11px; padding:9px 10px; display:flex; align-items:center; gap:9px; box-shadow:0 2px 8px rgba(27,46,36,0.06); }
+  .pmrow .t{ width:32px; flex-shrink:0; font-size:9px; color:var(--ink-faint); font-weight:700; }
+  .pmrow b{ font-size:10.5px; color:var(--forest); display:block; font-weight:700; }
+  .pmrow span{ font-size:8.5px; color:var(--ink-faint); }
+  .pmrow.now{ background:var(--forest); }
+  .pmrow.now .t, .pmrow.now span{ color:rgba(251,249,245,0.6); }
+  .pmrow.now b{ color:var(--cream); }
+  .pmplay{ width:22px; height:22px; border-radius:50%; background:var(--sage-soft2); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .pmcard{ margin:6px 12px; background:var(--forest); border-radius:14px; padding:14px; }
+  .pmcard .k{ font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:#c9d4c4; }
+  .pmcard b{ font-family:var(--serif); font-size:14px; color:var(--cream); display:block; margin-top:4px; font-weight:400; }
+  .pmcard span{ font-size:9px; color:rgba(251,249,245,0.55); }
+  .pmgrid{ padding:8px 12px; display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .pmtile{ background:var(--white); border-radius:11px; padding:10px; box-shadow:0 2px 8px rgba(27,46,36,0.06); }
+  .pmtile .ic{ width:20px; height:20px; border-radius:6px; background:var(--sage-soft); margin-bottom:6px; }
+  .pmtile b{ font-size:9.5px; color:var(--forest); display:block; }
+
+  /* ================= SECTION HEADS ================= */
+  .sectionhead{ margin-bottom:70px; }
+  .sectionhead.center{ text-align:center; max-width:680px; margin-left:auto; margin-right:auto; }
+  .sectionhead .kicker{ display:block; margin-bottom:16px; }
+
+  /* ================= ABOUT ================= */
+  .about .wrap{ display:grid; grid-template-columns:.85fr 1.15fr; gap:80px; align-items:center; }
+  @media (max-width:900px){ .about .wrap{ grid-template-columns:1fr; gap:44px; } }
+  .about-portrait{ position:relative; }
+  .portrait-frame{
+    width:100%; aspect-ratio:4/5; background:linear-gradient(155deg,var(--sage-soft2),var(--sage-soft) 60%,var(--cream));
+    clip-path:path('M0,120 C0,40 60,0 160,0 L320,0 C400,0 440,50 440,140 L440,420 C440,500 390,540 300,540 L100,540 C30,540 0,490 0,410 Z');
+    display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
+  }
+  .portrait-frame::after{ content:""; position:absolute; inset:0; background:radial-gradient(circle at 30% 20%, rgba(255,255,255,0.35), transparent 55%); }
+  .portrait-frame svg{ width:34%; opacity:.5; }
+  .portrait-note{ position:absolute; bottom:-18px; right:6%; background:var(--white); border-radius:16px; padding:14px 18px; box-shadow:0 16px 32px -12px rgba(27,46,36,0.2); display:flex; align-items:center; gap:10px; }
+  .portrait-note .dot{ width:8px; height:8px; border-radius:50%; background:var(--sage); }
+  .portrait-note span{ font-size:11.5px; font-weight:700; color:var(--forest); }
+  .about-copy .statement{ margin-bottom:24px; }
+  .about-copy p{ color:var(--ink-dim); font-size:16px; line-height:1.75; margin-bottom:18px; max-width:520px; }
+  .about-copy p:last-of-type{ margin-bottom:0; }
+
+  /* ================= PORTFOLIO ================= */
+  .showcase-row{ display:grid; grid-template-columns:.9fr 1.1fr; gap:70px; align-items:center; padding:70px 0; border-top:1px solid var(--line); }
+  .showcase-row:first-of-type{ border-top:none; }
+  .showcase-row.rev{ direction:rtl; }
+  .showcase-row.rev > *{ direction:ltr; }
+  @media (max-width:900px){ .showcase-row, .showcase-row.rev{ grid-template-columns:1fr; direction:ltr; gap:36px; padding:52px 0; } }
+  .showcase-txt .tag{ display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--forest); background:var(--sage-soft); padding:7px 14px; border-radius:100px; margin-bottom:20px; }
+  .showcase-txt h3{ font-family:var(--serif); font-size:clamp(24px,2.6vw,32px); font-weight:400; color:var(--forest); margin-bottom:16px; line-height:1.25; }
+  .showcase-txt p{ color:var(--ink-dim); font-size:15px; line-height:1.7; margin-bottom:16px; max-width:440px; }
+  .showcase-txt ul{ list-style:none; display:flex; flex-direction:column; gap:9px; margin-bottom:26px; }
+  .showcase-txt li{ font-size:13.5px; color:var(--ink-dim); display:flex; align-items:baseline; gap:9px; }
+  .showcase-txt li::before{ content:"—"; color:var(--sage); flex-shrink:0; }
+  .showcase-link{ display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:700; letter-spacing:.03em; color:var(--forest); }
+  .showcase-link svg{ width:14px; height:14px; transition:transform .18s; }
+  .showcase-row:hover .showcase-link svg{ transform:translateX(3px); }
+  .showcase-visual{ display:flex; justify-content:center; position:relative; height:460px; align-items:center; }
+  .showcase-visual .pm{ position:relative; left:auto; top:auto; transform:none; width:230px; animation:fadeUp .6s ease backwards; transition:transform .3s ease; }
+  .showcase-row:hover .showcase-visual .pm{ transform:translateY(-6px); }
+
+  /* ================= PRICING ================= */
+  .pricing-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:26px; align-items:stretch; }
+  @media (max-width:900px){ .pricing-grid{ grid-template-columns:1fr; max-width:420px; margin:0 auto; } }
+  .pcard{ background:var(--white); border-radius:24px; padding:40px 32px; border:1px solid var(--line); display:flex; flex-direction:column; animation:fadeUp .6s ease backwards; }
+  .pcard.featured{ border:1.5px solid var(--sage); background:linear-gradient(180deg, var(--sage-soft), var(--white) 30%); position:relative; }
+  .pop-badge{ position:absolute; top:-14px; left:50%; transform:translateX(-50%); background:var(--forest); color:var(--cream); font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:8px 16px; border-radius:100px; white-space:nowrap; }
+  .pcard .pname{ font-family:var(--serif); font-size:24px; color:var(--forest); font-weight:400; }
+  .pcard .psub{ font-size:12.5px; color:var(--ink-faint); margin-top:4px; text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
+  .pcard .pprice{ font-family:var(--serif); font-size:38px; color:var(--forest); margin:22px 0 4px; }
+  .pcard .pprice span{ font-size:13px; font-family:var(--sans); color:var(--ink-faint); font-weight:600; }
+  .pcard .pdesc{ font-size:13.5px; color:var(--ink-dim); margin-bottom:22px; }
+  .pcard hr{ border:none; border-top:1px solid var(--line); margin-bottom:22px; }
+  .pcard ul{ list-style:none; display:flex; flex-direction:column; gap:13px; margin-bottom:28px; flex:1; }
+  .pcard li{ display:flex; align-items:flex-start; gap:10px; font-size:13.5px; color:var(--ink-dim); }
+  .pcard li svg{ flex-shrink:0; margin-top:2px; }
+  .pcard .btn{ width:100%; }
+
+  /* ================= TESTIMONIALS ================= */
+  .tgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+  @media (max-width:900px){ .tgrid{ grid-template-columns:1fr; max-width:440px; margin:0 auto; } }
+  .tcard{ background:var(--white); border:1px solid var(--line); border-radius:22px; padding:36px 32px; position:relative; animation:fadeUp .6s ease backwards; }
+  .tcard .qmark{ font-family:var(--serif); font-size:64px; color:var(--sage-soft2); line-height:1; position:absolute; top:14px; right:26px; }
+  .tcard p{ font-size:15px; line-height:1.7; color:var(--ink); margin:18px 0 26px; position:relative; }
   .tcard .who{ display:flex; align-items:center; gap:12px; }
-  .tcard .av{ width:40px; height:40px; border-radius:50%; flex-shrink:0; }
-  .tcard .who b{ font-size:13.5px; display:block; }
-  .tcard .who span{ font-size:12px; color:var(--text-faint); }
-  .disclaimer{ margin:36px auto 0; font-size:12.5px; color:var(--text-faint); max-width:640px; text-align:center; line-height:1.6; }
+  .tcard .av{ width:42px; height:42px; border-radius:50%; flex-shrink:0; }
+  .tcard .who b{ font-size:13.5px; color:var(--forest); display:block; }
+  .tcard .who span{ font-size:12px; color:var(--ink-faint); }
+  .disclaimer{ margin:40px auto 0; font-size:12px; color:var(--ink-faint); max-width:640px; text-align:center; line-height:1.6; }
 
-  /* ---------- CTA ---------- */
-  .ctacard{
-    text-align:center; padding:90px 48px; border-radius:32px; position:relative; overflow:hidden;
-    background: linear-gradient(160deg, var(--panel-hi), var(--panel));
-    border:1px solid var(--line-hi);
-  }
-  .ctacard .glow{ position:absolute; width:600px; height:600px; border-radius:50%; background:radial-gradient(circle, var(--violet), transparent 70%); opacity:0.25; top:-260px; left:50%; transform:translateX(-50%); filter:blur(60px); pointer-events:none; }
-  .ctacard h2{ font-weight:800; font-size:clamp(28px,4vw,44px); letter-spacing:-0.02em; max-width:640px; margin:0 auto 20px; position:relative; }
-  .ctacard p{ color:var(--text-dim); font-size:16px; max-width:480px; margin:0 auto 36px; position:relative; }
-  .ctacard .herobtns{ justify-content:center; position:relative; }
+  /* ================= SHOP ================= */
+  .shop-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+  @media (max-width:900px){ .shop-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:560px){ .shop-grid{ grid-template-columns:1fr; max-width:340px; margin:0 auto; } }
+  .prod{ animation:fadeUp .6s ease backwards; }
+  .prod-img{ aspect-ratio:1/1.1; border-radius:20px; position:relative; overflow:hidden; margin-bottom:18px; }
+  .prod-img::after{ content:""; position:absolute; inset:0; background:radial-gradient(circle at 30% 25%, rgba(255,255,255,0.5), transparent 55%); }
+  .prod-img .glyph{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:.55; }
+  .prod-name{ font-family:var(--serif); font-size:18px; color:var(--forest); }
+  .prod-price{ font-size:13px; color:var(--ink-faint); margin:4px 0 14px; }
+  .prod .showcase-link{ font-size:12px; }
+  .shop-cta{ text-align:center; margin-top:56px; }
 
-  footer{ border-top:1px solid var(--line); padding:44px 0; position:relative; z-index:1; }
-  footer .wrap{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
-  footer .flinks{ display:flex; gap:28px; }
-  footer .flinks a{ color:var(--text-dim); font-size:13px; text-decoration:none; }
-  footer .flinks a:hover{ color:var(--text); }
-  footer .fnote{ font-size:12px; color:var(--text-faint); margin-top:16px; }
+  /* ================= FINAL CTA ================= */
+  .finalcta{ background:var(--forest); text-align:center; overflow:hidden; position:relative; }
+  .finalcta::before{ content:""; position:absolute; inset:0; background:radial-gradient(circle at 50% 0%, rgba(138,154,134,0.22), transparent 60%); pointer-events:none; }
+  .finalcta .wrap{ position:relative; }
+  .finalcta h2{ max-width:640px; margin:0 auto 20px; }
+  .finalcta p{ color:rgba(251,249,245,0.68); font-size:16.5px; max-width:480px; margin:0 auto 40px; line-height:1.7; }
+  .finalcta .herobtns{ display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
 
-  @media (max-width: 860px){
-    .stripstats{ grid-template-columns:repeat(2,1fr); }
-    .bento{ grid-template-columns:1fr; }
-    .card.big, .card.small{ grid-column:span 1; }
-    .tgrid{ grid-template-columns:1fr; }
-    .checklist{ grid-template-columns:1fr; }
-    nav .links{ display:none; }
-  }
+  /* ================= FOOTER ================= */
+  footer{ background:var(--forest); padding:64px 0 40px; color:var(--cream); }
+  .footer-top{ display:flex; justify-content:space-between; gap:40px; flex-wrap:wrap; padding-bottom:44px; border-bottom:1px solid rgba(251,249,245,0.14); }
+  .footer-brand .mark{ font-family:var(--serif); font-size:24px; color:var(--cream); }
+  .footer-brand p{ margin-top:12px; font-size:13.5px; color:rgba(251,249,245,0.55); max-width:320px; line-height:1.65; }
+  .footer-cols{ display:flex; gap:64px; flex-wrap:wrap; }
+  .footer-col b{ font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:rgba(251,249,245,0.45); display:block; margin-bottom:16px; }
+  .footer-col a{ display:block; font-size:13.5px; color:rgba(251,249,245,0.78); margin-bottom:11px; }
+  .footer-col a:hover{ color:var(--cream); }
+  .footer-bottom{ display:flex; justify-content:space-between; align-items:center; padding-top:26px; flex-wrap:wrap; gap:10px; }
+  .footer-bottom span{ font-size:12px; color:rgba(251,249,245,0.4); }
 
-  /* ---------- LIGHTBOX ---------- */
-  .lightbox{
-    position:fixed; inset:0; z-index:200; display:none; align-items:center; justify-content:center;
-    background:rgba(4,4,6,0.88); backdrop-filter:blur(8px); padding:70px 24px;
-  }
-  .lightbox.open{ display:flex; }
-  .lb-inner{ display:flex; flex-direction:column; align-items:center; gap:18px; max-width:min(880px,94vw); width:100%; }
-  .lb-stage{
-    position:relative; width:100%; max-height:72vh; aspect-ratio:1080/1350;
-    border-radius:28px; overflow:hidden; background:var(--panel); border:1px solid var(--line-hi);
-    box-shadow:0 60px 140px -20px rgba(0,0,0,0.85); cursor:grab; touch-action:pan-y;
-  }
-  .lb-stage.dragging{ cursor:grabbing; }
-  .lb-stage img{ display:block; width:100%; height:100%; object-fit:contain; user-select:none; -webkit-user-drag:none; pointer-events:none; }
-  .lb-close, .lb-arrow{
-    position:absolute; z-index:5; border-radius:50%; background:rgba(255,255,255,0.08);
-    border:1px solid var(--line-hi); color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center;
-    transition:background .15s;
-  }
-  .lb-close:hover, .lb-arrow:hover{ background:rgba(255,255,255,0.18); }
-  .lb-close{ top:-52px; right:0; width:38px; height:38px; font-size:15px; }
-  .lb-arrow{ top:50%; transform:translateY(-50%); width:48px; height:48px; font-size:20px; }
-  .lb-prev{ left:14px; } .lb-next{ right:14px; }
-  @media (max-width:640px){ .lb-close{ top:-46px; } .lb-arrow{ width:40px; height:40px; } .lb-prev{ left:8px; } .lb-next{ right:8px; } }
-  .lb-meta{ display:flex; align-items:center; gap:14px; color:var(--text-dim); font-size:13px; font-weight:600; }
-  .lb-dots{ display:flex; gap:6px; align-items:center; }
-  .lb-dots i{ width:6px; height:6px; border-radius:50%; background:var(--line-hi); display:block; transition:.2s; }
-  .lb-dots i.on{ background:var(--text); width:18px; border-radius:3px; }
+  .checklist{ display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:20px; overflow:hidden; margin-top:56px; }
+  @media (max-width:760px){ .checklist{ grid-template-columns:1fr; } }
+  .checkitem{ background:var(--cream); padding:22px 24px; font-size:13.5px; color:var(--ink-dim); display:flex; gap:10px; align-items:flex-start; }
+  .checkitem svg{ flex-shrink:0; margin-top:2px; }
 </style>
 </head>
 <body>
 
-<div class="backdrop">
-  <div class="blob blob1"></div>
-  <div class="blob blob2"></div>
-  <div class="blob blob3"></div>
-  <div class="grain"></div>
-</div>
-
-<main>
-<nav>
-  <div class="inner">
-    <div class="wrap">
-      <div class="wordmark"><span class="dot"></span>RBR<span class="navtag">DataFrame &amp; Systems Solutions</span></div>
-      <div class="links">
-        <a href="#work">Work</a>
-        <a href="#testimonials">Testimonials</a>
-        <a href="#contact">Contact</a>
-      </div>
-      <a class="cta" href="#contact">Start a project</a>
-    </div>
-  </div>
-</nav>
-
-<header class="hero">
+<header id="siteHeader">
   <div class="wrap">
-    <div class="pill"><span class="dot2"></span>Now booking Q1 builds</div>
-    <h1 class="display">Internal software for businesses that run on <span class="grad">more than one screen.</span></h1>
-    <p class="lede">We design and build the systems hospitality &amp; wellness brands actually operate on — guest apps, staff tools, booking sites and point-of-sale — branded, connected, and boringly reliable.</p>
-    <div class="herobtns">
-      <a class="btn-primary" href="#contact">Start a project →</a>
-      <a class="btn-ghost" href="#work">See the work</a>
-    </div>
-
-    <div class="heroshot">
-      <img src="images/app-01.png" alt="RBR guest experience app">
-      <div class="heroshot-caption">
-        <div class="k">Guest Experience App</div>
-        <h3>The app that runs the whole stay</h3>
-      </div>
-    </div>
-
-    <div class="stripstats">
-      <div><b>5</b><span>Systems shipped</span></div>
-      <div><b>30</b><span>Screens designed</span></div>
-      <div><b>1</b><span>Team, start to finish</span></div>
-      <div><b>&lt;1min</b><span>Guest booking flow</span></div>
-    </div>
+    <a href="#top" class="logo">
+      <span class="mark">RBR</span>
+      <span class="sub">Retreats By Ron</span>
+    </a>
+    <nav class="mainnav">
+      <a href="#about">About</a>
+      <a href="#portfolio">Portfolio</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#shop">Shop</a>
+      <a href="#testimonials">Testimonials</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <a class="btn btn-forest" href="#pricing">Get Your App</a>
+    <button class="burger" id="burgerBtn" aria-label="Open menu"><span></span></button>
   </div>
 </header>
 
-<section id="work">
+<div class="mobilemenu" id="mobileMenu">
+  <div class="mtop">
+    <div class="logo"><span class="mark">RBR</span><span class="sub">Retreats By Ron</span></div>
+    <button class="mclose" id="mcloseBtn" aria-label="Close menu">✕</button>
+  </div>
+  <nav>
+    <a href="#about">About</a>
+    <a href="#portfolio">Portfolio</a>
+    <a href="#pricing">Pricing</a>
+    <a href="#shop">Shop</a>
+    <a href="#testimonials">Testimonials</a>
+    <a href="#contact">Contact</a>
+  </nav>
+  <a class="btn btn-cream mcta" href="#pricing">Get Your App</a>
+</div>
+
+<main id="top">
+
+<section class="hero">
+  <div class="hero-bg">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+  </div>
   <div class="wrap">
-    <div class="sectionhead">
-      <div class="k">Selected Work</div>
-      <h2>Five systems, one property.</h2>
-      <p>Everything below is a real build — guest-facing, staff-facing and management-facing — shown here under a demo brand while the client stays private.</p>
-    </div>
-
-    <div class="bento">
-      <div class="card big" data-reveal>
-        <div class="glow" style="background:radial-gradient(circle, var(--sage), transparent 70%);"></div>
-        <div class="tag" style="background:rgba(143,199,154,0.16); color:var(--sage);">Guest Experience App</div>
-        <h3>The app that runs the whole stay.</h3>
-        <p>Schedule, dining, treatments, check-in and live updates — one calm PWA guests actually open every morning.</p>
-        <div class="shots">
-          <button type="button" class="shot" data-product="app" data-index="1"><img src="images/app-01.png" alt="Guest app home"></button>
-          <button type="button" class="shot" data-product="app" data-index="3"><img src="images/app-03.png" alt="Guest app treatments"></button>
-          <button type="button" class="shot" data-product="app" data-index="5"><img src="images/app-05.png" alt="Guest app detox tracker"></button>
-        </div>
-        <a class="worklink" style="color:var(--sage);" href="#contact">Discuss a similar build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-      </div>
-
-      <div class="card small" data-reveal>
-        <div class="glow" style="background:radial-gradient(circle, var(--jade), transparent 70%);"></div>
-        <div class="tag" style="background:rgba(63,209,184,0.16); color:var(--jade);">Booking Website</div>
-        <h3>Feels like the stay, not a template.</h3>
-        <p>Live pricing and a direct booking flow — no commission, mobile-first.</p>
-        <div class="shots">
-          <button type="button" class="shot" data-product="web" data-index="1"><img src="images/web-01.png" alt="Website homepage"></button>
-        </div>
-        <a class="worklink" style="color:var(--jade);" href="#contact">Discuss a build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-      </div>
-
-      <div class="card small" data-reveal>
-        <div class="glow" style="background:radial-gradient(circle, var(--purple), transparent 70%);"></div>
-        <div class="tag" style="background:rgba(169,146,224,0.16); color:var(--purple);">Bar &amp; Room-Charge</div>
-        <h3>Every drink, tracked to the room.</h3>
-        <p>Two taps to order — the charge lands on the folio automatically.</p>
-        <div class="shots">
-          <button type="button" class="shot" data-product="bar" data-index="1"><img src="images/bar-01.png" alt="Bar tracking screen"></button>
-        </div>
-        <a class="worklink" style="color:var(--purple);" href="#contact">Discuss a build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-      </div>
-
-      <div class="card small" data-reveal>
-        <div class="glow" style="background:radial-gradient(circle, var(--mint), transparent 70%);"></div>
-        <div class="tag" style="background:rgba(127,220,196,0.16); color:var(--mint);">Housekeeping App</div>
-        <h3>No names, no passwords — just a PIN.</h3>
-        <p>Teams sign in with a 4-digit code and work a checklist. Every clean is timed automatically, so managers see average clean time and completion rate per team — not just a to-do list.</p>
-        <div class="shots">
-          <button type="button" class="shot" data-product="hk" data-index="1"><img src="images/hk-01.png" alt="Housekeeping login"></button>
-        </div>
-        <a class="worklink" style="color:var(--mint);" href="#contact">Discuss a similar build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-      </div>
-
-      <div class="card big" data-reveal>
-        <div class="glow" style="background:radial-gradient(circle, var(--amber2,#e0a26a), transparent 70%);"></div>
-        <div class="tag" style="background:rgba(224,162,106,0.18); color:#e0a26a;">Retreat Organizer</div>
-        <h3>Every retreat, on one calendar.</h3>
-        <p>Built for a solo organizer running several retreats a year — schedule, capacity and participant data in one dashboard instead of six spreadsheet tabs.</p>
-        <div class="shots">
-          <button type="button" class="shot" data-product="retreat" data-index="1"><img src="images/retreat-01.png" alt="Retreat organizer calendar"></button>
-          <button type="button" class="shot" data-product="retreat" data-index="2"><img src="images/retreat-02.png" alt="Retreat organizer participant dashboard"></button>
-        </div>
-        <a class="worklink" style="color:#e0a26a;" href="#contact">Discuss a similar build <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <div class="hero-head">
+      <h1>Harmonize your retreats<br>&amp; healing spaces with<br>custom digital experiences</h1>
+      <p class="lede">Custom digital experiences designed specifically for retreats, healing spaces and conscious communities — beautiful technology that helps your guests stay connected, informed and present.</p>
+      <div class="hero-ctas">
+        <a class="btn btn-forest" href="#portfolio">Explore Demo Apps</a>
+        <a class="btn btn-outline" href="#contact">Book a Call</a>
       </div>
     </div>
 
-    <div class="checklist">
-      <div class="checkitem"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Built and branded per property — never a generic template</div>
-      <div class="checkitem"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Guest, staff and admin systems that share one source of data</div>
-      <div class="checkitem"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Live from day one — no six-month enterprise rollout</div>
+    <div class="phonestage">
+      <div class="pm pm-l">
+        <div class="island"></div>
+        <div class="pm-screen">
+          <div class="pmtop"><div class="d">Today · Day 3</div><h4>Retreat Schedule</h4></div>
+          <div class="pmlist">
+            <div class="pmrow now"><div class="t">07:00</div><div><b>Morning Practice</b><span>Main Pavilion</span></div></div>
+            <div class="pmrow"><div class="t">09:30</div><div><b>Meditation</b><span>Garden Circle</span></div></div>
+            <div class="pmrow"><div class="t">11:00</div><div><b>Vinyasa</b><span>Studio One</span></div></div>
+            <div class="pmrow"><div class="t">17:00</div><div><b>Sound Healing</b><span>Sanctuary</span></div></div>
+            <div class="pmrow"><div class="t">19:00</div><div><b>Dinner</b><span>Open Kitchen</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm pm-c">
+        <div class="island"></div>
+        <div class="pm-screen">
+          <div class="pmtop"><div class="d">Good Morning</div><h4>Welcome back, Maya</h4></div>
+          <div class="pmcard">
+            <div class="k">Happening Now</div>
+            <b>Morning Practice</b>
+            <span>Main Pavilion · 45 min</span>
+          </div>
+          <div class="pmgrid">
+            <div class="pmtile"><div class="ic"></div><b>Schedule</b></div>
+            <div class="pmtile"><div class="ic"></div><b>Meals</b></div>
+            <div class="pmtile"><div class="ic"></div><b>Facilities</b></div>
+            <div class="pmtile"><div class="ic"></div><b>Teachers</b></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pm pm-r">
+        <div class="island"></div>
+        <div class="pm-screen">
+          <div class="pmtop"><div class="d">Library</div><h4>Wellness Audio</h4></div>
+          <div class="pmlist">
+            <div class="pmrow"><div class="pmplay">▸</div><div><b>Morning Meditation</b><span>12 min · Guided</span></div></div>
+            <div class="pmrow"><div class="pmplay">▸</div><div><b>Box Breathwork</b><span>8 min · Breath</span></div></div>
+            <div class="pmrow"><div class="pmplay">▸</div><div><b>Sound Journey</b><span>34 min · Sound</span></div></div>
+            <div class="pmrow"><div class="pmplay">▸</div><div><b>Evening Wind-down</b><span>15 min · Sleep</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="about" class="about">
+  <div class="wrap">
+    <div class="about-portrait">
+      <div class="portrait-frame">
+        <svg viewBox="0 0 100 100" fill="none" stroke="var(--forest)" stroke-width="1.2"><path d="M50 12c18 0 30 14 30 34S68 88 50 88 20 66 20 46 32 12 50 12z" opacity=".4"/><path d="M35 46c0-10 7-18 15-18s15 8 15 18-7 26-15 26-15-16-15-26z" opacity=".6"/></svg>
+      </div>
+      <div class="portrait-note"><span class="dot"></span><span>Photo coming soon</span></div>
+    </div>
+    <div class="about-copy">
+      <div class="kicker">About Me</div>
+      <div class="statement">Bridging consciousness &amp; technology</div>
+      <p>RBR exists to close the gap between the depth of a retreat experience and the clarity of modern technology. Guests shouldn't need a printed schedule taped to a dining hall door, and facilitators shouldn't need to answer the same question five times a day.</p>
+      <p>Having spent time around retreat centers, yoga schools and healing spaces, I've learned what actually matters on the ground — a schedule people trust, a way to reach their teacher, a library they keep returning to long after they've gone home.</p>
+      <p>I build digital experiences that support that rhythm instead of competing with it: simple enough to disappear into the background, beautiful enough to feel like part of the space itself.</p>
+    </div>
+  </div>
+</section>
+
+<section id="portfolio">
+  <div class="wrap">
+    <div class="sectionhead center">
+      <div class="kicker">Portfolio</div>
+      <div class="statement">Featured Showcase</div>
+      <p style="margin-top:16px; color:var(--ink-dim); font-size:16px;">Crafted for sacred spaces.</p>
+    </div>
+
+    <div class="showcase-row">
+      <div class="showcase-txt">
+        <div class="tag">Guest Mobile App</div>
+        <h3>The Retreat Companion</h3>
+        <p>Everything a guest needs during their stay, in one calm app — built and branded to the retreat.</p>
+        <ul>
+          <li>Live schedule &amp; "happening now"</li>
+          <li>Meals, dietary notes &amp; facilities map</li>
+          <li>Teacher and facilitator profiles</li>
+        </ul>
+        <a class="showcase-link" href="#contact">View Demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="showcase-visual">
+        <div class="pm">
+          <div class="island"></div>
+          <div class="pm-screen">
+            <div class="pmtop"><div class="d">Good Morning</div><h4>Welcome back, Maya</h4></div>
+            <div class="pmcard"><div class="k">Happening Now</div><b>Morning Practice</b><span>Main Pavilion · 45 min</span></div>
+            <div class="pmgrid">
+              <div class="pmtile"><div class="ic"></div><b>Schedule</b></div>
+              <div class="pmtile"><div class="ic"></div><b>Meals</b></div>
+              <div class="pmtile"><div class="ic"></div><b>Facilities</b></div>
+              <div class="pmtile"><div class="ic"></div><b>Teachers</b></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="showcase-row rev">
+      <div class="showcase-txt">
+        <div class="tag">Practitioner Platform</div>
+        <h3>Healer's Client Hub</h3>
+        <p>A calm home base for 1:1 practitioners — sessions, programs and client messages in one place.</p>
+        <ul>
+          <li>Upcoming client sessions at a glance</li>
+          <li>Programs, resources &amp; homework</li>
+          <li>Direct messages without a group chat</li>
+        </ul>
+        <a class="showcase-link" href="#contact">View Project <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="showcase-visual">
+        <div class="pm">
+          <div class="island"></div>
+          <div class="pm-screen">
+            <div class="pmtop"><div class="d">Today</div><h4>Your Clients</h4></div>
+            <div class="pmlist">
+              <div class="pmrow now"><div class="t">09:00</div><div><b>Elena R.</b><span>Session · Confirmed</span></div></div>
+              <div class="pmrow"><div class="t">11:30</div><div><b>Marcus T.</b><span>Program check-in</span></div></div>
+              <div class="pmrow"><div class="t">14:00</div><div><b>Sofia L.</b><span>New client</span></div></div>
+              <div class="pmrow"><div class="t">16:30</div><div><b>Jonah P.</b><span>Follow-up</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="showcase-row">
+      <div class="showcase-txt">
+        <div class="tag">Wellness Audio App</div>
+        <h3>Sound &amp; Breath Vault</h3>
+        <p>An elegant home for meditation, breathwork and sound journeys guests can return to anytime.</p>
+        <ul>
+          <li>Curated meditation &amp; breathwork library</li>
+          <li>Full-screen audio player with progress</li>
+          <li>Favorites, saved for after the retreat ends</li>
+        </ul>
+        <a class="showcase-link" href="#contact">Explore App <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="showcase-visual">
+        <div class="pm">
+          <div class="island"></div>
+          <div class="pm-screen">
+            <div class="pmtop"><div class="d">Now Playing</div><h4>Sound Journey</h4></div>
+            <div class="pmcard">
+              <div class="k">Sound &amp; Breath</div>
+              <b>Ocean Breath Journey</b>
+              <span>18:24 / 34:00</span>
+            </div>
+            <div class="pmlist">
+              <div class="pmrow"><div class="pmplay">▸</div><div><b>Box Breathwork</b><span>8 min · Breath</span></div></div>
+              <div class="pmrow"><div class="pmplay">▸</div><div><b>Morning Meditation</b><span>12 min · Guided</span></div></div>
+              <div class="pmrow"><div class="pmplay">▸</div><div><b>Evening Wind-down</b><span>15 min · Sleep</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <div class="sectionhead center">
+      <div class="kicker">Pricing</div>
+      <div class="statement">Choose the experience that fits your space</div>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="pcard">
+        <div class="pname">Essence</div>
+        <div class="psub">Starter App</div>
+        <div class="pprice">$1,900</div>
+        <div class="pdesc">A focused, branded app for a single retreat or event.</div>
+        <hr>
+        <ul>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Branded guest app shell</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Schedule &amp; itinerary view</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Basic push notifications</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Single retreat support</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>2-week delivery</li>
+        </ul>
+        <a class="btn btn-outline" href="#contact">Choose Plan</a>
+      </div>
+
+      <div class="pcard featured">
+        <div class="pop-badge">Most Popular</div>
+        <div class="pname">Harmony</div>
+        <div class="psub">Full Retreat Experience</div>
+        <div class="pprice">$4,200</div>
+        <div class="pdesc">Everything a season of retreats needs to run smoothly.</div>
+        <hr>
+        <ul>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Everything in Essence</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Community &amp; updates feed</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Audio &amp; wellness library</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Teacher &amp; facilitator profiles</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Multi-retreat support</li>
+        </ul>
+        <a class="btn btn-forest" href="#contact">Choose Plan</a>
+      </div>
+
+      <div class="pcard">
+        <div class="pname">Sanctuary</div>
+        <div class="psub">Retreat Ecosystem</div>
+        <div class="pprice">Custom</div>
+        <div class="pdesc">A full digital ecosystem for multi-space, year-round operations.</div>
+        <hr>
+        <ul>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Everything in Harmony</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Client hub for 1:1 practitioners</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom integrations</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Ongoing seasonal updates</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Dedicated support</li>
+        </ul>
+        <a class="btn btn-outline" href="#contact">Choose Plan</a>
+      </div>
     </div>
   </div>
 </section>
 
 <section id="testimonials">
   <div class="wrap">
-    <div class="sectionhead">
-      <div class="k">From The Teams Who Use It</div>
-      <h2>Built for the people who run the floor.</h2>
-      <p>Feedback from the roles closest to daily operations on the demo property above.</p>
+    <div class="sectionhead center">
+      <div class="kicker">Testimonials</div>
+      <div class="statement">What leaders say about working with RBR</div>
     </div>
 
     <div class="tgrid">
-      <div class="tcard" data-reveal>
-        <div class="stars">
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-        </div>
-        <p>"Before this, shift handover meant three radio calls and a guess at who cleaned what. Now every team sees exactly their rooms, and nothing gets marked done without photos. Reports that used to take a manager an hour now update themselves."</p>
+      <div class="tcard">
+        <div class="qmark">"</div>
+        <p>Our guests finally have one place to check the schedule instead of a printed sheet taped to the dining hall door. Bookings for next season are already up.</p>
         <div class="who">
-          <div class="av" style="background:linear-gradient(150deg,#7fdcc4,#3fa88f);"></div>
-          <div><b>Housekeeping Supervisor</b><span>RBR Retreat</span></div>
+          <div class="av" style="background:linear-gradient(150deg,#a8c9be,#4f7a6e);"></div>
+          <div><b>Retreat Director</b><span>Wellness Retreat, Bali</span></div>
         </div>
       </div>
-
-      <div class="tcard" data-reveal>
-        <div class="stars">
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-        </div>
-        <p>"The whole point of hiring outside was that our team stops being the bottleneck for every schedule change. Now guests open the app and just know — what's on today, what moved, what's for dinner. Front desk calls dropped almost immediately."</p>
+      <div class="tcard">
+        <div class="qmark">"</div>
+        <p>I stopped answering the same "what time is meditation" question fifty times a retreat. The app just handles it, and it actually looks like us.</p>
         <div class="who">
           <div class="av" style="background:linear-gradient(150deg,#8fc79a,#4f7a56);"></div>
-          <div><b>Guest Relations Manager</b><span>RBR Retreat</span></div>
+          <div><b>Founder</b><span>Yoga Teacher Training School</span></div>
         </div>
       </div>
-
-      <div class="tcard" data-reveal>
-        <div class="stars">
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-        </div>
-        <p>"We used to run housekeeping, the bar and reception off three different habits — a notebook, a group chat and memory. Getting it onto one system that actually matches how each team works, without forcing them into generic software, was the hard part. That's what they solved."</p>
+      <div class="tcard">
+        <div class="qmark">"</div>
+        <p>My clients keep coming back to the audio library weeks after their session ends. It's the first piece of tech I've used that feels like part of the work.</p>
         <div class="who">
-          <div class="av" style="background:linear-gradient(150deg,#a992e0,#6b55af);"></div>
-          <div><b>Operations Manager</b><span>RBR Retreat</span></div>
-        </div>
-      </div>
-
-      <div class="tcard" data-reveal>
-        <div class="stars">
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-          <svg viewBox="0 0 20 20" fill="#e0b463"><path d="M10 1l2.6 5.9 6.4.6-4.8 4.3 1.4 6.2L10 14.9 4.4 18l1.4-6.2L1 7.5l6.4-.6z"/></svg>
-        </div>
-        <p>"I used to run every retreat out of three spreadsheets and a notes app — capacity, payments, who still owed a deposit. Now I open one dashboard and see all of it, per retreat. I run more retreats per year with less admin time than before, and I actually trust the numbers now."</p>
-        <div class="who">
-          <div class="av" style="background:linear-gradient(150deg,#e0a26a,#a15f30);"></div>
-          <div><b>Retreat Organizer &amp; Founder</b><span>RBR Retreat</span></div>
+          <div class="av" style="background:linear-gradient(150deg,#c9b48e,#8a6a2c);"></div>
+          <div><b>Wellness Practitioner</b><span>Private Practice, Tulum</span></div>
         </div>
       </div>
     </div>
-
-    <p class="disclaimer">Illustrative feedback from the demo case study above, written to reflect the kind of operational impact these systems are designed for — shown while the site collects its first real client testimonials.</p>
+    <p class="disclaimer">Illustrative feedback written to reflect the kind of impact these apps are designed for — shown while RBR collects its first real client testimonials.</p>
   </div>
 </section>
 
-<section id="contact">
+<section id="shop">
   <div class="wrap">
-    <div class="ctacard">
-      <div class="glow"></div>
-      <div class="k" style="text-align:center;">Let's Talk</div>
-      <h2>Have an operation that outgrew its spreadsheet?</h2>
-      <p>We design and build the internal software — guest apps, staff tools, booking sites and back-office systems — for hospitality and wellness businesses that need something built for how they actually work.</p>
-      <div class="herobtns">
-        <a class="btn-primary" href="https://instagram.com" target="_blank" rel="noopener">Message us on Instagram →</a>
+    <div class="sectionhead center">
+      <div class="kicker">Sacred Shop</div>
+      <div class="statement">Elevate your space</div>
+    </div>
+
+    <div class="shop-grid">
+      <div class="prod">
+        <div class="prod-img" style="background:linear-gradient(160deg,#e7e2d3,var(--sage-soft2));">
+          <div class="glyph"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="1.3"><path d="M12 3c2 3 5 6 5 10a5 5 0 01-10 0c0-4 3-7 5-10z"/></svg></div>
+        </div>
+        <div class="prod-name">Aura Spray</div>
+        <div class="prod-price">$28</div>
+        <a class="showcase-link" href="#">View Item <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
+      <div class="prod">
+        <div class="prod-img" style="background:linear-gradient(160deg,#efe9dc,var(--sage-soft));">
+          <div class="glyph"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="1.3"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18M13 8h4M13 12h4"/></svg></div>
+        </div>
+        <div class="prod-name">Journal Kit</div>
+        <div class="prod-price">$34</div>
+        <a class="showcase-link" href="#">View Item <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="prod">
+        <div class="prod-img" style="background:linear-gradient(160deg,#e2ddcd,var(--sage-soft2));">
+          <div class="glyph"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="1.3"><ellipse cx="12" cy="16" rx="9" ry="5"/><path d="M3 16c0-6 4-11 9-11s9 5 9 11"/></svg></div>
+        </div>
+        <div class="prod-name">Meditation Cushion</div>
+        <div class="prod-price">$68</div>
+        <a class="showcase-link" href="#">View Item <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </div>
+
+    <div class="shop-cta">
+      <a class="btn btn-outline" href="#">Explore The Full Shop</a>
     </div>
   </div>
 </section>
+
+<section id="contact" class="finalcta">
+  <div class="wrap">
+    <div class="kicker on-dark" style="margin-bottom:18px;">Let's Talk</div>
+    <div class="statement on-dark">Ready to elevate your sacred space?</div>
+    <p>Let's talk about the digital experience your guests deserve — a quick message is the easiest way to start.</p>
+    <div class="herobtns">
+      <a class="btn btn-cream" href="#">Chat on WhatsApp</a>
+      <a class="btn btn-outline" style="color:var(--cream); border-color:rgba(251,249,245,0.3);" href="#">Follow on Instagram</a>
+    </div>
+  </div>
+</section>
+
+</main>
 
 <footer>
   <div class="wrap">
-    <div class="wordmark"><span class="dot"></span>RBR</div>
-    <div class="flinks">
-      <a href="#work">Work</a>
-      <a href="#testimonials">Testimonials</a>
-      <a href="#contact">Contact</a>
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="mark">RBR — Retreats By Ron</div>
+        <p>Custom digital experiences for retreats, healing spaces &amp; conscious communities.</p>
+      </div>
+      <div class="footer-cols">
+        <div class="footer-col">
+          <b>Site</b>
+          <a href="#about">About</a>
+          <a href="#portfolio">Portfolio</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#shop">Shop</a>
+        </div>
+        <div class="footer-col">
+          <b>Connect</b>
+          <a href="#">Instagram</a>
+          <a href="#">WhatsApp</a>
+          <a href="#contact">Contact</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 RBR — Retreats By Ron. Built with intention.</span>
+      <span>Made for retreats, healing spaces &amp; conscious communities.</span>
     </div>
   </div>
-  <div class="wrap"><div class="fnote">RBR · DataFrame &amp; Systems Solutions — internal software for hospitality &amp; wellness businesses.</div></div>
 </footer>
-</main>
-
-<div class="lightbox" id="lightbox" aria-hidden="true">
-  <div class="lb-inner">
-    <div class="lb-stage" id="lbStage">
-      <button type="button" class="lb-close" id="lbClose" aria-label="Close">✕</button>
-      <button type="button" class="lb-arrow lb-prev" id="lbPrev" aria-label="Previous screen">‹</button>
-      <button type="button" class="lb-arrow lb-next" id="lbNext" aria-label="Next screen">›</button>
-      <img id="lbImg" src="" alt="">
-    </div>
-    <div class="lb-meta">
-      <span id="lbTitle"></span>
-      <div class="lb-dots" id="lbDots"></div>
-    </div>
-  </div>
-</div>
 
 <script>
 (function(){
-  var PRODUCTS = {
-    app: { count: 7, label: 'Guest Experience App' },
-    web: { count: 7, label: 'Booking Website' },
-    bar: { count: 7, label: 'Bar & Room-Charge System' },
-    hk: { count: 7, label: 'Housekeeping App' },
-    retreat: { count: 2, label: 'Retreat Organizer' }
-  };
-
-  var lb = document.getElementById('lightbox');
-  var stage = document.getElementById('lbStage');
-  var img = document.getElementById('lbImg');
-  var title = document.getElementById('lbTitle');
-  var dotsWrap = document.getElementById('lbDots');
-  var current = { product: null, index: 1 };
-
-  function pad(n){ return n < 10 ? '0' + n : '' + n; }
-  function srcFor(p, i){ return 'images/' + p + '-' + pad(i) + '.png'; }
-
-  function render(){
-    var meta = PRODUCTS[current.product];
-    img.src = srcFor(current.product, current.index);
-    img.alt = meta.label + ' — screen ' + current.index;
-    title.textContent = meta.label + '  ·  ' + current.index + ' / ' + meta.count;
-    dotsWrap.innerHTML = '';
-    for (var i = 1; i <= meta.count; i++){
-      var d = document.createElement('i');
-      if (i === current.index) d.className = 'on';
-      dotsWrap.appendChild(d);
-    }
-  }
-
-  function open(product, index){
-    current.product = product;
-    current.index = index;
-    render();
-    lb.classList.add('open');
-    lb.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function close(){
-    lb.classList.remove('open');
-    lb.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-  }
-
-  function go(delta){
-    var meta = PRODUCTS[current.product];
-    current.index = ((current.index - 1 + delta) % meta.count + meta.count) % meta.count + 1;
-    render();
-  }
-
-  document.querySelectorAll('.shot').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      open(btn.getAttribute('data-product'), parseInt(btn.getAttribute('data-index'), 10));
-    });
+  var header = document.getElementById('siteHeader');
+  window.addEventListener('scroll', function(){
+    if (window.scrollY > 40) header.classList.add('scrolled');
+    else header.classList.remove('scrolled');
   });
 
-  document.getElementById('lbClose').addEventListener('click', close);
-  document.getElementById('lbPrev').addEventListener('click', function(){ go(-1); });
-  document.getElementById('lbNext').addEventListener('click', function(){ go(1); });
-  lb.addEventListener('click', function(e){ if (e.target === lb) close(); });
-  document.addEventListener('keydown', function(e){
-    if (!lb.classList.contains('open')) return;
-    if (e.key === 'Escape') close();
-    if (e.key === 'ArrowLeft') go(-1);
-    if (e.key === 'ArrowRight') go(1);
-  });
-
-  var dragging = false, startX = 0, deltaX = 0;
-  stage.addEventListener('pointerdown', function(e){
-    if (e.target.closest('.lb-close, .lb-arrow')) return;
-    dragging = true; startX = e.clientX; deltaX = 0;
-    stage.classList.add('dragging');
-    stage.setPointerCapture(e.pointerId);
-  });
-  stage.addEventListener('pointermove', function(e){
-    if (!dragging) return;
-    deltaX = e.clientX - startX;
-    img.style.transform = 'translateX(' + deltaX + 'px)';
-    img.style.opacity = String(1 - Math.min(Math.abs(deltaX) / 500, 0.5));
-  });
-  function endDrag(){
-    if (!dragging) return;
-    dragging = false;
-    stage.classList.remove('dragging');
-    img.style.transform = '';
-    img.style.opacity = '';
-    if (deltaX > 60) go(-1);
-    else if (deltaX < -60) go(1);
-    deltaX = 0;
-  }
-  stage.addEventListener('pointerup', endDrag);
-  stage.addEventListener('pointercancel', endDrag);
+  var burger = document.getElementById('burgerBtn');
+  var menu = document.getElementById('mobileMenu');
+  var mclose = document.getElementById('mcloseBtn');
+  function openMenu(){ menu.classList.add('open'); document.body.style.overflow='hidden'; }
+  function closeMenu(){ menu.classList.remove('open'); document.body.style.overflow=''; }
+  burger.addEventListener('click', openMenu);
+  mclose.addEventListener('click', closeMenu);
+  menu.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', closeMenu); });
 })();
 </script>
 
