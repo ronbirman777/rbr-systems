@@ -490,6 +490,74 @@
   .comparetable td:first-child, .comparetable th:first-child{ text-align:left; color:var(--ink-dim); }
   .comparetable td.no{ color:var(--ink-faint); }
 
+  /* ================= HARMONY PLAN SELECTION MODAL ================= */
+  .hmodal-overlay{
+    position:fixed; inset:0; z-index:300; display:none; align-items:center; justify-content:center;
+    background:rgba(27,46,36,0.28); backdrop-filter:blur(6px); padding:24px;
+  }
+  .hmodal-overlay.open{ display:flex; }
+  .hmodal{
+    background:var(--white); border-radius:28px; max-width:880px; width:100%; max-height:88vh;
+    overflow-y:auto; position:relative; box-shadow:0 60px 120px -30px rgba(27,46,36,0.35);
+    padding:44px 44px 36px; animation:hmodalIn .35s ease;
+  }
+  @keyframes hmodalIn{ from{ opacity:0; transform:translateY(16px) scale(.98); } to{ opacity:1; transform:translateY(0) scale(1); } }
+  .hmodal-close{
+    position:absolute; top:24px; right:24px; width:38px; height:38px; border-radius:50%;
+    background:var(--cream); border:1px solid var(--line); display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--forest); font-size:15px; transition:background .15s;
+  }
+  .hmodal-close:hover{ background:var(--sage-soft); }
+  .hmodal-head{ text-align:center; max-width:520px; margin:0 auto 36px; }
+  .hmodal-head .kicker{ margin-bottom:14px; display:block; }
+  .hmodal-head h3{ font-family:var(--serif); font-size:clamp(24px,3vw,32px); color:var(--forest); font-weight:400; margin-bottom:12px; }
+  .hmodal-head p{ font-size:14.5px; color:var(--ink-dim); line-height:1.65; }
+
+  .hoptions{ display:grid; grid-template-columns:1fr 1fr; gap:22px; }
+  @media (max-width:720px){ .hoptions{ grid-template-columns:1fr; } }
+  .hopt{ border:1px solid var(--line); border-radius:20px; padding:28px 26px; display:flex; flex-direction:column; }
+  .hopt.partner{ border:1.5px solid var(--sage); background:linear-gradient(180deg, var(--sage-soft), var(--white) 40%); position:relative; }
+  .hopt-badge{ display:inline-block; align-self:flex-start; font-size:10px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; padding:6px 13px; border-radius:100px; margin-bottom:16px; background:var(--forest); color:var(--cream); }
+  .hopt.partner .hopt-badge{ background:var(--sage); color:var(--forest); }
+  .hopt-limited{ font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#b8834a; margin-bottom:6px; }
+  .hopt-credit{ font-size:12px; font-weight:700; color:var(--sage); margin-bottom:14px; }
+  .hopt h4{ font-family:var(--serif); font-size:20px; color:var(--forest); font-weight:400; margin-bottom:10px; }
+  .hopt p.hopt-desc{ font-size:13px; color:var(--ink-dim); line-height:1.6; margin-bottom:18px; }
+  .hopt-price{ margin-bottom:18px; }
+  .hopt-price .row{ display:flex; justify-content:space-between; align-items:baseline; padding:9px 0; border-bottom:1px solid var(--line); }
+  .hopt-price .row:last-child{ border-bottom:none; }
+  .hopt-price .plabel{ font-size:9.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint); }
+  .hopt-price .pamt{ font-family:var(--serif); font-size:22px; color:var(--forest); }
+  .hopt-price .pamt span{ font-size:11px; font-family:var(--sans); color:var(--ink-faint); font-weight:600; }
+  .hopt-price .strike{ font-size:13px; color:var(--ink-faint); text-decoration:line-through; margin-right:8px; }
+  .hopt-save{ font-size:12px; color:var(--sage); font-weight:700; margin-bottom:16px; }
+  .hopt .btn{ width:100%; margin-top:auto; }
+
+  .hopt-info{ background:rgba(255,255,255,0.6); border-radius:14px; padding:16px 18px; margin-bottom:18px; }
+  .hopt-info .k{ font-size:9.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--forest); margin-bottom:8px; display:block; }
+  .hopt-info p{ font-size:12px; color:var(--ink-dim); line-height:1.6; margin-bottom:10px; }
+  .hopt-info ul{ list-style:none; display:flex; flex-direction:column; gap:7px; }
+  .hopt-info li{ font-size:11.5px; color:var(--ink-dim); display:flex; align-items:flex-start; gap:7px; line-height:1.5; }
+  .hopt-info li::before{ content:"—"; color:var(--sage); flex-shrink:0; }
+  .hopt-micro{ font-family:var(--serif); font-style:italic; font-size:12.5px; color:var(--sage); margin-bottom:14px; }
+
+  .hmodal-foot{ text-align:center; font-size:12.5px; color:var(--ink-faint); margin-top:30px; padding-top:24px; border-top:1px solid var(--line); }
+
+  @media (prefers-reduced-motion: reduce){ .hmodal{ animation:none; } }
+
+  @media (max-width:720px){
+    .hmodal-overlay{ align-items:flex-end; padding:0; background:rgba(27,46,36,0.32); }
+    .hmodal{
+      max-width:none; width:100%; max-height:92vh; border-radius:26px 26px 0 0;
+      padding:14px 22px calc(28px + env(safe-area-inset-bottom, 0px));
+      animation:hsheetIn .35s ease;
+    }
+    .hmodal-drag{ width:40px; height:4px; border-radius:3px; background:var(--line-2); margin:0 auto 20px; }
+    .hmodal-close{ top:14px; }
+  }
+  @keyframes hsheetIn{ from{ transform:translateY(100%); } to{ transform:translateY(0); } }
+  @media (max-width:720px) and (prefers-reduced-motion: reduce){ .hmodal{ animation:none; } }
+
   /* ================= TESTIMONIALS ================= */
   .tgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
   @media (max-width:900px){ .tgrid{ grid-template-columns:1fr; max-width:440px; margin:0 auto; } }
@@ -1231,7 +1299,7 @@
             <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Priority support</li>
           </ul>
         </details>
-        <a class="btn btn-forest" href="#contact">Choose Harmony →</a>
+        <a class="btn btn-forest" href="#contact" id="harmonyCta">Choose Harmony →</a>
       </div>
 
       <div class="pcard">
@@ -1416,6 +1484,61 @@
 
 </main>
 
+<div class="hmodal-overlay" id="harmonyModalOverlay">
+  <div class="hmodal" role="dialog" aria-modal="true" aria-labelledby="harmonyModalTitle" id="harmonyModal">
+    <div class="hmodal-drag" aria-hidden="true"></div>
+    <button type="button" class="hmodal-close" id="harmonyModalClose" aria-label="Close">✕</button>
+
+    <div class="hmodal-head">
+      <span class="kicker">Harmony Plan Selection</span>
+      <h3 id="harmonyModalTitle">Choose How You Launch.</h3>
+      <p>Select standard onboarding or join our Portfolio Partner initiative to receive a one time setup credit.</p>
+    </div>
+
+    <div class="hoptions">
+      <div class="hopt">
+        <span class="hopt-badge">Standard Launch</span>
+        <h4>Standard Harmony</h4>
+        <p class="hopt-desc">Standard custom onboarding, dedicated configuration, full Harmony feature access and complete portfolio privacy.</p>
+        <div class="hopt-price">
+          <div class="row"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$690<span> one time</span></span></div>
+          <div class="row"><span class="plabel">Platform &amp; Care</span><span class="pamt">$79<span> / month</span></span></div>
+        </div>
+        <a class="btn btn-outline" href="#contact" id="selectStandardHarmony">Select Standard Harmony →</a>
+      </div>
+
+      <div class="hopt partner">
+        <span class="hopt-badge">Portfolio Partner</span>
+        <div class="hopt-limited">Limited Availability</div>
+        <div class="hopt-credit">$150 Setup Credit</div>
+        <h4>Harmony Portfolio Partner</h4>
+        <div class="hopt-price">
+          <div class="row"><span class="plabel">Standard Setup</span><span class="pamt"><span class="strike">$690</span></span></div>
+          <div class="row"><span class="plabel">Portfolio Partner Setup</span><span class="pamt">$540<span> one time</span></span></div>
+          <div class="row"><span class="plabel">Platform &amp; Care</span><span class="pamt">$79<span> / month</span></span></div>
+        </div>
+        <div class="hopt-save">Save $150 on your initial Setup &amp; Launch.</div>
+
+        <details class="hopt-info">
+          <summary class="k" style="cursor:pointer;">What does Portfolio Partner mean? <span style="font-weight:400;">▾</span></summary>
+          <p>As an early RBR Portfolio Partner, you receive a $150 Setup &amp; Launch credit. After launch, we may invite you to share an honest review of your experience and allow RBR to showcase approved parts of the digital experience we created for you.</p>
+          <ul>
+            <li>Share an honest post launch review</li>
+            <li>Allow approved app screenshots to appear in the RBR portfolio</li>
+            <li>Potential inclusion in an RBR case study</li>
+            <li>Sensitive or private information remains excluded</li>
+          </ul>
+        </details>
+
+        <div class="hopt-micro">Help us tell the story of what we create together.</div>
+        <a class="btn btn-forest" href="#contact" id="selectPortfolioPartner">Choose Portfolio Partner →</a>
+      </div>
+    </div>
+
+    <div class="hmodal-foot">Both options include the complete Harmony feature suite, custom branding and continuous RBR Platform &amp; Care.</div>
+  </div>
+</div>
+
 <footer>
   <div class="wrap">
     <div class="footer-top">
@@ -1487,10 +1610,92 @@
    Pricing section's numbers can be updated in one place. The cards above are
    authored directly from these values; keep them in sync if prices change. */
 var RBR_PRICING = {
-  essence:   { setup: 300,  monthly: 39  },
-  harmony:   { setup: 690,  monthly: 79  },
-  sanctuary: { setup: 1490, monthly: 149 }
+  essence:   { setup: 300,  monthly: 39,  portfolioPartner: { enabled: false } },
+  harmony:   { setup: 690,  monthly: 79,  portfolioPartner: { enabled: true, setup: 540, credit: 150 } },
+  sanctuary: { setup: 1490, monthly: 149, portfolioPartner: { enabled: false } }
 };
+</script>
+
+<script>
+/* Harmony Plan Selection modal.
+   Gated entirely by RBR_PRICING.harmony.portfolioPartner.enabled — when that's
+   set to false, "Choose Harmony" skips the modal and goes straight to #contact
+   like Essence/Sanctuary do, with no other code changes needed. */
+(function(){
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var trigger = document.getElementById('harmonyCta');
+  var overlay = document.getElementById('harmonyModalOverlay');
+  var modal = document.getElementById('harmonyModal');
+  var closeBtn = document.getElementById('harmonyModalClose');
+  var standardBtn = document.getElementById('selectStandardHarmony');
+  var partnerBtn = document.getElementById('selectPortfolioPartner');
+  if (!trigger || !overlay || !modal) return;
+
+  var lastFocused = null;
+
+  function focusableEls(){
+    return Array.prototype.slice.call(
+      modal.querySelectorAll('a[href], button:not([disabled]), summary, [tabindex]:not([tabindex="-1"])')
+    ).filter(function(el){ return el.offsetParent !== null; });
+  }
+
+  function openModal(){
+    lastFocused = document.activeElement;
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    var f = focusableEls();
+    if (f.length) f[0].focus();
+    document.addEventListener('keydown', onKeydown);
+  }
+
+  function closeModal(){
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', onKeydown);
+    if (lastFocused) lastFocused.focus();
+  }
+
+  function onKeydown(e){
+    if (e.key === 'Escape'){ closeModal(); return; }
+    if (e.key === 'Tab'){
+      var f = focusableEls();
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  }
+
+  trigger.addEventListener('click', function(e){
+    var pp = (RBR_PRICING.harmony || {}).portfolioPartner;
+    if (!pp || !pp.enabled) return; // program disabled — fall through to plain #contact link
+    e.preventDefault();
+    openModal();
+  });
+
+  closeBtn.addEventListener('click', closeModal);
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) closeModal(); });
+
+  function recordSelection(plan){
+    try {
+      sessionStorage.setItem('rbr_selected_plan', JSON.stringify(plan));
+    } catch (err) { /* sessionStorage unavailable — selection just won't persist */ }
+  }
+
+  if (standardBtn){
+    standardBtn.addEventListener('click', function(){
+      recordSelection({ plan: 'Harmony', path: 'Standard', setup: RBR_PRICING.harmony.setup, monthly: RBR_PRICING.harmony.monthly });
+      closeModal();
+    });
+  }
+  if (partnerBtn){
+    partnerBtn.addEventListener('click', function(){
+      var pp = RBR_PRICING.harmony.portfolioPartner;
+      recordSelection({ plan: 'Harmony', path: 'Portfolio Partner', setup: pp.setup, credit: pp.credit, monthly: RBR_PRICING.harmony.monthly });
+      closeModal();
+    });
+  }
+})();
 </script>
 
 <script>
