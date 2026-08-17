@@ -450,12 +450,6 @@
   /* desktop/mobile switch — declared last so it always wins regardless of the
      unconditional rules above, at any viewport width. */
   @media (min-width:860px){ .eco-stage{ display:block; } .eco-mobile-wrap{ display:none; } }
-  .pricing-billing{ display:flex; justify-content:center; align-items:center; gap:14px; margin:-16px 0 50px; flex-wrap:wrap; }
-  .billtoggle{ display:inline-flex; background:var(--white); border:1px solid var(--line); border-radius:100px; padding:4px; }
-  .billtoggle button{ border:none; background:none; padding:9px 20px; border-radius:100px; font-size:12.5px; font-weight:700; color:var(--ink-dim); cursor:pointer; transition:background .2s ease, color .2s ease; font-family:var(--sans); }
-  .billtoggle button.on{ background:var(--forest); color:var(--cream); }
-  .billtoggle-note{ font-size:11.5px; color:var(--sage); font-weight:700; }
-
   .pricing-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:26px; align-items:stretch; }
   @media (max-width:900px){ .pricing-grid{ grid-template-columns:1fr; max-width:440px; margin:0 auto; } }
   .pcard{ background:var(--white); border-radius:24px; padding:40px 32px; border:1px solid var(--line); display:flex; flex-direction:column; animation:fadeUp .6s ease backwards; }
@@ -473,6 +467,30 @@
   .pricerow .pamt{ font-family:var(--serif); font-size:24px; color:var(--forest); white-space:nowrap; }
   .pricerow .pamt span{ font-size:11.5px; font-family:var(--sans); color:var(--ink-faint); font-weight:600; }
   .pricedivider{ height:1px; background:var(--line); }
+  .pnorecurring{ font-size:11.5px; color:var(--sage); font-weight:700; margin:-15px 0 20px; }
+
+  /* -- Single Retreat lifecycle (before / during / after) -- */
+  .lifecycle{ background:var(--cream); border-radius:14px; padding:16px 16px 14px; margin-bottom:22px; }
+  .lifecycle-h .ltrack{ display:flex; align-items:center; padding:0 6px; }
+  .lifecycle-h .ldot{ width:7px; height:7px; border-radius:50%; background:var(--sage); flex-shrink:0; }
+  .lifecycle-h .lline{ flex:1; height:1px; background:var(--line-2); margin:0 2px; }
+  .lifecycle-h .llabels{ display:flex; margin-top:9px; }
+  .lifecycle-h .lstep{ flex:1; }
+  .lifecycle-h .lstep:first-child{ text-align:left; }
+  .lifecycle-h .lstep:nth-child(2){ text-align:center; }
+  .lifecycle-h .lstep:last-child{ text-align:right; }
+  .lifecycle-h .lstep b{ display:block; font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--forest); margin-bottom:3px; }
+  .lifecycle-h .lstep span{ font-size:9px; color:var(--ink-faint); line-height:1.35; }
+  .lifecycle-v{ display:none; }
+  .lifecycle-v .lstepv{ display:flex; align-items:center; gap:10px; }
+  .lifecycle-v .lstepv .ldot{ width:7px; height:7px; border-radius:50%; background:var(--sage); flex-shrink:0; }
+  .lifecycle-v .lstepv b{ display:block; font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--forest); margin-bottom:2px; }
+  .lifecycle-v .lstepv span{ font-size:9.5px; color:var(--ink-faint); }
+  .lifecycle-v .lconnv{ padding-left:3px; font-size:10px; color:var(--line-2); line-height:1.4; margin:1px 0; }
+  @media (max-width:480px){
+    .lifecycle-h{ display:none; }
+    .lifecycle-v{ display:block; }
+  }
 
   .pcard hr{ border:none; border-top:1px solid var(--line); margin-bottom:22px; }
   .pcard ul{ list-style:none; display:flex; flex-direction:column; gap:12px; margin-bottom:16px; }
@@ -500,6 +518,12 @@
   .customdev{ margin-top:26px; background:var(--forest); border-radius:20px; padding:32px 36px; display:flex; align-items:center; justify-content:space-between; gap:26px; flex-wrap:wrap; }
   .customdev h4{ font-family:var(--serif); font-size:19px; color:var(--cream); font-weight:400; margin-bottom:6px; }
   .customdev p{ font-size:13px; color:rgba(251,249,245,0.7); max-width:440px; line-height:1.6; }
+
+  /* -- upgrade path: Single Retreat -> Harmony -- */
+  .upgradepath{ margin-top:20px; background:var(--sage-soft); border:1px solid var(--line); border-radius:20px; padding:30px 36px; display:flex; align-items:center; justify-content:space-between; gap:26px; flex-wrap:wrap; }
+  .upgradepath .k{ font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--sage); margin-bottom:8px; }
+  .upgradepath h4{ font-family:var(--serif); font-size:19px; color:var(--forest); font-weight:400; margin-bottom:6px; }
+  .upgradepath p{ font-size:13px; color:var(--ink-dim); max-width:440px; line-height:1.6; }
 
   /* -- compare plans (native details/summary, zero JS) -- */
   .comparewrap{ margin-top:56px; }
@@ -1304,80 +1328,89 @@
 <section id="pricing">
   <div class="wrap">
     <div class="sectionhead center">
-      <div class="kicker">Choose Your Experience</div>
-      <div class="statement">A Digital Home for Every Retreat.</div>
-      <p style="margin-top:16px; color:var(--ink-dim); font-size:16px; max-width:600px; margin-left:auto; margin-right:auto;">Start with essential guest guidance or launch a fully connected retreat ecosystem. Every RBR experience is thoughtfully crafted, professionally launched and continuously cared for.</p>
-    </div>
-
-    <div class="pricing-billing">
-      <div class="billtoggle" id="billToggle" role="group" aria-label="Billing period">
-        <button type="button" class="on" data-bill="monthly" aria-pressed="true">Monthly</button>
-        <button type="button" data-bill="annual" aria-pressed="false">Annual Billing</button>
-      </div>
-      <span class="billtoggle-note">Save on Platform Care</span>
+      <div class="kicker">Flexible Engagement Models</div>
+      <div class="statement">A Digital Space for Every Kind of Retreat.</div>
+      <p style="margin-top:16px; color:var(--ink-dim); font-size:16px; max-width:600px; margin-left:auto; margin-right:auto;">Whether hosting a single transformational week or running an ongoing retreat venue, choose the digital experience that fits the way you work.</p>
     </div>
 
     <div class="pricing-grid">
       <div class="pcard">
-        <div class="pname">Essence</div>
-        <div class="pdescriptor">Foundational Experience</div>
-        <div class="pfor">Independent facilitators &amp; boutique retreats</div>
-        <div class="pdesc">A beautiful digital foundation for giving guests the essentials in one calm, branded experience.</div>
+        <div class="pname">Single Retreat</div>
+        <div class="pdescriptor">Single Event Pass</div>
+        <div class="pfor">Independent facilitators, pop up retreats &amp; single immersive events</div>
+        <div class="pdesc">Everything your guests need for one unforgettable retreat, beautifully organized in a custom branded digital experience.</div>
         <div class="pricerows">
-          <div class="pricerow"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$300<span> one time</span></span></div>
-          <div class="pricedivider"></div>
-          <div class="pricerow"><span class="plabel">Platform &amp; Care</span><span class="pamt">$59<span> / month</span></span></div>
+          <div class="pricerow"><span class="plabel">Single Event Pass</span><span class="pamt">$399<span> one time</span></span></div>
         </div>
+        <div class="pnorecurring">No recurring subscription</div>
+
+        <div class="lifecycle" aria-label="Retreat access lifecycle">
+          <div class="lifecycle-h">
+            <div class="ltrack">
+              <span class="ldot"></span><span class="lline"></span><span class="ldot"></span><span class="lline"></span><span class="ldot"></span>
+            </div>
+            <div class="llabels">
+              <div class="lstep"><b>Before</b><span>Opens 1 day prior</span></div>
+              <div class="lstep"><b>During</b><span>Live throughout retreat</span></div>
+              <div class="lstep"><b>After</b><span>Closes 1 day after</span></div>
+            </div>
+          </div>
+          <div class="lifecycle-v">
+            <div class="lstepv"><span class="ldot"></span><div><b>Before</b><span>Opens 1 day prior</span></div></div>
+            <div class="lconnv" aria-hidden="true">↓</div>
+            <div class="lstepv"><span class="ldot"></span><div><b>During</b><span>Live throughout retreat</span></div></div>
+            <div class="lconnv" aria-hidden="true">↓</div>
+            <div class="lstepv"><span class="ldot"></span><div><b>After</b><span>Closes 1 day after</span></div></div>
+          </div>
+        </div>
+
         <ul>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Branded guest web app</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom logo &amp; brand palette</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Core schedule</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>General information</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Mobile optimized experience</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom branded guest web app</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Retreat Home &amp; Happening Now</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Full interactive schedule</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Teacher &amp; facilitator profiles</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Meals &amp; dietary information</li>
         </ul>
         <details>
           <summary>View plan details <span class="arrow">▾</span></summary>
           <ul class="pmore">
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Contact &amp; essential guest details</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Secure managed hosting</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>SSL &amp; platform maintenance</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Standard storage allowance</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>RBR subdomain</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Standard support</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Facilities &amp; space information</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Gallery</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>General information</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Contact details</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Mobile optimized experience</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Secure event hosting</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Launch QA</li>
           </ul>
         </details>
-        <a class="btn btn-outline" href="#contact" id="essenceCta">Start With Essence →</a>
+        <a class="btn btn-outline" href="#contact" id="singleRetreatCta">Create My Retreat →</a>
       </div>
 
-      <div class="pcard featured">
+      <div class="pcard featured" id="harmonyCard">
         <div class="pop-badge">Most Popular</div>
         <div class="pname">Harmony</div>
-        <div class="pdescriptor">Complete Retreat Experience</div>
-        <div class="pfor">Retreat centers &amp; multi-day immersive programs</div>
-        <div class="pdesc">Everything your guests need throughout the retreat, beautifully connected in one complete digital experience.</div>
+        <div class="pdescriptor">Ongoing Platform</div>
+        <div class="pfor">Retreat centers, recurring program organizers &amp; year round facilitators</div>
+        <div class="pdesc">Your digital retreat home, always ready for what's next.</div>
         <div class="pricerows">
           <div class="pricerow"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$690<span> one time</span></span></div>
           <div class="pricedivider"></div>
           <div class="pricerow"><span class="plabel">Platform &amp; Care</span><span class="pamt">$99<span> / month</span></span></div>
         </div>
         <ul>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Everything in Essence</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Advanced live schedule</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Happening Now</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Teacher &amp; facilitator profiles</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Meals &amp; dining</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Everything in Single Retreat</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Persistent year round platform</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Sound &amp; audio vault</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Resources library</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom domain connection</li>
         </ul>
         <details>
           <summary>View plan details <span class="arrow">▾</span></summary>
           <ul class="pmore">
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Facilities &amp; guest information</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Gallery</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Resources</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Audio integration</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom domain connection</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Expanded storage allowance</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>More content flexibility</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Priority support</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Multi date scheduling</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Expanded content capability</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Ongoing Platform &amp; Care</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Priority care</li>
           </ul>
         </details>
         <a class="btn btn-forest" href="#contact" id="harmonyCta">Choose Harmony →</a>
@@ -1385,9 +1418,9 @@
 
       <div class="pcard">
         <div class="pname">Sanctuary</div>
-        <div class="pdescriptor">Complete Digital Ecosystem</div>
-        <div class="pfor">Multi-program retreat centers &amp; larger wellness operations</div>
-        <div class="pdesc">A more expansive RBR ecosystem for organizations managing multiple programs, deeper content libraries and more complex guest experiences.</div>
+        <div class="pdescriptor">Complete Ecosystem</div>
+        <div class="pfor">Larger retreat centers, multi journey venues &amp; more complex operations</div>
+        <div class="pdesc">Comprehensive digital infrastructure for multi program retreat centers and larger wellness venues.</div>
         <div class="pricerows">
           <div class="pricerow"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$1,490<span> one time</span></span></div>
           <div class="pricedivider"></div>
@@ -1397,18 +1430,17 @@
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Everything in Harmony</li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Multiple retreat programs / journeys</li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Advanced content structure</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Expanded audio &amp; resource library</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Expanded media &amp; resource capacity</li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Higher storage allowance</li>
         </ul>
         <details>
           <summary>View plan details <span class="arrow">▾</span></summary>
           <ul class="pmore">
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Additional admin capabilities</li>
             <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Advanced localization readiness</li>
             <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Advanced integrations</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Additional admin capabilities</li>
             <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Priority onboarding</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Premium support</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>More customization</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Premium care</li>
           </ul>
         </details>
         <a class="btn btn-outline" href="#contact" id="sanctuaryCta">Build Your Sanctuary →</a>
@@ -1453,24 +1485,29 @@
       <a class="btn btn-cream" href="#contact">Let's Talk →</a>
     </div>
 
+    <div class="upgradepath">
+      <div>
+        <div class="k">Loved your Single Retreat experience?</div>
+        <h4>Make it your ongoing digital retreat home.</h4>
+        <p>If you find yourself hosting retreats more regularly, you can move from Single Retreat into Harmony whenever the time feels right.</p>
+      </div>
+      <a class="btn btn-outline" href="#pricing" id="exploreHarmonyCta">Explore Harmony →</a>
+    </div>
+
     <details class="comparewrap">
       <summary>Compare Plans <span class="arrow">▾</span></summary>
       <div class="comparetable-wrap">
         <table class="comparetable">
-          <tr><th>Feature</th><th>Essence</th><th>Harmony</th><th>Sanctuary</th></tr>
-          <tr><td>Core Schedule</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Happening Now</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Teachers</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Meals</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Facilities</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Gallery</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Resources</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Audio</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Custom Domain</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Multiple Programs</td><td class="no">—</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Advanced Localization</td><td class="no">—</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Advanced Integrations</td><td class="no">—</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Support Level</td><td>Standard</td><td>Priority</td><td>Premium</td></tr>
+          <tr><th>Feature</th><th>Single Retreat</th><th>Harmony</th><th>Sanctuary</th></tr>
+          <tr><td>Model</td><td>Single Event</td><td>Ongoing Platform</td><td>Complete Ecosystem</td></tr>
+          <tr><td>Access</td><td>Event Window</td><td>Year Round</td><td>Year Round</td></tr>
+          <tr><td>Programs</td><td>One Retreat</td><td>Ongoing / Recurring</td><td>Multiple Programs</td></tr>
+          <tr><td>Live Schedule</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Teachers</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Meals</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Audio / Resources</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td>Expanded</td></tr>
+          <tr><td>Custom Domain</td><td class="no">Not Standard</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Ongoing Platform &amp; Care</td><td class="no">Not Required</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td>Premium</td></tr>
         </table>
       </div>
     </details>
@@ -1626,15 +1663,16 @@
     <button type="button" class="hmodal-close" id="leadModalClose" aria-label="Close">✕</button>
 
     <div class="hmodal-head" style="text-align:left; max-width:none; margin-bottom:0;">
-      <span class="lc-kicker" id="leadPlanKicker">You've Selected Essence</span>
+      <span class="lc-kicker" id="leadPlanKicker">You've Selected Single Retreat</span>
       <h3 id="leadModalTitle">Let's Build Your Experience.</h3>
       <p>A few details, then we'll continue the conversation on WhatsApp so you can talk with Ron directly.</p>
     </div>
 
     <div class="lc-summary" id="leadSummary">
-      <div class="lc-summary-row"><span class="l">Setup &amp; Launch</span><span class="v" id="leadSetupAmt">$300<span class="unit"> one time</span></span></div>
-      <div class="lc-summary-row"><span class="l">Platform &amp; Care</span><span class="v" id="leadMonthlyAmt">$59<span class="unit"> / month</span></span></div>
+      <div class="lc-summary-row" id="leadSetupRow"><span class="l" id="leadSetupLabel">Single Event Pass</span><span class="v" id="leadSetupAmt">$399<span class="unit"> one time</span></span></div>
+      <div class="lc-summary-row" id="leadMonthlyRow" style="display:none;"><span class="l">Platform &amp; Care</span><span class="v" id="leadMonthlyAmt">$99<span class="unit"> / month</span></span></div>
       <div class="lc-summary-credit" id="leadCreditNote" style="display:none;"></div>
+      <div class="lc-summary-credit" id="leadNoRecurring">No recurring subscription</div>
       <button type="button" class="lc-change" id="leadChangePlan">← Change plan</button>
     </div>
 
@@ -1762,7 +1800,7 @@
    Pricing section's numbers can be updated in one place. The cards above are
    authored directly from these values; keep them in sync if prices change. */
 var RBR_PRICING = {
-  essence:   { setup: 300,  monthly: 59,  portfolioPartner: { enabled: false } },
+  singleRetreat: { price: 399, billingType: 'one-time', eventBased: true, accessBeforeDays: 1, accessAfterDays: 1 },
   harmony:   { setup: 690,  monthly: 99,  portfolioPartner: { enabled: true, setup: 540, credit: 150 } },
   sanctuary: { setup: 1490, monthly: 199, portfolioPartner: { enabled: false } }
 };
@@ -1783,7 +1821,7 @@ var RBR_CONTACT = {
 /* Harmony Plan Selection modal.
    Gated entirely by RBR_PRICING.harmony.portfolioPartner.enabled — when that's
    set to false, "Choose Harmony" skips the modal and goes straight to #contact
-   like Essence/Sanctuary do, with no other code changes needed. */
+   like Single Retreat/Sanctuary do, with no other code changes needed. */
 (function(){
   var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var trigger = document.getElementById('harmonyCta');
@@ -1873,7 +1911,7 @@ var RBR_CONTACT = {
 
 <script>
 /* Lead Capture & WhatsApp Handoff modal.
-   Opened from the Essence/Sanctuary Pricing CTAs directly, and from the
+   Opened from the Single Retreat/Sanctuary Pricing CTAs directly, and from the
    Harmony modal's two option buttons. Everything the visitor types lives in
    plain JS variables for the life of this modal only — nothing is written to
    localStorage, sessionStorage, a URL, analytics, or a server. */
@@ -1944,6 +1982,19 @@ var RBR_CONTACT = {
 
   function renderSummary(plan){
     kickerEl.textContent = "You've Selected " + plan.label;
+
+    if (plan.billingType === 'one-time'){
+      document.getElementById('leadSetupLabel').textContent = 'Single Event Pass';
+      setupAmtEl.innerHTML = '$' + plan.price + '<span class="unit"> one time</span>';
+      document.getElementById('leadMonthlyRow').style.display = 'none';
+      creditNoteEl.style.display = 'none';
+      document.getElementById('leadNoRecurring').style.display = '';
+      return;
+    }
+    document.getElementById('leadMonthlyRow').style.display = '';
+    document.getElementById('leadNoRecurring').style.display = 'none';
+    document.getElementById('leadSetupLabel').textContent = 'Setup & Launch';
+
     if (plan.standardSetup){
       setupAmtEl.innerHTML = '<span class="strike">$' + plan.standardSetup + '</span>$' + plan.setup + '<span class="unit"> one time</span>';
     } else {
@@ -1967,7 +2018,7 @@ var RBR_CONTACT = {
     document.body.style.overflow = 'hidden';
     document.addEventListener('keydown', onKeydown);
     setTimeout(function(){ if (nameInput) nameInput.focus(); }, 10);
-    trackEvent('lead_modal_open', { plan: plan.key, setup: plan.setup, monthly: plan.monthly });
+    trackEvent('lead_modal_open', { plan: plan.key, price: plan.price, setup: plan.setup, monthly: plan.monthly });
   }
 
   function closeLeadModal(){
@@ -2048,6 +2099,21 @@ var RBR_CONTACT = {
      only when the visitor filled them in. Portfolio Partner adds the setup
      credit breakdown without dumping the full program terms. */
   function buildMessage(plan, lead){
+    if (plan.billingType === 'one-time'){
+      var slines = [];
+      slines.push("Hi Ron, I'm interested in RBR.");
+      slines.push('Name: ' + lead.name);
+      if (lead.retreat) slines.push('Retreat / Practice: ' + lead.retreat);
+      slines.push('Email: ' + lead.email);
+      slines.push('Phone / WhatsApp: ' + lead.phone);
+      if (lead.type) slines.push('Type: ' + lead.type);
+      slines.push('Selected Plan: Single Retreat');
+      slines.push('Price: $' + plan.price + ' one time');
+      slines.push('No recurring subscription');
+      slines.push("I'd love to discuss the next steps.");
+      return slines.join('\n');
+    }
+
     var lines = [];
     lines.push('Hi Ron! I would like to get started with RBR.');
     lines.push('');
@@ -2129,20 +2195,31 @@ var RBR_CONTACT = {
     }
   });
 
-  /* ---- Direct-entry triggers: Essence & Sanctuary skip the Harmony modal
-     entirely and open Lead Capture straight from the Pricing card CTA. ---- */
-  var essenceCta = document.getElementById('essenceCta');
+  /* ---- Direct-entry triggers: Single Retreat & Sanctuary skip the Harmony
+     modal entirely and open Lead Capture straight from the Pricing card CTA. ---- */
+  var singleRetreatCta = document.getElementById('singleRetreatCta');
   var sanctuaryCta = document.getElementById('sanctuaryCta');
-  if (essenceCta){
-    essenceCta.addEventListener('click', function(e){
+  var exploreHarmonyCta = document.getElementById('exploreHarmonyCta');
+  if (singleRetreatCta){
+    singleRetreatCta.addEventListener('click', function(e){
       e.preventDefault();
-      openLeadCapture({ key: 'essence', label: 'Essence', setup: RBR_PRICING.essence.setup, monthly: RBR_PRICING.essence.monthly });
+      openLeadCapture({
+        key: 'single-retreat', label: 'Single Retreat',
+        billingType: RBR_PRICING.singleRetreat.billingType, price: RBR_PRICING.singleRetreat.price
+      });
     });
   }
   if (sanctuaryCta){
     sanctuaryCta.addEventListener('click', function(e){
       e.preventDefault();
       openLeadCapture({ key: 'sanctuary', label: 'Sanctuary', setup: RBR_PRICING.sanctuary.setup, monthly: RBR_PRICING.sanctuary.monthly });
+    });
+  }
+  if (exploreHarmonyCta){
+    exploreHarmonyCta.addEventListener('click', function(e){
+      e.preventDefault();
+      var card = document.getElementById('harmonyCard');
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   }
 })();
