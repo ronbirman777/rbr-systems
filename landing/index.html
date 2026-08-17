@@ -426,21 +426,69 @@
   /* desktop/mobile switch — declared last so it always wins regardless of the
      unconditional rules above, at any viewport width. */
   @media (min-width:860px){ .eco-stage{ display:block; } .eco-mobile-wrap{ display:none; } }
+  .pricing-billing{ display:flex; justify-content:center; align-items:center; gap:14px; margin:-16px 0 50px; flex-wrap:wrap; }
+  .billtoggle{ display:inline-flex; background:var(--white); border:1px solid var(--line); border-radius:100px; padding:4px; }
+  .billtoggle button{ border:none; background:none; padding:9px 20px; border-radius:100px; font-size:12.5px; font-weight:700; color:var(--ink-dim); cursor:pointer; transition:background .2s ease, color .2s ease; font-family:var(--sans); }
+  .billtoggle button.on{ background:var(--forest); color:var(--cream); }
+  .billtoggle-note{ font-size:11.5px; color:var(--sage); font-weight:700; }
+
   .pricing-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:26px; align-items:stretch; }
-  @media (max-width:900px){ .pricing-grid{ grid-template-columns:1fr; max-width:420px; margin:0 auto; } }
+  @media (max-width:900px){ .pricing-grid{ grid-template-columns:1fr; max-width:440px; margin:0 auto; } }
   .pcard{ background:var(--white); border-radius:24px; padding:40px 32px; border:1px solid var(--line); display:flex; flex-direction:column; animation:fadeUp .6s ease backwards; }
-  .pcard.featured{ border:1.5px solid var(--sage); background:linear-gradient(180deg, var(--sage-soft), var(--white) 30%); position:relative; }
+  .pcard.featured{ border:1.5px solid var(--sage); background:linear-gradient(180deg, var(--sage-soft), var(--white) 34%); position:relative; box-shadow:0 24px 54px -24px rgba(27,46,36,0.22); }
   .pop-badge{ position:absolute; top:-14px; left:50%; transform:translateX(-50%); background:var(--forest); color:var(--cream); font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; padding:8px 16px; border-radius:100px; white-space:nowrap; }
   .pcard .pname{ font-family:var(--serif); font-size:24px; color:var(--forest); font-weight:400; }
-  .pcard .psub{ font-size:12.5px; color:var(--ink-faint); margin-top:4px; text-transform:uppercase; letter-spacing:.06em; font-weight:600; }
-  .pcard .pprice{ font-family:var(--serif); font-size:38px; color:var(--forest); margin:22px 0 4px; }
-  .pcard .pprice span{ font-size:13px; font-family:var(--sans); color:var(--ink-faint); font-weight:600; }
-  .pcard .pdesc{ font-size:13.5px; color:var(--ink-dim); margin-bottom:22px; }
+  .pcard .pdescriptor{ font-size:10.5px; color:var(--sage); margin-top:5px; text-transform:uppercase; letter-spacing:.07em; font-weight:800; }
+  .pcard .pfor{ font-size:12px; color:var(--ink-faint); margin-top:12px; font-style:italic; font-family:var(--serif); }
+  .pcard .pdesc{ font-size:13.5px; color:var(--ink-dim); margin:12px 0 24px; line-height:1.65; }
+
+  .pricerows{ display:flex; flex-direction:column; gap:13px; margin-bottom:24px; padding:18px; background:var(--cream); border-radius:14px; }
+  .pcard.featured .pricerows{ background:rgba(255,255,255,0.6); }
+  .pricerow{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; }
+  .pricerow .plabel{ font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); }
+  .pricerow .pamt{ font-family:var(--serif); font-size:24px; color:var(--forest); white-space:nowrap; }
+  .pricerow .pamt span{ font-size:11.5px; font-family:var(--sans); color:var(--ink-faint); font-weight:600; }
+  .pricedivider{ height:1px; background:var(--line); }
+
   .pcard hr{ border:none; border-top:1px solid var(--line); margin-bottom:22px; }
-  .pcard ul{ list-style:none; display:flex; flex-direction:column; gap:13px; margin-bottom:28px; flex:1; }
-  .pcard li{ display:flex; align-items:flex-start; gap:10px; font-size:13.5px; color:var(--ink-dim); }
+  .pcard ul{ list-style:none; display:flex; flex-direction:column; gap:12px; margin-bottom:16px; }
+  .pcard ul.pmore{ margin-top:12px; padding-top:14px; border-top:1px solid var(--line); margin-bottom:0; }
+  .pcard li{ display:flex; align-items:flex-start; gap:10px; font-size:13px; color:var(--ink-dim); }
   .pcard li svg{ flex-shrink:0; margin-top:2px; }
+  .pcard details{ flex:1; margin-bottom:24px; }
+  .pcard summary{ cursor:pointer; list-style:none; font-size:12px; font-weight:700; color:var(--forest); padding-top:2px; }
+  .pcard summary::-webkit-details-marker{ display:none; }
+  .pcard summary .arrow{ display:inline-block; margin-left:4px; transition:transform .2s ease; }
+  .pcard details[open] summary .arrow{ transform:rotate(180deg); }
   .pcard .btn{ width:100%; }
+
+  /* -- setup & care explainer blocks -- */
+  .pricing-info{ display:grid; grid-template-columns:1fr 1fr; gap:26px; margin-top:64px; }
+  @media (max-width:860px){ .pricing-info{ grid-template-columns:1fr; } }
+  .infoblock{ background:var(--white); border:1px solid var(--line); border-radius:20px; padding:34px 32px; }
+  .infoblock h4{ font-family:var(--serif); font-size:20px; color:var(--forest); font-weight:400; margin-bottom:12px; }
+  .infoblock p{ font-size:14px; color:var(--ink-dim); line-height:1.7; margin-bottom:20px; }
+  .checkgrid{ display:grid; grid-template-columns:1fr 1fr; gap:11px 16px; }
+  .checkgrid div{ display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-dim); }
+  .checkgrid svg{ flex-shrink:0; }
+
+  /* -- custom development block -- */
+  .customdev{ margin-top:26px; background:var(--forest); border-radius:20px; padding:32px 36px; display:flex; align-items:center; justify-content:space-between; gap:26px; flex-wrap:wrap; }
+  .customdev h4{ font-family:var(--serif); font-size:19px; color:var(--cream); font-weight:400; margin-bottom:6px; }
+  .customdev p{ font-size:13px; color:rgba(251,249,245,0.7); max-width:440px; line-height:1.6; }
+
+  /* -- compare plans (native details/summary, zero JS) -- */
+  .comparewrap{ margin-top:56px; }
+  .comparewrap > summary{ cursor:pointer; text-align:center; list-style:none; font-size:13px; font-weight:700; letter-spacing:.03em; color:var(--forest); padding:16px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+  .comparewrap > summary::-webkit-details-marker{ display:none; }
+  .comparewrap > summary .arrow{ display:inline-block; margin-left:6px; transition:transform .2s ease; }
+  .comparewrap[open] > summary .arrow{ transform:rotate(180deg); }
+  .comparetable-wrap{ overflow-x:auto; margin-top:24px; }
+  .comparetable{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:520px; }
+  .comparetable th, .comparetable td{ padding:11px 10px; text-align:center; border-bottom:1px solid var(--line); }
+  .comparetable th{ font-weight:700; color:var(--forest); font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; }
+  .comparetable td:first-child, .comparetable th:first-child{ text-align:left; color:var(--ink-dim); }
+  .comparetable td.no{ color:var(--ink-faint); }
 
   /* ================= TESTIMONIALS ================= */
   .tgrid{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
@@ -1107,60 +1155,176 @@
 <section id="pricing">
   <div class="wrap">
     <div class="sectionhead center">
-      <div class="kicker">Pricing</div>
-      <div class="statement">Choose the experience that fits your space</div>
+      <div class="kicker">Choose Your Experience</div>
+      <div class="statement">A Digital Home for Every Retreat.</div>
+      <p style="margin-top:16px; color:var(--ink-dim); font-size:16px; max-width:600px; margin-left:auto; margin-right:auto;">Start with essential guest guidance or launch a fully connected retreat ecosystem. Every RBR experience is thoughtfully crafted, professionally launched and continuously cared for.</p>
+    </div>
+
+    <div class="pricing-billing">
+      <div class="billtoggle" id="billToggle" role="group" aria-label="Billing period">
+        <button type="button" class="on" data-bill="monthly" aria-pressed="true">Monthly</button>
+        <button type="button" data-bill="annual" aria-pressed="false">Annual Billing</button>
+      </div>
+      <span class="billtoggle-note">Save on Platform Care</span>
     </div>
 
     <div class="pricing-grid">
       <div class="pcard">
         <div class="pname">Essence</div>
-        <div class="psub">Starter App</div>
-        <div class="pprice">$1,900</div>
-        <div class="pdesc">A focused, branded app for a single retreat or event.</div>
-        <hr>
+        <div class="pdescriptor">Foundational Experience</div>
+        <div class="pfor">Independent facilitators &amp; boutique retreats</div>
+        <div class="pdesc">A beautiful digital foundation for giving guests the essentials in one calm, branded experience.</div>
+        <div class="pricerows">
+          <div class="pricerow"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$300<span> one time</span></span></div>
+          <div class="pricedivider"></div>
+          <div class="pricerow"><span class="plabel">Platform &amp; Care</span><span class="pamt">$39<span> / month</span></span></div>
+        </div>
         <ul>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Branded guest app shell</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Schedule &amp; itinerary view</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Basic push notifications</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Single retreat support</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>2-week delivery</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Branded guest web app</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom logo &amp; brand palette</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Core schedule</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>General information</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Mobile optimized experience</li>
         </ul>
-        <a class="btn btn-outline" href="#contact">Choose Plan</a>
+        <details>
+          <summary>View plan details <span class="arrow">▾</span></summary>
+          <ul class="pmore">
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Contact &amp; essential guest details</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Secure managed hosting</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>SSL &amp; platform maintenance</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Standard storage allowance</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>RBR subdomain</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Standard support</li>
+          </ul>
+        </details>
+        <a class="btn btn-outline" href="#contact">Start With Essence →</a>
       </div>
 
       <div class="pcard featured">
         <div class="pop-badge">Most Popular</div>
         <div class="pname">Harmony</div>
-        <div class="psub">Full Retreat Experience</div>
-        <div class="pprice">$4,200</div>
-        <div class="pdesc">Everything a season of retreats needs to run smoothly.</div>
-        <hr>
+        <div class="pdescriptor">Complete Retreat Experience</div>
+        <div class="pfor">Retreat centers &amp; multi-day immersive programs</div>
+        <div class="pdesc">Everything your guests need throughout the retreat, beautifully connected in one complete digital experience.</div>
+        <div class="pricerows">
+          <div class="pricerow"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$690<span> one time</span></span></div>
+          <div class="pricedivider"></div>
+          <div class="pricerow"><span class="plabel">Platform &amp; Care</span><span class="pamt">$79<span> / month</span></span></div>
+        </div>
         <ul>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Everything in Essence</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Community &amp; updates feed</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Audio &amp; wellness library</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Advanced live schedule</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Happening Now</li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Teacher &amp; facilitator profiles</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Multi-retreat support</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Meals &amp; dining</li>
         </ul>
-        <a class="btn btn-forest" href="#contact">Choose Plan</a>
+        <details>
+          <summary>View plan details <span class="arrow">▾</span></summary>
+          <ul class="pmore">
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Facilities &amp; guest information</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Gallery</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Resources</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Audio integration</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom domain connection</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Expanded storage allowance</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>More content flexibility</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Priority support</li>
+          </ul>
+        </details>
+        <a class="btn btn-forest" href="#contact">Choose Harmony →</a>
       </div>
 
       <div class="pcard">
         <div class="pname">Sanctuary</div>
-        <div class="psub">Retreat Ecosystem</div>
-        <div class="pprice">Custom</div>
-        <div class="pdesc">A full digital ecosystem for multi-space, year-round operations.</div>
-        <hr>
+        <div class="pdescriptor">Complete Digital Ecosystem</div>
+        <div class="pfor">Multi-program retreat centers &amp; larger wellness operations</div>
+        <div class="pdesc">A more expansive RBR ecosystem for organizations managing multiple programs, deeper content libraries and more complex guest experiences.</div>
+        <div class="pricerows">
+          <div class="pricerow"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$1,490<span> one time</span></span></div>
+          <div class="pricedivider"></div>
+          <div class="pricerow"><span class="plabel">Platform &amp; Care</span><span class="pamt">$149<span> / month</span></span></div>
+        </div>
         <ul>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Everything in Harmony</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Client hub for 1:1 practitioners</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom integrations</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Ongoing seasonal updates</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Dedicated support</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Multiple retreat programs / journeys</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Advanced content structure</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Expanded audio &amp; resource library</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Higher storage allowance</li>
         </ul>
-        <a class="btn btn-outline" href="#contact">Choose Plan</a>
+        <details>
+          <summary>View plan details <span class="arrow">▾</span></summary>
+          <ul class="pmore">
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Additional admin capabilities</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Advanced localization readiness</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Advanced integrations</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Priority onboarding</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Premium support</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>More customization</li>
+          </ul>
+        </details>
+        <a class="btn btn-outline" href="#contact">Build Your Sanctuary →</a>
       </div>
     </div>
+
+    <div class="pricing-info">
+      <div class="infoblock">
+        <h4>What your Setup &amp; Launch includes</h4>
+        <p>The one-time fee is how we professionally prepare your digital experience for launch, start to finish.</p>
+        <div class="checkgrid">
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Brand integration</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Content structuring</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Application configuration</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Image &amp; media preparation</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Module configuration</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Mobile optimization</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Domain &amp; security setup</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Quality assurance &amp; launch prep</div>
+        </div>
+      </div>
+      <div class="infoblock">
+        <h4>Your app stays cared for.</h4>
+        <p>Every RBR experience lives on our managed platform, so hosting, security, backups, maintenance and ongoing platform improvements are taken care of for you.</p>
+        <div class="checkgrid">
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Managed hosting</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Security</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Backups</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Platform updates</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Performance care</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Technical maintenance</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Support</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="customdev">
+      <div>
+        <h4>Need something unique?</h4>
+        <p>Custom features, integrations and larger digital ecosystems can be scoped separately around your retreat, practice or organization.</p>
+      </div>
+      <a class="btn btn-cream" href="#contact">Let's Talk →</a>
+    </div>
+
+    <details class="comparewrap">
+      <summary>Compare Plans <span class="arrow">▾</span></summary>
+      <div class="comparetable-wrap">
+        <table class="comparetable">
+          <tr><th>Feature</th><th>Essence</th><th>Harmony</th><th>Sanctuary</th></tr>
+          <tr><td>Core Schedule</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Happening Now</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Teachers</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Meals</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Facilities</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Gallery</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Resources</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Audio</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Custom Domain</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Multiple Programs</td><td class="no">—</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Advanced Localization</td><td class="no">—</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Advanced Integrations</td><td class="no">—</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Support Level</td><td>Standard</td><td>Priority</td><td>Premium</td></tr>
+        </table>
+      </div>
+    </details>
   </div>
 </section>
 
@@ -1298,7 +1462,35 @@
   burger.addEventListener('click', openMenu);
   mclose.addEventListener('click', closeMenu);
   menu.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', closeMenu); });
+
+  /* Billing toggle — visual state only. Annual pricing hasn't been defined yet,
+     so this intentionally does not compute or display any alternate numbers.
+     Wire real annual figures into RBR_PRICING below once they're finalized. */
+  var billToggle = document.getElementById('billToggle');
+  if (billToggle){
+    billToggle.querySelectorAll('button').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        billToggle.querySelectorAll('button').forEach(function(b){
+          b.classList.remove('on');
+          b.setAttribute('aria-pressed', 'false');
+        });
+        btn.classList.add('on');
+        btn.setAttribute('aria-pressed', 'true');
+      });
+    });
+  }
 })();
+</script>
+
+<script>
+/* RBR_PRICING — single source of truth for plan figures, referenced here so the
+   Pricing section's numbers can be updated in one place. The cards above are
+   authored directly from these values; keep them in sync if prices change. */
+var RBR_PRICING = {
+  essence:   { setup: 300,  monthly: 39  },
+  harmony:   { setup: 690,  monthly: 79  },
+  sanctuary: { setup: 1490, monthly: 149 }
+};
 </script>
 
 <script>
