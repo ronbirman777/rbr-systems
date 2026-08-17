@@ -15,6 +15,24 @@
     --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
     --sans: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif;
     --maxw: 1320px;
+
+    /* ===== centralized RBR environment image map =====
+       Source: real retreat-center photography, mapped by content:
+       lotusWater = purple water lily on pond | buddhaFerns = deity statue in dense ferns
+       naturePathway = lantern-lit garden walkway | ganesha = Ganesha statue
+       coconutDrink = fresh coconut in hand | buddhaOffering = marigold flower offering */
+    --img-lotus: url('images/env/lotus-lg.jpg');
+    --img-lotus-sm: url('images/env/lotus-sm.jpg');
+    --img-buddha-ferns: url('images/env/buddha-ferns-lg.jpg');
+    --img-buddha-ferns-sm: url('images/env/buddha-ferns-sm.jpg');
+    --img-pathway: url('images/env/pathway-lg.jpg');
+    --img-pathway-sm: url('images/env/pathway-sm.jpg');
+    --img-ganesha: url('images/env/ganesha-lg.jpg');
+    --img-ganesha-sm: url('images/env/ganesha-sm.jpg');
+    --img-coconut: url('images/env/coconut-lg.jpg');
+    --img-coconut-sm: url('images/env/coconut-sm.jpg');
+    --img-buddha-offering: url('images/env/buddha-offering-lg.jpg');
+    --img-buddha-offering-sm: url('images/env/buddha-offering-sm.jpg');
   }
   *{ box-sizing:border-box; margin:0; padding:0; }
   html{ scroll-behavior:smooth; }
@@ -79,11 +97,20 @@
 
   /* ================= HERO ================= */
   .hero{ padding:210px 0 100px; position:relative; overflow:hidden; }
-  .hero-bg{ position:absolute; inset:0; z-index:0; pointer-events:none; }
+  .hero-bg{ position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
   .hero-bg .blob{ position:absolute; border-radius:50%; filter:blur(70px); }
   .hero-bg .b1{ width:520px; height:520px; top:-180px; right:-140px; background:radial-gradient(circle, var(--sage-soft2), transparent 70%); }
   .hero-bg .b2{ width:420px; height:420px; bottom:-120px; left:-160px; background:radial-gradient(circle, var(--sage-soft), transparent 70%); }
   .hero-bg svg{ position:absolute; opacity:.5; }
+  .hero-bg .lotus-atmos{
+    position:absolute; left:50%; top:360px; transform:translateX(-50%);
+    width:min(1500px,190vw); height:820px;
+    background-image:var(--img-lotus); background-size:cover; background-position:center 32%;
+    opacity:.2;
+    -webkit-mask-image: radial-gradient(ellipse 58% 60% at 50% 42%, #000 0%, rgba(0,0,0,0.55) 42%, transparent 76%);
+    mask-image: radial-gradient(ellipse 58% 60% at 50% 42%, #000 0%, rgba(0,0,0,0.55) 42%, transparent 76%);
+  }
+  @media (max-width:760px){ .hero-bg .lotus-atmos{ top:280px; height:640px; opacity:.16; } }
   .hero .wrap{ position:relative; z-index:1; }
   .hero-head{ max-width:780px; margin:0 auto; text-align:center; }
   .hero h1{ font-family:var(--serif); font-weight:400; font-size:clamp(38px,6.2vw,68px); line-height:1.08; letter-spacing:-0.01em; color:var(--forest); }
@@ -129,28 +156,46 @@
   .pmtile .ic{ width:20px; height:20px; border-radius:6px; background:var(--sage-soft); margin-bottom:6px; }
   .pmtile b{ font-size:9.5px; color:var(--forest); display:block; }
 
+  .pmtop.lotus-top{ position:relative; background-image:var(--img-lotus-sm); background-size:cover; background-position:center 35%; padding-bottom:22px; overflow:hidden; }
+  .pmtop.lotus-top::before{ content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(27,46,36,0.4), rgba(27,46,36,0.12) 55%, var(--cream) 94%); }
+  .pmtop.lotus-top .d, .pmtop.lotus-top h4{ position:relative; z-index:1; }
+  .pmtop.lotus-top .d{ color:rgba(255,255,255,0.88); }
+  .pmtop.lotus-top h4{ color:#fff; }
+  .pmimgcards{ padding:4px 12px; display:flex; flex-direction:column; gap:8px; }
+  .pmimgcard{ display:flex; align-items:center; gap:10px; background:var(--white); border-radius:12px; padding:7px; box-shadow:0 2px 8px rgba(27,46,36,0.06); }
+  .pmimgcard .thumb{ width:36px; height:36px; border-radius:9px; background-size:cover; background-position:center; flex-shrink:0; }
+  .pmimgcard b{ font-size:10.5px; color:var(--forest); font-weight:700; }
+
   /* ================= SECTION HEADS ================= */
   .sectionhead{ margin-bottom:70px; }
   .sectionhead.center{ text-align:center; max-width:680px; margin-left:auto; margin-right:auto; }
   .sectionhead .kicker{ display:block; margin-bottom:16px; }
 
   /* ================= ABOUT ================= */
-  .about .wrap{ display:grid; grid-template-columns:.85fr 1.15fr; gap:80px; align-items:center; }
+  .about .wrap{ display:grid; grid-template-columns:.85fr 1.15fr; gap:80px; align-items:start; }
   @media (max-width:900px){ .about .wrap{ grid-template-columns:1fr; gap:44px; } }
   .about-portrait{ position:relative; }
+  .about-portrait::before{
+    content:""; position:absolute; top:-9%; left:-13%; width:126%; height:122%;
+    background-image:var(--img-buddha-ferns); background-size:cover; background-position:center 28%;
+    opacity:.13; z-index:0; pointer-events:none;
+    -webkit-mask-image: radial-gradient(ellipse 60% 60% at 58% 44%, #000 0%, rgba(0,0,0,0.5) 55%, transparent 82%);
+    mask-image: radial-gradient(ellipse 60% 60% at 58% 44%, #000 0%, rgba(0,0,0,0.5) 55%, transparent 82%);
+  }
   .portrait-frame{
     width:100%; aspect-ratio:4/5; background:linear-gradient(155deg,var(--sage-soft2),var(--sage-soft) 60%,var(--cream));
     clip-path:path('M0,120 C0,40 60,0 160,0 L320,0 C400,0 440,50 440,140 L440,420 C440,500 390,540 300,540 L100,540 C30,540 0,490 0,410 Z');
-    display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; z-index:1;
   }
   .portrait-frame::after{ content:""; position:absolute; inset:0; background:radial-gradient(circle at 30% 20%, rgba(255,255,255,0.35), transparent 55%); }
   .portrait-frame svg{ width:34%; opacity:.5; }
-  .portrait-note{ position:absolute; bottom:-18px; right:6%; background:var(--white); border-radius:16px; padding:14px 18px; box-shadow:0 16px 32px -12px rgba(27,46,36,0.2); display:flex; align-items:center; gap:10px; }
+  .portrait-note{ position:absolute; z-index:2; bottom:-18px; right:6%; background:var(--white); border-radius:16px; padding:14px 18px; box-shadow:0 16px 32px -12px rgba(27,46,36,0.2); display:flex; align-items:center; gap:10px; }
   .portrait-note .dot{ width:8px; height:8px; border-radius:50%; background:var(--sage); }
   .portrait-note span{ font-size:11.5px; font-weight:700; color:var(--forest); }
   .about-copy .statement{ margin-bottom:24px; }
   .about-copy p{ color:var(--ink-dim); font-size:16px; line-height:1.75; margin-bottom:18px; max-width:520px; }
   .about-copy p:last-of-type{ margin-bottom:0; }
+  .about-copy p.about-emphasis{ color:var(--forest); font-weight:700; margin:30px 0; }
 
   /* ================= PORTFOLIO ================= */
   .showcase-row{ display:grid; grid-template-columns:.9fr 1.1fr; gap:70px; align-items:center; padding:70px 0; border-top:1px solid var(--line); }
@@ -170,6 +215,95 @@
   .showcase-visual{ display:flex; justify-content:center; position:relative; height:460px; align-items:center; }
   .showcase-visual .pm{ position:relative; left:auto; top:auto; transform:none; width:230px; animation:fadeUp .6s ease backwards; transition:transform .3s ease; }
   .showcase-row:hover .showcase-visual .pm{ transform:translateY(-6px); }
+
+  /* ================= APP SHOWCASE (interactive) ================= */
+  .appshowcase{ display:flex; flex-direction:column; align-items:center; gap:22px; }
+  .phonestack{ position:relative; width:250px; height:508px; display:flex; align-items:center; justify-content:center; }
+  .phonestack:focus{ outline:none; }
+  .phonestack:focus-visible{ outline:2px solid var(--sage); outline-offset:10px; border-radius:44px; }
+  .depth-layer{ position:absolute; width:250px; aspect-ratio:9/19.4; border-radius:40px; background:linear-gradient(160deg,#20241f,#0d0f0e); pointer-events:none; }
+  .depth-layer.d1{ transform:translate(13px,9px) scale(.97); opacity:.32; z-index:0; }
+  .depth-layer.d2{ transform:translate(23px,17px) scale(.94); opacity:.14; z-index:-1; }
+  .appshowcase .pm.main-pm{
+    position:relative; width:250px; z-index:1; cursor:grab; touch-action:pan-y;
+    box-shadow:0 4px 10px -2px rgba(27,46,36,0.22), 0 40px 70px -24px rgba(27,46,36,0.4);
+  }
+  .appshowcase .pm.main-pm:active{ cursor:grabbing; }
+  .appshowcase .pm-screen{ overflow:hidden; }
+  .ashot-track{ position:relative; width:100%; height:100%; }
+  .ashot{ position:absolute; inset:0; opacity:0; transform:translateX(16px); transition:opacity .3s ease, transform .3s ease; pointer-events:none; overflow-y:auto; -ms-overflow-style:none; scrollbar-width:none; }
+  .ashot::-webkit-scrollbar{ display:none; }
+  .ashot.active{ opacity:1; transform:translateX(0); pointer-events:auto; z-index:2; }
+  @media (prefers-reduced-motion: reduce){ .ashot{ transition:opacity .15s linear !important; transform:none !important; } }
+
+  .asnav{ position:absolute; top:50%; transform:translateY(-50%); width:46px; height:46px; border-radius:50%; background:rgba(251,249,245,0.85); border:1px solid var(--sage); display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 8px 20px -6px rgba(27,46,36,0.25); transition:transform .15s ease, background .15s ease; z-index:5; }
+  .asnav:hover{ background:var(--white); transform:translateY(-50%) scale(1.06); }
+  .asnav:active{ transform:translateY(-50%) scale(.96); }
+  .asnav svg{ width:20px; height:20px; stroke:var(--forest); }
+  .asprev{ left:-23px; } .asnext{ right:-23px; }
+  @media (max-width:520px){ .asprev{ left:-14px; } .asnext{ right:-14px; } }
+
+  .asrotate{ display:inline-flex; align-items:center; gap:9px; background:none; border:1px solid var(--line-2); color:var(--ink-dim); font-size:12.5px; font-weight:600; padding:10px 18px; border-radius:100px; cursor:pointer; transition:background .15s, color .15s; }
+  .asrotate:hover{ background:var(--sage-soft); color:var(--forest); }
+  .asrotate svg{ width:15px; height:15px; transition:transform .3s ease; }
+  .asrotate:hover svg{ transform:rotate(45deg); }
+
+  .aspag{ display:flex; align-items:center; gap:8px; }
+  .asdot{ width:6px; height:6px; border-radius:3px; background:var(--sage-soft2); border:none; padding:0; cursor:pointer; transition:width .25s ease, background .25s ease; }
+  .asdot.on{ width:18px; background:var(--sage); }
+  .asdot:hover{ background:var(--forest); }
+
+  /* mini-UI additions for showcase screens */
+  .ashot .pmtop{ padding:26px 14px 6px; }
+  .foodrow{ display:flex; gap:9px; padding:4px 12px 8px; }
+  .foodrow .fimg{ flex:1; aspect-ratio:1; border-radius:10px; position:relative; overflow:hidden; }
+  .foodrow .fimg::after{ content:""; position:absolute; inset:0; background:radial-gradient(circle at 30% 25%, rgba(255,255,255,0.4), transparent 55%); }
+  .ashot .mealcard{ margin:2px 12px 10px; background:var(--forest); border-radius:14px; padding:14px; }
+  .ashot .mealcard .k{ font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:#c9d4c4; }
+  .ashot .mealcard b{ font-family:var(--serif); font-size:14px; color:var(--cream); display:block; margin-top:4px; font-weight:400; }
+  .ashot .mealcard span{ font-size:9px; color:rgba(251,249,245,0.55); }
+  .teacherrow{ background:var(--white); border-radius:11px; padding:9px 10px; display:flex; align-items:center; gap:9px; box-shadow:0 2px 8px rgba(27,46,36,0.06); }
+  .teacherrow .tav{ width:32px; height:32px; border-radius:50%; flex-shrink:0; }
+  .teacherrow b{ font-size:10.5px; color:var(--forest); display:block; font-weight:700; }
+  .teacherrow span{ font-size:8.5px; color:var(--ink-faint); }
+  .gallerygrid{ padding:6px 12px; display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+  .gallerygrid div{ aspect-ratio:1; border-radius:8px; position:relative; overflow:hidden; }
+  .gallerygrid div::after{ content:""; position:absolute; inset:0; background:radial-gradient(circle at 30% 25%, rgba(255,255,255,0.4), transparent 55%); }
+  .inforow{ display:flex; justify-content:space-between; align-items:center; background:var(--white); border-radius:11px; padding:10px 12px; box-shadow:0 2px 8px rgba(27,46,36,0.06); }
+  .inforow b{ font-size:10px; color:var(--forest); font-weight:700; }
+  .inforow span{ font-size:9.5px; color:var(--ink-faint); }
+  .daychips{ display:flex; gap:6px; padding:0 12px 8px; }
+  .daychips div{ flex:1; text-align:center; padding:7px 0; border-radius:9px; background:var(--white); font-size:8.5px; font-weight:700; color:var(--ink-faint); }
+  .daychips div.on{ background:var(--forest); color:var(--cream); }
+
+  .audiocard{ margin:4px 12px 10px; border-radius:14px; padding:16px; position:relative; overflow:hidden; background-image:var(--img-pathway-sm); background-size:cover; background-position:center; }
+  .audiocard::before{ content:""; position:absolute; inset:0; background:linear-gradient(160deg, rgba(27,46,36,0.8), rgba(27,46,36,0.58)); }
+  .audiocard > *{ position:relative; z-index:1; }
+  .audiocard .k{ font-size:8.5px; letter-spacing:.1em; text-transform:uppercase; color:#c9d4c4; }
+  .audiocard b{ font-family:var(--serif); font-size:15px; color:#fff; display:block; margin:4px 0 10px; font-weight:400; }
+  .audiocard .prog{ height:3px; border-radius:3px; background:rgba(255,255,255,0.28); overflow:hidden; margin-bottom:10px; }
+  .audiocard .prog i{ display:block; height:100%; width:38%; background:var(--sage); }
+  .audiocard .controls{ display:flex; align-items:center; gap:14px; }
+  .audiocard .controls .play{ width:28px; height:28px; border-radius:50%; background:#fff; color:var(--forest); display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; }
+  .audiocard .controls span{ font-size:9px; color:rgba(255,255,255,0.72); }
+
+  .shopcard{ margin:4px 12px 10px; background:var(--white); border-radius:14px; overflow:hidden; box-shadow:0 3px 12px rgba(27,46,36,0.07); }
+  .shopcard .simg{ height:108px; background-image:var(--img-coconut-sm); background-size:cover; background-position:center 35%; }
+  .shopcard .sinfo{ padding:11px 13px; }
+  .shopcard .sinfo .k{ font-size:8px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
+  .shopcard .sinfo b{ font-size:12px; color:var(--forest); display:block; margin:3px 0; }
+  .shopcard .sinfo span{ font-size:10.5px; color:var(--sage); font-weight:700; }
+
+  .communitycard{ margin:4px 12px 8px; border-radius:14px; overflow:hidden; position:relative; height:116px; background-image:var(--img-buddha-offering-sm); background-size:cover; background-position:center; }
+  .communitycard::before{ content:""; position:absolute; inset:0; background:linear-gradient(0deg, rgba(27,46,36,0.75), transparent 60%); }
+  .communitycard .cap{ position:absolute; left:12px; bottom:10px; z-index:1; }
+  .communitycard .cap b{ font-size:11.5px; color:#fff; display:block; }
+  .communitycard .cap span{ font-size:9px; color:rgba(255,255,255,0.78); }
+
+  .resourcegrid{ padding:4px 12px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .resourcecard{ background:var(--white); border-radius:12px; overflow:hidden; box-shadow:0 2px 8px rgba(27,46,36,0.06); }
+  .resourcecard .rimg{ height:50px; background-size:cover; background-position:center; }
+  .resourcecard b{ font-size:9.5px; color:var(--forest); display:block; padding:7px 8px; font-weight:700; }
 
   /* ================= PRICING ================= */
   .pricing-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:26px; align-items:stretch; }
@@ -208,6 +342,7 @@
   .prod-img{ aspect-ratio:1/1.1; border-radius:20px; position:relative; overflow:hidden; margin-bottom:18px; }
   .prod-img::after{ content:""; position:absolute; inset:0; background:radial-gradient(circle at 30% 25%, rgba(255,255,255,0.5), transparent 55%); }
   .prod-img .glyph{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:.55; }
+  .prod-cat{ font-size:10.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--sage); margin-bottom:6px; display:block; }
   .prod-name{ font-family:var(--serif); font-size:18px; color:var(--forest); }
   .prod-price{ font-size:13px; color:var(--ink-faint); margin:4px 0 14px; }
   .prod .showcase-link{ font-size:12px; }
@@ -282,6 +417,7 @@
   <div class="hero-bg">
     <div class="blob b1"></div>
     <div class="blob b2"></div>
+    <div class="lotus-atmos" role="presentation" aria-hidden="true"></div>
   </div>
   <div class="wrap">
     <div class="hero-head">
@@ -297,13 +433,12 @@
       <div class="pm pm-l">
         <div class="island"></div>
         <div class="pm-screen">
-          <div class="pmtop"><div class="d">Today · Day 3</div><h4>Retreat Schedule</h4></div>
-          <div class="pmlist">
-            <div class="pmrow now"><div class="t">07:00</div><div><b>Morning Practice</b><span>Main Pavilion</span></div></div>
-            <div class="pmrow"><div class="t">09:30</div><div><b>Meditation</b><span>Garden Circle</span></div></div>
-            <div class="pmrow"><div class="t">11:00</div><div><b>Vinyasa</b><span>Studio One</span></div></div>
-            <div class="pmrow"><div class="t">17:00</div><div><b>Sound Healing</b><span>Sanctuary</span></div></div>
-            <div class="pmrow"><div class="t">19:00</div><div><b>Dinner</b><span>Open Kitchen</span></div></div>
+          <div class="pmtop"><div class="d">Discover</div><h4>Explore</h4></div>
+          <div class="pmimgcards">
+            <div class="pmimgcard"><div class="thumb" style="background-image:var(--img-pathway-sm)"></div><b>Facilities</b></div>
+            <div class="pmimgcard"><div class="thumb" style="background-image:var(--img-buddha-ferns-sm)"></div><b>Practice</b></div>
+            <div class="pmimgcard"><div class="thumb" style="background-image:var(--img-ganesha-sm)"></div><b>Sacred Spaces</b></div>
+            <div class="pmimgcard"><div class="thumb" style="background:var(--sage-soft2)"></div><b>Teachers</b></div>
           </div>
         </div>
       </div>
@@ -311,7 +446,7 @@
       <div class="pm pm-c">
         <div class="island"></div>
         <div class="pm-screen">
-          <div class="pmtop"><div class="d">Good Morning</div><h4>Welcome back, Maya</h4></div>
+          <div class="pmtop lotus-top" role="img" aria-label="Soft lotus flower atmosphere"><div class="d">Good Morning</div><h4>Welcome back, Maya</h4></div>
           <div class="pmcard">
             <div class="k">Happening Now</div>
             <b>Morning Practice</b>
@@ -353,9 +488,13 @@
     <div class="about-copy">
       <div class="kicker">About Me</div>
       <div class="statement">Bridging consciousness &amp; technology</div>
-      <p>RBR exists to close the gap between the depth of a retreat experience and the clarity of modern technology. Guests shouldn't need a printed schedule taped to a dining hall door, and facilitators shouldn't need to answer the same question five times a day.</p>
-      <p>Having spent time around retreat centers, yoga schools and healing spaces, I've learned what actually matters on the ground — a schedule people trust, a way to reach their teacher, a library they keep returning to long after they've gone home.</p>
-      <p>I build digital experiences that support that rhythm instead of competing with it: simple enough to disappear into the background, beautiful enough to feel like part of the space itself.</p>
+      <p>For the past three years, I've been managing a retreat center in Thailand, while also producing retreats of my own and working closely with facilitators, teachers, and groups from around the world.</p>
+      <p>That experience showed me a gap that kept appearing again and again. Retreats are deeply human experiences, but much of what surrounds them, including schedules, updates, resources, communication, and guest information, is still often fragmented or unnecessarily complicated.</p>
+      <p>Guests shouldn't need to search for a printed schedule or ask the same practical questions throughout the day. They should be able to stay present, connect more deeply with their teacher or facilitator, and access everything that supports their journey without technology getting in the way.</p>
+      <p>At the same time, facilitators shouldn't have to spend their energy repeatedly sharing information, managing scattered resources, or answering questions that could be handled beautifully and instantly.</p>
+      <p class="about-emphasis">That's why I created RBR.</p>
+      <p>I build digital experiences that bridge those two worlds. Guests get a simple, intuitive way to experience the retreat at its best, while facilitators and retreat centers get an effortless way to organize and share everything their participants need.</p>
+      <p>Technology shouldn't compete with the retreat experience. It should quietly support it. Simple enough to disappear into the background, thoughtful enough to make everything easier, and beautifully integrated into the experience itself.</p>
     </div>
   </div>
 </section>
@@ -381,17 +520,111 @@
         <a class="showcase-link" href="#contact">View Demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
       <div class="showcase-visual">
-        <div class="pm">
-          <div class="island"></div>
-          <div class="pm-screen">
-            <div class="pmtop"><div class="d">Good Morning</div><h4>Welcome back, Maya</h4></div>
-            <div class="pmcard"><div class="k">Happening Now</div><b>Morning Practice</b><span>Main Pavilion · 45 min</span></div>
-            <div class="pmgrid">
-              <div class="pmtile"><div class="ic"></div><b>Schedule</b></div>
-              <div class="pmtile"><div class="ic"></div><b>Meals</b></div>
-              <div class="pmtile"><div class="ic"></div><b>Facilities</b></div>
-              <div class="pmtile"><div class="ic"></div><b>Teachers</b></div>
+        <div class="appshowcase" data-appshowcase>
+          <div class="phonestack" tabindex="0" aria-roledescription="carousel" aria-label="The Retreat Companion — app screen previews">
+            <div class="depth-layer d2"></div>
+            <div class="depth-layer d1"></div>
+            <div class="pm main-pm">
+              <div class="island"></div>
+              <div class="pm-screen">
+                <div class="ashot-track">
+
+                  <div class="ashot active" data-i="0" role="group" aria-roledescription="slide" aria-label="Screen 1 of 7: Home">
+                    <div class="pmtop lotus-top" role="img" aria-label="Soft lotus flower atmosphere"><div class="d">Good Morning</div><h4>Welcome back, Maya</h4></div>
+                    <div class="pmcard"><div class="k">Happening Now</div><b>Morning Practice</b><span>Main Pavilion · 45 min</span></div>
+                    <div class="pmgrid">
+                      <div class="pmtile"><div class="ic"></div><b>Schedule</b></div>
+                      <div class="pmtile"><div class="ic"></div><b>Meals</b></div>
+                      <div class="pmtile"><div class="ic"></div><b>Facilities</b></div>
+                      <div class="pmtile"><div class="ic"></div><b>Teachers</b></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="1" role="group" aria-roledescription="slide" aria-label="Screen 2 of 7: Explore">
+                    <div class="pmtop"><div class="d">Discover</div><h4>Explore</h4></div>
+                    <div class="pmimgcards">
+                      <div class="pmimgcard"><div class="thumb" style="background-image:var(--img-pathway-sm)"></div><b>Facilities</b></div>
+                      <div class="pmimgcard"><div class="thumb" style="background-image:var(--img-buddha-ferns-sm)"></div><b>Practice</b></div>
+                      <div class="pmimgcard"><div class="thumb" style="background-image:var(--img-ganesha-sm)"></div><b>Sacred Spaces</b></div>
+                      <div class="pmimgcard"><div class="thumb" style="background:var(--sage-soft2)"></div><b>Teachers</b></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="2" role="group" aria-roledescription="slide" aria-label="Screen 3 of 7: Sound and Breath Vault">
+                    <div class="pmtop"><div class="d">Now Playing</div><h4>Sound &amp; Breath</h4></div>
+                    <div class="audiocard">
+                      <div class="k">Sound Journey</div>
+                      <b>Forest Water Meditation</b>
+                      <div class="prog"><i></i></div>
+                      <div class="controls"><div class="play">▸</div><span>14:02 / 32:00</span></div>
+                    </div>
+                    <div class="pmlist">
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Morning Breathwork</b><span>10 min · Breath</span></div></div>
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Deep Rest</b><span>20 min · Sleep</span></div></div>
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Meditation</b><span>12 min · Guided</span></div></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="3" role="group" aria-roledescription="slide" aria-label="Screen 4 of 7: Wellness Shop">
+                    <div class="pmtop"><div class="d">Wellness Shop</div><h4>For Your Stay</h4></div>
+                    <div class="shopcard">
+                      <div class="simg"></div>
+                      <div class="sinfo"><div class="k">Refreshment</div><b>Fresh Coconut</b><span>Add to room service · ฿90</span></div>
+                    </div>
+                    <div class="pmlist">
+                      <div class="pmrow"><div class="t">☺</div><div><b>Available at Open Kitchen</b><span>Daily, 8:00 to 18:00</span></div></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="4" role="group" aria-roledescription="slide" aria-label="Screen 5 of 7: Community">
+                    <div class="pmtop"><div class="d">Tonight</div><h4>Community</h4></div>
+                    <div class="communitycard"><div class="cap"><b>Full Moon Ceremony</b><span>Beach Sanctuary · 20:30</span></div></div>
+                    <div class="pmlist">
+                      <div class="pmrow"><div class="t">✓</div><div><b>Led by Priya Nathan</b><span>Meditation &amp; sound facilitator</span></div></div>
+                      <div class="pmrow"><div class="t">→</div><div><b>Next: Sunrise Circle</b><span>Tomorrow · 06:30</span></div></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="5" role="group" aria-roledescription="slide" aria-label="Screen 6 of 7: Sacred Resources">
+                    <div class="pmtop"><div class="d">Library</div><h4>Sacred Resources</h4></div>
+                    <div class="resourcegrid">
+                      <div class="resourcecard"><div class="rimg" style="background-image:var(--img-lotus-sm)"></div><b>Meditation Guide</b></div>
+                      <div class="resourcecard"><div class="rimg" style="background-image:var(--img-ganesha-sm)"></div><b>Yoga Philosophy</b></div>
+                      <div class="resourcecard"><div class="rimg" style="background-image:var(--img-buddha-ferns-sm)"></div><b>Journal Prompts</b></div>
+                      <div class="resourcecard"><div class="rimg" style="background:var(--sage-soft2)"></div><b>Integration Notes</b></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="6" role="group" aria-roledescription="slide" aria-label="Screen 7 of 7: Stay and Facilities">
+                    <div class="pmtop"><div class="d">Explore</div><h4>Facilities</h4></div>
+                    <div class="communitycard" style="height:88px; background-image:var(--img-pathway-sm);"></div>
+                    <div class="pmlist">
+                      <div class="inforow"><b>WiFi</b><span>retreat-guest</span></div>
+                      <div class="inforow"><b>Checkout</b><span>11:00 AM</span></div>
+                      <div class="inforow"><b>Laundry</b><span>Front desk · daily</span></div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
             </div>
+            <button type="button" class="asnav asprev" aria-label="Previous screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <button type="button" class="asnav asnext" aria-label="Next screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+
+          <button type="button" class="asrotate" aria-label="Advance to next screen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg>
+            <span class="asrotate-label">Explore App · 1 of 7</span>
+          </button>
+
+          <div class="aspag" role="tablist" aria-label="Go to screen">
+            <button type="button" class="asdot on" data-i="0" aria-label="Go to screen 1" aria-selected="true"></button>
+            <button type="button" class="asdot" data-i="1" aria-label="Go to screen 2" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="2" aria-label="Go to screen 3" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="3" aria-label="Go to screen 4" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="4" aria-label="Go to screen 5" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="5" aria-label="Go to screen 6" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="6" aria-label="Go to screen 7" aria-selected="false"></button>
           </div>
         </div>
       </div>
@@ -565,25 +798,22 @@
 
     <div class="shop-grid">
       <div class="prod">
-        <div class="prod-img" style="background:linear-gradient(160deg,#e7e2d3,var(--sage-soft2));">
-          <div class="glyph"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="1.3"><path d="M12 3c2 3 5 6 5 10a5 5 0 01-10 0c0-4 3-7 5-10z"/></svg></div>
-        </div>
-        <div class="prod-name">Aura Spray</div>
-        <div class="prod-price">$28</div>
-        <a class="showcase-link" href="#">View Item <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-      </div>
-      <div class="prod">
-        <div class="prod-img" style="background:linear-gradient(160deg,#efe9dc,var(--sage-soft));">
-          <div class="glyph"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="1.3"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 3v18M13 8h4M13 12h4"/></svg></div>
-        </div>
-        <div class="prod-name">Journal Kit</div>
+        <div class="prod-img" style="background-image:var(--img-buddha-offering); background-size:cover; background-position:center;"></div>
+        <span class="prod-cat">Ritual &amp; Integration</span>
+        <div class="prod-name">Integration Journal Kit</div>
         <div class="prod-price">$34</div>
         <a class="showcase-link" href="#">View Item <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
       <div class="prod">
-        <div class="prod-img" style="background:linear-gradient(160deg,#e2ddcd,var(--sage-soft2));">
-          <div class="glyph"><svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="var(--forest)" stroke-width="1.3"><ellipse cx="12" cy="16" rx="9" ry="5"/><path d="M3 16c0-6 4-11 9-11s9 5 9 11"/></svg></div>
-        </div>
+        <div class="prod-img" style="background-image:var(--img-lotus); background-size:cover; background-position:center 35%;"></div>
+        <span class="prod-cat">Space &amp; Atmosphere</span>
+        <div class="prod-name">Sacred Space Spray</div>
+        <div class="prod-price">$28</div>
+        <a class="showcase-link" href="#">View Item <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <div class="prod">
+        <div class="prod-img" style="background-image:var(--img-ganesha); background-size:cover; background-position:center 30%;"></div>
+        <span class="prod-cat">Practice &amp; Seat</span>
         <div class="prod-name">Meditation Cushion</div>
         <div class="prod-price">$68</div>
         <a class="showcase-link" href="#">View Item <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
@@ -656,6 +886,136 @@
   burger.addEventListener('click', openMenu);
   mclose.addEventListener('click', closeMenu);
   menu.querySelectorAll('a').forEach(function(a){ a.addEventListener('click', closeMenu); });
+})();
+</script>
+
+<script>
+/* AppShowcase — reusable interactive N-screen phone carousel.
+   Auto-wires any [data-appshowcase] found on the page. */
+(function(){
+  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function initShowcase(root){
+    var shots = Array.prototype.slice.call(root.querySelectorAll('.ashot'));
+    var dots = Array.prototype.slice.call(root.querySelectorAll('.asdot'));
+    var total = shots.length;
+    if (!total) return;
+    var stack = root.querySelector('.phonestack');
+    var prevBtn = root.querySelector('.asprev');
+    var nextBtn = root.querySelector('.asnext');
+    var rotateBtn = root.querySelector('.asrotate');
+    var rotateLabel = root.querySelector('.asrotate-label');
+    var current = 0;
+    var autoplayTimer = null;
+
+    function render(){
+      shots.forEach(function(s, i){ s.classList.toggle('active', i === current); });
+      dots.forEach(function(d, i){
+        d.classList.toggle('on', i === current);
+        d.setAttribute('aria-selected', i === current ? 'true' : 'false');
+      });
+      if (rotateLabel) rotateLabel.textContent = 'Explore App · ' + (current + 1) + ' of ' + total;
+    }
+
+    function goTo(index, direction){
+      index = ((index % total) + total) % total;
+      if (index === current) return;
+      var dir = direction || (index === (current + 1) % total ? 'next' : 'prev');
+      var oldEl = shots[current];
+      var newEl = shots[index];
+
+      if (reduceMotion){
+        oldEl.classList.remove('active');
+        newEl.classList.add('active');
+      } else {
+        var enterFrom = dir === 'next' ? 16 : -16;
+        var exitTo = dir === 'next' ? -16 : 16;
+        newEl.style.transition = 'none';
+        newEl.style.transform = 'translateX(' + enterFrom + 'px)';
+        newEl.style.opacity = '0';
+        newEl.getBoundingClientRect();
+        newEl.style.transition = '';
+        oldEl.classList.remove('active');
+        oldEl.style.transform = 'translateX(' + exitTo + 'px)';
+        oldEl.style.opacity = '0';
+        newEl.classList.add('active');
+        newEl.style.transform = 'translateX(0)';
+        newEl.style.opacity = '1';
+      }
+      current = index;
+      dots.forEach(function(d, i){
+        d.classList.toggle('on', i === current);
+        d.setAttribute('aria-selected', i === current ? 'true' : 'false');
+      });
+      if (rotateLabel) rotateLabel.textContent = 'Explore App · ' + (current + 1) + ' of ' + total;
+    }
+
+    function manualGoTo(index, direction){
+      goTo(index, direction);
+      resetAutoplay();
+    }
+
+    if (prevBtn) prevBtn.addEventListener('click', function(){ manualGoTo(current - 1, 'prev'); });
+    if (nextBtn) nextBtn.addEventListener('click', function(){ manualGoTo(current + 1, 'next'); });
+    if (rotateBtn) rotateBtn.addEventListener('click', function(){ manualGoTo(current + 1, 'next'); });
+    dots.forEach(function(d){
+      d.addEventListener('click', function(){
+        var i = parseInt(d.getAttribute('data-i'), 10);
+        manualGoTo(i, i > current ? 'next' : 'prev');
+      });
+    });
+
+    if (stack){
+      stack.addEventListener('keydown', function(e){
+        if (e.key === 'ArrowLeft'){ e.preventDefault(); manualGoTo(current - 1, 'prev'); }
+        else if (e.key === 'ArrowRight'){ e.preventDefault(); manualGoTo(current + 1, 'next'); }
+      });
+
+      var dragging = false, startX = 0, startY = 0, dx = 0, dy = 0;
+      stack.addEventListener('pointerdown', function(e){
+        if (e.target.closest('.asnav')) return;
+        dragging = true; startX = e.clientX; startY = e.clientY; dx = 0; dy = 0;
+      });
+      stack.addEventListener('pointermove', function(e){
+        if (!dragging) return;
+        dx = e.clientX - startX; dy = e.clientY - startY;
+      });
+      function endDrag(){
+        if (!dragging) return;
+        dragging = false;
+        if (Math.abs(dx) > 44 && Math.abs(dx) > Math.abs(dy) * 1.4){
+          if (dx < 0) manualGoTo(current + 1, 'next');
+          else manualGoTo(current - 1, 'prev');
+        }
+        dx = 0; dy = 0;
+      }
+      stack.addEventListener('pointerup', endDrag);
+      stack.addEventListener('pointercancel', endDrag);
+    }
+
+    function startAutoplay(){
+      if (reduceMotion || total < 2) return;
+      stopAutoplay();
+      autoplayTimer = setInterval(function(){
+        goTo(current + 1, 'next');
+      }, 6000);
+    }
+    function stopAutoplay(){
+      if (autoplayTimer){ clearInterval(autoplayTimer); autoplayTimer = null; }
+    }
+    function resetAutoplay(){ if (autoplayTimer) startAutoplay(); }
+
+    root.addEventListener('mouseenter', stopAutoplay);
+    root.addEventListener('mouseleave', startAutoplay);
+    document.addEventListener('visibilitychange', function(){
+      if (document.hidden) stopAutoplay(); else startAutoplay();
+    });
+
+    render();
+    startAutoplay();
+  }
+
+  document.querySelectorAll('[data-appshowcase]').forEach(initShowcase);
 })();
 </script>
 
