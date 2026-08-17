@@ -198,11 +198,19 @@
   .about-copy p.about-emphasis{ color:var(--forest); font-weight:700; margin:30px 0; }
 
   /* ================= PORTFOLIO ================= */
-  .showcase-row{ display:grid; grid-template-columns:.9fr 1.1fr; gap:70px; align-items:center; padding:70px 0; border-top:1px solid var(--line); }
+  /* Two independent grid regions: info column never shares vertical space with the
+     device column, so the device (whatever its content height) can never overlap text. */
+  .showcase-row{
+    display:grid; grid-template-columns:.9fr 1.1fr; grid-template-areas:"info device";
+    gap:70px; align-items:start; padding:70px 0; border-top:1px solid var(--line);
+  }
   .showcase-row:first-of-type{ border-top:none; }
-  .showcase-row.rev{ direction:rtl; }
-  .showcase-row.rev > *{ direction:ltr; }
-  @media (max-width:900px){ .showcase-row, .showcase-row.rev{ grid-template-columns:1fr; direction:ltr; gap:36px; padding:52px 0; } }
+  .showcase-row.rev{ grid-template-areas:"device info"; grid-template-columns:1.1fr .9fr; }
+  .showcase-txt{ grid-area:info; min-width:0; }
+  .showcase-visual{ grid-area:device; min-width:0; }
+  @media (max-width:900px){
+    .showcase-row, .showcase-row.rev{ grid-template-columns:1fr; grid-template-areas:"info" "device"; gap:40px; padding:52px 0; }
+  }
   .showcase-txt .tag{ display:inline-block; font-size:10.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--forest); background:var(--sage-soft); padding:7px 14px; border-radius:100px; margin-bottom:20px; }
   .showcase-txt h3{ font-family:var(--serif); font-size:clamp(24px,2.6vw,32px); font-weight:400; color:var(--forest); margin-bottom:16px; line-height:1.25; }
   .showcase-txt p{ color:var(--ink-dim); font-size:15px; line-height:1.7; margin-bottom:16px; max-width:440px; }
@@ -212,7 +220,9 @@
   .showcase-link{ display:inline-flex; align-items:center; gap:7px; font-size:13px; font-weight:700; letter-spacing:.03em; color:var(--forest); }
   .showcase-link svg{ width:14px; height:14px; transition:transform .18s; }
   .showcase-row:hover .showcase-link svg{ transform:translateX(3px); }
-  .showcase-visual{ display:flex; justify-content:center; position:relative; height:460px; align-items:center; }
+  /* device column auto-sizes to its content (phone + controls + pagination) —
+     no fixed height, so nothing can spill out of this grid area. */
+  .showcase-visual{ display:flex; justify-content:center; align-items:flex-start; position:relative; width:100%; padding-top:8px; }
   .showcase-visual .pm{ position:relative; left:auto; top:auto; transform:none; width:230px; animation:fadeUp .6s ease backwards; transition:transform .3s ease; }
   .showcase-row:hover .showcase-visual .pm{ transform:translateY(-6px); }
 
@@ -305,7 +315,117 @@
   .resourcecard .rimg{ height:50px; background-size:cover; background-position:center; }
   .resourcecard b{ font-size:9.5px; color:var(--forest); display:block; padding:7px 8px; font-weight:700; }
 
-  /* ================= PRICING ================= */
+  /* ---- Schedule: day strip + timeline with live indicator ---- */
+  .pmdays{ display:flex; gap:5px; padding:0 12px 8px; }
+  .pmdays div{ flex:1; text-align:center; padding:7px 2px; border-radius:9px; background:var(--white); font-size:8px; font-weight:700; color:var(--ink-faint); line-height:1.3; }
+  .pmdays div b{ display:block; font-size:11px; margin-top:1px; }
+  .pmdays div.on{ background:var(--forest); color:var(--cream); }
+  .timeline{ padding:2px 12px; display:flex; flex-direction:column; gap:8px; }
+  .tlrow{ display:flex; gap:9px; }
+  .tlrow .tltime{ width:34px; flex-shrink:0; font-size:9px; font-weight:700; color:var(--ink-faint); padding-top:9px; }
+  .tlrow .tlbody{ flex:1; background:var(--white); border-radius:10px; padding:8px 10px; box-shadow:0 2px 8px rgba(27,46,36,0.05); }
+  .tlrow .tlbody b{ font-size:10.5px; color:var(--forest); display:block; font-weight:700; }
+  .tlrow .tlbody span{ font-size:8.5px; color:var(--ink-faint); }
+  .tlrow.live .tlbody{ background:var(--forest); }
+  .tlrow.live .tlbody b{ color:var(--cream); }
+  .tlrow.live .tlbody span{ color:rgba(251,249,245,0.65); }
+  .livepill{ display:inline-flex; align-items:center; gap:4px; font-size:7px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:#e0937c; margin-bottom:3px; }
+  .livepill i{ width:5px; height:5px; border-radius:50%; background:#e0937c; display:block; }
+
+  /* ---- Teacher list + detail profile ---- */
+  .teacherprofile{ margin:2px 12px 10px; background:var(--white); border-radius:16px; overflow:hidden; box-shadow:0 3px 12px rgba(27,46,36,0.07); }
+  .teacherprofile .tpimg{ height:96px; background-size:cover; background-position:center; }
+  .teacherprofile .tpbody{ padding:11px 13px 13px; }
+  .teacherprofile .tpbody .role{ font-size:8.5px; color:var(--sage); font-weight:800; text-transform:uppercase; letter-spacing:.05em; }
+  .teacherprofile .tpbody b{ font-family:var(--serif); font-size:15px; color:var(--forest); display:block; margin:3px 0 7px; font-weight:400; }
+  .teacherprofile .tptags{ display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px; }
+  .teacherprofile .tptags span{ font-size:7.5px; padding:3px 7px; border-radius:20px; background:var(--sage-soft); color:var(--forest); font-weight:700; }
+  .teacherprofile .tpbody p{ font-size:9px; color:var(--ink-dim); line-height:1.55; margin-bottom:8px; }
+  .teacherprofile .tpnext{ font-size:8.5px; color:var(--ink-faint); border-top:1px solid var(--line); padding-top:7px; }
+  .teacherprofile .tpnext b{ color:var(--forest); font-size:9px; }
+
+  /* ---- Meals: dish cards w/ dietary tags ---- */
+  .dishcard{ display:flex; gap:10px; align-items:center; background:var(--white); border-radius:12px; padding:8px; box-shadow:0 2px 8px rgba(27,46,36,0.06); }
+  .dishcard .dimg{ width:42px; height:42px; border-radius:9px; flex-shrink:0; position:relative; overflow:hidden; }
+  .dishcard .dimg::after{ content:""; position:absolute; inset:0; background:radial-gradient(circle at 30% 25%, rgba(255,255,255,0.45), transparent 55%); }
+  .dishcard .dinfo b{ font-size:10px; color:var(--forest); display:block; font-weight:700; }
+  .diettags{ display:flex; gap:4px; margin-top:4px; }
+  .diettags span{ font-size:6.5px; font-weight:800; padding:2px 5px; border-radius:5px; background:var(--sage-soft); color:var(--forest); letter-spacing:.02em; }
+
+  /* ---- Facilities: image cards w/ open/closed status ---- */
+  .facgrid2{ padding:4px 12px; display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+  .faccard{ position:relative; border-radius:12px; overflow:hidden; height:62px; background-size:cover; background-position:center; }
+  .faccard::after{ content:""; position:absolute; inset:0; background:linear-gradient(0deg, rgba(27,46,36,0.78), transparent 68%); }
+  .faccard .fcap{ position:absolute; left:8px; bottom:6px; z-index:1; }
+  .faccard .fcap b{ font-size:9px; color:#fff; display:block; font-weight:700; }
+  .faccard .status{ position:absolute; top:5px; right:5px; z-index:1; font-size:6px; font-weight:800; text-transform:uppercase; padding:2px 6px; border-radius:20px; background:rgba(255,255,255,0.92); color:#4c7a54; }
+  .faccard .status.closed{ color:#a15c4a; }
+
+  /* ---- Full audio player ---- */
+  .playerfull{ margin:2px 12px 10px; border-radius:16px; overflow:hidden; background:var(--white); box-shadow:0 4px 14px rgba(27,46,36,0.08); }
+  .playerfull .art{ height:104px; background-size:cover; background-position:center; position:relative; }
+  .playerfull .art::after{ content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(27,46,36,0.08), rgba(27,46,36,0.55)); }
+  .playerfull .save{ position:absolute; top:9px; right:9px; z-index:1; width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,0.92); display:flex; align-items:center; justify-content:center; font-size:10px; color:var(--forest); }
+  .playerfull .pbody{ padding:11px 13px 13px; }
+  .playerfull .pbody .k{ font-size:7.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
+  .playerfull .pbody b{ font-family:var(--serif); font-size:14px; color:var(--forest); display:block; margin:3px 0 8px; font-weight:400; }
+  .playerfull .prog2{ height:3px; border-radius:3px; background:var(--sage-soft); overflow:hidden; margin-bottom:4px; }
+  .playerfull .prog2 i{ display:block; height:100%; width:44%; background:var(--sage); }
+  .playerfull .times{ display:flex; justify-content:space-between; font-size:7.5px; color:var(--ink-faint); margin-bottom:10px; }
+  .playerfull .pctrls{ display:flex; align-items:center; justify-content:center; gap:18px; }
+  .playerfull .pctrls .midbtn{ width:32px; height:32px; border-radius:50%; background:var(--forest); color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; flex-shrink:0; }
+  .playerfull .pctrls .sidebtn{ font-size:13px; color:var(--forest); }
+
+  /* ---- Practitioner / Client view label ---- */
+  .viewpill{ display:inline-flex; align-items:center; gap:5px; font-size:7px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:4px 9px; border-radius:20px; margin:32px 0 4px 12px; }
+  .viewpill.practitioner{ background:var(--forest); color:var(--cream); }
+  .viewpill.client{ background:var(--sage-soft2); color:var(--forest); }
+
+  /* ---- Client / progress / milestones ---- */
+  .statrow{ display:grid; grid-template-columns:1fr 1fr; gap:7px; padding:4px 12px; }
+  .statbox{ background:var(--white); border-radius:11px; padding:10px; box-shadow:0 2px 8px rgba(27,46,36,0.06); }
+  .statbox b{ font-size:16px; color:var(--forest); display:block; font-family:var(--serif); font-weight:400; }
+  .statbox span{ font-size:7.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; }
+  .milestone{ display:flex; align-items:center; gap:9px; background:var(--white); border-radius:11px; padding:9px 10px; box-shadow:0 2px 8px rgba(27,46,36,0.06); }
+  .milestone .mdone{ width:18px; height:18px; border-radius:50%; background:var(--sage); color:#fff; display:flex; align-items:center; justify-content:center; font-size:10px; flex-shrink:0; }
+  .milestone b{ font-size:10px; color:var(--forest); font-weight:700; }
+  .notecard{ margin:2px 12px 8px; background:var(--sage-soft); border-radius:12px; padding:11px 12px; }
+  .notecard .k{ font-size:7.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--sage); font-weight:800; }
+  .notecard p{ font-size:9.5px; color:var(--ink-dim); line-height:1.55; margin-top:4px; }
+
+  /* ================= COMPLETE ECOSYSTEM ================= */
+  #ecosystem{ overflow:hidden; }
+  .eco-intro{ text-align:center; max-width:620px; margin:0 auto 64px; }
+  .eco-intro p{ margin-top:16px; color:var(--ink-dim); font-size:16px; line-height:1.7; }
+  .eco-intro .herobtns{ display:flex; justify-content:center; margin-top:30px; }
+
+  /* -- desktop cinematic stage -- */
+  .eco-stage{ position:relative; height:600px; max-width:1180px; margin:0 auto; display:none; }
+  .eco-phone{
+    position:absolute; width:var(--w,170px); top:var(--t,120px); left:var(--l,50%);
+    transform:translateX(-50%) translateY(14px) scale(.95) rotate(var(--rot,0deg));
+    opacity:0; z-index:var(--z,1); transition:opacity .7s ease, transform .7s ease;
+  }
+  .eco-stage.reveal .eco-phone{ opacity:var(--op,1); transform:translateX(-50%) translateY(0) scale(1) rotate(var(--rot,0deg)); }
+  .eco-phone .pm{ width:100%; position:relative; left:auto; top:auto; transform:none; transition:transform .3s ease, box-shadow .3s ease; }
+  .eco-phone:hover{ z-index:9; }
+  .eco-phone:hover .pm{ transform:translateY(-10px); }
+  .eco-phone .eco-tag{
+    position:absolute; left:50%; bottom:-30px; transform:translateX(-50%);
+    font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--ink-faint); white-space:nowrap; opacity:0; transition:opacity .25s ease; pointer-events:none;
+  }
+  .eco-phone:hover .eco-tag{ opacity:1; }
+  @media (prefers-reduced-motion: reduce){
+    .eco-phone{ transition:none; opacity:var(--op,1); transform:translateX(-50%) translateY(0) scale(1) rotate(var(--rot,0deg)); }
+  }
+
+  /* -- mobile swipeable ecosystem deck (reuses .appshowcase system) -- */
+  .eco-mobile-wrap{ display:flex; justify-content:center; }
+  @media (max-width:859px){ .eco-mobile-wrap{ padding:0 8px; } }
+  /* desktop/mobile switch — declared last so it always wins regardless of the
+     unconditional rules above, at any viewport width. */
+  @media (min-width:860px){ .eco-stage{ display:block; } .eco-mobile-wrap{ display:none; } }
   .pricing-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:26px; align-items:stretch; }
   @media (max-width:900px){ .pricing-grid{ grid-template-columns:1fr; max-width:420px; margin:0 auto; } }
   .pcard{ background:var(--white); border-radius:24px; padding:40px 32px; border:1px solid var(--line); display:flex; flex-direction:column; animation:fadeUp .6s ease backwards; }
@@ -529,7 +649,7 @@
               <div class="pm-screen">
                 <div class="ashot-track">
 
-                  <div class="ashot active" data-i="0" role="group" aria-roledescription="slide" aria-label="Screen 1 of 7: Home">
+                  <div id="rc-home" class="ashot active" data-i="0" role="group" aria-roledescription="slide" aria-label="Screen 1 of 7: Home">
                     <div class="pmtop lotus-top" role="img" aria-label="Soft lotus flower atmosphere"><div class="d">Good Morning</div><h4>Welcome back, Maya</h4></div>
                     <div class="pmcard"><div class="k">Happening Now</div><b>Morning Practice</b><span>Main Pavilion · 45 min</span></div>
                     <div class="pmgrid">
@@ -540,68 +660,89 @@
                     </div>
                   </div>
 
-                  <div class="ashot" data-i="1" role="group" aria-roledescription="slide" aria-label="Screen 2 of 7: Explore">
-                    <div class="pmtop"><div class="d">Discover</div><h4>Explore</h4></div>
-                    <div class="pmimgcards">
-                      <div class="pmimgcard"><div class="thumb" style="background-image:var(--img-pathway-sm)"></div><b>Facilities</b></div>
-                      <div class="pmimgcard"><div class="thumb" style="background-image:var(--img-buddha-ferns-sm)"></div><b>Practice</b></div>
-                      <div class="pmimgcard"><div class="thumb" style="background-image:var(--img-ganesha-sm)"></div><b>Sacred Spaces</b></div>
-                      <div class="pmimgcard"><div class="thumb" style="background:var(--sage-soft2)"></div><b>Teachers</b></div>
+                  <div id="rc-schedule" class="ashot" data-i="1" role="group" aria-roledescription="slide" aria-label="Screen 2 of 7: Schedule">
+                    <div class="pmtop"><div class="d">This Week</div><h4>Schedule</h4></div>
+                    <div class="pmdays">
+                      <div>MON<b>10</b></div>
+                      <div class="on">TUE<b>11</b></div>
+                      <div>WED<b>12</b></div>
+                      <div>THU<b>13</b></div>
+                      <div>FRI<b>14</b></div>
+                    </div>
+                    <div class="timeline">
+                      <div class="tlrow"><div class="tltime">08:00</div><div class="tlbody"><b>Morning Practice</b><span>Anya Kessler · Main Pavilion</span></div></div>
+                      <div class="tlrow live"><div class="tltime">09:30</div><div class="tlbody"><div class="livepill"><i></i>Live now</div><b>Breathwork</b><span>Marco Villanueva · Studio One</span></div></div>
+                      <div class="tlrow"><div class="tltime">11:00</div><div class="tlbody"><b>Healing Session</b><span>Priya Nathan · Sanctuary</span></div></div>
+                      <div class="tlrow"><div class="tltime">13:00</div><div class="tlbody"><b>Meditation</b><span>Garden Circle</span></div></div>
+                      <div class="tlrow"><div class="tltime">16:00</div><div class="tlbody"><b>Sound Healing</b><span>Sanctuary</span></div></div>
                     </div>
                   </div>
 
-                  <div class="ashot" data-i="2" role="group" aria-roledescription="slide" aria-label="Screen 3 of 7: Sound and Breath Vault">
-                    <div class="pmtop"><div class="d">Now Playing</div><h4>Sound &amp; Breath</h4></div>
-                    <div class="audiocard">
-                      <div class="k">Sound Journey</div>
-                      <b>Forest Water Meditation</b>
-                      <div class="prog"><i></i></div>
-                      <div class="controls"><div class="play">▸</div><span>14:02 / 32:00</span></div>
+                  <div id="rc-teachers" class="ashot" data-i="2" role="group" aria-roledescription="slide" aria-label="Screen 3 of 7: Teachers">
+                    <div class="pmtop"><div class="d">This Week</div><h4>Teachers</h4></div>
+                    <div class="pmlist" style="padding-bottom:0;">
+                      <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#c9b48e,#8a6a2c)"></div><div><b>Marco Villanueva</b><span>Sound Healing</span></div></div>
+                      <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#c3b3c9,#6d5375)"></div><div><b>Priya Nathan</b><span>Meditation</span></div></div>
                     </div>
+                    <div class="teacherprofile">
+                      <div class="tpimg" style="background:linear-gradient(150deg,#a8c9be,#4f7a6e)"></div>
+                      <div class="tpbody">
+                        <div class="role">Yoga &amp; Breathwork Facilitator</div>
+                        <b>Maya Cohen</b>
+                        <div class="tptags"><span>Vinyasa</span><span>Breathwork</span><span>Meditation</span></div>
+                        <p>Ten years teaching across Asia, blending traditional Hatha with modern breath science.</p>
+                        <div class="tpnext"><b>Next class</b> · Vinyasa, tomorrow 09:30</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div id="rc-meals" class="ashot" data-i="3" role="group" aria-roledescription="slide" aria-label="Screen 4 of 7: Meals">
+                    <div class="pmtop"><div class="d">Today · Vegan Buffet</div><h4>Meals</h4></div>
                     <div class="pmlist">
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Morning Breathwork</b><span>10 min · Breath</span></div></div>
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Deep Rest</b><span>20 min · Sleep</span></div></div>
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Meditation</b><span>12 min · Guided</span></div></div>
+                      <div class="dishcard"><div class="dimg" style="background:linear-gradient(150deg,#e0c78a,#a67c3a)"></div><div class="dinfo"><b>Turmeric Breakfast Bowl</b><div class="diettags"><span>GF</span><span>NF</span></div></div></div>
+                      <div class="dishcard"><div class="dimg" style="background:linear-gradient(150deg,#a8c9be,#4f7a6e)"></div><div class="dinfo"><b>Green Papaya Brunch Salad</b><div class="diettags"><span>GF</span><span>SF</span></div></div></div>
+                      <div class="dishcard"><div class="dimg" style="background:linear-gradient(150deg,#c9b48e,#8a6a2c)"></div><div class="dinfo"><b>Coconut Lentil Dinner</b><div class="diettags"><span>GF</span><span>NF</span><span>SF</span></div></div></div>
                     </div>
+                    <div class="pmcard"><div class="k">Serving Times</div><b>Breakfast · Brunch · Dinner</b><span>7:00 · 11:00 · 18:00</span></div>
                   </div>
 
-                  <div class="ashot" data-i="3" role="group" aria-roledescription="slide" aria-label="Screen 4 of 7: Wellness Shop">
-                    <div class="pmtop"><div class="d">Wellness Shop</div><h4>For Your Stay</h4></div>
-                    <div class="shopcard">
-                      <div class="simg"></div>
-                      <div class="sinfo"><div class="k">Refreshment</div><b>Fresh Coconut</b><span>Add to room service · ฿90</span></div>
-                    </div>
-                    <div class="pmlist">
-                      <div class="pmrow"><div class="t">☺</div><div><b>Available at Open Kitchen</b><span>Daily, 8:00 to 18:00</span></div></div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="4" role="group" aria-roledescription="slide" aria-label="Screen 5 of 7: Community">
-                    <div class="pmtop"><div class="d">Tonight</div><h4>Community</h4></div>
-                    <div class="communitycard"><div class="cap"><b>Full Moon Ceremony</b><span>Beach Sanctuary · 20:30</span></div></div>
-                    <div class="pmlist">
-                      <div class="pmrow"><div class="t">✓</div><div><b>Led by Priya Nathan</b><span>Meditation &amp; sound facilitator</span></div></div>
-                      <div class="pmrow"><div class="t">→</div><div><b>Next: Sunrise Circle</b><span>Tomorrow · 06:30</span></div></div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="5" role="group" aria-roledescription="slide" aria-label="Screen 6 of 7: Sacred Resources">
-                    <div class="pmtop"><div class="d">Library</div><h4>Sacred Resources</h4></div>
-                    <div class="resourcegrid">
-                      <div class="resourcecard"><div class="rimg" style="background-image:var(--img-lotus-sm)"></div><b>Meditation Guide</b></div>
-                      <div class="resourcecard"><div class="rimg" style="background-image:var(--img-ganesha-sm)"></div><b>Yoga Philosophy</b></div>
-                      <div class="resourcecard"><div class="rimg" style="background-image:var(--img-buddha-ferns-sm)"></div><b>Journal Prompts</b></div>
-                      <div class="resourcecard"><div class="rimg" style="background:var(--sage-soft2)"></div><b>Integration Notes</b></div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="6" role="group" aria-roledescription="slide" aria-label="Screen 7 of 7: Stay and Facilities">
+                  <div id="rc-facilities" class="ashot" data-i="4" role="group" aria-roledescription="slide" aria-label="Screen 5 of 7: Facilities">
                     <div class="pmtop"><div class="d">Explore</div><h4>Facilities</h4></div>
-                    <div class="communitycard" style="height:88px; background-image:var(--img-pathway-sm);"></div>
+                    <div class="facgrid2">
+                      <div class="faccard" style="background:linear-gradient(150deg,#cdb18f,#7a5c3a)"><div class="status">Open</div><div class="fcap"><b>Herbal Sauna</b></div></div>
+                      <div class="faccard" style="background:linear-gradient(150deg,#9cc2c4,#3d6b6d)"><div class="status">Open</div><div class="fcap"><b>Cold Plunge</b></div></div>
+                      <div class="faccard" style="background:linear-gradient(150deg,#a8c9be,#4f7a6e)"><div class="status">Open</div><div class="fcap"><b>Yoga Shala</b></div></div>
+                      <div class="faccard" style="background-image:var(--img-pathway-sm)"><div class="status closed">Closed</div><div class="fcap"><b>Nature Trail</b></div></div>
+                    </div>
+                    <div class="pmcard"><div class="k">Restaurant</div><b>Open Kitchen</b><span>08:00 — 21:00 · Poolside</span></div>
+                  </div>
+
+                  <div id="rc-resources" class="ashot" data-i="5" role="group" aria-roledescription="slide" aria-label="Screen 6 of 7: Audio and Resources">
+                    <div class="pmtop"><div class="d">Library</div><h4>Resources</h4></div>
+                    <div class="playerfull">
+                      <div class="art" style="background-image:var(--img-lotus-sm)"><div class="save">♡</div></div>
+                      <div class="pbody">
+                        <div class="k">Meditation · Priya Nathan</div>
+                        <b>Morning Grounding</b>
+                        <div class="prog2"><i></i></div>
+                        <div class="times"><span>5:12</span><span>12:00</span></div>
+                        <div class="pctrls"><div class="sidebtn">⏮</div><div class="midbtn">▸</div><div class="sidebtn">⏭</div></div>
+                      </div>
+                    </div>
+                    <div class="pmlist">
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Box Breathwork</b><span>8 min · Breath</span></div></div>
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Ocean Sound Journey</b><span>34 min · Sound</span></div></div>
+                    </div>
+                  </div>
+
+                  <div id="rc-info" class="ashot" data-i="6" role="group" aria-roledescription="slide" aria-label="Screen 7 of 7: Information">
+                    <div class="pmtop"><div class="d">Useful</div><h4>Information</h4></div>
                     <div class="pmlist">
                       <div class="inforow"><b>WiFi</b><span>retreat-guest</span></div>
-                      <div class="inforow"><b>Checkout</b><span>11:00 AM</span></div>
-                      <div class="inforow"><b>Laundry</b><span>Front desk · daily</span></div>
+                      <div class="inforow"><b>Check-in / out</b><span>2 PM / 11 AM</span></div>
+                      <div class="inforow"><b>Reception</b><span>Ext. 0</span></div>
+                      <div class="inforow"><b>Transportation</b><span>Airport desk</span></div>
+                      <div class="inforow"><b>Emergency</b><span>24hr on call</span></div>
                     </div>
                   </div>
 
@@ -643,16 +784,119 @@
         <a class="showcase-link" href="#contact">View Project <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
       <div class="showcase-visual">
-        <div class="pm">
-          <div class="island"></div>
-          <div class="pm-screen">
-            <div class="pmtop"><div class="d">Today</div><h4>Your Clients</h4></div>
-            <div class="pmlist">
-              <div class="pmrow now"><div class="t">09:00</div><div><b>Elena R.</b><span>Session · Confirmed</span></div></div>
-              <div class="pmrow"><div class="t">11:30</div><div><b>Marcus T.</b><span>Program check-in</span></div></div>
-              <div class="pmrow"><div class="t">14:00</div><div><b>Sofia L.</b><span>New client</span></div></div>
-              <div class="pmrow"><div class="t">16:30</div><div><b>Jonah P.</b><span>Follow-up</span></div></div>
+        <div class="appshowcase" data-appshowcase>
+          <div class="phonestack" tabindex="0" aria-roledescription="carousel" aria-label="Healer's Client Hub — app screen previews">
+            <div class="depth-layer d2"></div>
+            <div class="depth-layer d1"></div>
+            <div class="pm main-pm">
+              <div class="island"></div>
+              <div class="pm-screen">
+                <div class="ashot-track">
+
+                  <div class="ashot active" data-i="0" role="group" aria-roledescription="slide" aria-label="Screen 1 of 7: Practitioner Dashboard">
+                    <div class="viewpill practitioner">Practitioner View</div>
+                    <div class="pmtop" style="padding-top:2px;"><div class="d">Good Morning</div><h4>Today's Sessions</h4></div>
+                    <div class="statrow">
+                      <div class="statbox"><b>5</b><span>Sessions Today</span></div>
+                      <div class="statbox"><b>2</b><span>New Messages</span></div>
+                    </div>
+                    <div class="pmlist">
+                      <div class="pmrow now"><div class="t">09:00</div><div><b>Elena R.</b><span>Session · Confirmed</span></div></div>
+                      <div class="pmrow"><div class="t">11:30</div><div><b>Marcus T.</b><span>Program check-in</span></div></div>
+                      <div class="pmrow"><div class="t">14:00</div><div><b>Sofia L.</b><span>New client</span></div></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="1" role="group" aria-roledescription="slide" aria-label="Screen 2 of 7: Client List">
+                    <div class="viewpill practitioner">Practitioner View</div>
+                    <div class="pmtop" style="padding-top:2px;"><div class="d">12 Active</div><h4>Your Clients</h4></div>
+                    <div class="pmlist">
+                      <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#a8c9be,#4f7a6e)"></div><div><b>Elena R.</b><span>Next: Today, 09:00</span></div></div>
+                      <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#c9b48e,#8a6a2c)"></div><div><b>Marcus T.</b><span>Next: Today, 11:30</span></div></div>
+                      <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#c3b3c9,#6d5375)"></div><div><b>Sofia L.</b><span>New client</span></div></div>
+                      <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#9cc2c4,#3d6b6d)"></div><div><b>Jonah P.</b><span>Next: Fri, 16:30</span></div></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="2" role="group" aria-roledescription="slide" aria-label="Screen 3 of 7: Client Profile">
+                    <div class="viewpill practitioner">Practitioner View</div>
+                    <div class="pmtop" style="padding-top:2px;"><div class="d">Client Profile</div><h4>Elena R.</h4></div>
+                    <div class="statrow">
+                      <div class="statbox"><b>8</b><span>Sessions Done</span></div>
+                      <div class="statbox"><b>Today</b><span>Next Session</span></div>
+                    </div>
+                    <div class="notecard"><div class="k">Private Note</div><p>Steady progress with breathwork practice. Focus on evening routine next session.</p></div>
+                    <div class="pmlist" style="padding-top:0;">
+                      <div class="inforow"><b>Assigned Practice</b><span>Evening Wind-down</span></div>
+                      <div class="inforow"><b>Resources Shared</b><span>3 items</span></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="3" role="group" aria-roledescription="slide" aria-label="Screen 4 of 7: Session Notes">
+                    <div class="viewpill practitioner">Practitioner View</div>
+                    <div class="pmtop" style="padding-top:2px;"><div class="d">Today · 09:00</div><h4>Session Notes</h4></div>
+                    <div class="notecard"><div class="k">Elena R.</div><p>Discussed breathwork routine and reduced anxiety before sleep. Good energy today.</p></div>
+                    <div class="pmlist">
+                      <div class="inforow"><b>Follow-up Task</b><span>Send evening playlist</span></div>
+                      <div class="inforow"><b>Assign Resource</b><span>Deep Rest audio</span></div>
+                      <div class="inforow"><b>Next Session</b><span>Fri, 10:00</span></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="4" role="group" aria-roledescription="slide" aria-label="Screen 5 of 7: Client Home">
+                    <div class="viewpill client">Client View</div>
+                    <div class="pmtop" style="padding-top:2px;"><div class="d">Welcome back</div><h4>Elena</h4></div>
+                    <div class="pmcard"><div class="k">Next Session</div><b>With Maya Cohen</b><span>Friday · 10:00</span></div>
+                    <div class="notecard"><div class="k">Message from Maya</div><p>"Try the evening breathwork tonight, it really helps before sleep."</p></div>
+                    <div class="pmgrid">
+                      <div class="pmtile"><div class="ic"></div><b>My Practice</b></div>
+                      <div class="pmtile"><div class="ic"></div><b>Resources</b></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="5" role="group" aria-roledescription="slide" aria-label="Screen 6 of 7: My Journey">
+                    <div class="viewpill client">Client View</div>
+                    <div class="pmtop" style="padding-top:2px;"><div class="d">Your Progress</div><h4>My Journey</h4></div>
+                    <div class="statrow">
+                      <div class="statbox"><b>8</b><span>Sessions</span></div>
+                      <div class="statbox"><b>3</b><span>Milestones</span></div>
+                    </div>
+                    <div class="pmlist">
+                      <div class="milestone"><div class="mdone">✓</div><b>Completed 30 Days of Practice</b></div>
+                      <div class="milestone"><div class="mdone">✓</div><b>First Breathwork Session</b></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="6" role="group" aria-roledescription="slide" aria-label="Screen 7 of 7: Resources and Contact">
+                    <div class="viewpill client">Client View</div>
+                    <div class="pmtop" style="padding-top:2px;"><div class="d">Between Sessions</div><h4>Resources</h4></div>
+                    <div class="pmlist">
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Evening Wind-down</b><span>15 min · Assigned</span></div></div>
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Box Breathwork</b><span>8 min · Practice</span></div></div>
+                    </div>
+                    <div class="pmcard"><div class="k">Need to talk?</div><b>Message Maya</b><span>Usually replies within a day</span></div>
+                  </div>
+
+                </div>
+              </div>
             </div>
+            <button type="button" class="asnav asprev" aria-label="Previous screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <button type="button" class="asnav asnext" aria-label="Next screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+
+          <button type="button" class="asrotate" aria-label="Advance to next screen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg>
+            <span class="asrotate-label">Explore App · 1 of 7</span>
+          </button>
+
+          <div class="aspag" role="tablist" aria-label="Go to screen">
+            <button type="button" class="asdot on" data-i="0" aria-label="Go to screen 1" aria-selected="true"></button>
+            <button type="button" class="asdot" data-i="1" aria-label="Go to screen 2" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="2" aria-label="Go to screen 3" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="3" aria-label="Go to screen 4" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="4" aria-label="Go to screen 5" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="5" aria-label="Go to screen 6" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="6" aria-label="Go to screen 7" aria-selected="false"></button>
           </div>
         </div>
       </div>
@@ -671,21 +915,189 @@
         <a class="showcase-link" href="#contact">Explore App <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
       </div>
       <div class="showcase-visual">
-        <div class="pm">
-          <div class="island"></div>
-          <div class="pm-screen">
-            <div class="pmtop"><div class="d">Now Playing</div><h4>Sound Journey</h4></div>
-            <div class="pmcard">
-              <div class="k">Sound &amp; Breath</div>
-              <b>Ocean Breath Journey</b>
-              <span>18:24 / 34:00</span>
+        <div class="appshowcase" data-appshowcase>
+          <div class="phonestack" tabindex="0" aria-roledescription="carousel" aria-label="Sound and Breath Vault — app screen previews">
+            <div class="depth-layer d2"></div>
+            <div class="depth-layer d1"></div>
+            <div class="pm main-pm">
+              <div class="island"></div>
+              <div class="pm-screen">
+                <div class="ashot-track">
+
+                  <div class="ashot active" data-i="0" role="group" aria-roledescription="slide" aria-label="Screen 1 of 6: Library Home">
+                    <div class="pmtop lotus-top" role="img" aria-label="Soft lotus flower atmosphere"><div class="d">Continue Listening</div><h4>Sound &amp; Breath</h4></div>
+                    <div class="pmgrid">
+                      <div class="pmtile"><div class="ic"></div><b>Meditations</b></div>
+                      <div class="pmtile"><div class="ic"></div><b>Breathwork</b></div>
+                      <div class="pmtile"><div class="ic"></div><b>Sound Journeys</b></div>
+                      <div class="pmtile"><div class="ic"></div><b>Integration</b></div>
+                    </div>
+                    <div class="pmcard"><div class="k">Featured Practice</div><b>Ocean Breath Journey</b><span>34 min · Sound</span></div>
+                  </div>
+
+                  <div class="ashot" data-i="1" role="group" aria-roledescription="slide" aria-label="Screen 2 of 6: Meditations">
+                    <div class="pmtop"><div class="d">Library</div><h4>Meditations</h4></div>
+                    <div class="pmlist">
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Morning Grounding</b><span>Priya Nathan · 12 min</span></div></div>
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Loving Kindness</b><span>Maya Cohen · 15 min</span></div></div>
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Body Scan</b><span>Priya Nathan · 18 min</span></div></div>
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Evening Wind-down</b><span>Maya Cohen · 15 min</span></div></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="2" role="group" aria-roledescription="slide" aria-label="Screen 3 of 6: Breathwork">
+                    <div class="pmtop"><div class="d">Library</div><h4>Breathwork</h4></div>
+                    <div class="pmlist">
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Morning Energy</b><span>Marco Villanueva · 8 min</span></div></div>
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Grounding Breath</b><span>Marco Villanueva · 10 min</span></div></div>
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Deep Release</b><span>Marco Villanueva · 14 min</span></div></div>
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Evening Reset</b><span>Marco Villanueva · 9 min</span></div></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="3" role="group" aria-roledescription="slide" aria-label="Screen 4 of 6: Sound Journeys">
+                    <div class="pmtop"><div class="d">Immersive</div><h4>Sound Journeys</h4></div>
+                    <div class="communitycard" style="height:96px; background-image:var(--img-pathway-sm);"><div class="cap"><b>Ocean Breath Journey</b><span>Marco Villanueva · 34 min</span></div></div>
+                    <div class="pmlist">
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Forest Water Meditation</b><span>28 min · Sound</span></div></div>
+                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Crystal Bowl Ceremony</b><span>40 min · Sound</span></div></div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="4" role="group" aria-roledescription="slide" aria-label="Screen 5 of 6: Audio Player">
+                    <div class="pmtop"><div class="d">Now Playing</div><h4>Player</h4></div>
+                    <div class="playerfull">
+                      <div class="art" style="background-image:var(--img-lotus-sm)"><div class="save">♡</div></div>
+                      <div class="pbody">
+                        <div class="k">Sound Journey · Marco Villanueva</div>
+                        <b>Ocean Breath Journey</b>
+                        <div class="prog2"><i></i></div>
+                        <div class="times"><span>18:24</span><span>34:00</span></div>
+                        <div class="pctrls"><div class="sidebtn">⏮</div><div class="midbtn">▸</div><div class="sidebtn">⏭</div></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="ashot" data-i="5" role="group" aria-roledescription="slide" aria-label="Screen 6 of 6: My Practice">
+                    <div class="pmtop"><div class="d">You</div><h4>My Practice</h4></div>
+                    <div class="statrow">
+                      <div class="statbox"><b>24</b><span>Sessions Played</span></div>
+                      <div class="statbox"><b>6</b><span>Favorites</span></div>
+                    </div>
+                    <div class="pmlist">
+                      <div class="pmrow"><div class="pmplay">♡</div><div><b>Evening Wind-down</b><span>Saved · 15 min</span></div></div>
+                      <div class="pmrow"><div class="pmplay">♡</div><div><b>Morning Grounding</b><span>Saved · 12 min</span></div></div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
             </div>
-            <div class="pmlist">
-              <div class="pmrow"><div class="pmplay">▸</div><div><b>Box Breathwork</b><span>8 min · Breath</span></div></div>
-              <div class="pmrow"><div class="pmplay">▸</div><div><b>Morning Meditation</b><span>12 min · Guided</span></div></div>
-              <div class="pmrow"><div class="pmplay">▸</div><div><b>Evening Wind-down</b><span>15 min · Sleep</span></div></div>
+            <button type="button" class="asnav asprev" aria-label="Previous screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <button type="button" class="asnav asnext" aria-label="Next screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></button>
+          </div>
+
+          <button type="button" class="asrotate" aria-label="Advance to next screen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg>
+            <span class="asrotate-label">Explore App · 1 of 6</span>
+          </button>
+
+          <div class="aspag" role="tablist" aria-label="Go to screen">
+            <button type="button" class="asdot on" data-i="0" aria-label="Go to screen 1" aria-selected="true"></button>
+            <button type="button" class="asdot" data-i="1" aria-label="Go to screen 2" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="2" aria-label="Go to screen 3" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="3" aria-label="Go to screen 4" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="4" aria-label="Go to screen 5" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="5" aria-label="Go to screen 6" aria-selected="false"></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="ecosystem">
+  <div class="wrap">
+    <div class="eco-intro">
+      <div class="kicker">The Complete Ecosystem</div>
+      <div class="statement">Everything your guests need, beautifully connected.</div>
+      <p>From arrival to the final integration circle, schedules, teachers, dining, facilities, resources and essential information live harmoniously inside one intuitive digital space.</p>
+      <div class="herobtns">
+        <a class="btn btn-forest" href="#contact">Explore the Full Experience Demo →</a>
+      </div>
+    </div>
+
+    <!-- Desktop: cinematic hierarchical composition, screens cloned at runtime from the
+         Retreat Companion carousel above (#rc-home etc.) — single source of truth. -->
+    <div class="eco-stage" id="ecoStage">
+      <div class="eco-phone" style="--l:4%; --t:196px; --w:132px; --z:1; --rot:-13deg; --op:.88;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-facilities"></div></div>
+        <div class="eco-tag">Facilities</div>
+      </div>
+      <div class="eco-phone" style="--l:19%; --t:130px; --w:158px; --z:2; --rot:-8deg;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-teachers"></div></div>
+        <div class="eco-tag">Teachers</div>
+      </div>
+      <div class="eco-phone" style="--l:35.5%; --t:58px; --w:200px; --z:4; --rot:-4deg;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-home"></div></div>
+        <div class="eco-tag">Home</div>
+      </div>
+      <div class="eco-phone" style="--l:50%; --t:6px; --w:240px; --z:5; --rot:0deg;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-schedule"></div></div>
+        <div class="eco-tag">Full Schedule</div>
+      </div>
+      <div class="eco-phone" style="--l:64.5%; --t:58px; --w:200px; --z:4; --rot:4deg;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-meals"></div></div>
+        <div class="eco-tag">Meals</div>
+      </div>
+      <div class="eco-phone" style="--l:81%; --t:130px; --w:158px; --z:2; --rot:8deg;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-resources"></div></div>
+        <div class="eco-tag">Audio &amp; Resources</div>
+      </div>
+      <div class="eco-phone" style="--l:96%; --t:196px; --w:132px; --z:1; --rot:13deg; --op:.88;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-info"></div></div>
+        <div class="eco-tag">General Info</div>
+      </div>
+    </div>
+
+    <!-- Mobile: same interactive appshowcase system used elsewhere, opens on Schedule,
+         screens cloned at runtime from the same source. -->
+    <div class="eco-mobile-wrap">
+      <div class="appshowcase" data-appshowcase data-start="1">
+        <div class="phonestack" tabindex="0" aria-roledescription="carousel" aria-label="The Complete Ecosystem — all Retreat Companion screens">
+          <div class="depth-layer d2"></div>
+          <div class="depth-layer d1"></div>
+          <div class="pm main-pm">
+            <div class="island"></div>
+            <div class="pm-screen">
+              <div class="ashot-track">
+                <div class="ashot" data-i="0" data-clone-from="rc-home" role="group" aria-roledescription="slide" aria-label="Screen 1 of 7: Home"></div>
+                <div class="ashot" data-i="1" data-clone-from="rc-schedule" role="group" aria-roledescription="slide" aria-label="Screen 2 of 7: Schedule"></div>
+                <div class="ashot" data-i="2" data-clone-from="rc-teachers" role="group" aria-roledescription="slide" aria-label="Screen 3 of 7: Teachers"></div>
+                <div class="ashot" data-i="3" data-clone-from="rc-meals" role="group" aria-roledescription="slide" aria-label="Screen 4 of 7: Meals"></div>
+                <div class="ashot" data-i="4" data-clone-from="rc-facilities" role="group" aria-roledescription="slide" aria-label="Screen 5 of 7: Facilities"></div>
+                <div class="ashot" data-i="5" data-clone-from="rc-resources" role="group" aria-roledescription="slide" aria-label="Screen 6 of 7: Audio and Resources"></div>
+                <div class="ashot" data-i="6" data-clone-from="rc-info" role="group" aria-roledescription="slide" aria-label="Screen 7 of 7: Information"></div>
+              </div>
             </div>
           </div>
+          <button type="button" class="asnav asprev" aria-label="Previous screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <button type="button" class="asnav asnext" aria-label="Next screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
+
+        <button type="button" class="asrotate" aria-label="Advance to next screen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg>
+          <span class="asrotate-label">Explore App · 2 of 7</span>
+        </button>
+
+        <div class="aspag" role="tablist" aria-label="Go to screen">
+          <button type="button" class="asdot" data-i="0" aria-label="Go to screen 1" aria-selected="false"></button>
+          <button type="button" class="asdot on" data-i="1" aria-label="Go to screen 2" aria-selected="true"></button>
+          <button type="button" class="asdot" data-i="2" aria-label="Go to screen 3" aria-selected="false"></button>
+          <button type="button" class="asdot" data-i="3" aria-label="Go to screen 4" aria-selected="false"></button>
+          <button type="button" class="asdot" data-i="4" aria-label="Go to screen 5" aria-selected="false"></button>
+          <button type="button" class="asdot" data-i="5" aria-label="Go to screen 6" aria-selected="false"></button>
+          <button type="button" class="asdot" data-i="6" aria-label="Go to screen 7" aria-selected="false"></button>
         </div>
       </div>
     </div>
@@ -905,7 +1317,7 @@
     var nextBtn = root.querySelector('.asnext');
     var rotateBtn = root.querySelector('.asrotate');
     var rotateLabel = root.querySelector('.asrotate-label');
-    var current = 0;
+    var current = parseInt(root.getAttribute('data-start'), 10) || 0;
     var autoplayTimer = null;
 
     function render(){
@@ -1015,7 +1427,36 @@
     startAutoplay();
   }
 
+  /* Clone screen content from the single source of truth (the Retreat Companion
+     carousel's #rc-* screens) into any element that asks for it — used by both the
+     Complete Ecosystem desktop stage and its mobile carousel, so screen content is
+     authored once and reused everywhere. */
+  document.querySelectorAll('[data-clone-from]').forEach(function(target){
+    var src = document.getElementById(target.getAttribute('data-clone-from'));
+    if (src) target.innerHTML = src.innerHTML;
+  });
+
   document.querySelectorAll('[data-appshowcase]').forEach(initShowcase);
+
+  /* Desktop ecosystem stage: reveal the phones with a restrained fade/rise once the
+     section scrolls into view. Respects prefers-reduced-motion (CSS shows them
+     immediately in that case regardless of this class). */
+  var ecoStage = document.getElementById('ecoStage');
+  if (ecoStage){
+    if (reduceMotion || !('IntersectionObserver' in window)){
+      ecoStage.classList.add('reveal');
+    } else {
+      var ecoObserver = new IntersectionObserver(function(entries){
+        entries.forEach(function(entry){
+          if (entry.isIntersecting){
+            ecoStage.classList.add('reveal');
+            ecoObserver.disconnect();
+          }
+        });
+      }, { threshold: 0.2 });
+      ecoObserver.observe(ecoStage);
+    }
+  }
 })();
 </script>
 
