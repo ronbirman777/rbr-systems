@@ -407,17 +407,41 @@
     opacity:0; z-index:var(--z,1); transition:opacity .7s ease, transform .7s ease;
   }
   .eco-stage.reveal .eco-phone{ opacity:var(--op,1); transform:translateX(-50%) translateY(0) scale(1) rotate(var(--rot,0deg)); }
-  .eco-phone .pm{ width:100%; position:relative; left:auto; top:auto; transform:none; transition:transform .3s ease, box-shadow .3s ease; }
-  .eco-phone:hover{ z-index:9; }
-  .eco-phone:hover .pm{ transform:translateY(-10px); }
+  /* Scale/lift is applied to the inner .pm, not the outer positioned .eco-phone,
+     so the outer element's left/translateX(-50%) centering is never touched —
+     focus and dim states are pure transform+opacity, no layout properties. */
+  .eco-phone .pm{
+    width:100%; position:relative; left:auto; top:auto; transform:none;
+    transform-origin:top center;
+    transition:transform .4s cubic-bezier(.4,0,.2,1), box-shadow .4s ease;
+  }
   .eco-phone .eco-tag{
     position:absolute; left:50%; bottom:-30px; transform:translateX(-50%);
     font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
     color:var(--ink-faint); white-space:nowrap; opacity:0; transition:opacity .25s ease; pointer-events:none;
   }
-  .eco-phone:hover .eco-tag{ opacity:1; }
+  @media (hover:hover) and (pointer:fine){ .eco-phone{ cursor:pointer; } }
+  @media (any-hover:none), (any-pointer:coarse){ .eco-phone{ cursor:default; } }
+
+  /* focus/active/dimmed states — driven by JS (hover, click-lock, keyboard focus).
+     #ecoStage-prefixed for specificity so these reliably win over the base
+     .eco-stage.reveal .eco-phone rule above without needing !important. */
+  #ecoStage .eco-phone.is-active{ z-index:30; }
+  #ecoStage .eco-phone.is-active .pm{
+    transform:scale(1.18);
+    box-shadow:0 0 0 3px rgba(138,154,134,0.45), 0 34px 70px -18px rgba(27,46,36,0.4);
+  }
+  #ecoStage .eco-phone.is-active .eco-tag{ opacity:1; color:var(--forest); }
+  #ecoStage .eco-phone.is-dimmed{ opacity:.62; }
+  #ecoStage .eco-phone.is-dimmed .pm{ transform:scale(.93); box-shadow:none; }
+  #ecoStage .eco-phone:focus-visible{ outline:none; }
+  #ecoStage .eco-phone:focus-visible .pm{ box-shadow:0 0 0 3px rgba(138,154,134,0.6); }
+
   @media (prefers-reduced-motion: reduce){
     .eco-phone{ transition:none; opacity:var(--op,1); transform:translateX(-50%) translateY(0) scale(1) rotate(var(--rot,0deg)); }
+    .eco-phone .pm{ transition:none; }
+    #ecoStage .eco-phone.is-active .pm{ transform:scale(1.08); }
+    #ecoStage .eco-phone.is-dimmed .pm{ transform:none; }
   }
 
   /* -- mobile swipeable ecosystem deck (reuses .appshowcase system) -- */
@@ -1146,31 +1170,31 @@
     <!-- Desktop: cinematic hierarchical composition, screens cloned at runtime from the
          Retreat Companion carousel above (#rc-home etc.) — single source of truth. -->
     <div class="eco-stage" id="ecoStage">
-      <div class="eco-phone" style="--l:4%; --t:196px; --w:132px; --z:1; --rot:-13deg; --op:.88;">
+      <div class="eco-phone" data-idx="0" tabindex="0" role="button" aria-label="Focus the Facilities screen" style="--l:4%; --t:196px; --w:132px; --z:1; --rot:-13deg; --op:.88;">
         <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-facilities"></div></div>
         <div class="eco-tag">Facilities</div>
       </div>
-      <div class="eco-phone" style="--l:19%; --t:130px; --w:158px; --z:2; --rot:-8deg;">
+      <div class="eco-phone" data-idx="1" tabindex="0" role="button" aria-label="Focus the Teachers screen" style="--l:19%; --t:130px; --w:158px; --z:2; --rot:-8deg;">
         <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-teachers"></div></div>
         <div class="eco-tag">Teachers</div>
       </div>
-      <div class="eco-phone" style="--l:35.5%; --t:58px; --w:200px; --z:4; --rot:-4deg;">
+      <div class="eco-phone" data-idx="2" tabindex="0" role="button" aria-label="Focus the Home screen" style="--l:35.5%; --t:58px; --w:200px; --z:4; --rot:-4deg;">
         <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-home"></div></div>
         <div class="eco-tag">Home</div>
       </div>
-      <div class="eco-phone" style="--l:50%; --t:6px; --w:240px; --z:5; --rot:0deg;">
+      <div class="eco-phone" data-idx="3" tabindex="0" role="button" aria-label="Focus the Full Schedule screen" style="--l:50%; --t:6px; --w:240px; --z:5; --rot:0deg;">
         <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-schedule"></div></div>
         <div class="eco-tag">Full Schedule</div>
       </div>
-      <div class="eco-phone" style="--l:64.5%; --t:58px; --w:200px; --z:4; --rot:4deg;">
+      <div class="eco-phone" data-idx="4" tabindex="0" role="button" aria-label="Focus the Meals screen" style="--l:64.5%; --t:58px; --w:200px; --z:4; --rot:4deg;">
         <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-meals"></div></div>
         <div class="eco-tag">Meals</div>
       </div>
-      <div class="eco-phone" style="--l:81%; --t:130px; --w:158px; --z:2; --rot:8deg;">
+      <div class="eco-phone" data-idx="5" tabindex="0" role="button" aria-label="Focus the Audio and Resources screen" style="--l:81%; --t:130px; --w:158px; --z:2; --rot:8deg;">
         <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-resources"></div></div>
         <div class="eco-tag">Audio &amp; Resources</div>
       </div>
-      <div class="eco-phone" style="--l:96%; --t:196px; --w:132px; --z:1; --rot:13deg; --op:.88;">
+      <div class="eco-phone" data-idx="6" tabindex="0" role="button" aria-label="Focus the General Information screen" style="--l:96%; --t:196px; --w:132px; --z:1; --rot:13deg; --op:.88;">
         <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-info"></div></div>
         <div class="eco-tag">General Info</div>
       </div>
@@ -1853,6 +1877,65 @@ var RBR_PRICING = {
       }, { threshold: 0.2 });
       ecoObserver.observe(ecoStage);
     }
+  }
+
+  /* Desktop ecosystem interactive focus: hover (pointer:fine only) previews a
+     screen; click/tap locks it so the visitor can move the pointer away and keep
+     inspecting it; keyboard focus gets the same treatment. Schedule (idx 3) is
+     the default hero and needs no active/dimmed classes applied to anyone — the
+     resting composition already reads as its default state. Purely class-based
+     (is-active / is-dimmed), so it costs nothing beyond a handful of transforms. */
+  if (ecoStage){
+    var ecoPhones = Array.prototype.slice.call(ecoStage.querySelectorAll('.eco-phone'));
+    var canHover = window.matchMedia && window.matchMedia('(hover:hover) and (pointer:fine)').matches;
+    var lockedIdx = null;
+
+    function ecoApply(idx){
+      ecoPhones.forEach(function(p){
+        var isTarget = p.getAttribute('data-idx') === String(idx);
+        p.classList.toggle('is-active', idx !== null && isTarget);
+        p.classList.toggle('is-dimmed', idx !== null && !isTarget);
+      });
+    }
+
+    function ecoPreview(idx){
+      if (lockedIdx === null) ecoApply(idx);
+    }
+
+    function ecoReset(){
+      if (lockedIdx === null) ecoApply(null);
+    }
+
+    function ecoLock(idx){
+      lockedIdx = (lockedIdx === idx) ? null : idx;
+      ecoApply(lockedIdx);
+    }
+
+    ecoPhones.forEach(function(phone){
+      var idx = phone.getAttribute('data-idx');
+
+      if (canHover){
+        phone.addEventListener('mouseenter', function(){ ecoPreview(idx); });
+        phone.addEventListener('mouseleave', function(){ ecoReset(); });
+      }
+      phone.addEventListener('focus', function(){ ecoPreview(idx); });
+      phone.addEventListener('blur', function(){ ecoReset(); });
+
+      phone.addEventListener('click', function(){ ecoLock(idx); });
+      phone.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' '){
+          e.preventDefault();
+          ecoLock(idx);
+        }
+      });
+    });
+
+    ecoStage.addEventListener('click', function(e){
+      if (e.target === ecoStage){ lockedIdx = null; ecoApply(null); }
+    });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape' && lockedIdx !== null){ lockedIdx = null; ecoApply(null); }
+    });
   }
 })();
 </script>
