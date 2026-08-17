@@ -171,6 +171,81 @@
   .sectionhead.center{ text-align:center; max-width:680px; margin-left:auto; margin-right:auto; }
   .sectionhead .kicker{ display:block; margin-bottom:16px; }
 
+  /* ================= PRODUCT FAMILY SELECTOR ================= */
+  .familynav{ display:flex; justify-content:center; padding:38px 20px 4px; background:var(--cream); }
+  .familynav-inner{ display:inline-flex; background:var(--white); border:1px solid var(--line); border-radius:100px; padding:5px; gap:4px; max-width:100%; }
+  .familynav a{ display:inline-flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-dim); padding:11px 20px; border-radius:100px; transition:background .2s ease, color .2s ease; white-space:nowrap; }
+  .familynav a.on{ background:var(--forest); color:var(--cream); }
+  .familynav a:hover:not(.on){ background:var(--sage-soft); color:var(--forest); }
+  @media (max-width:560px){
+    .familynav-inner{ width:100%; }
+    .familynav a{ flex:1; justify-content:center; padding:12px 8px; font-size:10px; letter-spacing:.02em; }
+  }
+
+  /* ================= CLIENT JOURNEY HUB ================= */
+  .chub-onelabel{ text-align:center; font-size:10.5px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--sage); margin:44px 0 34px; }
+
+  .chub-hero{ display:flex; align-items:center; justify-content:center; gap:30px; margin:0 auto 20px; max-width:760px; }
+  .chub-dash{ position:relative; width:62%; background:var(--white); border:1px solid var(--line); border-radius:22px; box-shadow:0 40px 80px -30px rgba(27,46,36,0.28); padding:26px 26px 22px; z-index:1; animation:fadeUp .7s ease backwards; }
+  .chub-dash .dhead{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+  .chub-dash .dhead .d{ font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
+  .chub-dash .dhead h4{ font-family:var(--serif); font-size:20px; color:var(--forest); font-weight:400; margin-top:3px; }
+  .chub-dash .dbadge{ font-size:9.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; background:var(--sage-soft); color:var(--forest); padding:6px 12px; border-radius:100px; white-space:nowrap; }
+  .chub-next{ background:var(--forest); border-radius:14px; padding:15px 18px; display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+  .chub-next .k{ font-size:8.5px; letter-spacing:.08em; text-transform:uppercase; color:rgba(251,249,245,0.6); }
+  .chub-next b{ font-family:var(--serif); font-size:15px; color:var(--cream); font-weight:400; display:block; margin-top:4px; }
+  .chub-next span{ font-size:10.5px; color:rgba(251,249,245,0.7); }
+  .chub-next .time{ font-family:var(--serif); font-size:22px; color:var(--cream); text-align:right; flex-shrink:0; }
+  .chub-dgrid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .chub-dgrid .row{ background:var(--cream); border-radius:11px; padding:11px 13px; }
+  .chub-dgrid .row b{ font-family:var(--serif); font-size:16px; color:var(--forest); display:block; font-weight:400; }
+  .chub-dgrid .row span{ font-size:9.5px; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; font-weight:700; }
+
+  .chub-phone{ width:34%; max-width:170px; flex-shrink:0; z-index:2; position:relative; }
+  .chub-phone .pm{ position:relative; left:auto; top:auto; transform:none; width:100%; animation:fadeUp .7s .1s ease backwards; }
+
+  @media (max-width:720px){
+    .chub-hero{ flex-direction:column; align-items:center; gap:40px; max-width:340px; }
+    .chub-dash{ width:100%; }
+    .chub-phone{ width:230px; max-width:none; }
+  }
+
+  /* -- session journey -- */
+  .journey-strip{ display:flex; justify-content:center; margin:64px auto 8px; max-width:820px; }
+  .jstep{ flex:1; text-align:center; padding:0 18px; position:relative; }
+  .jstep:not(:last-child)::after{ content:""; position:absolute; top:15px; left:calc(50% + 24px); right:calc(-50% + 24px); height:1px; background:var(--line-2); }
+  .jstep .jn{ width:30px; height:30px; border-radius:50%; background:var(--white); border:1.5px solid var(--sage); color:var(--forest); font-family:var(--serif); font-size:13px; display:flex; align-items:center; justify-content:center; margin:0 auto 14px; position:relative; z-index:1; }
+  .jstep .jk{ font-size:10px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--forest); margin-bottom:8px; }
+  .jstep ul{ list-style:none; display:flex; flex-direction:column; gap:5px; }
+  .jstep li{ font-size:12px; color:var(--ink-dim); line-height:1.5; }
+  @media (max-width:720px){
+    .journey-strip{ flex-direction:column; gap:34px; max-width:320px; }
+    .jstep::after{ display:none; }
+  }
+
+  /* -- resource library -- */
+  .resource-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:56px; }
+  @media (max-width:860px){ .resource-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:480px){ .resource-grid{ grid-template-columns:1fr; } }
+  .rescard{ background:var(--cream); border-radius:16px; padding:22px 20px 18px; }
+  .rescard .ric{ width:32px; height:32px; border-radius:50%; background:var(--sage-soft2); margin-bottom:14px; }
+  .rescard b{ font-size:13.5px; color:var(--forest); display:block; margin-bottom:5px; }
+  .rescard span{ font-size:11.5px; color:var(--ink-faint); }
+
+  /* -- features + dedicated pricing card -- */
+  .chub-features{ list-style:none; display:grid; grid-template-columns:1fr 1fr; gap:12px 24px; margin:56px auto 0; max-width:640px; }
+  .chub-features li{ display:flex; align-items:flex-start; gap:10px; font-size:13.5px; color:var(--ink-dim); }
+  @media (max-width:600px){ .chub-features{ grid-template-columns:1fr; } }
+
+  .chub-pricing{ max-width:480px; margin:56px auto 0; background:var(--white); border:1.5px solid var(--sage); border-radius:24px; padding:38px 36px; text-align:center; box-shadow:0 24px 54px -24px rgba(27,46,36,0.18); }
+  .chub-pricing .tag{ font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--sage); margin-bottom:14px; }
+  .chub-pricing .pname{ font-family:var(--serif); font-size:24px; color:var(--forest); font-weight:400; }
+  .chub-pricing .rows{ display:flex; justify-content:center; gap:36px; margin:18px 0 8px; }
+  .chub-pricing .rows .amt{ font-family:var(--serif); font-size:26px; color:var(--forest); }
+  .chub-pricing .rows .amt span{ display:block; font-size:10px; font-family:var(--sans); font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint); margin-top:4px; }
+  .chub-pricing .tagline{ font-family:var(--serif); font-style:italic; font-size:14px; color:var(--ink-dim); margin:10px 0 26px; }
+  .chub-pricing .btn{ width:100%; }
+
   /* ================= ABOUT ================= */
   .about .wrap{ display:grid; grid-template-columns:.85fr 1.15fr; gap:80px; align-items:start; }
   @media (max-width:900px){ .about .wrap{ grid-template-columns:1fr; gap:44px; } }
@@ -280,6 +355,14 @@
   .gallerygrid div{ aspect-ratio:1; border-radius:8px; position:relative; overflow:hidden; }
   .gallerygrid div::after{ content:""; position:absolute; inset:0; background:radial-gradient(circle at 30% 25%, rgba(255,255,255,0.4), transparent 55%); }
   .inforow{ display:flex; justify-content:space-between; align-items:center; background:var(--white); border-radius:11px; padding:10px 12px; box-shadow:0 2px 8px rgba(27,46,36,0.06); }
+  .daycard{ display:flex; align-items:center; gap:11px; background:var(--white); border-radius:11px; padding:9px 11px; box-shadow:0 2px 8px rgba(27,46,36,0.06); }
+  .daycard .dnum{ width:24px; height:24px; border-radius:50%; background:var(--sage-soft2); color:var(--forest); font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .daycard .dbody b{ font-size:10.5px; color:var(--forest); display:block; font-weight:700; }
+  .daycard .dbody span{ font-size:8.5px; color:var(--ink-faint); }
+  .daycard.today{ background:var(--forest); }
+  .daycard.today .dnum{ background:var(--sage); color:#fff; }
+  .daycard.today .dbody b{ color:var(--cream); }
+  .daycard.today .dbody span{ color:rgba(251,249,245,0.7); }
   .inforow b{ font-size:10px; color:var(--forest); font-weight:700; }
   .inforow span{ font-size:9.5px; color:var(--ink-faint); }
   .daychips{ display:flex; gap:6px; padding:0 12px 8px; }
@@ -763,7 +846,7 @@
   <div class="wrap">
     <div class="hero-head">
       <h1>Harmonize your retreats<br>&amp; healing spaces with<br>custom digital experiences</h1>
-      <p class="lede">Custom digital experiences designed specifically for retreats, healing spaces and conscious communities — beautiful technology that helps your guests stay connected, informed and present.</p>
+      <p class="lede">Custom digital experiences designed for retreats, therapists, healers and conscious communities. Beautiful technology that helps guests and clients stay connected, informed and present throughout their journey.</p>
       <div class="hero-ctas">
         <a class="btn btn-forest" href="#portfolio">Explore Demo Apps</a>
         <a class="btn btn-outline" href="#contact">Book a Call</a>
@@ -818,6 +901,13 @@
   </div>
 </section>
 
+<nav class="familynav" aria-label="Product family">
+  <div class="familynav-inner" role="group">
+    <a href="#portfolio" id="familyRetreats" class="on">For Retreats</a>
+    <a href="#client-hub" id="familyTherapists">For Therapists &amp; Healers</a>
+  </div>
+</nav>
+
 <section id="about" class="about">
   <div class="wrap">
     <div class="about-portrait">
@@ -870,10 +960,11 @@
               <div class="pm-screen">
                 <div class="ashot-track">
 
-                  <div id="rc-home" class="ashot active" data-i="0" role="group" aria-roledescription="slide" aria-label="Screen 1 of 7: Home">
+                  <div id="rc-home" class="ashot active" data-i="0" role="group" aria-roledescription="slide" aria-label="Screen 1 of 8: Home">
                     <div class="pmtop lotus-top" role="img" aria-label="Soft lotus flower atmosphere"><div class="d">Good Morning</div><h4>Welcome back, Maya</h4></div>
                     <div class="pmcard"><div class="k">Happening Now</div><b>Morning Practice</b><span>Main Pavilion · 45 min</span></div>
                     <div class="pmgrid">
+                      <div class="pmtile"><div class="ic"></div><b>Calendar</b></div>
                       <div class="pmtile"><div class="ic"></div><b>Schedule</b></div>
                       <div class="pmtile"><div class="ic"></div><b>Meals</b></div>
                       <div class="pmtile"><div class="ic"></div><b>Facilities</b></div>
@@ -881,8 +972,19 @@
                     </div>
                   </div>
 
-                  <div id="rc-schedule" class="ashot" data-i="1" role="group" aria-roledescription="slide" aria-label="Screen 2 of 7: Schedule">
-                    <div class="pmtop"><div class="d">This Week</div><h4>Schedule</h4></div>
+                  <div id="rc-calendar" class="ashot" data-i="1" role="group" aria-roledescription="slide" aria-label="Screen 2 of 8: Retreat Calendar">
+                    <div class="pmtop"><div class="d">12 Oct — 18 Oct · 7 Days</div><h4>Retreat Calendar</h4></div>
+                    <div class="pmlist" style="gap:6px;">
+                      <div class="daycard"><div class="dnum">1</div><div class="dbody"><b>Arrival</b><span>12 Oct · Check In · Welcome Circle</span></div></div>
+                      <div class="daycard"><div class="dnum">2</div><div class="dbody"><b>Grounding</b><span>13 Oct · Morning Practice · Breathwork</span></div></div>
+                      <div class="daycard today"><div class="dnum">3</div><div class="dbody"><b>Expansion · Today</b><span>14 Oct · Yoga · Sound Journey</span></div></div>
+                      <div class="daycard"><div class="dnum">4</div><div class="dbody"><b>Silence &amp; Deep Rest</b><span>15 Oct · Noble Silence</span></div></div>
+                      <div class="daycard"><div class="dnum">5</div><div class="dbody"><b>Integration</b><span>16 Oct · Integration Walk</span></div></div>
+                    </div>
+                  </div>
+
+                  <div id="rc-schedule" class="ashot" data-i="2" role="group" aria-roledescription="slide" aria-label="Screen 3 of 8: Daily Schedule">
+                    <div class="pmtop"><div class="d">Day 3 · Expansion</div><h4>Schedule</h4></div>
                     <div class="pmdays">
                       <div>MON<b>10</b></div>
                       <div class="on">TUE<b>11</b></div>
@@ -899,7 +1001,7 @@
                     </div>
                   </div>
 
-                  <div id="rc-teachers" class="ashot" data-i="2" role="group" aria-roledescription="slide" aria-label="Screen 3 of 7: Teachers">
+                  <div id="rc-teachers" class="ashot" data-i="3" role="group" aria-roledescription="slide" aria-label="Screen 4 of 8: Teachers">
                     <div class="pmtop"><div class="d">This Week</div><h4>Teachers</h4></div>
                     <div class="pmlist" style="padding-bottom:0;">
                       <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#c9b48e,#8a6a2c)"></div><div><b>Marco Villanueva</b><span>Sound Healing</span></div></div>
@@ -917,7 +1019,7 @@
                     </div>
                   </div>
 
-                  <div id="rc-meals" class="ashot" data-i="3" role="group" aria-roledescription="slide" aria-label="Screen 4 of 7: Meals">
+                  <div id="rc-meals" class="ashot" data-i="4" role="group" aria-roledescription="slide" aria-label="Screen 5 of 8: Meals">
                     <div class="pmtop"><div class="d">Today · Vegan Buffet</div><h4>Meals</h4></div>
                     <div class="pmlist">
                       <div class="dishcard"><div class="dimg" style="background:linear-gradient(150deg,#e0c78a,#a67c3a)"></div><div class="dinfo"><b>Turmeric Breakfast Bowl</b><div class="diettags"><span>GF</span><span>NF</span></div></div></div>
@@ -927,7 +1029,7 @@
                     <div class="pmcard"><div class="k">Serving Times</div><b>Breakfast · Brunch · Dinner</b><span>7:00 · 11:00 · 18:00</span></div>
                   </div>
 
-                  <div id="rc-facilities" class="ashot" data-i="4" role="group" aria-roledescription="slide" aria-label="Screen 5 of 7: Facilities">
+                  <div id="rc-facilities" class="ashot" data-i="5" role="group" aria-roledescription="slide" aria-label="Screen 6 of 8: Facilities">
                     <div class="pmtop"><div class="d">Explore</div><h4>Facilities</h4></div>
                     <div class="facgrid2">
                       <div class="faccard" style="background:linear-gradient(150deg,#cdb18f,#7a5c3a)"><div class="status">Open</div><div class="fcap"><b>Herbal Sauna</b></div></div>
@@ -938,7 +1040,7 @@
                     <div class="pmcard"><div class="k">Restaurant</div><b>Open Kitchen</b><span>08:00 — 21:00 · Poolside</span></div>
                   </div>
 
-                  <div id="rc-resources" class="ashot" data-i="5" role="group" aria-roledescription="slide" aria-label="Screen 6 of 7: Audio and Resources">
+                  <div id="rc-resources" class="ashot" data-i="6" role="group" aria-roledescription="slide" aria-label="Screen 7 of 8: Audio and Resources">
                     <div class="pmtop"><div class="d">Library</div><h4>Resources</h4></div>
                     <div class="playerfull">
                       <div class="art" style="background-image:var(--img-lotus-sm)"><div class="save">♡</div></div>
@@ -956,7 +1058,7 @@
                     </div>
                   </div>
 
-                  <div id="rc-info" class="ashot" data-i="6" role="group" aria-roledescription="slide" aria-label="Screen 7 of 7: Information">
+                  <div id="rc-info" class="ashot" data-i="7" role="group" aria-roledescription="slide" aria-label="Screen 8 of 8: Information">
                     <div class="pmtop"><div class="d">Useful</div><h4>Information</h4></div>
                     <div class="pmlist">
                       <div class="inforow"><b>WiFi</b><span>retreat-guest</span></div>
@@ -976,7 +1078,7 @@
 
           <button type="button" class="asrotate" aria-label="Advance to next screen">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg>
-            <span class="asrotate-label">Explore App · 1 of 7</span>
+            <span class="asrotate-label">Explore App · 1 of 8</span>
           </button>
 
           <div class="aspag" role="tablist" aria-label="Go to screen">
@@ -987,6 +1089,7 @@
             <button type="button" class="asdot" data-i="4" aria-label="Go to screen 5" aria-selected="false"></button>
             <button type="button" class="asdot" data-i="5" aria-label="Go to screen 6" aria-selected="false"></button>
             <button type="button" class="asdot" data-i="6" aria-label="Go to screen 7" aria-selected="false"></button>
+            <button type="button" class="asdot" data-i="7" aria-label="Go to screen 8" aria-selected="false"></button>
           </div>
         </div>
       </div>
@@ -1325,6 +1428,215 @@
   </div>
 </section>
 
+<section id="client-hub">
+  <div class="wrap">
+    <div class="sectionhead center">
+      <div class="kicker">For Therapists &amp; Healers</div>
+      <div class="statement">Your Practice. One Calm Digital Space.</div>
+      <p style="margin-top:16px; color:var(--ink-dim); font-size:16px; max-width:600px; margin-left:auto; margin-right:auto;">A private, beautifully branded digital experience connecting therapists and healers with their clients before, between and after sessions.</p>
+    </div>
+
+    <div class="chub-onelabel">One Practice · Two Synchronized Experiences</div>
+
+    <div class="chub-hero">
+      <div class="chub-dash">
+        <div class="dhead">
+          <div><div class="d">Good Morning, Maya</div><h4>3 Sessions Today</h4></div>
+          <div class="dbadge">Practitioner View</div>
+        </div>
+        <div class="chub-next">
+          <div><div class="k">Next Session</div><b>Sarah Cohen</b><span>Integration Session</span></div>
+          <div class="time">10:30<span style="font-family:var(--sans); font-size:10px; display:block; font-weight:700; color:rgba(251,249,245,0.6);">AM</span></div>
+        </div>
+        <div class="chub-dgrid">
+          <div class="row"><b>12</b><span>Active Clients</span></div>
+          <div class="row"><b>5</b><span>Assigned Practices</span></div>
+          <div class="row"><b>2</b><span>New Messages</span></div>
+          <div class="row"><b>3</b><span>Resources Shared</span></div>
+        </div>
+      </div>
+      <div class="chub-phone">
+        <div class="pm">
+          <div class="island"></div>
+          <div class="pm-screen">
+            <div class="viewpill client">Client View</div>
+            <div class="pmtop" style="padding-top:2px;"><div class="d">Good Morning</div><h4>Sarah</h4></div>
+            <div class="pmcard"><div class="k">Next Session</div><b>Integration Session</b><span>Tuesday · 10:30 AM</span></div>
+            <div class="pmlist">
+              <div class="pmrow"><div class="pmplay">▸</div><div><b>Morning Grounding</b><span>10 min · Practice</span></div></div>
+              <div class="pmrow"><div class="pmplay">▸</div><div><b>Breath Integration</b><span>7 min · Practice</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="showcase-visual" style="margin-top:12px;">
+      <div class="appshowcase" data-appshowcase>
+        <div class="phonestack" tabindex="0" aria-roledescription="carousel" aria-label="Client Journey Hub — app screen previews">
+          <div class="depth-layer d2"></div>
+          <div class="depth-layer d1"></div>
+          <div class="pm main-pm">
+            <div class="island"></div>
+            <div class="pm-screen">
+              <div class="ashot-track">
+
+                <div class="ashot active" data-i="0" role="group" aria-roledescription="slide" aria-label="Screen 1 of 7: Practitioner Dashboard">
+                  <div class="viewpill practitioner">Practitioner View</div>
+                  <div class="pmtop" style="padding-top:2px;"><div class="d">Good Morning</div><h4>Today's Sessions</h4></div>
+                  <div class="statrow">
+                    <div class="statbox"><b>5</b><span>Sessions Today</span></div>
+                    <div class="statbox"><b>2</b><span>New Messages</span></div>
+                  </div>
+                  <div class="pmlist">
+                    <div class="pmrow now"><div class="t">09:00</div><div><b>Elena R.</b><span>Session · Confirmed</span></div></div>
+                    <div class="pmrow"><div class="t">11:30</div><div><b>Marcus T.</b><span>Program check-in</span></div></div>
+                    <div class="pmrow"><div class="t">14:00</div><div><b>Sofia L.</b><span>New client</span></div></div>
+                  </div>
+                </div>
+
+                <div class="ashot" data-i="1" role="group" aria-roledescription="slide" aria-label="Screen 2 of 7: Client List">
+                  <div class="viewpill practitioner">Practitioner View</div>
+                  <div class="pmtop" style="padding-top:2px;"><div class="d">12 Active</div><h4>Your Clients</h4></div>
+                  <div class="pmlist">
+                    <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#a8c9be,#4f7a6e)"></div><div><b>Elena R.</b><span>Next: Today, 09:00</span></div></div>
+                    <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#c9b48e,#8a6a2c)"></div><div><b>Marcus T.</b><span>Next: Today, 11:30</span></div></div>
+                    <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#c3b3c9,#6d5375)"></div><div><b>Sofia L.</b><span>New client</span></div></div>
+                    <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#9cc2c4,#3d6b6d)"></div><div><b>Jonah P.</b><span>Next: Fri, 16:30</span></div></div>
+                  </div>
+                </div>
+
+                <div class="ashot" data-i="2" role="group" aria-roledescription="slide" aria-label="Screen 3 of 7: Client Profile">
+                  <div class="viewpill practitioner">Practitioner View</div>
+                  <div class="pmtop" style="padding-top:2px;"><div class="d">Client Profile</div><h4>Elena R.</h4></div>
+                  <div class="statrow">
+                    <div class="statbox"><b>8</b><span>Sessions Done</span></div>
+                    <div class="statbox"><b>Today</b><span>Next Session</span></div>
+                  </div>
+                  <div class="notecard"><div class="k">Private Note</div><p>Steady progress with breathwork practice. Focus on evening routine next session.</p></div>
+                  <div class="pmlist" style="padding-top:0;">
+                    <div class="inforow"><b>Assigned Practice</b><span>Evening Wind-down</span></div>
+                    <div class="inforow"><b>Resources Shared</b><span>3 items</span></div>
+                  </div>
+                </div>
+
+                <div class="ashot" data-i="3" role="group" aria-roledescription="slide" aria-label="Screen 4 of 7: Session View">
+                  <div class="viewpill practitioner">Practitioner View</div>
+                  <div class="pmtop" style="padding-top:2px;"><div class="d">Today · 09:00</div><h4>Session Notes</h4></div>
+                  <div class="notecard"><div class="k">Elena R.</div><p>Discussed breathwork routine and reduced anxiety before sleep. Good energy today.</p></div>
+                  <div class="pmlist">
+                    <div class="inforow"><b>Follow-up Task</b><span>Send evening playlist</span></div>
+                    <div class="inforow"><b>Assign Resource</b><span>Deep Rest audio</span></div>
+                    <div class="inforow"><b>Next Session</b><span>Fri, 10:00</span></div>
+                  </div>
+                </div>
+
+                <div class="ashot" data-i="4" role="group" aria-roledescription="slide" aria-label="Screen 5 of 7: Client Home">
+                  <div class="viewpill client">Client View</div>
+                  <div class="pmtop" style="padding-top:2px;"><div class="d">Welcome back</div><h4>Elena</h4></div>
+                  <div class="pmcard"><div class="k">Next Session</div><b>With Maya Cohen</b><span>Friday · 10:00</span></div>
+                  <div class="notecard"><div class="k">Message from Maya</div><p>"Try the evening breathwork tonight, it really helps before sleep."</p></div>
+                  <div class="pmgrid">
+                    <div class="pmtile"><div class="ic"></div><b>My Practice</b></div>
+                    <div class="pmtile"><div class="ic"></div><b>Resources</b></div>
+                  </div>
+                </div>
+
+                <div class="ashot" data-i="5" role="group" aria-roledescription="slide" aria-label="Screen 6 of 7: Client Journey">
+                  <div class="viewpill client">Client View</div>
+                  <div class="pmtop" style="padding-top:2px;"><div class="d">Your Path</div><h4>My Journey</h4></div>
+                  <div class="pmlist">
+                    <div class="inforow"><b>Beginning</b><span>Complete</span></div>
+                    <div class="inforow"><b>Exploration</b><span>Complete</span></div>
+                    <div class="inforow"><b>Integration</b><span>In Progress</span></div>
+                    <div class="inforow"><b>Continuation</b><span>Upcoming</span></div>
+                  </div>
+                  <div class="notecard"><div class="k">Current Focus</div><p>Building an evening wind-down practice between sessions.</p></div>
+                </div>
+
+                <div class="ashot" data-i="6" role="group" aria-roledescription="slide" aria-label="Screen 7 of 7: Resources">
+                  <div class="viewpill client">Client View</div>
+                  <div class="pmtop" style="padding-top:2px;"><div class="d">Between Sessions</div><h4>Resources</h4></div>
+                  <div class="pmlist">
+                    <div class="pmrow"><div class="pmplay">▸</div><div><b>Evening Wind-down</b><span>15 min · Assigned</span></div></div>
+                    <div class="pmrow"><div class="pmplay">▸</div><div><b>Box Breathwork</b><span>8 min · Practice</span></div></div>
+                  </div>
+                  <div class="pmcard"><div class="k">Need to talk?</div><b>Message Maya</b><span>Usually replies within a day</span></div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+          <button type="button" class="asnav asprev" aria-label="Previous screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <button type="button" class="asnav asnext" aria-label="Next screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></button>
+        </div>
+
+        <button type="button" class="asrotate" aria-label="Advance to next screen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg>
+          <span class="asrotate-label">Explore App · 1 of 7</span>
+        </button>
+
+        <div class="aspag" role="tablist" aria-label="Go to screen">
+          <button type="button" class="asdot on" data-i="0" aria-label="Go to screen 1" aria-selected="true"></button>
+          <button type="button" class="asdot" data-i="1" aria-label="Go to screen 2" aria-selected="false"></button>
+          <button type="button" class="asdot" data-i="2" aria-label="Go to screen 3" aria-selected="false"></button>
+          <button type="button" class="asdot" data-i="3" aria-label="Go to screen 4" aria-selected="false"></button>
+          <button type="button" class="asdot" data-i="4" aria-label="Go to screen 5" aria-selected="false"></button>
+          <button type="button" class="asdot" data-i="5" aria-label="Go to screen 6" aria-selected="false"></button>
+          <button type="button" class="asdot" data-i="6" aria-label="Go to screen 7" aria-selected="false"></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="journey-strip">
+      <div class="jstep">
+        <div class="jn">1</div>
+        <div class="jk">Before Session</div>
+        <ul><li>Preparation practice</li><li>Reflection prompt</li><li>Upcoming session reminder</li></ul>
+      </div>
+      <div class="jstep">
+        <div class="jn">2</div>
+        <div class="jk">Session</div>
+        <ul><li>Dedicated therapist and client space</li><li>Session details, date and time</li></ul>
+      </div>
+      <div class="jstep">
+        <div class="jn">3</div>
+        <div class="jk">Integration</div>
+        <ul><li>Assigned practices</li><li>Audio &amp; breathwork</li><li>Journal prompts</li></ul>
+      </div>
+    </div>
+
+    <div class="resource-grid">
+      <div class="rescard"><div class="ric"></div><b>Meditations</b><span>Grounding &amp; guided audio</span></div>
+      <div class="rescard"><div class="ric"></div><b>Breathwork</b><span>Practices between sessions</span></div>
+      <div class="rescard"><div class="ric"></div><b>Journal Prompts</b><span>Reflection &amp; integration</span></div>
+      <div class="rescard"><div class="ric"></div><b>Reading &amp; Documents</b><span>Shared resources</span></div>
+    </div>
+
+    <ul class="chub-features">
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Branded client experience</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Therapist / practitioner dashboard</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Individual client spaces</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Session overview &amp; upcoming sessions</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Assigned integration practices</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Private resource library</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Client journey view</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom branding &amp; managed hosting</li>
+    </ul>
+
+    <div class="chub-pricing">
+      <div class="tag">For Therapists &amp; Healers</div>
+      <div class="pname">Client Journey Hub</div>
+      <div class="rows">
+        <div class="amt">$399<span>Setup &amp; Launch</span></div>
+        <div class="amt">$99<span>/ month Platform &amp; Care</span></div>
+      </div>
+      <div class="tagline">Your practice, beautifully connected.</div>
+      <a class="btn btn-forest" href="#contact" id="clientHubCta">Build My Client Hub →</a>
+    </div>
+  </div>
+</section>
+
 <section id="pricing">
   <div class="wrap">
     <div class="sectionhead center">
@@ -1336,11 +1648,11 @@
     <div class="pricing-grid">
       <div class="pcard">
         <div class="pname">Single Retreat</div>
-        <div class="pdescriptor">Single Event Pass</div>
+        <div class="pdescriptor">One Retreat Experience</div>
         <div class="pfor">Independent facilitators, pop up retreats &amp; single immersive events</div>
         <div class="pdesc">Everything your guests need for one unforgettable retreat, beautifully organized in a custom branded digital experience.</div>
         <div class="pricerows">
-          <div class="pricerow"><span class="plabel">Single Event Pass</span><span class="pamt">$399<span> one time</span></span></div>
+          <div class="pricerow"><span class="plabel">Retreat Access</span><span class="pamt">$399<span> one time</span></span></div>
         </div>
         <div class="pnorecurring">No recurring subscription</div>
 
@@ -1367,13 +1679,15 @@
         <ul>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom branded guest web app</li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Retreat Home &amp; Happening Now</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Full interactive schedule</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Retreat calendar</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Full daily interactive schedule</li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Teacher &amp; facilitator profiles</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Meals &amp; dietary information</li>
         </ul>
         <details>
           <summary>View plan details <span class="arrow">▾</span></summary>
           <ul class="pmore">
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom logo &amp; brand palette</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Meals &amp; dietary information</li>
             <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Facilities &amp; space information</li>
             <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Gallery</li>
             <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>General information</li>
@@ -1669,7 +1983,7 @@
     </div>
 
     <div class="lc-summary" id="leadSummary">
-      <div class="lc-summary-row" id="leadSetupRow"><span class="l" id="leadSetupLabel">Single Event Pass</span><span class="v" id="leadSetupAmt">$399<span class="unit"> one time</span></span></div>
+      <div class="lc-summary-row" id="leadSetupRow"><span class="l" id="leadSetupLabel">Retreat Access</span><span class="v" id="leadSetupAmt">$399<span class="unit"> one time</span></span></div>
       <div class="lc-summary-row" id="leadMonthlyRow" style="display:none;"><span class="l">Platform &amp; Care</span><span class="v" id="leadMonthlyAmt">$99<span class="unit"> / month</span></span></div>
       <div class="lc-summary-credit" id="leadCreditNote" style="display:none;"></div>
       <div class="lc-summary-credit" id="leadNoRecurring">No recurring subscription</div>
@@ -1704,6 +2018,16 @@
           <button type="button" class="lc-type-chip" aria-pressed="false" data-type="Healing Practitioner">Healing Practitioner</button>
           <button type="button" class="lc-type-chip" aria-pressed="false" data-type="Yoga School">Yoga School</button>
           <button type="button" class="lc-type-chip" aria-pressed="false" data-type="Wellness Venue">Wellness Venue</button>
+          <button type="button" class="lc-type-chip" aria-pressed="false" data-type="Other">Other</button>
+        </div>
+        <div class="lc-types" role="group" aria-labelledby="lcTypeLabel" id="lcTypesClient" style="display:none;">
+          <button type="button" class="lc-type-chip" aria-pressed="false" data-type="Therapist">Therapist</button>
+          <button type="button" class="lc-type-chip" aria-pressed="false" data-type="Healing Practitioner">Healing Practitioner</button>
+          <button type="button" class="lc-type-chip" aria-pressed="false" data-type="Coach">Coach</button>
+          <button type="button" class="lc-type-chip" aria-pressed="false" data-type="Somatic Practitioner">Somatic Practitioner</button>
+          <button type="button" class="lc-type-chip" aria-pressed="false" data-type="Breathwork Facilitator">Breathwork Facilitator</button>
+          <button type="button" class="lc-type-chip" aria-pressed="false" data-type="Integration Practitioner">Integration Practitioner</button>
+          <button type="button" class="lc-type-chip" aria-pressed="false" data-type="Yoga / Meditation Teacher">Yoga / Meditation Teacher</button>
           <button type="button" class="lc-type-chip" aria-pressed="false" data-type="Other">Other</button>
         </div>
       </div>
@@ -1767,6 +2091,29 @@
     else header.classList.remove('scrolled');
   });
 
+  /* Product family selector — reflects scroll position, doesn't hide either
+     family's content (both stay in the DOM and visible for SEO/a11y). */
+  var familyRetreats = document.getElementById('familyRetreats');
+  var familyTherapists = document.getElementById('familyTherapists');
+  var portfolioSection = document.getElementById('portfolio');
+  var clientHubSection = document.getElementById('client-hub');
+  if (familyRetreats && familyTherapists && portfolioSection && clientHubSection && window.IntersectionObserver){
+    var familyObserver = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        if (!entry.isIntersecting) return;
+        if (entry.target === clientHubSection){
+          familyTherapists.classList.add('on');
+          familyRetreats.classList.remove('on');
+        } else {
+          familyRetreats.classList.add('on');
+          familyTherapists.classList.remove('on');
+        }
+      });
+    }, { rootMargin: '-45% 0px -45% 0px' });
+    familyObserver.observe(portfolioSection);
+    familyObserver.observe(clientHubSection);
+  }
+
   var burger = document.getElementById('burgerBtn');
   var menu = document.getElementById('mobileMenu');
   var mclose = document.getElementById('mcloseBtn');
@@ -1802,7 +2149,8 @@
 var RBR_PRICING = {
   singleRetreat: { price: 399, billingType: 'one-time', eventBased: true, accessBeforeDays: 1, accessAfterDays: 1 },
   harmony:   { setup: 690,  monthly: 99,  portfolioPartner: { enabled: true, setup: 540, credit: 150 } },
-  sanctuary: { setup: 1490, monthly: 199, portfolioPartner: { enabled: false } }
+  sanctuary: { setup: 1490, monthly: 199, portfolioPartner: { enabled: false } },
+  clientHub: { setup: 399,  monthly: 99 }
 };
 
 /* RBR_CONTACT — WhatsApp handoff target for the Lead Capture modal.
@@ -1930,7 +2278,9 @@ var RBR_CONTACT = {
   var retryBtn = document.getElementById('lcRetryBtn');
   var copyBtn = document.getElementById('lcCopyBtn');
   var copiedNote = document.getElementById('lcCopiedNote');
-  var typeChips = Array.prototype.slice.call(document.querySelectorAll('#lcTypes .lc-type-chip'));
+  var typeGroupRetreat = document.getElementById('lcTypes');
+  var typeGroupClient = document.getElementById('lcTypesClient');
+  var typeChips = Array.prototype.slice.call(document.querySelectorAll('#lcTypes .lc-type-chip, #lcTypesClient .lc-type-chip'));
   var nameInput = document.getElementById('lcName');
   var emailInput = document.getElementById('lcEmail');
   var phoneInput = document.getElementById('lcPhone');
@@ -1984,7 +2334,7 @@ var RBR_CONTACT = {
     kickerEl.textContent = "You've Selected " + plan.label;
 
     if (plan.billingType === 'one-time'){
-      document.getElementById('leadSetupLabel').textContent = 'Single Event Pass';
+      document.getElementById('leadSetupLabel').textContent = 'Retreat Access';
       setupAmtEl.innerHTML = '$' + plan.price + '<span class="unit"> one time</span>';
       document.getElementById('leadMonthlyRow').style.display = 'none';
       creditNoteEl.style.display = 'none';
@@ -2009,10 +2359,17 @@ var RBR_CONTACT = {
     }
   }
 
+  function showTypeGroup(family){
+    var isClient = family === 'client';
+    typeGroupClient.style.display = isClient ? '' : 'none';
+    typeGroupRetreat.style.display = isClient ? 'none' : '';
+  }
+
   function openLeadCapture(plan){
     currentPlan = plan;
     resetForm();
     renderSummary(plan);
+    showTypeGroup(plan.family);
     lastFocused = document.activeElement;
     overlay.classList.add('open');
     document.body.style.overflow = 'hidden';
@@ -2099,6 +2456,21 @@ var RBR_CONTACT = {
      only when the visitor filled them in. Portfolio Partner adds the setup
      credit breakdown without dumping the full program terms. */
   function buildMessage(plan, lead){
+    if (plan.family === 'client'){
+      var clines = [];
+      clines.push("Hi Ron, I'm interested in RBR.");
+      clines.push('Name: ' + lead.name);
+      if (lead.retreat) clines.push('Practice: ' + lead.retreat);
+      clines.push('Email: ' + lead.email);
+      clines.push('Phone / WhatsApp: ' + lead.phone);
+      if (lead.type) clines.push('Type: ' + lead.type);
+      clines.push('Selected Product: Client Journey Hub');
+      clines.push('Setup & Launch: $' + plan.setup);
+      clines.push('Platform & Care: $' + plan.monthly + '/month');
+      clines.push("I'd love to discuss the next steps.");
+      return clines.join('\n');
+    }
+
     if (plan.billingType === 'one-time'){
       var slines = [];
       slines.push("Hi Ron, I'm interested in RBR.");
@@ -2220,6 +2592,16 @@ var RBR_CONTACT = {
       e.preventDefault();
       var card = document.getElementById('harmonyCard');
       if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+  var clientHubCta = document.getElementById('clientHubCta');
+  if (clientHubCta){
+    clientHubCta.addEventListener('click', function(e){
+      e.preventDefault();
+      openLeadCapture({
+        key: 'client-hub', label: 'Client Journey Hub', family: 'client',
+        setup: RBR_PRICING.clientHub.setup, monthly: RBR_PRICING.clientHub.monthly
+      });
     });
   }
 })();
