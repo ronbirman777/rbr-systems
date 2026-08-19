@@ -560,6 +560,39 @@
   .pricerow .pamt span{ font-size:11.5px; font-family:var(--sans); color:var(--ink-faint); font-weight:600; }
   .pricedivider{ height:1px; background:var(--line); }
   .pnorecurring{ font-size:11.5px; color:var(--sage); font-weight:700; margin:-15px 0 20px; }
+  .pstartingfrom{ font-size:10px; color:var(--sage); font-weight:800; letter-spacing:.04em; text-transform:uppercase; margin:-15px 0 6px; }
+  .pmicro{ font-size:11px; color:var(--ink-faint); line-height:1.5; margin:-14px 0 20px; font-style:italic; font-family:var(--serif); }
+
+  /* -- Sanctuary: compact website + guest app ecosystem visual -- */
+  .sanct-tagline{ font-family:var(--serif); font-size:15px; color:var(--forest); margin:6px 0 3px; }
+  .sanct-subtag{ font-size:11.5px; color:var(--sage); font-weight:700; margin-bottom:12px; }
+  .sanct-visual{ margin:6px 0 22px; }
+  .sanct-onebrand{ text-align:center; font-size:9px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--sage); margin-bottom:16px; }
+  .sanct-devices{ display:flex; align-items:flex-end; justify-content:center; }
+  .sanct-devcol{ display:flex; flex-direction:column; align-items:center; gap:9px; }
+  .sanct-devcol.phone{ margin-left:-16px; z-index:2; }
+  .sanct-devlabel{ font-size:7.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint); white-space:nowrap; }
+
+  .sanct-browser{ width:148px; background:var(--white); border:1px solid var(--line); border-radius:10px; overflow:hidden; box-shadow:0 14px 28px -14px rgba(27,46,36,0.22); }
+  .sanct-browser-bar{ height:14px; background:var(--cream); display:flex; align-items:center; gap:3px; padding:0 7px; border-bottom:1px solid var(--line); }
+  .sanct-browser-bar span{ width:4px; height:4px; border-radius:50%; background:var(--line-2); }
+  .sanct-browser-body{ padding:9px; }
+  .sb-hero{ height:30px; border-radius:5px; background:linear-gradient(135deg, var(--forest), #2d4536); margin-bottom:7px; }
+  .sb-cta{ font-size:6.5px; font-weight:800; text-transform:uppercase; letter-spacing:.04em; background:var(--forest); color:var(--cream); text-align:center; padding:5px; border-radius:4px; }
+
+  .sanct-phone{ width:54px; flex-shrink:0; background:linear-gradient(160deg,#20241f,#0d0f0e); border-radius:13px; padding:3px; box-shadow:0 16px 30px -12px rgba(27,46,36,0.32); }
+  .sanct-phone-notch{ width:18px; height:4px; background:#0d0f0e; border-radius:3px; margin:2px auto 3px; }
+  .sanct-phone-body{ background:var(--cream); border-radius:10px; padding:6px 5px; height:100px; }
+  .sp-now{ font-size:5.5px; font-weight:800; text-transform:uppercase; background:var(--forest); color:var(--cream); border-radius:3px; padding:3px 4px; margin-bottom:4px; }
+  .sp-row{ height:9px; background:var(--white); border-radius:3px; margin-bottom:3px; box-shadow:0 1px 3px rgba(27,46,36,0.08); }
+
+  /* -- Sanctuary: three grouped ecosystem detail cards -- */
+  .sanct-details{ display:flex; flex-direction:column; gap:14px; margin-top:6px; }
+  .sanct-detailgroup{ background:var(--cream); border-radius:14px; padding:16px 18px; }
+  .sanct-detailgroup .dg-k{ font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--forest); margin-bottom:10px; }
+  .sanct-detailgroup ul{ list-style:none; display:flex; flex-direction:column; gap:7px; margin:0; padding:0; }
+  .sanct-detailgroup li{ display:flex; align-items:flex-start; gap:8px; font-size:12px; color:var(--ink-dim); line-height:1.5; }
+  .sanct-detailgroup li::before{ content:"—"; color:var(--sage); flex-shrink:0; }
 
   /* -- Single Retreat lifecycle (before / during / after) -- */
   .lifecycle{ background:var(--cream); border-radius:14px; padding:16px 16px 14px; margin-bottom:22px; }
@@ -1745,32 +1778,98 @@
 
       <div class="pcard">
         <div class="pname">Sanctuary</div>
-        <div class="pdescriptor">Complete Ecosystem</div>
-        <div class="pfor">Larger retreat centers, multi journey venues &amp; more complex operations</div>
-        <div class="pdesc">Comprehensive digital infrastructure for multi program retreat centers and larger wellness venues.</div>
+        <div class="pdescriptor">Complete Digital Ecosystem</div>
+        <div class="sanct-tagline">Your Complete Digital Presence</div>
+        <div class="sanct-subtag">Premium Website + Branded Guest App</div>
+        <div class="pdesc">A complete digital presence for retreat centers ready to connect discovery, booking and the on-site guest journey in one beautifully unified ecosystem.</div>
+
+        <div class="sanct-visual" aria-hidden="true">
+          <div class="sanct-onebrand">One Brand · Two Experiences</div>
+          <div class="sanct-devices">
+            <div class="sanct-devcol">
+              <div class="sanct-browser">
+                <div class="sanct-browser-bar"><span></span><span></span><span></span></div>
+                <div class="sanct-browser-body">
+                  <div class="sb-hero"></div>
+                  <div class="sb-cta">Book Your Retreat</div>
+                </div>
+              </div>
+              <span class="sanct-devlabel">Public Website</span>
+            </div>
+            <div class="sanct-devcol phone">
+              <div class="sanct-phone">
+                <div class="sanct-phone-notch"></div>
+                <div class="sanct-phone-body">
+                  <div class="sp-now">Happening Now</div>
+                  <div class="sp-row"></div>
+                  <div class="sp-row"></div>
+                  <div class="sp-row"></div>
+                </div>
+              </div>
+              <span class="sanct-devlabel">Guest App</span>
+            </div>
+          </div>
+        </div>
+
         <div class="pricerows">
-          <div class="pricerow"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$1,490<span> one time</span></span></div>
+          <div class="pricerow"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$1,490<span> starting from</span></span></div>
           <div class="pricedivider"></div>
           <div class="pricerow"><span class="plabel">Platform &amp; Care</span><span class="pamt">$199<span> / month</span></span></div>
         </div>
+        <div class="pmicro">Final setup depends on website scope and custom integrations.</div>
         <ul>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Everything in Harmony</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Multiple retreat programs / journeys</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Advanced content structure</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Expanded media &amp; resource capacity</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Higher storage allowance</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Premium branded website</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Complete Harmony guest app</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Booking journey integration</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Unified website + app branding</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Managed hosting &amp; security</li>
         </ul>
         <details>
-          <summary>View plan details <span class="arrow">▾</span></summary>
-          <ul class="pmore">
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Advanced localization readiness</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Advanced integrations</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Additional admin capabilities</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Priority onboarding</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Premium care</li>
-          </ul>
+          <summary>View full ecosystem details <span class="arrow">▾</span></summary>
+          <div class="sanct-details">
+            <div class="sanct-detailgroup">
+              <div class="dg-k">Premium Website</div>
+              <ul>
+                <li>Custom branded retreat website</li>
+                <li>Responsive desktop, tablet and mobile experience</li>
+                <li>Retreat programs and experiences</li>
+                <li>Accommodation and Stay presentation</li>
+                <li>Facilities and wellness presentation</li>
+                <li>Teacher / facilitator presentation</li>
+                <li>Booking journey integration</li>
+                <li>SEO ready structure</li>
+              </ul>
+            </div>
+            <div class="sanct-detailgroup">
+              <div class="dg-k">Branded Guest App</div>
+              <ul>
+                <li>Everything included in Harmony</li>
+                <li>Retreat Calendar</li>
+                <li>Live Schedule</li>
+                <li>Happening Now</li>
+                <li>Teacher Profiles</li>
+                <li>Meals &amp; Dining</li>
+                <li>Facilities</li>
+                <li>Audio Vault</li>
+                <li>Resources</li>
+                <li>Guest Information</li>
+              </ul>
+            </div>
+            <div class="sanct-detailgroup">
+              <div class="dg-k">Connected Platform</div>
+              <ul>
+                <li>Unified visual identity</li>
+                <li>Website and guest app ecosystem</li>
+                <li>Managed hosting</li>
+                <li>Security</li>
+                <li>Domain configuration</li>
+                <li>Platform maintenance</li>
+                <li>Continuous care</li>
+              </ul>
+            </div>
+          </div>
         </details>
-        <a class="btn btn-outline" href="#contact" id="sanctuaryCta">Build Your Sanctuary →</a>
+        <a class="btn btn-outline" href="#contact" id="sanctuaryCta">Build Your Digital Ecosystem →</a>
       </div>
     </div>
 
@@ -2360,6 +2459,8 @@ var RBR_CONTACT = {
 
     if (plan.standardSetup){
       setupAmtEl.innerHTML = '<span class="strike">$' + plan.standardSetup + '</span>$' + plan.setup + '<span class="unit"> one time</span>';
+    } else if (plan.startingFrom){
+      setupAmtEl.innerHTML = '$' + plan.setup + '<span class="unit"> starting from</span>';
     } else {
       setupAmtEl.innerHTML = '$' + plan.setup + '<span class="unit"> one time</span>';
     }
@@ -2507,6 +2608,8 @@ var RBR_CONTACT = {
       lines.push('Standard Setup Value: $' + plan.standardSetup);
       lines.push('Portfolio Partner Setup: $' + plan.setup + ' one time');
       lines.push('Portfolio Partner Credit: $' + plan.credit);
+    } else if (plan.startingFrom){
+      lines.push('Setup & Launch: Starting from $' + plan.setup);
     } else {
       lines.push('Setup & Launch: $' + plan.setup + ' one time');
     }
@@ -2597,7 +2700,10 @@ var RBR_CONTACT = {
   if (sanctuaryCta){
     sanctuaryCta.addEventListener('click', function(e){
       e.preventDefault();
-      openLeadCapture({ key: 'sanctuary', label: 'Sanctuary', setup: RBR_PRICING.sanctuary.setup, monthly: RBR_PRICING.sanctuary.monthly });
+      openLeadCapture({
+        key: 'sanctuary', label: 'Sanctuary · Complete Digital Ecosystem', startingFrom: true,
+        setup: RBR_PRICING.sanctuary.setup, monthly: RBR_PRICING.sanctuary.monthly
+      });
     });
   }
   if (exploreHarmonyCta){
