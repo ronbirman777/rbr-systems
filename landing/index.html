@@ -485,6 +485,82 @@
   .notecard .k{ font-size:7.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--sage); font-weight:800; }
   .notecard p{ font-size:9.5px; color:var(--ink-dim); line-height:1.55; margin-top:4px; }
 
+  /* ================= WONDERLAND FEATURED CASE STUDY ================= */
+  #wonderland-case-study .wl-projectlabel{ text-align:center; font-family:var(--serif); font-style:italic; font-size:16px; color:var(--sage); margin-top:-30px; margin-bottom:52px; }
+
+  .wl-hero{ max-width:900px; margin:0 auto 8px; }
+  .wl-onestatement{ text-align:center; font-size:10px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; color:var(--sage); margin-bottom:34px; }
+  .wl-devices{ display:flex; align-items:flex-end; justify-content:center; gap:0; }
+
+  .wl-device{ display:block; text-decoration:none; }
+  .wl-website-device{ width:62%; max-width:520px; position:relative; z-index:1; transition:transform .3s ease, box-shadow .3s ease; }
+  .wl-website-device:hover, .wl-website-device:focus-visible{ transform:translateY(-6px) scale(1.01); }
+  .wl-laptop{ background:linear-gradient(160deg,#20241f,#0d0f0e); border-radius:16px 16px 4px 4px; padding:14px 14px 0; box-shadow:0 40px 80px -30px rgba(27,46,36,0.35); }
+  .wl-laptop-bar{ display:flex; gap:6px; padding-bottom:10px; }
+  .wl-laptop-bar span{ width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,0.18); }
+  .wl-laptop-screen{ border-radius:6px 6px 0 0; overflow:hidden; aspect-ratio:16/10.2; background:var(--cream); }
+  .wl-laptop-screen img{ width:100%; height:100%; object-fit:cover; object-position:top center; display:block; }
+  .wl-laptop-base{ height:12px; background:linear-gradient(180deg,#2b2f29,#14170f); border-radius:0 0 8px 8px; margin:0 -6px; }
+  .wl-laptop-base::after{ content:""; display:block; width:70px; height:4px; background:rgba(0,0,0,0.3); border-radius:0 0 4px 4px; margin:0 auto; }
+
+  .wl-app-device{ width:32%; max-width:190px; margin-left:-40px; z-index:2; position:relative; transition:transform .3s ease; }
+  .wl-app-device:hover, .wl-app-device:focus-visible{ transform:translateY(-8px) scale(1.03); }
+  .wl-app-device .pm{ position:relative; left:auto; top:auto; transform:none; width:100%; animation:none; box-shadow:0 30px 60px -20px rgba(27,46,36,0.4); }
+  .wl-app-device .pm-screen img{ width:100%; height:100%; object-fit:cover; object-position:top center; display:block; }
+
+  .wl-devlabel{ text-align:center; margin-top:16px; }
+  .wl-devlabel b{ display:block; font-size:9.5px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--forest); margin-bottom:3px; }
+  .wl-devlabel span{ font-size:10.5px; color:var(--ink-faint); }
+  .wl-devcta{ display:block; text-align:center; font-size:11px; font-weight:700; color:var(--sage); margin-top:8px; opacity:0; transition:opacity .25s ease; }
+  .wl-device:hover .wl-devcta, .wl-device:focus-visible .wl-devcta{ opacity:1; }
+  @media (any-hover:none), (any-pointer:coarse){ .wl-devcta{ opacity:1; } }
+  .wl-device:focus-visible{ outline:2px solid var(--sage); outline-offset:4px; border-radius:8px; }
+
+  @media (max-width:860px){
+    .wl-devices{ flex-direction:column; align-items:center; gap:44px; }
+    .wl-website-device{ width:100%; max-width:420px; }
+    .wl-app-device{ width:230px; max-width:none; margin-left:0; }
+  }
+
+  /* -- customer journey strip -- */
+  .wl-journey{ display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:10px; max-width:760px; margin:56px auto 0; text-align:center; }
+  .wl-journey span{ font-size:11px; font-weight:700; letter-spacing:.03em; color:var(--ink-dim); }
+  .wl-journey span.grp{ color:var(--forest); font-weight:800; }
+  .wl-journey .sep{ color:var(--line-2); }
+  @media (max-width:600px){ .wl-journey{ gap:7px; } .wl-journey span{ font-size:10px; } }
+
+  /* -- secondary real-screen gallery -- */
+  .wl-gallery{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-top:64px; }
+  @media (max-width:900px){ .wl-gallery{ grid-template-columns:1fr 1fr; max-width:520px; margin-left:auto; margin-right:auto; } }
+  .wl-gcard{ background:var(--white); border:1px solid var(--line); border-radius:16px; overflow:hidden; cursor:pointer; padding:0; text-align:left; transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease; display:block; width:100%; }
+  .wl-gcard:hover, .wl-gcard:focus-visible{ transform:translateY(-4px); box-shadow:0 20px 40px -18px rgba(27,46,36,0.22); border-color:var(--sage); }
+  .wl-gcard:focus-visible{ outline:2px solid var(--sage); outline-offset:2px; }
+  .wl-gthumb{ aspect-ratio:4/3; overflow:hidden; background:var(--cream); }
+  .wl-gthumb img{ width:100%; height:100%; object-fit:cover; }
+  .wl-gcaption{ padding:12px 14px 14px; }
+  .wl-gcaption .k{ font-size:8.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--sage); margin-bottom:3px; }
+  .wl-gcaption b{ font-size:12px; color:var(--forest); font-weight:700; }
+
+  /* -- Sanctuary bridge -- */
+  .wl-bridge{ text-align:center; max-width:600px; margin:72px auto 0; padding:44px 36px; background:var(--forest); border-radius:24px; }
+  .wl-bridge .badge{ font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--sage); margin-bottom:16px; }
+  .wl-bridge h3{ font-family:var(--serif); font-size:clamp(19px,2.4vw,24px); color:var(--cream); font-weight:400; line-height:1.35; margin-bottom:26px; }
+
+  /* -- lightbox -- */
+  .wl-lightbox-overlay{ position:fixed; inset:0; z-index:400; display:none; align-items:center; justify-content:center; background:rgba(27,46,36,0.5); backdrop-filter:blur(6px); padding:24px; }
+  .wl-lightbox-overlay.open{ display:flex; }
+  .wl-lightbox{ background:var(--white); border-radius:20px; max-width:800px; width:100%; max-height:90vh; overflow-y:auto; position:relative; padding:20px 20px 28px; animation:fadeUp .3s ease; }
+  @media (prefers-reduced-motion: reduce){ .wl-lightbox{ animation:none; } }
+  .wl-lightbox img{ width:100%; border-radius:12px; display:block; }
+  .wl-lightbox-close{ position:absolute; top:16px; right:16px; width:36px; height:36px; border-radius:50%; background:var(--cream); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--forest); z-index:1; }
+  .wl-lightbox-close:hover{ background:var(--sage-soft); }
+  .wl-lightbox-caption{ text-align:center; margin-top:18px; font-size:13.5px; color:var(--ink-dim); }
+  .wl-lightbox .btn{ display:flex; width:fit-content; margin:16px auto 0; }
+
+  @media (prefers-reduced-motion: reduce){
+    .wl-website-device, .wl-app-device, .wl-gcard{ transition:none; }
+  }
+
   /* ================= COMPLETE ECOSYSTEM ================= */
   #ecosystem{ overflow:hidden; }
   .eco-intro{ text-align:center; max-width:620px; margin:0 auto 64px; }
@@ -1382,6 +1458,80 @@
   </div>
 </section>
 
+<section id="wonderland-case-study">
+  <div class="wrap">
+    <div class="sectionhead center">
+      <div class="kicker">Featured Ecosystem Case Study</div>
+      <div class="statement">From Discovery to Experience.</div>
+      <p style="margin-top:16px; color:var(--ink-dim); font-size:16px; max-width:640px; margin-left:auto; margin-right:auto;">One retreat center, two purpose built digital experiences. A public website guides discovery and booking, while a dedicated guest app supports the experience inside the retreat.</p>
+    </div>
+    <div class="wl-projectlabel">Wonderland Healing Center</div>
+
+    <div class="wl-hero">
+      <div class="wl-onestatement">One Retreat · Two Digital Experiences</div>
+      <div class="wl-devices">
+        <a class="wl-device wl-website-device" href="https://wonderlandhc.com" target="_blank" rel="noopener noreferrer" aria-label="Explore the real Wonderland Healing Center website (opens in a new tab)">
+          <div class="wl-laptop">
+            <div class="wl-laptop-bar"><span></span><span></span><span></span></div>
+            <div class="wl-laptop-screen"><img src="images/wonderland/website-hero-sm.jpg" srcset="images/wonderland/website-hero-sm.jpg 480w, images/wonderland/website-hero-lg.jpg 960w" sizes="(max-width:860px) 90vw, 520px" width="960" height="600" alt="Wonderland Healing Center public website homepage, showing hero photography and booking navigation" loading="lazy"></div>
+            <div class="wl-laptop-base"></div>
+          </div>
+          <div class="wl-devlabel"><b>Public Website</b><span>Discover · Explore · Book</span></div>
+          <span class="wl-devcta">Explore Website →</span>
+        </a>
+        <a class="wl-device wl-app-device" href="https://wonderland-app.netlify.app/" target="_blank" rel="noopener noreferrer" aria-label="Open the real Wonderland guest web app (opens in a new tab)">
+          <div class="pm">
+            <div class="island"></div>
+            <div class="pm-screen"><img src="images/wonderland/app-home-sm.jpg" srcset="images/wonderland/app-home-sm.jpg 260w, images/wonderland/app-home-lg.jpg 480w" sizes="190px" width="480" height="1043" alt="Wonderland guest app Home screen showing Happening Now with a live class" loading="lazy"></div>
+          </div>
+          <div class="wl-devlabel"><b>Guest Web App</b><span>Arrive · Experience · Connect</span></div>
+          <span class="wl-devcta">Open Guest App →</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="wl-journey" aria-hidden="true">
+      <span class="grp">Discover</span><span class="sep">→</span><span class="grp">Explore</span><span class="sep">→</span><span class="grp">Book</span>
+      <span class="sep" style="margin:0 4px; color:var(--sage);">·</span>
+      <span class="grp">Arrive</span><span class="sep">→</span><span class="grp">Experience</span><span class="sep">→</span><span class="grp">Connect</span>
+    </div>
+
+    <div class="wl-gallery">
+      <button type="button" class="wl-gcard" data-full="images/wonderland/website-accommodations-lg.jpg" data-caption="Accommodation & Stay — the public website's Stay presentation." data-link="https://wonderlandhc.com/accommodations" data-linklabel="Open Accommodations page">
+        <div class="wl-gthumb"><img src="images/wonderland/website-accommodations-sm.jpg" width="480" height="360" alt="Wonderland website Accommodation and Stay page" loading="lazy"></div>
+        <div class="wl-gcaption"><div class="k">Public Website</div><b>Accommodation &amp; Stay</b></div>
+      </button>
+      <button type="button" class="wl-gcard" data-full="images/wonderland/app-schedule-lg.jpg" data-caption="Schedule — the guest app's live, day by day activity timeline." data-link="https://wonderland-app.netlify.app/" data-linklabel="Open Guest App">
+        <div class="wl-gthumb"><img src="images/wonderland/app-schedule-sm.jpg" width="480" height="360" alt="Wonderland guest app Schedule screen with a daily activity timeline" loading="lazy"></div>
+        <div class="wl-gcaption"><div class="k">Guest App</div><b>Schedule</b></div>
+      </button>
+      <button type="button" class="wl-gcard" data-full="images/wonderland/website-dining-lg.jpg" data-caption="Vegan Dining — the public website's dining and menu philosophy page." data-link="https://wonderlandhc.com/dining" data-linklabel="Open Vegan Dining page">
+        <div class="wl-gthumb"><img src="images/wonderland/website-dining-sm.jpg" width="480" height="360" alt="Wonderland website Vegan Dining page" loading="lazy"></div>
+        <div class="wl-gcaption"><div class="k">Public Website</div><b>Vegan Dining</b></div>
+      </button>
+      <button type="button" class="wl-gcard" data-full="images/wonderland/app-meals-lg.jpg" data-caption="Meals — the guest app's daily menu, dietary tags and serving times." data-link="https://wonderland-app.netlify.app/" data-linklabel="Open Guest App">
+        <div class="wl-gthumb"><img src="images/wonderland/app-meals-sm.jpg" width="480" height="360" alt="Wonderland guest app Meals screen with the vegan buffet menu" loading="lazy"></div>
+        <div class="wl-gcaption"><div class="k">Guest App</div><b>Meals</b></div>
+      </button>
+    </div>
+
+    <div class="wl-bridge">
+      <div class="badge">The Sanctuary Approach</div>
+      <h3>One connected digital identity from first discovery to the guest experience.</h3>
+      <a class="btn btn-forest" href="#pricing" id="wlSanctuaryBridge">Build Your Digital Ecosystem →</a>
+    </div>
+  </div>
+</section>
+
+<div class="wl-lightbox-overlay" id="wlLightboxOverlay">
+  <div class="wl-lightbox" role="dialog" aria-modal="true" aria-labelledby="wlLightboxCaption">
+    <button type="button" class="wl-lightbox-close" id="wlLightboxClose" aria-label="Close">✕</button>
+    <img id="wlLightboxImg" src="" alt="">
+    <div class="wl-lightbox-caption" id="wlLightboxCaption"></div>
+    <a class="btn btn-outline" id="wlLightboxLink" href="#" target="_blank" rel="noopener noreferrer">Open Live →</a>
+  </div>
+</div>
+
 <section id="ecosystem">
   <div class="wrap">
     <div class="eco-intro">
@@ -1776,7 +1926,7 @@
         <a class="btn btn-forest" href="#contact" id="harmonyCta">Choose Harmony →</a>
       </div>
 
-      <div class="pcard">
+      <div class="pcard" id="sanctuaryCard">
         <div class="pname">Sanctuary</div>
         <div class="pdescriptor">Complete Digital Ecosystem</div>
         <div class="sanct-tagline">Your Complete Digital Presence</div>
@@ -2939,6 +3089,74 @@ var RBR_CONTACT = {
     });
     document.addEventListener('keydown', function(e){
       if (e.key === 'Escape' && lockedIdx !== null){ lockedIdx = null; ecoApply(null); }
+    });
+  }
+})();
+</script>
+
+<script>
+/* Wonderland Featured Case Study — secondary screen lightbox + Sanctuary bridge CTA. */
+(function(){
+  var overlay = document.getElementById('wlLightboxOverlay');
+  var modal = document.querySelector('.wl-lightbox');
+  var closeBtn = document.getElementById('wlLightboxClose');
+  var imgEl = document.getElementById('wlLightboxImg');
+  var captionEl = document.getElementById('wlLightboxCaption');
+  var linkEl = document.getElementById('wlLightboxLink');
+  var cards = document.querySelectorAll('.wl-gcard');
+  if (!overlay || !cards.length) return;
+
+  var lastFocused = null;
+
+  function focusableEls(){
+    return Array.prototype.slice.call(
+      modal.querySelectorAll('a[href], button:not([disabled])')
+    ).filter(function(el){ return el.offsetParent !== null; });
+  }
+
+  function openLightbox(card){
+    lastFocused = document.activeElement;
+    imgEl.src = card.getAttribute('data-full');
+    imgEl.alt = card.querySelector('img').alt;
+    captionEl.textContent = card.getAttribute('data-caption') || '';
+    linkEl.href = card.getAttribute('data-link') || '#';
+    linkEl.textContent = (card.getAttribute('data-linklabel') || 'Open Live') + ' →';
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKeydown);
+    closeBtn.focus();
+  }
+
+  function closeLightbox(){
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', onKeydown);
+    if (lastFocused) lastFocused.focus();
+  }
+
+  function onKeydown(e){
+    if (e.key === 'Escape'){ closeLightbox(); return; }
+    if (e.key === 'Tab'){
+      var f = focusableEls();
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  }
+
+  cards.forEach(function(card){
+    card.addEventListener('click', function(){ openLightbox(card); });
+  });
+  closeBtn.addEventListener('click', closeLightbox);
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) closeLightbox(); });
+
+  var bridgeCta = document.getElementById('wlSanctuaryBridge');
+  if (bridgeCta){
+    bridgeCta.addEventListener('click', function(e){
+      e.preventDefault();
+      var card = document.getElementById('sanctuaryCard');
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     });
   }
 })();
