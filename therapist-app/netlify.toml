@@ -1,0 +1,29 @@
+# Netlify configuration for the RBR Therapist Companion demo.
+# In Netlify: set "Base directory" to `therapist-app` when deploying from the
+# repository root, or point the site directly at this folder.
+
+[build]
+  base    = "therapist-app"
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+  NPM_FLAGS    = "--no-audit --no-fund"
+
+# Single Page Application fallback — every route is served by index.html.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

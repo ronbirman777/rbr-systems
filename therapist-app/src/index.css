@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-ivory text-ink font-sans antialiased;
+    font-feature-settings: 'ss01' on, 'cv11' on;
+  }
+
+  /* Status is never carried by colour alone, and focus is always visible. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-forest-600 ring-offset-2 ring-offset-ivory rounded-md;
+  }
+
+  ::selection {
+    @apply bg-sage-200 text-forest-900;
+  }
+
+  h1, h2, h3, h4 {
+    @apply text-ink;
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+}
+
+@layer components {
+  .editorial {
+    @apply font-serif font-normal tracking-[-0.01em];
+  }
+
+  .eyebrow {
+    @apply text-2xs font-semibold uppercase tracking-widest2 text-ink-faint;
+  }
+
+  .divider {
+    @apply border-t border-sage-200/70;
+  }
+
+  .surface {
+    @apply bg-white border border-sage-200/70 rounded-xl2;
+  }
+
+  .hairline-list > * + * {
+    @apply border-t border-sage-200/60;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
