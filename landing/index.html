@@ -279,6 +279,15 @@
   .chub-pricing .rows .amt span{ display:block; font-size:10px; font-family:var(--sans); font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-faint); margin-top:4px; }
   .chub-pricing .tagline{ font-family:var(--serif); font-style:italic; font-size:14px; color:var(--ink-dim); margin:10px 0 26px; }
   .chub-pricing .btn{ width:100%; }
+  .chub-pricing .pfrom-block{ margin:4px 0 20px; }
+
+  /* -- shared "From $X/month, Setup Included" membership price display -- */
+  .pfrom-block{ text-align:center; }
+  .pfrom-k{ display:block; font-size:9.5px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px; }
+  .pfrom-amt{ font-family:var(--serif); font-size:32px; color:var(--forest); line-height:1.15; }
+  .pfrom-amt span{ font-size:12.5px; font-family:var(--sans); color:var(--ink-faint); font-weight:600; }
+  .pfrom-included{ font-size:11.5px; color:var(--sage); font-weight:700; margin-top:6px; }
+  .pcard-badge2{ display:inline-block; font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:5px 12px; border-radius:100px; background:var(--sage-soft2); color:var(--forest); margin-bottom:12px; }
 
   /* ================= ABOUT ================= */
   .about .wrap{ display:grid; grid-template-columns:.85fr 1.15fr; gap:80px; align-items:start; }
@@ -818,6 +827,14 @@
   .hopt-micro{ font-family:var(--serif); font-style:italic; font-size:12.5px; color:var(--sage); margin-bottom:14px; }
 
   .hmodal-foot{ text-align:center; font-size:12.5px; color:var(--ink-faint); margin-top:30px; padding-top:24px; border-top:1px solid var(--line); }
+
+  /* -- membership selection modal (Harmony / Client Journey Hub) -- */
+  .memb-steps{ display:flex; justify-content:center; gap:8px; margin-bottom:30px; }
+  .memb-steps span{ font-size:10px; font-weight:800; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-faint); padding:7px 13px; border-radius:100px; background:var(--cream); transition:background .2s ease, color .2s ease; }
+  .memb-steps span.on{ background:var(--forest); color:var(--cream); }
+  .memb-detaillist{ list-style:none; display:flex; flex-direction:column; gap:7px; margin-bottom:18px; }
+  .memb-detaillist li{ font-size:12px; color:var(--ink-dim); display:flex; align-items:flex-start; gap:7px; line-height:1.5; }
+  .memb-detaillist li::before{ content:"—"; color:var(--sage); flex-shrink:0; }
 
   @media (prefers-reduced-motion: reduce){ .hmodal{ animation:none; } }
 
@@ -1864,12 +1881,15 @@
 
     <div class="chub-pricing">
       <div class="tag">For Therapists &amp; Healers</div>
+      <div class="pcard-badge2">Private Client Experience</div>
       <div class="pname">Client Journey Hub</div>
-      <div class="rows">
-        <div class="amt">$399<span>Setup &amp; Launch</span></div>
-        <div class="amt">$99<span>/ month Platform &amp; Care</span></div>
+      <p style="font-size:13px; color:var(--ink-dim); margin:10px 0 4px; line-height:1.6;">A calm digital space connecting your work with clients before, during and between sessions.</p>
+      <div class="pfrom-block">
+        <span class="pfrom-k">From</span>
+        <span class="pfrom-amt">$99<span> / month</span></span>
+        <div class="pfrom-included">Setup &amp; Launch Included</div>
       </div>
-      <div class="tagline">Your practice, beautifully connected.</div>
+      <div class="pmicro" style="margin:0 0 22px;">Choose a 6 or 12 month membership.</div>
       <a class="btn btn-forest" href="#contact" id="clientHubCta">Build My Client Hub →</a>
     </div>
   </div>
@@ -1941,14 +1961,17 @@
       <div class="pcard featured" id="harmonyCard">
         <div class="pop-badge">Most Popular</div>
         <div class="pname">Harmony</div>
-        <div class="pdescriptor">Ongoing Platform</div>
+        <div class="pdescriptor">Ongoing Retreat Platform</div>
         <div class="pfor">Retreat centers, recurring program organizers &amp; year round facilitators</div>
-        <div class="pdesc">Your digital retreat home, always ready for what's next.</div>
+        <div class="pdesc">Your ongoing digital home for recurring retreat experiences.</div>
         <div class="pricerows">
-          <div class="pricerow"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$690<span> one time</span></span></div>
-          <div class="pricedivider"></div>
-          <div class="pricerow"><span class="plabel">Platform &amp; Care</span><span class="pamt">$99<span> / month</span></span></div>
+          <div class="pfrom-block">
+            <span class="pfrom-k">From</span>
+            <span class="pfrom-amt">$99<span> / month</span></span>
+            <div class="pfrom-included">Setup &amp; Launch Included</div>
+          </div>
         </div>
+        <div class="pmicro" style="margin:-14px 0 20px;">Choose a 6 or 12 month membership.</div>
         <ul>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Everything in Single Retreat</li>
           <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Persistent year round platform</li>
@@ -2297,6 +2320,85 @@
   </div>
 </div>
 
+<div class="hmodal-overlay" id="membershipModalOverlay">
+  <div class="hmodal" role="dialog" aria-modal="true" aria-labelledby="membershipModalTitle" id="membershipModal">
+    <div class="hmodal-drag" aria-hidden="true"></div>
+    <button type="button" class="hmodal-close" id="membershipModalClose" aria-label="Close">✕</button>
+
+    <div class="memb-steps" aria-hidden="true">
+      <span class="memb-step on" id="membStepIndTerm">1. Membership</span>
+      <span class="memb-step" id="membStepIndPayment">2. Payment</span>
+      <span class="memb-step" id="membStepIndDetails">3. Details</span>
+    </div>
+
+    <div class="memb-screen" id="membScreenTerm">
+      <div class="hmodal-head">
+        <span class="kicker" id="membProductKicker">Harmony Membership</span>
+        <h3 id="membershipModalTitle">Choose the rhythm that works for you.</h3>
+        <p>Setup &amp; Launch is included with either membership.</p>
+      </div>
+      <div class="hoptions">
+        <div class="hopt">
+          <span class="hopt-badge">Best Value</span>
+          <h4>12 Month Membership</h4>
+          <div class="hopt-price">
+            <div class="row"><span class="plabel">Monthly Equivalent</span><span class="pamt">$99<span> / month</span></span></div>
+          </div>
+          <ul class="memb-detaillist">
+            <li>12 month commitment</li>
+            <li>Setup &amp; Launch included</li>
+            <li>Best value for ongoing use</li>
+          </ul>
+          <button type="button" class="btn btn-forest" data-term="12">Select 12 Months</button>
+        </div>
+        <div class="hopt">
+          <span class="hopt-badge">More Flexible</span>
+          <h4>6 Month Membership</h4>
+          <div class="hopt-price">
+            <div class="row"><span class="plabel">Monthly Equivalent</span><span class="pamt">$149<span> / month</span></span></div>
+          </div>
+          <ul class="memb-detaillist">
+            <li>6 month commitment</li>
+            <li>Setup &amp; Launch included</li>
+            <li>Shorter commitment with more flexibility</li>
+          </ul>
+          <button type="button" class="btn btn-outline" data-term="6">Select 6 Months</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="memb-screen" id="membScreenPayment" style="display:none;">
+      <div class="hmodal-head">
+        <span class="kicker" id="membPaymentKicker">12 Month Membership</span>
+        <h3>How would you like to pay?</h3>
+      </div>
+      <div class="hoptions">
+        <div class="hopt">
+          <span class="hopt-badge">Quarterly</span>
+          <h4>Quarterly Billing</h4>
+          <div class="hopt-price">
+            <div class="row"><span class="plabel">Every 3 Months</span><span class="pamt" id="membQuarterlyAmt">$297</span></div>
+            <div class="row"><span class="plabel">Total Commitment</span><span class="pamt" id="membQuarterlyTotal">$1,188</span></div>
+          </div>
+          <div class="hopt-micro" id="membQuarterlyMicro">Quarterly billing does not change your selected 12 month commitment.</div>
+          <button type="button" class="btn btn-outline" data-cadence="quarterly">Choose Quarterly</button>
+        </div>
+        <div class="hopt partner">
+          <span class="hopt-badge">Save 10%</span>
+          <h4>Pay In Full</h4>
+          <div class="hopt-price">
+            <div class="row"><span class="plabel">Original Total</span><span class="pamt"><span class="strike" id="membFullOriginal">$1,188</span></span></div>
+            <div class="row"><span class="plabel">Pay In Full</span><span class="pamt" id="membFullAmt">$1,069</span></div>
+          </div>
+          <div class="hopt-save">One payment. No additional membership payments during the term.</div>
+          <button type="button" class="btn btn-forest" data-cadence="full">Choose Pay In Full</button>
+        </div>
+      </div>
+      <button type="button" class="lc-change" id="membBackToTerm" style="display:block; margin:20px auto 0;">← Back to membership term</button>
+    </div>
+  </div>
+</div>
+
 <div class="hmodal-overlay" id="leadModalOverlay">
   <div class="hmodal lcmodal" role="dialog" aria-modal="true" aria-labelledby="leadModalTitle" id="leadModal">
     <div class="hmodal-drag" aria-hidden="true"></div>
@@ -2309,11 +2411,24 @@
     </div>
 
     <div class="lc-summary" id="leadSummary">
-      <div class="lc-summary-row" id="leadSetupRow"><span class="l" id="leadSetupLabel">Retreat Access</span><span class="v" id="leadSetupAmt">$349<span class="unit"> one time</span></span></div>
-      <div class="lc-summary-row" id="leadMonthlyRow" style="display:none;"><span class="l">Platform &amp; Care</span><span class="v" id="leadMonthlyAmt">$99<span class="unit"> / month</span></span></div>
-      <div class="lc-summary-credit" id="leadCreditNote" style="display:none;"></div>
-      <div class="lc-summary-credit" id="leadNoRecurring">No recurring subscription</div>
-      <button type="button" class="lc-change" id="leadChangePlan">← Change plan</button>
+      <div id="leadStandardSummary">
+        <div class="lc-summary-row" id="leadSetupRow"><span class="l" id="leadSetupLabel">Retreat Access</span><span class="v" id="leadSetupAmt">$349<span class="unit"> one time</span></span></div>
+        <div class="lc-summary-row" id="leadMonthlyRow" style="display:none;"><span class="l">Platform &amp; Care</span><span class="v" id="leadMonthlyAmt">$99<span class="unit"> / month</span></span></div>
+        <div class="lc-summary-credit" id="leadCreditNote" style="display:none;"></div>
+        <div class="lc-summary-credit" id="leadNoRecurring">No recurring subscription</div>
+        <button type="button" class="lc-change" id="leadChangePlan">← Change plan</button>
+      </div>
+      <div id="leadMembershipSummary" style="display:none;">
+        <div class="lc-summary-row"><span class="l">Membership</span><span class="v" id="membSumTerm">12 Month Membership</span></div>
+        <div class="lc-summary-row"><span class="l">Billing</span><span class="v" id="membSumBilling">Quarterly</span></div>
+        <div class="lc-summary-row"><span class="l">Payment Schedule</span><span class="v" id="membSumSchedule">$297 every 3 months</span></div>
+        <div class="lc-summary-row"><span class="l">Total Commitment</span><span class="v" id="membSumTotal">$1,188</span></div>
+        <div class="lc-summary-row"><span class="l">Setup &amp; Launch</span><span class="v">Included</span></div>
+        <div style="display:flex; gap:16px; justify-content:center; margin-top:4px;">
+          <button type="button" class="lc-change" id="leadEditMembership">← Edit membership</button>
+          <button type="button" class="lc-change" id="leadEditPayment">← Edit payment method</button>
+        </div>
+      </div>
     </div>
 
     <form class="lc-form" id="leadForm" novalidate>
@@ -2474,10 +2589,28 @@
    authored directly from these values; keep them in sync if prices change. */
 var RBR_PRICING = {
   singleRetreat: { price: 349, billingType: 'one-time', eventBased: true, accessBeforeDays: 1, accessAfterDays: 1 },
-  harmony:   { setup: 690,  monthly: 99,  portfolioPartner: { enabled: true, setup: 540, credit: 150 } },
+  harmony:   { setup: 690,  monthly: 99,  portfolioPartner: { enabled: false, setup: 540, credit: 150 } },
   sanctuary: { setup: 1490, monthly: 199, portfolioPartner: { enabled: false } },
   clientHub: { setup: 399,  monthly: 99 }
 };
+
+/* RBR_MEMBERSHIP — single source of truth for the Harmony / Client Journey Hub
+   membership commercial model (6 or 12 month term, quarterly or pay in full).
+   Setup & Launch is included in every membership term, so there is no
+   separate setup figure here. portfolioPartner above is intentionally
+   disabled: that flow is being redesigned for the membership model and is
+   left in place (unused) rather than deleted. */
+var RBR_MEMBERSHIP = {
+  harmony: {
+    12: { monthlyEquivalent: 99,  quarterlyPayment: 297, paymentCount: 4, quarterlyTotal: 1188, upfront: 1069 },
+    6:  { monthlyEquivalent: 149, quarterlyPayment: 447, paymentCount: 2, quarterlyTotal: 894,  upfront: 805 }
+  },
+  clientHub: {
+    12: { monthlyEquivalent: 99,  quarterlyPayment: 297, paymentCount: 4, quarterlyTotal: 1188, upfront: 1069 },
+    6:  { monthlyEquivalent: 149, quarterlyPayment: 447, paymentCount: 2, quarterlyTotal: 894,  upfront: 805 }
+  }
+};
+var RBR_MEMBERSHIP_LABELS = { harmony: 'Harmony', clientHub: 'Client Journey Hub' };
 
 /* RBR_CONTACT — WhatsApp handoff target for the Lead Capture modal.
    No real RBR WhatsApp number exists in this project yet, so this is left
@@ -2548,6 +2681,16 @@ var RBR_CONTACT = {
     openModal();
   });
 
+  /* Portfolio Partner is currently disabled (RBR_PRICING.harmony.portfolioPartner.enabled
+     = false), so the listener above no-ops and this handles "Choose Harmony"
+     instead: straight into the membership selector. */
+  trigger.addEventListener('click', function(e){
+    var pp = (RBR_PRICING.harmony || {}).portfolioPartner;
+    if (pp && pp.enabled) return;
+    e.preventDefault();
+    if (window.RBR_openMembershipModal) window.RBR_openMembershipModal('harmony');
+  });
+
   closeBtn.addEventListener('click', closeModal);
   overlay.addEventListener('click', function(e){ if (e.target === overlay) closeModal(); });
 
@@ -2580,6 +2723,123 @@ var RBR_CONTACT = {
       }
     });
   }
+})();
+</script>
+
+<script>
+/* Membership Selection modal — Harmony and Client Journey Hub share this
+   exact 2-step flow (Membership Term, then Payment Method), driven entirely
+   by RBR_MEMBERSHIP. Selecting a payment method closes this modal and hands
+   the assembled plan straight to the existing Lead Capture modal in memory,
+   the same "no stacked backdrops" handoff already used by the Harmony
+   Portfolio Partner flow. */
+(function(){
+  var overlay = document.getElementById('membershipModalOverlay');
+  var modal = document.getElementById('membershipModal');
+  var closeBtn = document.getElementById('membershipModalClose');
+  var screenTerm = document.getElementById('membScreenTerm');
+  var screenPayment = document.getElementById('membScreenPayment');
+  var stepIndTerm = document.getElementById('membStepIndTerm');
+  var stepIndPayment = document.getElementById('membStepIndPayment');
+  if (!overlay || !modal) return;
+
+  var state = { product: null, term: null };
+  var lastFocused = null;
+
+  function focusableEls(){
+    return Array.prototype.slice.call(
+      modal.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')
+    ).filter(function(el){ return el.offsetParent !== null; });
+  }
+
+  function onKeydown(e){
+    if (e.key === 'Escape'){ closeMembershipModal(); return; }
+    if (e.key === 'Tab'){
+      var f = focusableEls();
+      if (!f.length) return;
+      var first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
+    }
+  }
+
+  function showScreen(name){
+    screenTerm.style.display = name === 'term' ? '' : 'none';
+    screenPayment.style.display = name === 'payment' ? '' : 'none';
+    stepIndTerm.classList.toggle('on', name === 'term');
+    stepIndPayment.classList.toggle('on', name === 'payment');
+    var f = focusableEls();
+    if (f.length) f[0].focus();
+  }
+
+  function renderPaymentScreen(){
+    var d = RBR_MEMBERSHIP[state.product][state.term];
+    document.getElementById('membPaymentKicker').textContent = state.term + ' Month Membership';
+    document.getElementById('membQuarterlyAmt').innerHTML = '$' + d.quarterlyPayment;
+    document.getElementById('membQuarterlyTotal').innerHTML = '$' + d.quarterlyTotal.toLocaleString();
+    document.getElementById('membQuarterlyMicro').textContent = 'Quarterly billing does not change your selected ' + state.term + ' month commitment.';
+    document.getElementById('membFullOriginal').textContent = '$' + d.quarterlyTotal.toLocaleString();
+    document.getElementById('membFullAmt').innerHTML = '$' + d.upfront.toLocaleString();
+  }
+
+  function openMembershipModal(product, resumeTerm){
+    state = { product: product, term: resumeTerm || null };
+    lastFocused = document.activeElement;
+    document.getElementById('membProductKicker').textContent = RBR_MEMBERSHIP_LABELS[product] + ' Membership';
+    overlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onKeydown);
+    if (resumeTerm){
+      renderPaymentScreen();
+      showScreen('payment');
+    } else {
+      showScreen('term');
+    }
+  }
+
+  function closeMembershipModal(){
+    overlay.classList.remove('open');
+    document.body.style.overflow = '';
+    document.removeEventListener('keydown', onKeydown);
+    if (lastFocused) lastFocused.focus();
+  }
+
+  window.RBR_openMembershipModal = openMembershipModal;
+
+  closeBtn.addEventListener('click', closeMembershipModal);
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) closeMembershipModal(); });
+
+  screenTerm.querySelectorAll('[data-term]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      state.term = parseInt(btn.getAttribute('data-term'), 10);
+      renderPaymentScreen();
+      showScreen('payment');
+    });
+  });
+
+  document.getElementById('membBackToTerm').addEventListener('click', function(){ showScreen('term'); });
+
+  screenPayment.querySelectorAll('[data-cadence]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var cadence = btn.getAttribute('data-cadence');
+      var d = RBR_MEMBERSHIP[state.product][state.term];
+      var plan = {
+        key: state.product,
+        label: RBR_MEMBERSHIP_LABELS[state.product],
+        family: state.product === 'clientHub' ? 'client' : undefined,
+        membership: true,
+        term: state.term,
+        cadence: cadence,
+        monthlyEquivalent: d.monthlyEquivalent,
+        paymentAmount: cadence === 'full' ? d.upfront : d.quarterlyPayment,
+        totalPayments: cadence === 'full' ? 1 : d.paymentCount,
+        totalCommitment: cadence === 'full' ? d.upfront : d.quarterlyTotal,
+        setupIncluded: true
+      };
+      closeMembershipModal();
+      if (window.RBR_openLeadCapture) window.RBR_openLeadCapture(plan);
+    });
+  });
 })();
 </script>
 
@@ -2659,6 +2919,22 @@ var RBR_CONTACT = {
   function renderSummary(plan){
     kickerEl.textContent = "You've Selected " + plan.label;
 
+    if (plan.membership){
+      document.getElementById('leadStandardSummary').style.display = 'none';
+      document.getElementById('leadMembershipSummary').style.display = '';
+      var cadenceLabel = plan.cadence === 'full' ? 'Pay In Full' : 'Quarterly';
+      var scheduleText = plan.cadence === 'full'
+        ? '$' + plan.paymentAmount.toLocaleString() + ' one time'
+        : '$' + plan.paymentAmount.toLocaleString() + ' every 3 months';
+      document.getElementById('membSumTerm').textContent = plan.term + ' Month Membership';
+      document.getElementById('membSumBilling').textContent = cadenceLabel;
+      document.getElementById('membSumSchedule').textContent = scheduleText;
+      document.getElementById('membSumTotal').textContent = '$' + plan.totalCommitment.toLocaleString();
+      return;
+    }
+    document.getElementById('leadStandardSummary').style.display = '';
+    document.getElementById('leadMembershipSummary').style.display = 'none';
+
     if (plan.billingType === 'one-time'){
       document.getElementById('leadSetupLabel').textContent = 'Retreat Access';
       setupAmtEl.innerHTML = '$' + plan.price + '<span class="unit"> one time</span>';
@@ -2725,6 +3001,21 @@ var RBR_CONTACT = {
     if (pricing) pricing.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 
+  var editMembershipBtn = document.getElementById('leadEditMembership');
+  var editPaymentBtn = document.getElementById('leadEditPayment');
+  if (editMembershipBtn){
+    editMembershipBtn.addEventListener('click', function(){
+      closeLeadModal();
+      if (window.RBR_openMembershipModal && currentPlan) window.RBR_openMembershipModal(currentPlan.key);
+    });
+  }
+  if (editPaymentBtn){
+    editPaymentBtn.addEventListener('click', function(){
+      closeLeadModal();
+      if (window.RBR_openMembershipModal && currentPlan) window.RBR_openMembershipModal(currentPlan.key, currentPlan.term);
+    });
+  }
+
   typeChips.forEach(function(chip){
     chip.addEventListener('click', function(){
       var isOn = chip.getAttribute('aria-pressed') === 'true';
@@ -2784,6 +3075,42 @@ var RBR_CONTACT = {
      only when the visitor filled them in. Portfolio Partner adds the setup
      credit breakdown without dumping the full program terms. */
   function buildMessage(plan, lead){
+    if (plan.membership){
+      var mlines = [];
+      mlines.push('Hi Ron,');
+      mlines.push('');
+      mlines.push("I'm interested in " + plan.label + '.');
+      mlines.push('');
+      mlines.push('Membership:');
+      mlines.push(plan.term + ' Months');
+      mlines.push('');
+      mlines.push('Payment:');
+      mlines.push(plan.cadence === 'full' ? 'Pay In Full' : 'Quarterly');
+      mlines.push('');
+      mlines.push('Payment Schedule:');
+      mlines.push(plan.cadence === 'full' ? ('$' + plan.paymentAmount.toLocaleString() + ' one time') : ('$' + plan.paymentAmount.toLocaleString() + ' every 3 months'));
+      mlines.push('');
+      mlines.push('Total Commitment:');
+      mlines.push('$' + plan.totalCommitment.toLocaleString());
+      mlines.push('');
+      mlines.push('Setup & Launch:');
+      mlines.push('Included');
+      mlines.push('');
+      mlines.push('Name:');
+      mlines.push(lead.name);
+      if (lead.retreat){ mlines.push(''); mlines.push('Retreat / Business:'); mlines.push(lead.retreat); }
+      mlines.push('');
+      mlines.push('Email:');
+      mlines.push(lead.email);
+      mlines.push('');
+      mlines.push('Phone / WhatsApp:');
+      mlines.push(lead.phone);
+      if (lead.type){ mlines.push(''); mlines.push('Type:'); mlines.push(lead.type); }
+      mlines.push('');
+      mlines.push("I'd love to discuss the next steps.");
+      return mlines.join('\n');
+    }
+
     if (plan.family === 'client'){
       var clines = [];
       clines.push("Hi Ron, I'm interested in RBR.");
@@ -2931,10 +3258,7 @@ var RBR_CONTACT = {
   if (clientHubCta){
     clientHubCta.addEventListener('click', function(e){
       e.preventDefault();
-      openLeadCapture({
-        key: 'client-hub', label: 'Client Journey Hub', family: 'client',
-        setup: RBR_PRICING.clientHub.setup, monthly: RBR_PRICING.clientHub.monthly
-      });
+      if (window.RBR_openMembershipModal) window.RBR_openMembershipModal('clientHub');
     });
   }
 })();
