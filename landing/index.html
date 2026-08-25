@@ -953,9 +953,20 @@
   @media (max-width:760px){ .checklist{ grid-template-columns:1fr; } }
   .checkitem{ background:var(--cream); padding:22px 24px; font-size:13.5px; color:var(--ink-dim); display:flex; gap:10px; align-items:flex-start; }
   .checkitem svg{ flex-shrink:0; margin-top:2px; }
+
+  /* Choose Your Path (new): feature-hint chips + CTA spacing inside the existing
+     .whofor-card, and the editorial divider between the two journeys. */
+  .whofor-card{ display:flex; flex-direction:column; min-width:0; }
+  .whofor-hints{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin:16px 0 20px; }
+  .whofor-hint{ font-size:11px; font-weight:600; letter-spacing:.02em; padding:6px 12px; border-radius:100px; background:var(--sage-soft); color:var(--forest); }
+  .whofor-card .btn{ margin-top:4px; max-width:100%; white-space:normal; }
+  .productlabel{ font-family:var(--sans); font-size:11px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-faint); margin:-4px 0 2px; }
+  .journey-divider{ padding:64px 0; background:linear-gradient(to bottom, #FBF9F5, #F4F6F3); }
+  .journey-divider span{ display:block; width:64px; height:1px; background:var(--sage); margin:0 auto; opacity:.5; }
 </style>
 </head>
 <body>
+
 
 <header id="siteHeader">
   <div class="wrap">
@@ -964,14 +975,12 @@
       <span class="sub">Retreats By Ron</span>
     </a>
     <nav class="mainnav">
-      <a href="#about">About</a>
-      <a href="#portfolio">Portfolio</a>
-      <a href="#pricing">Pricing</a>
-      <a href="#shop">Shop</a>
-      <a href="#testimonials">Testimonials</a>
-      <a href="#contact">Contact</a>
+      <a href="#for-retreats">For Retreats</a>
+      <a href="#for-therapists">For Therapists</a>
+      <a href="#wonderland-proof">Wonderland</a>
+      <a href="#about-ron">About</a>
     </nav>
-    <a class="btn btn-forest" href="#pricing">Get Your App</a>
+    <a class="btn btn-forest" href="#final-cta">Talk With Ron</a>
     <button class="burger" id="burgerBtn" aria-label="Open menu"><span></span></button>
   </div>
 </header>
@@ -982,14 +991,12 @@
     <button class="mclose" id="mcloseBtn" aria-label="Close menu">✕</button>
   </div>
   <nav>
-    <a href="#about">About</a>
-    <a href="#portfolio">Portfolio</a>
-    <a href="#pricing">Pricing</a>
-    <a href="#shop">Shop</a>
-    <a href="#testimonials">Testimonials</a>
-    <a href="#contact">Contact</a>
+    <a href="#for-retreats">For Retreats</a>
+    <a href="#for-therapists">For Therapists</a>
+    <a href="#wonderland-proof">Wonderland</a>
+    <a href="#about-ron">About</a>
   </nav>
-  <a class="btn btn-cream mcta" href="#pricing">Get Your App</a>
+  <a class="btn btn-cream mcta" href="#final-cta">Talk With Ron</a>
 </div>
 
 <main id="top">
@@ -1002,11 +1009,12 @@
   </div>
   <div class="wrap">
     <div class="hero-head">
-      <h1>Harmonize your retreats<br>&amp; healing spaces with<br>custom digital experiences</h1>
-      <p class="lede">Custom digital experiences designed for retreats, therapists, healers and conscious communities. Beautiful technology that helps guests and clients stay connected, informed and present throughout their journey.</p>
+      <div class="kicker" style="margin-bottom:14px;">Purpose Built Digital Experiences</div>
+      <h1>Calm, thoughtful digital<br>experiences for retreats,<br>therapists and healers</h1>
+      <p class="lede">RBR creates beautifully branded digital spaces that organize the information, resources and experiences people need to stay connected and present.</p>
       <div class="hero-ctas">
-        <a class="btn btn-forest" href="#contact">Book a Conversation with Ron →</a>
-        <a class="btn btn-outline" href="#wonderland-case-study">Explore Real Project Proof ↓</a>
+        <a class="btn btn-forest" href="#choose-path">Explore Your Experience ↓</a>
+        <a class="btn btn-outline" href="#final-cta">Talk With Ron →</a>
       </div>
     </div>
 
@@ -1058,29 +1066,41 @@
   </div>
 </section>
 
-<nav class="familynav" aria-label="Product family">
-  <div class="familynav-inner" role="group">
-    <a href="#portfolio" id="familyRetreats" class="on">For Retreats</a>
-    <a href="#client-hub" id="familyTherapists">For Therapists &amp; Healers</a>
-  </div>
-</nav>
-
-<section id="who-for" class="whofor">
+<section id="choose-path" class="whofor">
   <div class="wrap">
+    <div class="sectionhead center" style="margin-bottom:36px;">
+      <div class="kicker">Choose Your Path</div>
+    </div>
     <div class="whofor-grid">
       <div class="whofor-card">
         <div class="kicker">For Retreats</div>
-        <p>Single retreats, recurring programs and complete retreat center ecosystems.</p>
+        <p>Digital guest experiences for single retreats, recurring programs and complete retreat centers.</p>
+        <div class="whofor-hints">
+          <span class="whofor-hint">Retreat Calendar</span>
+          <span class="whofor-hint">Daily Schedule</span>
+          <span class="whofor-hint">Meals</span>
+          <span class="whofor-hint">Teachers</span>
+          <span class="whofor-hint">Guest Experience</span>
+        </div>
+        <a class="btn btn-forest" href="#for-retreats">Explore Retreat Experiences ↓</a>
       </div>
       <div class="whofor-card">
         <div class="kicker">For Therapists &amp; Healers</div>
-        <p>Private client journeys, practices, resources and connection between sessions.</p>
+        <p>Private digital spaces that support your client journey before, during and between sessions.</p>
+        <div class="whofor-hints">
+          <span class="whofor-hint">Practitioner Dashboard</span>
+          <span class="whofor-hint">Client Experience</span>
+          <span class="whofor-hint">Practices</span>
+          <span class="whofor-hint">Resources</span>
+          <span class="whofor-hint">Session Journey</span>
+        </div>
+        <a class="btn btn-forest" href="#for-therapists">Explore Client Journey Hub ↓</a>
       </div>
     </div>
   </div>
 </section>
 
-<section id="about" class="about">
+<section id="about-ron" class="about">
   <div class="wrap">
     <div class="about-portrait">
       <div class="portrait-frame">
@@ -1088,15 +1108,15 @@
       </div>
     </div>
     <div class="about-copy">
-      <div class="kicker">About Me</div>
-      <div class="statement">Bridging consciousness &amp; technology</div>
+      <div class="kicker">Why RBR Exists</div>
+      <div class="statement">Built from real experience inside retreat spaces.</div>
       <p>For the past three years, I've been managing a retreat center in Thailand, while also producing retreats of my own and working closely with facilitators, teachers, and groups from around the world.</p>
-      <p>That experience showed me a gap that kept appearing again and again. Retreats are deeply human experiences, but much of what surrounds them, including schedules, updates, resources, communication, and guest information, is still often fragmented or unnecessarily complicated.</p>
+      <p>That experience showed me the same problems again and again: scattered information, repeated questions, confusing schedule communication, resources guests couldn't find when they needed them, and a steady stream of administrative noise that pulled facilitators away from the people in front of them.</p>
       <p>Guests shouldn't need to search for a printed schedule or ask the same practical questions throughout the day. They should be able to stay present, connect more deeply with their teacher or facilitator, and access everything that supports their journey without technology getting in the way.</p>
       <p>At the same time, facilitators shouldn't have to spend their energy repeatedly sharing information, managing scattered resources, or answering questions that could be handled beautifully and instantly.</p>
       <p class="about-emphasis">That's why I created RBR.</p>
       <p>I build digital experiences that bridge those two worlds. Guests get a simple, intuitive way to experience the retreat at its best, while facilitators and retreat centers get an effortless way to organize and share everything their participants need.</p>
-      <p>Technology shouldn't compete with the retreat experience. It should quietly support it. Simple enough to disappear into the background, thoughtful enough to make everything easier, and beautifully integrated into the experience itself.</p>
+      <p>Technology should create more space for people to be present, not become another distraction. Simple enough to disappear into the background, thoughtful enough to make everything easier, and beautifully integrated into the experience itself.</p>
       <div class="about-markers">
         <span>3 Years Inside Retreat Operations</span>
         <span>Retreats Produced First Hand</span>
@@ -1106,26 +1126,135 @@
   </div>
 </section>
 
-<section id="portfolio">
+
+<section id="for-retreats">
   <div class="wrap">
     <div class="sectionhead center">
-      <div class="kicker">Portfolio</div>
-      <div class="statement">Featured Showcase</div>
-      <p style="margin-top:16px; color:var(--ink-dim); font-size:16px;">Crafted for sacred spaces.</p>
+      <div class="kicker">For Retreats</div>
+      <div class="statement">Everything your guests need, in one calm digital space.</div>
+      <p style="margin-top:16px; color:var(--ink-dim); font-size:16px; max-width:640px; margin-left:auto; margin-right:auto;">From the days before arrival to the final session, give guests one beautifully organized place for schedules, teachers, meals, spaces and everything they need during their retreat.</p>
+    </div>
+  </div>
+</section>
+
+<section id="wonderland-proof">
+  <div class="wrap">
+    <div class="sectionhead center">
+      <div class="kicker">Featured Ecosystem Case Study</div>
+      <div class="statement">From Discovery to Experience.</div>
+      <p style="margin-top:16px; color:var(--ink-dim); font-size:16px; max-width:640px; margin-left:auto; margin-right:auto;">One retreat center, two purpose built digital experiences. A public website guides discovery and booking, while a dedicated guest app supports the experience inside the retreat.</p>
+    </div>
+    <div class="wl-projectlabel">Wonderland Healing Center</div>
+
+    <div class="wl-hero">
+      <div class="wl-onestatement">One Retreat · Two Digital Experiences</div>
+      <div class="wl-devices">
+        <a class="wl-device wl-website-device" href="https://wonderlandhc.com" target="_blank" rel="noopener noreferrer" aria-label="Explore the real Wonderland Healing Center website (opens in a new tab)">
+          <div class="wl-laptop">
+            <div class="wl-laptop-bar"><span></span><span></span><span></span></div>
+            <div class="wl-laptop-screen"><img src="images/wonderland/website-hero-display.webp" width="1400" height="875" alt="Wonderland Healing Center public website homepage, showing hero photography and booking navigation"></div>
+            <div class="wl-laptop-base"></div>
+          </div>
+          <div class="wl-devlabel"><b>Public Website</b><span>Discover · Explore · Book</span></div>
+          <span class="wl-devcta">Explore Website →</span>
+        </a>
+        <a class="wl-device wl-app-device" href="https://wonderland-app.netlify.app/" target="_blank" rel="noopener noreferrer" aria-label="Open the real Wonderland guest web app (opens in a new tab)">
+          <div class="pm">
+            <div class="island"></div>
+            <div class="pm-screen"><img src="images/wonderland/app-home-display.webp" width="700" height="1518" alt="Wonderland guest app Home screen showing Happening Now with a live class"></div>
+          </div>
+          <div class="wl-devlabel"><b>Guest Web App</b><span>Arrive · Experience · Connect</span></div>
+          <span class="wl-devcta">Open Guest App →</span>
+        </a>
+      </div>
     </div>
 
-    <div class="showcase-row">
-      <div class="showcase-txt">
-        <div class="tag">Guest Mobile App</div>
-        <h3>The Retreat Companion</h3>
-        <p>Everything a guest needs during their stay, in one calm app, built and branded to the retreat.</p>
-        <ul>
-          <li>Live schedule &amp; "happening now"</li>
-          <li>Meals, dietary notes &amp; facilities map</li>
-          <li>Teacher and facilitator profiles</li>
-        </ul>
-        <a class="showcase-link" href="#contact">View Demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <div class="wl-journey" aria-hidden="true">
+      <span class="grp">Discover</span><span class="sep">→</span><span class="grp">Explore</span><span class="sep">→</span><span class="grp">Book</span>
+      <span class="sep" style="margin:0 4px; color:var(--sage);">·</span>
+      <span class="grp">Arrive</span><span class="sep">→</span><span class="grp">Experience</span><span class="sep">→</span><span class="grp">Connect</span>
+    </div>
+
+    <div class="wl-gallery">
+      <button type="button" class="wl-gcard" data-full="images/wonderland/website-accommodations-full.webp" data-caption="Accommodation & Stay: the public website's Stay presentation." data-link="https://wonderlandhc.com/accommodations" data-linklabel="Open Accommodations page">
+        <div class="wl-gthumb"><img src="images/wonderland/website-accommodations-thumb.webp" width="480" height="300" alt="Wonderland website Accommodation and Stay page" loading="lazy"></div>
+        <div class="wl-gcaption"><div class="k">Public Website</div><b>Accommodation &amp; Stay</b></div>
+      </button>
+      <button type="button" class="wl-gcard" data-full="images/wonderland/app-schedule-full.webp" data-caption="Schedule: the guest app's live, day by day activity timeline." data-link="https://wonderland-app.netlify.app/" data-linklabel="Open Guest App">
+        <div class="wl-gthumb"><img src="images/wonderland/app-schedule-thumb.webp" width="300" height="650" alt="Wonderland guest app Schedule screen with a daily activity timeline" loading="lazy"></div>
+        <div class="wl-gcaption"><div class="k">Guest App</div><b>Schedule</b></div>
+      </button>
+      <button type="button" class="wl-gcard" data-full="images/wonderland/website-dining-full.webp" data-caption="Vegan Dining: the public website's dining and menu philosophy page." data-link="https://wonderlandhc.com/dining" data-linklabel="Open Vegan Dining page">
+        <div class="wl-gthumb"><img src="images/wonderland/website-dining-thumb.webp" width="480" height="300" alt="Wonderland website Vegan Dining page" loading="lazy"></div>
+        <div class="wl-gcaption"><div class="k">Public Website</div><b>Vegan Dining</b></div>
+      </button>
+      <button type="button" class="wl-gcard" data-full="images/wonderland/app-meals-full.webp" data-caption="Meals: the guest app's daily menu, dietary tags and serving times." data-link="https://wonderland-app.netlify.app/" data-linklabel="Open Guest App">
+        <div class="wl-gthumb"><img src="images/wonderland/app-meals-thumb.webp" width="300" height="650" alt="Wonderland guest app Meals screen with the vegan buffet menu" loading="lazy"></div>
+        <div class="wl-gcaption"><div class="k">Guest App</div><b>Meals</b></div>
+      </button>
+    </div>
+
+    <div class="wl-bridge">
+      <div class="badge">The Sanctuary Approach</div>
+      <h3>One connected digital identity from first discovery to the guest experience.</h3>
+      <a class="btn btn-forest" href="#retreat-pricing" id="wlSanctuaryBridge">Build Your Digital Ecosystem →</a>
+    </div>
+  </div>
+</section>
+
+
+<div class="wl-lightbox-overlay" id="wlLightboxOverlay">
+  <div class="wl-lightbox" role="dialog" aria-modal="true" aria-labelledby="wlLightboxCaption">
+    <button type="button" class="wl-lightbox-close" id="wlLightboxClose" aria-label="Close">✕</button>
+    <img id="wlLightboxImg" src="" alt="">
+    <div class="wl-lightbox-caption" id="wlLightboxCaption"></div>
+    <a class="btn btn-outline" id="wlLightboxLink" href="#" target="_blank" rel="noopener noreferrer">Open Live →</a>
+  </div>
+</div>
+
+
+<section id="retreat-app-experience">
+  <div class="wrap">
+    <div class="eco-intro">
+      <div class="kicker">Retreat Guest App Experience</div>
+      <div class="statement">Your retreat, beautifully organized.</div>
+      <p>Home and Happening Now, the retreat calendar, daily schedule, teachers and facilitators, meals, facilities and audio resources, all living in one intuitive digital space.</p>
+    </div>
+
+    <div class="eco-stage-wrap" id="ecosystem">
+    <div class="eco-stage" id="ecoStage">
+      <div class="eco-phone" data-idx="0" tabindex="0" role="button" aria-label="Focus the Facilities screen" style="--l:4%; --t:196px; --w:132px; --z:1; --rot:-13deg; --op:.88;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-facilities"></div></div>
+        <div class="eco-tag">Facilities</div>
       </div>
+      <div class="eco-phone" data-idx="1" tabindex="0" role="button" aria-label="Focus the Teachers screen" style="--l:19%; --t:130px; --w:158px; --z:2; --rot:-8deg;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-teachers"></div></div>
+        <div class="eco-tag">Teachers</div>
+      </div>
+      <div class="eco-phone" data-idx="2" tabindex="0" role="button" aria-label="Focus the Home screen" style="--l:35.5%; --t:58px; --w:200px; --z:4; --rot:-4deg;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-home"></div></div>
+        <div class="eco-tag">Home</div>
+      </div>
+      <div class="eco-phone" data-idx="3" tabindex="0" role="button" aria-label="Focus the Full Schedule screen" style="--l:50%; --t:6px; --w:240px; --z:5; --rot:0deg;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-schedule"></div></div>
+        <div class="eco-tag">Full Schedule</div>
+      </div>
+      <div class="eco-phone" data-idx="4" tabindex="0" role="button" aria-label="Focus the Meals screen" style="--l:64.5%; --t:58px; --w:200px; --z:4; --rot:4deg;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-meals"></div></div>
+        <div class="eco-tag">Meals</div>
+      </div>
+      <div class="eco-phone" data-idx="5" tabindex="0" role="button" aria-label="Focus the Audio and Resources screen" style="--l:81%; --t:130px; --w:158px; --z:2; --rot:8deg;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-resources"></div></div>
+        <div class="eco-tag">Audio &amp; Resources</div>
+      </div>
+      <div class="eco-phone" data-idx="6" tabindex="0" role="button" aria-label="Focus the General Information screen" style="--l:96%; --t:196px; --w:132px; --z:1; --rot:13deg; --op:.88;">
+        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-info"></div></div>
+        <div class="eco-tag">General Info</div>
+      </div>
+    </div>
+    </div>
+
+    <div class="eco-mobile-wrap">
       <div class="showcase-visual">
         <div class="appshowcase" data-appshowcase>
           <div class="phonestack" tabindex="0" aria-roledescription="carousel" aria-label="The Retreat Companion — app screen previews">
@@ -1149,7 +1278,7 @@
                   </div>
 
                   <div id="rc-calendar" class="ashot" data-i="1" role="group" aria-roledescription="slide" aria-label="Screen 2 of 8: Retreat Calendar">
-                    <div class="pmtop"><div class="d">12 Oct — 18 Oct · 7 Days</div><h4>Retreat Calendar</h4></div>
+                    <div class="pmtop"><div class="d">12 Oct to 18 Oct · 7 Days</div><h4>Retreat Calendar</h4></div>
                     <div class="pmlist" style="gap:6px;">
                       <div class="daycard"><div class="dnum">1</div><div class="dbody"><b>Arrival</b><span>12 Oct · Check In · Welcome Circle</span></div></div>
                       <div class="daycard"><div class="dnum">2</div><div class="dbody"><b>Grounding</b><span>13 Oct · Morning Practice · Breathwork</span></div></div>
@@ -1213,7 +1342,7 @@
                       <div class="faccard" style="background:linear-gradient(150deg,#a8c9be,#4f7a6e)"><div class="status">Open</div><div class="fcap"><b>Yoga Shala</b></div></div>
                       <div class="faccard" style="background-image:var(--img-pathway-sm)"><div class="status closed">Closed</div><div class="fcap"><b>Nature Trail</b></div></div>
                     </div>
-                    <div class="pmcard"><div class="k">Restaurant</div><b>Open Kitchen</b><span>08:00 — 21:00 · Poolside</span></div>
+                    <div class="pmcard"><div class="k">Restaurant</div><b>Open Kitchen</b><span>08:00 to 21:00 · Poolside</span></div>
                   </div>
 
                   <div id="rc-resources" class="ashot" data-i="6" role="group" aria-roledescription="slide" aria-label="Screen 7 of 8: Audio and Resources">
@@ -1270,423 +1399,321 @@
         </div>
       </div>
     </div>
-
-    <div class="showcase-row rev">
-      <div class="showcase-txt">
-        <div class="tag">Practitioner Platform</div>
-        <h3>Client Journey Hub</h3>
-        <p>A calm home base for 1:1 practitioners. Sessions, programs and client messages in one place.</p>
-        <ul>
-          <li>Upcoming client sessions at a glance</li>
-          <li>Programs, resources &amp; homework</li>
-          <li>Direct messages without a group chat</li>
-        </ul>
-        <a class="showcase-link" href="#contact">View Project <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-      </div>
-      <div class="showcase-visual">
-        <div class="appshowcase" data-appshowcase>
-          <div class="phonestack" tabindex="0" aria-roledescription="carousel" aria-label="Client Journey Hub — app screen previews">
-            <div class="depth-layer d2"></div>
-            <div class="depth-layer d1"></div>
-            <div class="pm main-pm">
-              <div class="island"></div>
-              <div class="pm-screen">
-                <div class="ashot-track">
-
-                  <div class="ashot active" data-i="0" role="group" aria-roledescription="slide" aria-label="Screen 1 of 7: Practitioner Dashboard">
-                    <div class="viewpill practitioner">Practitioner View</div>
-                    <div class="pmtop" style="padding-top:2px;"><div class="d">Good Morning</div><h4>Today's Sessions</h4></div>
-                    <div class="statrow">
-                      <div class="statbox"><b>5</b><span>Sessions Today</span></div>
-                      <div class="statbox"><b>2</b><span>New Messages</span></div>
-                    </div>
-                    <div class="pmlist">
-                      <div class="pmrow now"><div class="t">09:00</div><div><b>Elena R.</b><span>Session · Confirmed</span></div></div>
-                      <div class="pmrow"><div class="t">11:30</div><div><b>Marcus T.</b><span>Program check-in</span></div></div>
-                      <div class="pmrow"><div class="t">14:00</div><div><b>Sofia L.</b><span>New client</span></div></div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="1" role="group" aria-roledescription="slide" aria-label="Screen 2 of 7: Client List">
-                    <div class="viewpill practitioner">Practitioner View</div>
-                    <div class="pmtop" style="padding-top:2px;"><div class="d">12 Active</div><h4>Your Clients</h4></div>
-                    <div class="pmlist">
-                      <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#a8c9be,#4f7a6e)"></div><div><b>Elena R.</b><span>Next: Today, 09:00</span></div></div>
-                      <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#c9b48e,#8a6a2c)"></div><div><b>Marcus T.</b><span>Next: Today, 11:30</span></div></div>
-                      <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#c3b3c9,#6d5375)"></div><div><b>Sofia L.</b><span>New client</span></div></div>
-                      <div class="teacherrow"><div class="tav" style="background:linear-gradient(150deg,#9cc2c4,#3d6b6d)"></div><div><b>Jonah P.</b><span>Next: Fri, 16:30</span></div></div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="2" role="group" aria-roledescription="slide" aria-label="Screen 3 of 7: Client Profile">
-                    <div class="viewpill practitioner">Practitioner View</div>
-                    <div class="pmtop" style="padding-top:2px;"><div class="d">Client Profile</div><h4>Elena R.</h4></div>
-                    <div class="statrow">
-                      <div class="statbox"><b>8</b><span>Sessions Done</span></div>
-                      <div class="statbox"><b>Today</b><span>Next Session</span></div>
-                    </div>
-                    <div class="notecard"><div class="k">Private Note</div><p>Steady progress with breathwork practice. Focus on evening routine next session.</p></div>
-                    <div class="pmlist" style="padding-top:0;">
-                      <div class="inforow"><b>Assigned Practice</b><span>Evening Wind-down</span></div>
-                      <div class="inforow"><b>Resources Shared</b><span>3 items</span></div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="3" role="group" aria-roledescription="slide" aria-label="Screen 4 of 7: Session Notes">
-                    <div class="viewpill practitioner">Practitioner View</div>
-                    <div class="pmtop" style="padding-top:2px;"><div class="d">Today · 09:00</div><h4>Session Notes</h4></div>
-                    <div class="notecard"><div class="k">Elena R.</div><p>Discussed breathwork routine and reduced anxiety before sleep. Good energy today.</p></div>
-                    <div class="pmlist">
-                      <div class="inforow"><b>Follow-up Task</b><span>Send evening playlist</span></div>
-                      <div class="inforow"><b>Assign Resource</b><span>Deep Rest audio</span></div>
-                      <div class="inforow"><b>Next Session</b><span>Fri, 10:00</span></div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="4" role="group" aria-roledescription="slide" aria-label="Screen 5 of 7: Client Home">
-                    <div class="viewpill client">Client View</div>
-                    <div class="pmtop" style="padding-top:2px;"><div class="d">Welcome back</div><h4>Elena</h4></div>
-                    <div class="pmcard"><div class="k">Next Session</div><b>With Maya Cohen</b><span>Friday · 10:00</span></div>
-                    <div class="notecard"><div class="k">Message from Maya</div><p>"Try the evening breathwork tonight, it really helps before sleep."</p></div>
-                    <div class="pmgrid">
-                      <div class="pmtile"><div class="ic"></div><b>My Practice</b></div>
-                      <div class="pmtile"><div class="ic"></div><b>Resources</b></div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="5" role="group" aria-roledescription="slide" aria-label="Screen 6 of 7: My Journey">
-                    <div class="viewpill client">Client View</div>
-                    <div class="pmtop" style="padding-top:2px;"><div class="d">Your Progress</div><h4>My Journey</h4></div>
-                    <div class="statrow">
-                      <div class="statbox"><b>8</b><span>Sessions</span></div>
-                      <div class="statbox"><b>3</b><span>Milestones</span></div>
-                    </div>
-                    <div class="pmlist">
-                      <div class="milestone"><div class="mdone">✓</div><b>Completed 30 Days of Practice</b></div>
-                      <div class="milestone"><div class="mdone">✓</div><b>First Breathwork Session</b></div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="6" role="group" aria-roledescription="slide" aria-label="Screen 7 of 7: Resources and Contact">
-                    <div class="viewpill client">Client View</div>
-                    <div class="pmtop" style="padding-top:2px;"><div class="d">Between Sessions</div><h4>Resources</h4></div>
-                    <div class="pmlist">
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Evening Wind-down</b><span>15 min · Assigned</span></div></div>
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Box Breathwork</b><span>8 min · Practice</span></div></div>
-                    </div>
-                    <div class="pmcard"><div class="k">Need to talk?</div><b>Message Maya</b><span>Usually replies within a day</span></div>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-            <button type="button" class="asnav asprev" aria-label="Previous screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6"/></svg></button>
-            <button type="button" class="asnav asnext" aria-label="Next screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></button>
-          </div>
-
-          <button type="button" class="asrotate" aria-label="Advance to next screen">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg>
-            <span class="asrotate-label">Explore App · 1 of 7</span>
-          </button>
-
-          <div class="aspag" role="tablist" aria-label="Go to screen">
-            <button type="button" class="asdot on" data-i="0" aria-label="Go to screen 1" aria-selected="true"></button>
-            <button type="button" class="asdot" data-i="1" aria-label="Go to screen 2" aria-selected="false"></button>
-            <button type="button" class="asdot" data-i="2" aria-label="Go to screen 3" aria-selected="false"></button>
-            <button type="button" class="asdot" data-i="3" aria-label="Go to screen 4" aria-selected="false"></button>
-            <button type="button" class="asdot" data-i="4" aria-label="Go to screen 5" aria-selected="false"></button>
-            <button type="button" class="asdot" data-i="5" aria-label="Go to screen 6" aria-selected="false"></button>
-            <button type="button" class="asdot" data-i="6" aria-label="Go to screen 7" aria-selected="false"></button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="showcase-row">
-      <div class="showcase-txt">
-        <div class="tag">Included with Harmony &amp; Sanctuary</div>
-        <h3>Audio &amp; Resources</h3>
-        <p>A calm home for meditation, breathwork and sound journeys guests can return to anytime. Part of the Harmony and Sanctuary experience, not a separate purchase.</p>
-        <ul>
-          <li>Curated meditation &amp; breathwork library</li>
-          <li>Full-screen audio player with progress</li>
-          <li>Favorites, saved for after the retreat ends</li>
-        </ul>
-        <a class="showcase-link" href="#pricing">See It In Action <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-      </div>
-      <div class="showcase-visual">
-        <div class="appshowcase" data-appshowcase>
-          <div class="phonestack" tabindex="0" aria-roledescription="carousel" aria-label="Sound and Breath Vault — app screen previews">
-            <div class="depth-layer d2"></div>
-            <div class="depth-layer d1"></div>
-            <div class="pm main-pm">
-              <div class="island"></div>
-              <div class="pm-screen">
-                <div class="ashot-track">
-
-                  <div class="ashot active" data-i="0" role="group" aria-roledescription="slide" aria-label="Screen 1 of 6: Library Home">
-                    <div class="pmtop lotus-top" role="img" aria-label="Soft lotus flower atmosphere"><div class="d">Continue Listening</div><h4>Sound &amp; Breath</h4></div>
-                    <div class="pmgrid">
-                      <div class="pmtile"><div class="ic"></div><b>Meditations</b></div>
-                      <div class="pmtile"><div class="ic"></div><b>Breathwork</b></div>
-                      <div class="pmtile"><div class="ic"></div><b>Sound Journeys</b></div>
-                      <div class="pmtile"><div class="ic"></div><b>Integration</b></div>
-                    </div>
-                    <div class="pmcard"><div class="k">Featured Practice</div><b>Ocean Breath Journey</b><span>34 min · Sound</span></div>
-                  </div>
-
-                  <div class="ashot" data-i="1" role="group" aria-roledescription="slide" aria-label="Screen 2 of 6: Meditations">
-                    <div class="pmtop"><div class="d">Library</div><h4>Meditations</h4></div>
-                    <div class="pmlist">
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Morning Grounding</b><span>Priya Nathan · 12 min</span></div></div>
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Loving Kindness</b><span>Maya Cohen · 15 min</span></div></div>
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Body Scan</b><span>Priya Nathan · 18 min</span></div></div>
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Evening Wind-down</b><span>Maya Cohen · 15 min</span></div></div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="2" role="group" aria-roledescription="slide" aria-label="Screen 3 of 6: Breathwork">
-                    <div class="pmtop"><div class="d">Library</div><h4>Breathwork</h4></div>
-                    <div class="pmlist">
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Morning Energy</b><span>Marco Villanueva · 8 min</span></div></div>
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Grounding Breath</b><span>Marco Villanueva · 10 min</span></div></div>
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Deep Release</b><span>Marco Villanueva · 14 min</span></div></div>
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Evening Reset</b><span>Marco Villanueva · 9 min</span></div></div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="3" role="group" aria-roledescription="slide" aria-label="Screen 4 of 6: Sound Journeys">
-                    <div class="pmtop"><div class="d">Immersive</div><h4>Sound Journeys</h4></div>
-                    <div class="communitycard" style="height:96px; background-image:var(--img-pathway-sm);"><div class="cap"><b>Ocean Breath Journey</b><span>Marco Villanueva · 34 min</span></div></div>
-                    <div class="pmlist">
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Forest Water Meditation</b><span>28 min · Sound</span></div></div>
-                      <div class="pmrow"><div class="pmplay">▸</div><div><b>Crystal Bowl Ceremony</b><span>40 min · Sound</span></div></div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="4" role="group" aria-roledescription="slide" aria-label="Screen 5 of 6: Audio Player">
-                    <div class="pmtop"><div class="d">Now Playing</div><h4>Player</h4></div>
-                    <div class="playerfull">
-                      <div class="art" style="background-image:var(--img-lotus-sm)"><div class="save">♡</div></div>
-                      <div class="pbody">
-                        <div class="k">Sound Journey · Marco Villanueva</div>
-                        <b>Ocean Breath Journey</b>
-                        <div class="prog2"><i></i></div>
-                        <div class="times"><span>18:24</span><span>34:00</span></div>
-                        <div class="pctrls"><div class="sidebtn">⏮</div><div class="midbtn">▸</div><div class="sidebtn">⏭</div></div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div class="ashot" data-i="5" role="group" aria-roledescription="slide" aria-label="Screen 6 of 6: My Practice">
-                    <div class="pmtop"><div class="d">You</div><h4>My Practice</h4></div>
-                    <div class="statrow">
-                      <div class="statbox"><b>24</b><span>Sessions Played</span></div>
-                      <div class="statbox"><b>6</b><span>Favorites</span></div>
-                    </div>
-                    <div class="pmlist">
-                      <div class="pmrow"><div class="pmplay">♡</div><div><b>Evening Wind-down</b><span>Saved · 15 min</span></div></div>
-                      <div class="pmrow"><div class="pmplay">♡</div><div><b>Morning Grounding</b><span>Saved · 12 min</span></div></div>
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-            </div>
-            <button type="button" class="asnav asprev" aria-label="Previous screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6"/></svg></button>
-            <button type="button" class="asnav asnext" aria-label="Next screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></button>
-          </div>
-
-          <button type="button" class="asrotate" aria-label="Advance to next screen">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg>
-            <span class="asrotate-label">Explore App · 1 of 6</span>
-          </button>
-
-          <div class="aspag" role="tablist" aria-label="Go to screen">
-            <button type="button" class="asdot on" data-i="0" aria-label="Go to screen 1" aria-selected="true"></button>
-            <button type="button" class="asdot" data-i="1" aria-label="Go to screen 2" aria-selected="false"></button>
-            <button type="button" class="asdot" data-i="2" aria-label="Go to screen 3" aria-selected="false"></button>
-            <button type="button" class="asdot" data-i="3" aria-label="Go to screen 4" aria-selected="false"></button>
-            <button type="button" class="asdot" data-i="4" aria-label="Go to screen 5" aria-selected="false"></button>
-            <button type="button" class="asdot" data-i="5" aria-label="Go to screen 6" aria-selected="false"></button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </section>
 
-<section id="wonderland-case-study">
+<section id="retreat-how-it-works" class="hiw">
   <div class="wrap">
     <div class="sectionhead center">
-      <div class="kicker">Featured Ecosystem Case Study</div>
-      <div class="statement">From Discovery to Experience.</div>
-      <p style="margin-top:16px; color:var(--ink-dim); font-size:16px; max-width:640px; margin-left:auto; margin-right:auto;">One retreat center, two purpose built digital experiences. A public website guides discovery and booking, while a dedicated guest app supports the experience inside the retreat.</p>
-    </div>
-    <div class="wl-projectlabel">Wonderland Healing Center</div>
-
-    <div class="wl-hero">
-      <div class="wl-onestatement">One Retreat · Two Digital Experiences</div>
-      <div class="wl-devices">
-        <a class="wl-device wl-website-device" href="https://wonderlandhc.com" target="_blank" rel="noopener noreferrer" aria-label="Explore the real Wonderland Healing Center website (opens in a new tab)">
-          <div class="wl-laptop">
-            <div class="wl-laptop-bar"><span></span><span></span><span></span></div>
-            <div class="wl-laptop-screen"><img src="images/wonderland/website-hero-display.webp" width="1400" height="875" alt="Wonderland Healing Center public website homepage, showing hero photography and booking navigation"></div>
-            <div class="wl-laptop-base"></div>
-          </div>
-          <div class="wl-devlabel"><b>Public Website</b><span>Discover · Explore · Book</span></div>
-          <span class="wl-devcta">Explore Website →</span>
-        </a>
-        <a class="wl-device wl-app-device" href="https://wonderland-app.netlify.app/" target="_blank" rel="noopener noreferrer" aria-label="Open the real Wonderland guest web app (opens in a new tab)">
-          <div class="pm">
-            <div class="island"></div>
-            <div class="pm-screen"><img src="images/wonderland/app-home-display.webp" width="700" height="1518" alt="Wonderland guest app Home screen showing Happening Now with a live class"></div>
-          </div>
-          <div class="wl-devlabel"><b>Guest Web App</b><span>Arrive · Experience · Connect</span></div>
-          <span class="wl-devcta">Open Guest App →</span>
-        </a>
-      </div>
+      <div class="kicker">How A Retreat Project Works</div>
     </div>
 
-    <div class="wl-journey" aria-hidden="true">
-      <span class="grp">Discover</span><span class="sep">→</span><span class="grp">Explore</span><span class="sep">→</span><span class="grp">Book</span>
-      <span class="sep" style="margin:0 4px; color:var(--sage);">·</span>
-      <span class="grp">Arrive</span><span class="sep">→</span><span class="grp">Experience</span><span class="sep">→</span><span class="grp">Connect</span>
+    <div class="hiw-steps">
+      <div class="hiw-step"><div class="hiw-n">1</div><b>Tell Ron</b><span>About your retreat.</span></div>
+      <div class="hiw-step"><div class="hiw-n">2</div><b>Questionnaire</b><span>A short guided walkthrough.</span></div>
+      <div class="hiw-step"><div class="hiw-n">3</div><b>First Draft</b><span>RBR creates your branded draft.</span></div>
+      <div class="hiw-step"><div class="hiw-n">4</div><b>Private Preview</b><span>Review your private preview.</span></div>
+      <div class="hiw-step"><div class="hiw-n">5</div><b>Refine</b><span>Refine the details together.</span></div>
+      <div class="hiw-step"><div class="hiw-n">6</div><b>Launch</b><span>Your guest experience goes live.</span></div>
     </div>
 
-    <div class="wl-gallery">
-      <button type="button" class="wl-gcard" data-full="images/wonderland/website-accommodations-full.webp" data-caption="Accommodation & Stay: the public website's Stay presentation." data-link="https://wonderlandhc.com/accommodations" data-linklabel="Open Accommodations page">
-        <div class="wl-gthumb"><img src="images/wonderland/website-accommodations-thumb.webp" width="480" height="300" alt="Wonderland website Accommodation and Stay page" loading="lazy"></div>
-        <div class="wl-gcaption"><div class="k">Public Website</div><b>Accommodation &amp; Stay</b></div>
-      </button>
-      <button type="button" class="wl-gcard" data-full="images/wonderland/app-schedule-full.webp" data-caption="Schedule: the guest app's live, day by day activity timeline." data-link="https://wonderland-app.netlify.app/" data-linklabel="Open Guest App">
-        <div class="wl-gthumb"><img src="images/wonderland/app-schedule-thumb.webp" width="300" height="650" alt="Wonderland guest app Schedule screen with a daily activity timeline" loading="lazy"></div>
-        <div class="wl-gcaption"><div class="k">Guest App</div><b>Schedule</b></div>
-      </button>
-      <button type="button" class="wl-gcard" data-full="images/wonderland/website-dining-full.webp" data-caption="Vegan Dining: the public website's dining and menu philosophy page." data-link="https://wonderlandhc.com/dining" data-linklabel="Open Vegan Dining page">
-        <div class="wl-gthumb"><img src="images/wonderland/website-dining-thumb.webp" width="480" height="300" alt="Wonderland website Vegan Dining page" loading="lazy"></div>
-        <div class="wl-gcaption"><div class="k">Public Website</div><b>Vegan Dining</b></div>
-      </button>
-      <button type="button" class="wl-gcard" data-full="images/wonderland/app-meals-full.webp" data-caption="Meals: the guest app's daily menu, dietary tags and serving times." data-link="https://wonderland-app.netlify.app/" data-linklabel="Open Guest App">
-        <div class="wl-gthumb"><img src="images/wonderland/app-meals-thumb.webp" width="300" height="650" alt="Wonderland guest app Meals screen with the vegan buffet menu" loading="lazy"></div>
-        <div class="wl-gcaption"><div class="k">Guest App</div><b>Meals</b></div>
-      </button>
+    <div class="hiw-steps-v">
+      <div class="hiw-stepv"><div class="hiw-n">1</div><div><b>Tell Ron</b><span>About your retreat.</span></div></div>
+      <div class="hiw-stepv"><div class="hiw-n">2</div><div><b>Questionnaire</b><span>A short guided walkthrough.</span></div></div>
+      <div class="hiw-stepv"><div class="hiw-n">3</div><div><b>First Draft</b><span>RBR creates your branded draft.</span></div></div>
+      <div class="hiw-stepv"><div class="hiw-n">4</div><div><b>Private Preview</b><span>Review your private preview.</span></div></div>
+      <div class="hiw-stepv"><div class="hiw-n">5</div><div><b>Refine</b><span>Refine the details together.</span></div></div>
+      <div class="hiw-stepv"><div class="hiw-n">6</div><div><b>Launch</b><span>Your guest experience goes live.</span></div></div>
     </div>
 
-    <div class="wl-bridge">
-      <div class="badge">The Sanctuary Approach</div>
-      <h3>One connected digital identity from first discovery to the guest experience.</h3>
-      <a class="btn btn-forest" href="#pricing" id="wlSanctuaryBridge">Build Your Digital Ecosystem →</a>
+    <div style="text-align:center; margin-top:44px;">
+      <a class="btn btn-outline" href="onboarding.html">Start The Questionnaire →</a>
     </div>
   </div>
 </section>
 
-<div class="wl-lightbox-overlay" id="wlLightboxOverlay">
-  <div class="wl-lightbox" role="dialog" aria-modal="true" aria-labelledby="wlLightboxCaption">
-    <button type="button" class="wl-lightbox-close" id="wlLightboxClose" aria-label="Close">✕</button>
-    <img id="wlLightboxImg" src="" alt="">
-    <div class="wl-lightbox-caption" id="wlLightboxCaption"></div>
-    <a class="btn btn-outline" id="wlLightboxLink" href="#" target="_blank" rel="noopener noreferrer">Open Live →</a>
-  </div>
-</div>
-
-<section id="ecosystem">
+<section id="retreat-pricing">
   <div class="wrap">
-    <div class="eco-intro">
-      <div class="kicker">The Complete Ecosystem</div>
-      <div class="statement">Everything your guests need, beautifully connected.</div>
-      <p>From arrival to the final integration circle, schedules, teachers, dining, facilities, resources and essential information live harmoniously inside one intuitive digital space.</p>
-      <div class="herobtns">
-        <a class="btn btn-forest" href="#contact">Explore the Full Experience Demo →</a>
-      </div>
+    <div class="sectionhead center">
+      <div class="kicker">Flexible Engagement Models</div>
+      <div class="statement">A Digital Space for Every Kind of Retreat.</div>
+      <p style="margin-top:16px; color:var(--ink-dim); font-size:16px; max-width:600px; margin-left:auto; margin-right:auto;">Whether hosting a single transformational week or running an ongoing retreat venue, choose the digital experience that fits the way you work.</p>
     </div>
 
-    <!-- Desktop: cinematic hierarchical composition, screens cloned at runtime from the
-         Retreat Companion carousel above (#rc-home etc.) — single source of truth. -->
-    <div class="eco-stage" id="ecoStage">
-      <div class="eco-phone" data-idx="0" tabindex="0" role="button" aria-label="Focus the Facilities screen" style="--l:4%; --t:196px; --w:132px; --z:1; --rot:-13deg; --op:.88;">
-        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-facilities"></div></div>
-        <div class="eco-tag">Facilities</div>
-      </div>
-      <div class="eco-phone" data-idx="1" tabindex="0" role="button" aria-label="Focus the Teachers screen" style="--l:19%; --t:130px; --w:158px; --z:2; --rot:-8deg;">
-        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-teachers"></div></div>
-        <div class="eco-tag">Teachers</div>
-      </div>
-      <div class="eco-phone" data-idx="2" tabindex="0" role="button" aria-label="Focus the Home screen" style="--l:35.5%; --t:58px; --w:200px; --z:4; --rot:-4deg;">
-        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-home"></div></div>
-        <div class="eco-tag">Home</div>
-      </div>
-      <div class="eco-phone" data-idx="3" tabindex="0" role="button" aria-label="Focus the Full Schedule screen" style="--l:50%; --t:6px; --w:240px; --z:5; --rot:0deg;">
-        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-schedule"></div></div>
-        <div class="eco-tag">Full Schedule</div>
-      </div>
-      <div class="eco-phone" data-idx="4" tabindex="0" role="button" aria-label="Focus the Meals screen" style="--l:64.5%; --t:58px; --w:200px; --z:4; --rot:4deg;">
-        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-meals"></div></div>
-        <div class="eco-tag">Meals</div>
-      </div>
-      <div class="eco-phone" data-idx="5" tabindex="0" role="button" aria-label="Focus the Audio and Resources screen" style="--l:81%; --t:130px; --w:158px; --z:2; --rot:8deg;">
-        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-resources"></div></div>
-        <div class="eco-tag">Audio &amp; Resources</div>
-      </div>
-      <div class="eco-phone" data-idx="6" tabindex="0" role="button" aria-label="Focus the General Information screen" style="--l:96%; --t:196px; --w:132px; --z:1; --rot:13deg; --op:.88;">
-        <div class="pm"><div class="island"></div><div class="pm-screen" data-clone-from="rc-info"></div></div>
-        <div class="eco-tag">General Info</div>
-      </div>
-    </div>
+    <div class="pricing-grid">
+      <div class="pcard">
+        <div class="pname">Single Retreat</div>
+        <div class="pdescriptor">One Retreat Experience</div>
+        <div class="pfor">Independent facilitators, pop up retreats &amp; single immersive events</div>
+        <div class="pdesc">Everything your guests need for one unforgettable retreat, beautifully organized in a custom branded digital experience.</div>
+        <div class="pricerows">
+          <div class="pricerow"><span class="plabel">Retreat Access</span><span class="pamt">$349<span> one time</span></span></div>
+        </div>
+        <div class="pnorecurring">No recurring subscription</div>
 
-    <!-- Mobile: same interactive appshowcase system used elsewhere, opens on Schedule,
-         screens cloned at runtime from the same source. -->
-    <div class="eco-mobile-wrap">
-      <div class="appshowcase" data-appshowcase data-start="1">
-        <div class="phonestack" tabindex="0" aria-roledescription="carousel" aria-label="The Complete Ecosystem — all Retreat Companion screens">
-          <div class="depth-layer d2"></div>
-          <div class="depth-layer d1"></div>
-          <div class="pm main-pm">
-            <div class="island"></div>
-            <div class="pm-screen">
-              <div class="ashot-track">
-                <div class="ashot" data-i="0" data-clone-from="rc-home" role="group" aria-roledescription="slide" aria-label="Screen 1 of 7: Home"></div>
-                <div class="ashot" data-i="1" data-clone-from="rc-schedule" role="group" aria-roledescription="slide" aria-label="Screen 2 of 7: Schedule"></div>
-                <div class="ashot" data-i="2" data-clone-from="rc-teachers" role="group" aria-roledescription="slide" aria-label="Screen 3 of 7: Teachers"></div>
-                <div class="ashot" data-i="3" data-clone-from="rc-meals" role="group" aria-roledescription="slide" aria-label="Screen 4 of 7: Meals"></div>
-                <div class="ashot" data-i="4" data-clone-from="rc-facilities" role="group" aria-roledescription="slide" aria-label="Screen 5 of 7: Facilities"></div>
-                <div class="ashot" data-i="5" data-clone-from="rc-resources" role="group" aria-roledescription="slide" aria-label="Screen 6 of 7: Audio and Resources"></div>
-                <div class="ashot" data-i="6" data-clone-from="rc-info" role="group" aria-roledescription="slide" aria-label="Screen 7 of 7: Information"></div>
-              </div>
+        <div class="lifecycle" aria-label="Retreat access lifecycle">
+          <div class="lifecycle-h">
+            <div class="ltrack">
+              <span class="ldot"></span><span class="lline"></span><span class="ldot"></span><span class="lline"></span><span class="ldot"></span>
+            </div>
+            <div class="llabels">
+              <div class="lstep"><b>Before</b><span>Opens 1 day prior</span></div>
+              <div class="lstep"><b>During</b><span>Live throughout retreat</span></div>
+              <div class="lstep"><b>After</b><span>Closes 1 day after</span></div>
             </div>
           </div>
-          <button type="button" class="asnav asprev" aria-label="Previous screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6"/></svg></button>
-          <button type="button" class="asnav asnext" aria-label="Next screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 6l6 6-6 6"/></svg></button>
+          <div class="lifecycle-v">
+            <div class="lstepv"><span class="ldot"></span><div><b>Before</b><span>Opens 1 day prior</span></div></div>
+            <div class="lconnv" aria-hidden="true">↓</div>
+            <div class="lstepv"><span class="ldot"></span><div><b>During</b><span>Live throughout retreat</span></div></div>
+            <div class="lconnv" aria-hidden="true">↓</div>
+            <div class="lstepv"><span class="ldot"></span><div><b>After</b><span>Closes 1 day after</span></div></div>
+          </div>
         </div>
 
-        <button type="button" class="asrotate" aria-label="Advance to next screen">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 12a9 9 0 11-3-6.7"/><path d="M21 4v5h-5"/></svg>
-          <span class="asrotate-label">Explore App · 2 of 7</span>
-        </button>
+        <ul>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom branded guest web app</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Retreat Home &amp; Happening Now</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Retreat calendar</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Full daily interactive schedule</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Teacher &amp; facilitator profiles</li>
+        </ul>
+        <details>
+          <summary>View plan details <span class="arrow">▾</span></summary>
+          <ul class="pmore">
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom logo &amp; brand palette</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Meals &amp; dietary information</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Facilities &amp; space information</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Gallery</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>General information</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Contact details</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Mobile optimized experience</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Secure event hosting</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Launch QA</li>
+          </ul>
+        </details>
+        <a class="btn btn-outline" href="#final-cta" id="singleRetreatCta">Create My Retreat →</a>
+      </div>
 
-        <div class="aspag" role="tablist" aria-label="Go to screen">
-          <button type="button" class="asdot" data-i="0" aria-label="Go to screen 1" aria-selected="false"></button>
-          <button type="button" class="asdot on" data-i="1" aria-label="Go to screen 2" aria-selected="true"></button>
-          <button type="button" class="asdot" data-i="2" aria-label="Go to screen 3" aria-selected="false"></button>
-          <button type="button" class="asdot" data-i="3" aria-label="Go to screen 4" aria-selected="false"></button>
-          <button type="button" class="asdot" data-i="4" aria-label="Go to screen 5" aria-selected="false"></button>
-          <button type="button" class="asdot" data-i="5" aria-label="Go to screen 6" aria-selected="false"></button>
-          <button type="button" class="asdot" data-i="6" aria-label="Go to screen 7" aria-selected="false"></button>
+      <div class="pcard featured" id="harmonyCard">
+        <div class="pop-badge">Most Popular</div>
+        <div class="pname">Harmony</div>
+        <div class="pdescriptor">Ongoing Retreat Platform</div>
+        <div class="pfor">Retreat centers, recurring program organizers &amp; year round facilitators</div>
+        <div class="pdesc">Your ongoing digital home for recurring retreat experiences.</div>
+        <div class="pricerows">
+          <div class="pfrom-block">
+            <span class="pfrom-k">From</span>
+            <span class="pfrom-amt">$99<span> / month</span></span>
+            <div class="pfrom-included">Setup &amp; Launch Included</div>
+          </div>
+        </div>
+        <div class="pmicro" style="margin:-14px 0 20px;">Choose a 6 or 12 month membership.</div>
+        <ul>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Everything in Single Retreat</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Persistent year round platform</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Sound &amp; audio vault</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Resources library</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom domain connection</li>
+        </ul>
+        <details>
+          <summary>View plan details <span class="arrow">▾</span></summary>
+          <ul class="pmore">
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Multi date scheduling</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Expanded content capability</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Ongoing Platform &amp; Care</li>
+            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Priority care</li>
+          </ul>
+        </details>
+        <a class="btn btn-forest" href="#final-cta" id="harmonyCta">Choose Harmony →</a>
+      </div>
+
+      <div class="pcard" id="sanctuaryCard">
+        <div class="pname">Sanctuary</div>
+        <div class="pdescriptor">Complete Digital Ecosystem</div>
+        <div class="sanct-tagline">Your Complete Digital Presence</div>
+        <div class="sanct-subtag">Premium Website + Branded Guest App</div>
+        <div class="pdesc">A complete digital presence for retreat centers ready to connect discovery, booking and the on-site guest journey in one beautifully unified ecosystem.</div>
+
+        <div class="sanct-visual" aria-hidden="true">
+          <div class="sanct-onebrand">One Brand · Two Experiences</div>
+          <div class="sanct-devices">
+            <div class="sanct-devcol">
+              <div class="sanct-browser">
+                <div class="sanct-browser-bar"><span></span><span></span><span></span></div>
+                <div class="sanct-browser-body">
+                  <div class="sb-hero"></div>
+                  <div class="sb-cta">Book Your Retreat</div>
+                </div>
+              </div>
+              <span class="sanct-devlabel">Public Website</span>
+            </div>
+            <div class="sanct-devcol phone">
+              <div class="sanct-phone">
+                <div class="sanct-phone-notch"></div>
+                <div class="sanct-phone-body">
+                  <div class="sp-now">Happening Now</div>
+                  <div class="sp-row"></div>
+                  <div class="sp-row"></div>
+                  <div class="sp-row"></div>
+                </div>
+              </div>
+              <span class="sanct-devlabel">Guest App</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="pricerows">
+          <div class="pricerow"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$1,490<span> starting from</span></span></div>
+          <div class="pricedivider"></div>
+          <div class="pricerow"><span class="plabel">Platform &amp; Care</span><span class="pamt">$199<span> / month</span></span></div>
+        </div>
+        <div class="pmicro">Final setup depends on website scope and custom integrations.</div>
+        <ul>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Premium branded website</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Complete Harmony guest app</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Booking journey integration</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Unified website + app branding</li>
+          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Managed hosting &amp; security</li>
+        </ul>
+        <details>
+          <summary>View full ecosystem details <span class="arrow">▾</span></summary>
+          <div class="sanct-details">
+            <div class="sanct-detailgroup">
+              <div class="dg-k">Premium Website</div>
+              <ul>
+                <li>Custom branded retreat website</li>
+                <li>Responsive desktop, tablet and mobile experience</li>
+                <li>Retreat programs and experiences</li>
+                <li>Accommodation and Stay presentation</li>
+                <li>Facilities and wellness presentation</li>
+                <li>Teacher / facilitator presentation</li>
+                <li>Booking journey integration</li>
+                <li>SEO ready structure</li>
+              </ul>
+            </div>
+            <div class="sanct-detailgroup">
+              <div class="dg-k">Branded Guest App</div>
+              <ul>
+                <li>Everything included in Harmony</li>
+                <li>Retreat Calendar</li>
+                <li>Live Schedule</li>
+                <li>Happening Now</li>
+                <li>Teacher Profiles</li>
+                <li>Meals &amp; Dining</li>
+                <li>Facilities</li>
+                <li>Audio Vault</li>
+                <li>Resources</li>
+                <li>Guest Information</li>
+              </ul>
+            </div>
+            <div class="sanct-detailgroup">
+              <div class="dg-k">Connected Platform</div>
+              <ul>
+                <li>Unified visual identity</li>
+                <li>Website and guest app ecosystem</li>
+                <li>Managed hosting</li>
+                <li>Security</li>
+                <li>Domain configuration</li>
+                <li>Platform maintenance</li>
+                <li>Continuous care</li>
+              </ul>
+            </div>
+          </div>
+        </details>
+        <a class="btn btn-outline" href="#final-cta" id="sanctuaryCta">Build Your Digital Ecosystem →</a>
+      </div>
+    </div>
+
+    <div class="pricing-info">
+      <div class="infoblock">
+        <h4>What your Setup &amp; Launch includes</h4>
+        <p>The one-time fee is how we professionally prepare your digital experience for launch, start to finish.</p>
+        <div class="checkgrid">
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Brand integration</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Content structuring</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Application configuration</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Image &amp; media preparation</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Module configuration</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Mobile optimization</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Domain &amp; security setup</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Quality assurance &amp; launch prep</div>
         </div>
       </div>
+      <div class="infoblock">
+        <h4>Your app stays cared for.</h4>
+        <p>Every RBR experience lives on our managed platform, so hosting, security, backups, maintenance and ongoing platform improvements are taken care of for you.</p>
+        <div class="checkgrid">
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Managed hosting</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Security</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Backups</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Platform updates</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Performance care</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Technical maintenance</div>
+          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Support</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="customdev">
+      <div>
+        <h4>Need something unique?</h4>
+        <p>Custom features, integrations and larger digital ecosystems can be scoped separately around your retreat, practice or organization.</p>
+      </div>
+      <a class="btn btn-cream" href="#final-cta">Let's Talk →</a>
+    </div>
+
+    <div class="upgradepath">
+      <div>
+        <div class="k">Loved your Single Retreat experience?</div>
+        <h4>Make it your ongoing digital retreat home.</h4>
+        <p>If you find yourself hosting retreats more regularly, you can move from Single Retreat into Harmony whenever the time feels right.</p>
+      </div>
+      <a class="btn btn-outline" href="#retreat-pricing" id="exploreHarmonyCta">Explore Harmony →</a>
+    </div>
+
+    <details class="comparewrap">
+      <summary>Compare Plans <span class="arrow">▾</span></summary>
+      <div class="comparetable-wrap">
+        <table class="comparetable">
+          <tr><th>Feature</th><th>Single Retreat</th><th>Harmony</th><th>Sanctuary</th></tr>
+          <tr><td>Model</td><td>Single Event</td><td>Ongoing Platform</td><td>Complete Digital Ecosystem</td></tr>
+          <tr><td>Access</td><td>Event Window</td><td>Year Round</td><td>Year Round</td></tr>
+          <tr><td>Programs</td><td>One Retreat</td><td>Ongoing / Recurring</td><td>Multiple Programs</td></tr>
+          <tr><td>Live Schedule</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Teachers</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Meals</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Audio / Resources</td><td class="no">Not Included</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td>Expanded</td></tr>
+          <tr><td>Custom Domain</td><td class="no">Not Standard</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
+          <tr><td>Ongoing Platform &amp; Care</td><td class="no">Not Required</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td>Premium</td></tr>
+        </table>
+      </div>
+    </details>
+  </div>
+</section>
+
+
+<section id="retreat-cta" class="finalcta" style="padding:100px 0;">
+  <div class="wrap">
+    <div class="statement on-dark" style="font-size:clamp(26px,3.6vw,38px);">Ready to make your retreat experience feel simpler?</div>
+    <p>Tell Ron what you are creating and we can find the right starting point together.</p>
+    <div class="herobtns">
+      <a class="btn btn-cream" href="#final-cta">Start My Retreat Experience →</a>
     </div>
   </div>
 </section>
 
-<section id="client-hub">
+<div class="journey-divider" aria-hidden="true"><span></span></div>
+
+<section id="for-therapists">
   <div class="wrap">
     <div class="sectionhead center">
       <div class="kicker">For Therapists &amp; Healers</div>
+      <div class="productlabel">Client Journey Hub</div>
       <div class="statement">Your Practice. One Calm Digital Space.</div>
       <p style="margin-top:16px; color:var(--ink-dim); font-size:16px; max-width:600px; margin-left:auto; margin-right:auto;">A private, beautifully branded digital experience connecting therapists and healers with their clients before, between and after sessions.</p>
     </div>
-
-    <div class="chub-onelabel">One Practice · Two Synchronized Experiences</div>
+    <div class="chub-onelabel">One Practice. Two Connected Experiences.</div>
 
     <div class="chub-hero">
       <div class="chub-dash">
@@ -1837,7 +1864,16 @@
         </div>
       </div>
     </div>
-
+    <ul class="chub-features">
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Branded client experience</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Therapist / practitioner dashboard</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Individual client spaces</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Session overview &amp; upcoming sessions</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Assigned integration practices</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Private resource library</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Client journey view</li>
+      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom branding &amp; managed hosting</li>
+    </ul>
     <div class="journey-strip">
       <div class="jstep">
         <div class="jn">1</div>
@@ -1855,7 +1891,6 @@
         <ul><li>Assigned practices</li><li>Audio &amp; breathwork</li><li>Journal prompts</li></ul>
       </div>
     </div>
-
     <div class="resource-heading">
       <div class="kicker">Resources</div>
       <div style="font-family:var(--serif); font-size:clamp(20px,2.4vw,26px); color:var(--forest); font-weight:400;">Resources for Your Journey</div>
@@ -1866,19 +1901,7 @@
       <div class="rescard"><div class="ric"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg></div><b>Journal Prompts</b><span>Reflection &amp; integration</span><span class="arrow">→</span></div>
       <div class="rescard"><div class="ric"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5.5c2-1 5-1 8 1 3-2 6-2 8-1v13c-2-1-5-1-8 1-3-2-6-2-8-1v-13z"/><path d="M12 6.5v13"/></svg></div><b>Reading &amp; Documents</b><span>Shared resources</span><span class="arrow">→</span></div>
     </div>
-
-    <ul class="chub-features">
-      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Branded client experience</li>
-      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Therapist / practitioner dashboard</li>
-      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Individual client spaces</li>
-      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Session overview &amp; upcoming sessions</li>
-      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Assigned integration practices</li>
-      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Private resource library</li>
-      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Client journey view</li>
-      <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom branding &amp; managed hosting</li>
-    </ul>
-
-    <div class="chub-pricing">
+    <div class="chub-pricing" id="client-hub-pricing">
       <div class="tag">For Therapists &amp; Healers</div>
       <div class="pcard-badge2">Private Client Experience</div>
       <div class="pname">Client Journey Hub</div>
@@ -1889,298 +1912,47 @@
         <div class="pfrom-included">Setup &amp; Launch Included</div>
       </div>
       <div class="pmicro" style="margin:0 0 22px;">Choose a 6 or 12 month membership.</div>
-      <a class="btn btn-forest" href="#contact" id="clientHubCta">Build My Client Hub →</a>
+      <a class="btn btn-forest" href="#final-cta" id="clientHubCta">Build My Client Hub →</a>
     </div>
   </div>
 </section>
 
-<section id="pricing">
+<section id="client-hub-how-it-works" class="hiw">
   <div class="wrap">
     <div class="sectionhead center">
-      <div class="kicker">Flexible Engagement Models</div>
-      <div class="statement">A Digital Space for Every Kind of Retreat.</div>
-      <p style="margin-top:16px; color:var(--ink-dim); font-size:16px; max-width:600px; margin-left:auto; margin-right:auto;">Whether hosting a single transformational week or running an ongoing retreat venue, choose the digital experience that fits the way you work.</p>
-    </div>
-
-    <div class="pricing-grid">
-      <div class="pcard">
-        <div class="pname">Single Retreat</div>
-        <div class="pdescriptor">One Retreat Experience</div>
-        <div class="pfor">Independent facilitators, pop up retreats &amp; single immersive events</div>
-        <div class="pdesc">Everything your guests need for one unforgettable retreat, beautifully organized in a custom branded digital experience.</div>
-        <div class="pricerows">
-          <div class="pricerow"><span class="plabel">Retreat Access</span><span class="pamt">$349<span> one time</span></span></div>
-        </div>
-        <div class="pnorecurring">No recurring subscription</div>
-
-        <div class="lifecycle" aria-label="Retreat access lifecycle">
-          <div class="lifecycle-h">
-            <div class="ltrack">
-              <span class="ldot"></span><span class="lline"></span><span class="ldot"></span><span class="lline"></span><span class="ldot"></span>
-            </div>
-            <div class="llabels">
-              <div class="lstep"><b>Before</b><span>Opens 1 day prior</span></div>
-              <div class="lstep"><b>During</b><span>Live throughout retreat</span></div>
-              <div class="lstep"><b>After</b><span>Closes 1 day after</span></div>
-            </div>
-          </div>
-          <div class="lifecycle-v">
-            <div class="lstepv"><span class="ldot"></span><div><b>Before</b><span>Opens 1 day prior</span></div></div>
-            <div class="lconnv" aria-hidden="true">↓</div>
-            <div class="lstepv"><span class="ldot"></span><div><b>During</b><span>Live throughout retreat</span></div></div>
-            <div class="lconnv" aria-hidden="true">↓</div>
-            <div class="lstepv"><span class="ldot"></span><div><b>After</b><span>Closes 1 day after</span></div></div>
-          </div>
-        </div>
-
-        <ul>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom branded guest web app</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Retreat Home &amp; Happening Now</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Retreat calendar</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Full daily interactive schedule</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Teacher &amp; facilitator profiles</li>
-        </ul>
-        <details>
-          <summary>View plan details <span class="arrow">▾</span></summary>
-          <ul class="pmore">
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom logo &amp; brand palette</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Meals &amp; dietary information</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Facilities &amp; space information</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Gallery</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>General information</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Contact details</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Mobile optimized experience</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Secure event hosting</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Launch QA</li>
-          </ul>
-        </details>
-        <a class="btn btn-outline" href="#contact" id="singleRetreatCta">Create My Retreat →</a>
-      </div>
-
-      <div class="pcard featured" id="harmonyCard">
-        <div class="pop-badge">Most Popular</div>
-        <div class="pname">Harmony</div>
-        <div class="pdescriptor">Ongoing Retreat Platform</div>
-        <div class="pfor">Retreat centers, recurring program organizers &amp; year round facilitators</div>
-        <div class="pdesc">Your ongoing digital home for recurring retreat experiences.</div>
-        <div class="pricerows">
-          <div class="pfrom-block">
-            <span class="pfrom-k">From</span>
-            <span class="pfrom-amt">$99<span> / month</span></span>
-            <div class="pfrom-included">Setup &amp; Launch Included</div>
-          </div>
-        </div>
-        <div class="pmicro" style="margin:-14px 0 20px;">Choose a 6 or 12 month membership.</div>
-        <ul>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Everything in Single Retreat</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Persistent year round platform</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Sound &amp; audio vault</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Resources library</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Custom domain connection</li>
-        </ul>
-        <details>
-          <summary>View plan details <span class="arrow">▾</span></summary>
-          <ul class="pmore">
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Multi date scheduling</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Expanded content capability</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Ongoing Platform &amp; Care</li>
-            <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Priority care</li>
-          </ul>
-        </details>
-        <a class="btn btn-forest" href="#contact" id="harmonyCta">Choose Harmony →</a>
-      </div>
-
-      <div class="pcard" id="sanctuaryCard">
-        <div class="pname">Sanctuary</div>
-        <div class="pdescriptor">Complete Digital Ecosystem</div>
-        <div class="sanct-tagline">Your Complete Digital Presence</div>
-        <div class="sanct-subtag">Premium Website + Branded Guest App</div>
-        <div class="pdesc">A complete digital presence for retreat centers ready to connect discovery, booking and the on-site guest journey in one beautifully unified ecosystem.</div>
-
-        <div class="sanct-visual" aria-hidden="true">
-          <div class="sanct-onebrand">One Brand · Two Experiences</div>
-          <div class="sanct-devices">
-            <div class="sanct-devcol">
-              <div class="sanct-browser">
-                <div class="sanct-browser-bar"><span></span><span></span><span></span></div>
-                <div class="sanct-browser-body">
-                  <div class="sb-hero"></div>
-                  <div class="sb-cta">Book Your Retreat</div>
-                </div>
-              </div>
-              <span class="sanct-devlabel">Public Website</span>
-            </div>
-            <div class="sanct-devcol phone">
-              <div class="sanct-phone">
-                <div class="sanct-phone-notch"></div>
-                <div class="sanct-phone-body">
-                  <div class="sp-now">Happening Now</div>
-                  <div class="sp-row"></div>
-                  <div class="sp-row"></div>
-                  <div class="sp-row"></div>
-                </div>
-              </div>
-              <span class="sanct-devlabel">Guest App</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="pricerows">
-          <div class="pricerow"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$1,490<span> starting from</span></span></div>
-          <div class="pricedivider"></div>
-          <div class="pricerow"><span class="plabel">Platform &amp; Care</span><span class="pamt">$199<span> / month</span></span></div>
-        </div>
-        <div class="pmicro">Final setup depends on website scope and custom integrations.</div>
-        <ul>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Premium branded website</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Complete Harmony guest app</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Booking journey integration</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Unified website + app branding</li>
-          <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Managed hosting &amp; security</li>
-        </ul>
-        <details>
-          <summary>View full ecosystem details <span class="arrow">▾</span></summary>
-          <div class="sanct-details">
-            <div class="sanct-detailgroup">
-              <div class="dg-k">Premium Website</div>
-              <ul>
-                <li>Custom branded retreat website</li>
-                <li>Responsive desktop, tablet and mobile experience</li>
-                <li>Retreat programs and experiences</li>
-                <li>Accommodation and Stay presentation</li>
-                <li>Facilities and wellness presentation</li>
-                <li>Teacher / facilitator presentation</li>
-                <li>Booking journey integration</li>
-                <li>SEO ready structure</li>
-              </ul>
-            </div>
-            <div class="sanct-detailgroup">
-              <div class="dg-k">Branded Guest App</div>
-              <ul>
-                <li>Everything included in Harmony</li>
-                <li>Retreat Calendar</li>
-                <li>Live Schedule</li>
-                <li>Happening Now</li>
-                <li>Teacher Profiles</li>
-                <li>Meals &amp; Dining</li>
-                <li>Facilities</li>
-                <li>Audio Vault</li>
-                <li>Resources</li>
-                <li>Guest Information</li>
-              </ul>
-            </div>
-            <div class="sanct-detailgroup">
-              <div class="dg-k">Connected Platform</div>
-              <ul>
-                <li>Unified visual identity</li>
-                <li>Website and guest app ecosystem</li>
-                <li>Managed hosting</li>
-                <li>Security</li>
-                <li>Domain configuration</li>
-                <li>Platform maintenance</li>
-                <li>Continuous care</li>
-              </ul>
-            </div>
-          </div>
-        </details>
-        <a class="btn btn-outline" href="#contact" id="sanctuaryCta">Build Your Digital Ecosystem →</a>
-      </div>
-    </div>
-
-    <div class="pricing-info">
-      <div class="infoblock">
-        <h4>What your Setup &amp; Launch includes</h4>
-        <p>The one-time fee is how we professionally prepare your digital experience for launch, start to finish.</p>
-        <div class="checkgrid">
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Brand integration</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Content structuring</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Application configuration</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Image &amp; media preparation</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Module configuration</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Mobile optimization</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Domain &amp; security setup</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Quality assurance &amp; launch prep</div>
-        </div>
-      </div>
-      <div class="infoblock">
-        <h4>Your app stays cared for.</h4>
-        <p>Every RBR experience lives on our managed platform, so hosting, security, backups, maintenance and ongoing platform improvements are taken care of for you.</p>
-        <div class="checkgrid">
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Managed hosting</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Security</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Backups</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Platform updates</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Performance care</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Technical maintenance</div>
-          <div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>Support</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="customdev">
-      <div>
-        <h4>Need something unique?</h4>
-        <p>Custom features, integrations and larger digital ecosystems can be scoped separately around your retreat, practice or organization.</p>
-      </div>
-      <a class="btn btn-cream" href="#contact">Let's Talk →</a>
-    </div>
-
-    <div class="upgradepath">
-      <div>
-        <div class="k">Loved your Single Retreat experience?</div>
-        <h4>Make it your ongoing digital retreat home.</h4>
-        <p>If you find yourself hosting retreats more regularly, you can move from Single Retreat into Harmony whenever the time feels right.</p>
-      </div>
-      <a class="btn btn-outline" href="#pricing" id="exploreHarmonyCta">Explore Harmony →</a>
-    </div>
-
-    <details class="comparewrap">
-      <summary>Compare Plans <span class="arrow">▾</span></summary>
-      <div class="comparetable-wrap">
-        <table class="comparetable">
-          <tr><th>Feature</th><th>Single Retreat</th><th>Harmony</th><th>Sanctuary</th></tr>
-          <tr><td>Model</td><td>Single Event</td><td>Ongoing Platform</td><td>Complete Digital Ecosystem</td></tr>
-          <tr><td>Access</td><td>Event Window</td><td>Year Round</td><td>Year Round</td></tr>
-          <tr><td>Programs</td><td>One Retreat</td><td>Ongoing / Recurring</td><td>Multiple Programs</td></tr>
-          <tr><td>Live Schedule</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Teachers</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Meals</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Audio / Resources</td><td class="no">—</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td>Expanded</td></tr>
-          <tr><td>Custom Domain</td><td class="no">Not Standard</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td></tr>
-          <tr><td>Ongoing Platform &amp; Care</td><td class="no">Not Required</td><td><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sage)" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg></td><td>Premium</td></tr>
-        </table>
-      </div>
-    </details>
-  </div>
-</section>
-
-<section id="how-it-works" class="hiw">
-  <div class="wrap">
-    <div class="sectionhead center">
-      <div class="kicker">How It Works</div>
-      <div class="statement">Custom technology does not need to feel complicated.</div>
+      <div class="kicker">How Client Journey Hub Works</div>
     </div>
 
     <div class="hiw-steps">
-      <div class="hiw-step"><div class="hiw-n">1</div><b>Tell Ron</b><span>About your retreat or practice.</span></div>
-      <div class="hiw-step"><div class="hiw-n">2</div><b>Questionnaire</b><span>A short guided walkthrough.</span></div>
-      <div class="hiw-step"><div class="hiw-n">3</div><b>First Draft</b><span>RBR prepares your branded version.</span></div>
-      <div class="hiw-step"><div class="hiw-n">4</div><b>Review</b><span>Go through it directly with Ron.</span></div>
-      <div class="hiw-step"><div class="hiw-n">5</div><b>Refine</b><span>Adjust the final details together.</span></div>
-      <div class="hiw-step"><div class="hiw-n">6</div><b>Launch</b><span>Your digital experience goes live.</span></div>
+      <div class="hiw-step"><div class="hiw-n">1</div><b>Tell Ron</b><span>About your practice.</span></div>
+      <div class="hiw-step"><div class="hiw-n">2</div><b>Brand Direction</b><span>Choose your brand direction.</span></div>
+      <div class="hiw-step"><div class="hiw-n">3</div><b>Structure</b><span>Structure your client experience.</span></div>
+      <div class="hiw-step"><div class="hiw-n">4</div><b>Practices &amp; Resources</b><span>Add your practices and resources.</span></div>
+      <div class="hiw-step"><div class="hiw-n">5</div><b>Private Draft</b><span>Review your private draft.</span></div>
+      <div class="hiw-step"><div class="hiw-n">6</div><b>Launch</b><span>Your Client Journey Hub goes live.</span></div>
     </div>
 
     <div class="hiw-steps-v">
-      <div class="hiw-stepv"><div class="hiw-n">1</div><div><b>Tell Ron</b><span>About your retreat or practice.</span></div></div>
-      <div class="hiw-stepv"><div class="hiw-n">2</div><div><b>Questionnaire</b><span>A short guided walkthrough.</span></div></div>
-      <div class="hiw-stepv"><div class="hiw-n">3</div><div><b>First Draft</b><span>RBR prepares your branded version.</span></div></div>
-      <div class="hiw-stepv"><div class="hiw-n">4</div><div><b>Review</b><span>Go through it directly with Ron.</span></div></div>
-      <div class="hiw-stepv"><div class="hiw-n">5</div><div><b>Refine</b><span>Adjust the final details together.</span></div></div>
-      <div class="hiw-stepv"><div class="hiw-n">6</div><div><b>Launch</b><span>Your digital experience goes live.</span></div></div>
+      <div class="hiw-stepv"><div class="hiw-n">1</div><div><b>Tell Ron</b><span>About your practice.</span></div></div>
+      <div class="hiw-stepv"><div class="hiw-n">2</div><div><b>Brand Direction</b><span>Choose your brand direction.</span></div></div>
+      <div class="hiw-stepv"><div class="hiw-n">3</div><div><b>Structure</b><span>Structure your client experience.</span></div></div>
+      <div class="hiw-stepv"><div class="hiw-n">4</div><div><b>Practices &amp; Resources</b><span>Add your practices and resources.</span></div></div>
+      <div class="hiw-stepv"><div class="hiw-n">5</div><div><b>Private Draft</b><span>Review your private draft.</span></div></div>
+      <div class="hiw-stepv"><div class="hiw-n">6</div><div><b>Launch</b><span>Your Client Journey Hub goes live.</span></div></div>
     </div>
 
     <div style="text-align:center; margin-top:44px;">
       <a class="btn btn-outline" href="onboarding.html">Start The Questionnaire →</a>
+    </div>
+  </div>
+</section>
+
+<section id="client-hub-cta" class="finalcta" style="padding:100px 0;">
+  <div class="wrap">
+    <div class="statement on-dark" style="font-size:clamp(26px,3.6vw,38px);">Create a calmer space around the work you already do.</div>
+    <p>Bring your sessions, practices and resources together in one thoughtful client experience.</p>
+    <div class="herobtns">
+      <a class="btn btn-cream" href="#client-hub-pricing">Build My Client Hub →</a>
     </div>
   </div>
 </section>
@@ -2208,10 +1980,11 @@
       </div>
     </div>
     <div style="text-align:center; margin-top:40px;">
-      <a class="btn btn-outline" href="#wonderland-case-study">View The Wonderland Case Study →</a>
+      <a class="btn btn-outline" href="#wonderland-proof">View The Wonderland Case Study →</a>
     </div>
   </div>
 </section>
+
 
 <section id="shop">
   <div class="wrap">
@@ -2250,74 +2023,24 @@
   </div>
 </section>
 
-<section id="contact" class="finalcta">
+
+<section id="final-cta" class="finalcta">
   <div class="wrap">
-    <div class="kicker on-dark" style="margin-bottom:18px;">Let's Talk</div>
-    <div class="statement on-dark">Let's make your digital experience feel as calm as the space you are creating.</div>
-    <p>Tell me what you are building. We can explore together what would actually make the experience simpler for you and the people you serve.</p>
+    <div class="kicker on-dark" style="margin-bottom:18px;">Let's Create Something Thoughtful</div>
+    <div class="statement on-dark">Your digital experience should feel as intentional as the work behind it.</div>
+    <p>Whether you are hosting a retreat or supporting clients through an ongoing journey, tell Ron what you want to create.</p>
     <div class="herobtns">
-      <a class="btn btn-cream" href="#">Book a Conversation with Ron →</a>
-      <a class="btn btn-outline" style="color:var(--cream); border-color:rgba(251,249,245,0.3);" href="#">Follow on Instagram</a>
+      <a class="btn btn-cream" href="#">Talk With Ron →</a>
+    </div>
+    <div class="herobtns" style="margin-top:16px;">
+      <a class="btn btn-outline" style="color:var(--cream); border-color:rgba(251,249,245,0.3);" href="#for-retreats">I'm Building A Retreat</a>
+      <a class="btn btn-outline" style="color:var(--cream); border-color:rgba(251,249,245,0.3);" href="#for-therapists">I'm A Therapist Or Healer</a>
     </div>
   </div>
 </section>
 
 </main>
 
-<div class="hmodal-overlay" id="harmonyModalOverlay">
-  <div class="hmodal" role="dialog" aria-modal="true" aria-labelledby="harmonyModalTitle" id="harmonyModal">
-    <div class="hmodal-drag" aria-hidden="true"></div>
-    <button type="button" class="hmodal-close" id="harmonyModalClose" aria-label="Close">✕</button>
-
-    <div class="hmodal-head">
-      <span class="kicker">Harmony Plan Selection</span>
-      <h3 id="harmonyModalTitle">Choose How You Launch.</h3>
-      <p>Select standard onboarding or join our Portfolio Partner initiative to receive a one time setup credit.</p>
-    </div>
-
-    <div class="hoptions">
-      <div class="hopt">
-        <span class="hopt-badge">Standard Launch</span>
-        <h4>Standard Harmony</h4>
-        <p class="hopt-desc">Standard custom onboarding, dedicated configuration, full Harmony feature access and complete portfolio privacy.</p>
-        <div class="hopt-price">
-          <div class="row"><span class="plabel">Setup &amp; Launch</span><span class="pamt">$690<span> one time</span></span></div>
-          <div class="row"><span class="plabel">Platform &amp; Care</span><span class="pamt">$99<span> / month</span></span></div>
-        </div>
-        <a class="btn btn-outline" href="#contact" id="selectStandardHarmony">Select Standard Harmony →</a>
-      </div>
-
-      <div class="hopt partner">
-        <span class="hopt-badge">Portfolio Partner</span>
-        <div class="hopt-limited">Limited Availability</div>
-        <div class="hopt-credit">$150 Setup Credit</div>
-        <h4>Harmony Portfolio Partner</h4>
-        <div class="hopt-price">
-          <div class="row"><span class="plabel">Standard Setup</span><span class="pamt"><span class="strike">$690</span></span></div>
-          <div class="row"><span class="plabel">Portfolio Partner Setup</span><span class="pamt">$540<span> one time</span></span></div>
-          <div class="row"><span class="plabel">Platform &amp; Care</span><span class="pamt">$99<span> / month</span></span></div>
-        </div>
-        <div class="hopt-save">Save $150 on your initial Setup &amp; Launch.</div>
-
-        <details class="hopt-info">
-          <summary class="k" style="cursor:pointer;">What does Portfolio Partner mean? <span style="font-weight:400;">▾</span></summary>
-          <p>As an early RBR Portfolio Partner, you receive a $150 Setup &amp; Launch credit. After launch, we may invite you to share an honest review of your experience and allow RBR to showcase approved parts of the digital experience we created for you.</p>
-          <ul>
-            <li>Share an honest post launch review</li>
-            <li>Allow approved app screenshots to appear in the RBR portfolio</li>
-            <li>Potential inclusion in an RBR case study</li>
-            <li>Sensitive or private information remains excluded</li>
-          </ul>
-        </details>
-
-        <div class="hopt-micro">Help us tell the story of what we create together.</div>
-        <a class="btn btn-forest" href="#contact" id="selectPortfolioPartner">Choose Portfolio Partner →</a>
-      </div>
-    </div>
-
-    <div class="hmodal-foot">Both options include the complete Harmony feature suite, custom branding and continuous RBR Platform &amp; Care.</div>
-  </div>
-</div>
 
 <div class="hmodal-overlay" id="membershipModalOverlay">
   <div class="hmodal" role="dialog" aria-modal="true" aria-labelledby="membershipModalTitle" id="membershipModal">
@@ -2503,16 +2226,17 @@
       <div class="footer-cols">
         <div class="footer-col">
           <b>Site</b>
-          <a href="#about">About</a>
-          <a href="#portfolio">Portfolio</a>
-          <a href="#pricing">Pricing</a>
+          <a href="#about-ron">About</a>
+          <a href="#wonderland-proof">Wonderland</a>
+          <a href="#retreat-pricing">Retreat Pricing</a>
+          <a href="#client-hub-pricing">Client Hub Pricing</a>
           <a href="#shop">Shop</a>
         </div>
         <div class="footer-col">
           <b>Connect</b>
           <a href="#">Instagram</a>
           <a href="#">WhatsApp</a>
-          <a href="#contact">Contact</a>
+          <a href="#final-cta">Contact</a>
         </div>
       </div>
     </div>
@@ -2530,29 +2254,6 @@
     if (window.scrollY > 40) header.classList.add('scrolled');
     else header.classList.remove('scrolled');
   });
-
-  /* Product family selector — reflects scroll position, doesn't hide either
-     family's content (both stay in the DOM and visible for SEO/a11y). */
-  var familyRetreats = document.getElementById('familyRetreats');
-  var familyTherapists = document.getElementById('familyTherapists');
-  var portfolioSection = document.getElementById('portfolio');
-  var clientHubSection = document.getElementById('client-hub');
-  if (familyRetreats && familyTherapists && portfolioSection && clientHubSection && window.IntersectionObserver){
-    var familyObserver = new IntersectionObserver(function(entries){
-      entries.forEach(function(entry){
-        if (!entry.isIntersecting) return;
-        if (entry.target === clientHubSection){
-          familyTherapists.classList.add('on');
-          familyRetreats.classList.remove('on');
-        } else {
-          familyRetreats.classList.add('on');
-          familyTherapists.classList.remove('on');
-        }
-      });
-    }, { rootMargin: '-45% 0px -45% 0px' });
-    familyObserver.observe(portfolioSection);
-    familyObserver.observe(clientHubSection);
-  }
 
   var burger = document.getElementById('burgerBtn');
   var menu = document.getElementById('mobileMenu');
@@ -2588,9 +2289,7 @@
    authored directly from these values; keep them in sync if prices change. */
 var RBR_PRICING = {
   singleRetreat: { price: 349, billingType: 'one-time', eventBased: true, accessBeforeDays: 1, accessAfterDays: 1 },
-  harmony:   { setup: 690,  monthly: 99,  portfolioPartner: { enabled: false, setup: 540, credit: 150 } },
-  sanctuary: { setup: 1490, monthly: 199, portfolioPartner: { enabled: false } },
-  clientHub: { setup: 399,  monthly: 99 }
+  sanctuary: { setup: 1490, monthly: 199 }
 };
 
 /* RBR_MEMBERSHIP — single source of truth for the Harmony / Client Journey Hub
@@ -2611,118 +2310,10 @@ var RBR_MEMBERSHIP = {
 };
 var RBR_MEMBERSHIP_LABELS = { harmony: 'Harmony', clientHub: 'Client Journey Hub' };
 
-/* RBR_CONTACT — WhatsApp handoff target for the Lead Capture modal.
-   No real RBR WhatsApp number exists in this project yet, so this is left
-   empty on purpose rather than filled with a placeholder-looking fake number.
-   TODO (RBR): set this to the real WhatsApp Business number, digits only,
-   international format, no "+" and no spaces — e.g. "66812345678".
-   Until it's set, wa.me opens WhatsApp's own "choose a contact" screen
-   instead of messaging Ron directly. */
+/* RBR_CONTACT — WhatsApp handoff target for the Lead Capture modal. */
 var RBR_CONTACT = {
-  whatsappNumber: ''
+  whatsappNumber: '972523555057'
 };
-</script>
-
-<script>
-/* Harmony Plan Selection modal.
-   Gated entirely by RBR_PRICING.harmony.portfolioPartner.enabled — when that's
-   set to false, "Choose Harmony" skips the modal and goes straight to #contact
-   like Single Retreat/Sanctuary do, with no other code changes needed. */
-(function(){
-  var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var trigger = document.getElementById('harmonyCta');
-  var overlay = document.getElementById('harmonyModalOverlay');
-  var modal = document.getElementById('harmonyModal');
-  var closeBtn = document.getElementById('harmonyModalClose');
-  var standardBtn = document.getElementById('selectStandardHarmony');
-  var partnerBtn = document.getElementById('selectPortfolioPartner');
-  if (!trigger || !overlay || !modal) return;
-
-  var lastFocused = null;
-
-  function focusableEls(){
-    return Array.prototype.slice.call(
-      modal.querySelectorAll('a[href], button:not([disabled]), summary, [tabindex]:not([tabindex="-1"])')
-    ).filter(function(el){ return el.offsetParent !== null; });
-  }
-
-  function openModal(){
-    lastFocused = document.activeElement;
-    overlay.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    var f = focusableEls();
-    if (f.length) f[0].focus();
-    document.addEventListener('keydown', onKeydown);
-  }
-
-  function closeModal(){
-    overlay.classList.remove('open');
-    document.body.style.overflow = '';
-    document.removeEventListener('keydown', onKeydown);
-    if (lastFocused) lastFocused.focus();
-  }
-
-  function onKeydown(e){
-    if (e.key === 'Escape'){ closeModal(); return; }
-    if (e.key === 'Tab'){
-      var f = focusableEls();
-      if (!f.length) return;
-      var first = f[0], last = f[f.length - 1];
-      if (e.shiftKey && document.activeElement === first){ e.preventDefault(); last.focus(); }
-      else if (!e.shiftKey && document.activeElement === last){ e.preventDefault(); first.focus(); }
-    }
-  }
-
-  trigger.addEventListener('click', function(e){
-    var pp = (RBR_PRICING.harmony || {}).portfolioPartner;
-    if (!pp || !pp.enabled) return; // program disabled — fall through to plain #contact link
-    e.preventDefault();
-    openModal();
-  });
-
-  /* Portfolio Partner is currently disabled (RBR_PRICING.harmony.portfolioPartner.enabled
-     = false), so the listener above no-ops and this handles "Choose Harmony"
-     instead: straight into the membership selector. */
-  trigger.addEventListener('click', function(e){
-    var pp = (RBR_PRICING.harmony || {}).portfolioPartner;
-    if (pp && pp.enabled) return;
-    e.preventDefault();
-    if (window.RBR_openMembershipModal) window.RBR_openMembershipModal('harmony');
-  });
-
-  closeBtn.addEventListener('click', closeModal);
-  overlay.addEventListener('click', function(e){ if (e.target === overlay) closeModal(); });
-
-  /* Selection is handed straight to the Lead Capture modal in memory (see the
-     Lead Capture script below) — nothing about the visitor's choice is written
-     to storage of any kind. */
-  if (standardBtn){
-    standardBtn.addEventListener('click', function(e){
-      e.preventDefault();
-      closeModal();
-      if (window.RBR_openLeadCapture){
-        window.RBR_openLeadCapture({
-          key: 'harmony-standard', label: 'Harmony',
-          setup: RBR_PRICING.harmony.setup, monthly: RBR_PRICING.harmony.monthly
-        });
-      }
-    });
-  }
-  if (partnerBtn){
-    partnerBtn.addEventListener('click', function(e){
-      e.preventDefault();
-      closeModal();
-      var pp = RBR_PRICING.harmony.portfolioPartner;
-      if (window.RBR_openLeadCapture){
-        window.RBR_openLeadCapture({
-          key: 'harmony-partner', label: 'Harmony · Portfolio Partner',
-          setup: pp.setup, standardSetup: RBR_PRICING.harmony.setup, credit: pp.credit,
-          monthly: RBR_PRICING.harmony.monthly
-        });
-      }
-    });
-  }
-})();
 </script>
 
 <script>
@@ -3251,6 +2842,13 @@ var RBR_CONTACT = {
       e.preventDefault();
       var card = document.getElementById('harmonyCard');
       if (card) card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  }
+  var harmonyCta = document.getElementById('harmonyCta');
+  if (harmonyCta){
+    harmonyCta.addEventListener('click', function(e){
+      e.preventDefault();
+      if (window.RBR_openMembershipModal) window.RBR_openMembershipModal('harmony');
     });
   }
   var clientHubCta = document.getElementById('clientHubCta');
