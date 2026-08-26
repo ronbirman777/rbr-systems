@@ -1,4 +1,4 @@
-# Netlify configuration for the RBR Therapist Companion demo.
+# Netlify configuration for the RBR Client Journey Hub.
 # In Netlify: set "Base directory" to `therapist-app` when deploying from the
 # repository root, or point the site directly at this folder.
 
