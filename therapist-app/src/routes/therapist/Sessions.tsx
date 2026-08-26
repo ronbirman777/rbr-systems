@@ -1,163 +1,191 @@
 import { useMemo, useState } from 'react';
-import { useEcosystem } from '@/state/EcosystemProvider';
-import { pastSessions, prepProgress, todaysSessions, upcomingSessions } from '@/services/selectors';
-import { PageHeader } from '@/components/ui/PageHeader';
-import { Tabs } from '@/components/ui/Tabs';
-import { SessionRow } from '@/components/sessions/SessionRow';
-import { SessionBriefDrawer } from '@/components/sessions/SessionBriefDrawer';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { Section } from '@/components/ui/Section';
-import { Avatar } from '@/components/ui/Avatar';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useApp } from '@/state/AppProvider';
+import { sessionsOnDay, upcomingSessions, pastSessions } from '@/services/selectors';
+import { PageHeader } from '@/components/therapist/PageHeader';
+import { SessionItem } from '@/components/therapist/SessionItem';
 import { Button } from '@/components/ui/Button';
-import { PrivateNoteBadge } from '@/components/privacy/PrivacyBadge';
-import { TextArea } from '@/components/ui/Field';
-import { useAssign } from '@/components/layout/TherapistShell';
-import { clockTime, longDate, relativeDay } from '@/utils/date';
-import { plural, sessionTypeLabel } from '@/utils/format';
+import { EmptyState, Eyebrow } from '@/components/ui/Primitives';
+import { addDays, fullDate, todayISO, toISODate, weekOf, weekdayShort, relativeDay } from '@/utils/date';
+import { cn } from '@/utils/cn';
 
-type Tab = 'today' | 'upcoming' | 'past';
+type View = 'day' | 'week' | 'agenda';
 
-export default function TherapistSessions() {
-  const { state, dispatch } = useEcosystem();
-  const { openAssign } = useAssign();
-  const [tab, setTab] = useState<Tab>('today');
-  const [briefFor, setBriefFor] = useState<string | null>(null);
-  const [notesFor, setNotesFor] = useState<string | null>(null);
-  const [noteDraft, setNoteDraft] = useState('');
+/** Day, week and agenda over the same set of sessions. */
+export default function Sessions() {
+  const { state } = useApp();
+  const [view, setView] = useState<View>('day');
+  const [anchor, setAnchor] = useState(todayISO());
 
-  const today = useMemo(() => todaysSessions(state), [state]);
-  const upcoming = useMemo(() => upcomingSessions(state), [state]);
-  const past = useMemo(() => pastSessions(state), [state]);
-
-  const list = tab === 'today' ? today : tab === 'upcoming' ? upcoming : past;
+  const day = useMemo(() => sessionsOnDay(state, anchor), [state, anchor]);
+  const week = useMemo(
+    () => weekOf(anchor).map((date) => ({ date, sessions: sessionsOnDay(state, date) })),
+    [state, anchor],
+  );
+  const ahead = useMemo(() => upcomingSessions(state), [state]);
+  const held = useMemo(() => pastSessions(state).slice(0, 8), [state]);
 
   return (
     <div className="animate-fade-in">
-      <PageHeader
-        eyebrow="Sessions"
-        title="The shape of the week"
-        lede={`${plural(today.length, 'session')} today, ${upcoming.length} scheduled beyond it.`}
-      />
-
-      <Tabs<Tab>
-        value={tab}
-        onChange={setTab}
-        items={[
-          { value: 'today', label: 'Today', count: today.length },
-          { value: 'upcoming', label: 'Upcoming', count: upcoming.length },
-          { value: 'past', label: 'Past', count: past.length },
-        ]}
-      />
-
-      {tab === 'today' && today.length > 0 && (
-        <p className="pt-6 text-sm text-ink-muted">{longDate()}</p>
-      )}
-
-      <div className="pt-4">
-        {list.length === 0 ? (
-          <EmptyState
-            title={tab === 'today' ? 'No sessions today' : tab === 'upcoming' ? 'Nothing scheduled yet' : 'No past sessions'}
-          />
-        ) : tab === 'past' ? (
-          <ul className="space-y-3">
-            {list.map((session) => {
-              const client = state.clients.find((c) => c.id === session.clientId)!;
-              const open = notesFor === session.id;
-              return (
-                <li key={session.id} className="rounded-xl2 border border-sage-200 bg-white p-5">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex min-w-0 items-center gap-3.5">
-                      <Avatar person={client} size="md" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium text-ink">
-                          {client.firstName} {client.lastName}
-                        </p>
-                        <p className="text-xs text-ink-muted">
-                          {relativeDay(session.startsAt)} · {clockTime(session.startsAt)} ·{' '}
-                          {sessionTypeLabel[session.type]} · {session.durationMin} min
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => {
-                          setNotesFor(open ? null : session.id);
-                          setNoteDraft(session.notes ?? '');
-                        }}
-                      >
-                        {session.notes ? 'Session note' : 'Add note'}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => openAssign({ clientIds: [client.id] })}>
-                        Assign follow-up
-                      </Button>
-                    </div>
-                  </div>
-
-                  {(open || session.notes) && (
-                    <div className="mt-4 rounded-xl border border-sage-200 bg-cream/60 p-4">
-                      <PrivateNoteBadge />
-                      {open ? (
-                        <>
-                          <TextArea
-                            rows={3}
-                            className="mt-3"
-                            value={noteDraft}
-                            onChange={(e) => setNoteDraft(e.target.value)}
-                            aria-label="Session note"
-                            placeholder="What is worth remembering from this session?"
-                          />
-                          <div className="mt-3 flex justify-end gap-2">
-                            <Button size="sm" variant="ghost" onClick={() => setNotesFor(null)}>
-                              Cancel
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="primary"
-                              onClick={() => {
-                                dispatch({ type: 'session/save-notes', sessionId: session.id, notes: noteDraft });
-                                setNotesFor(null);
-                              }}
-                            >
-                              Save note
-                            </Button>
-                          </div>
-                        </>
-                      ) : (
-                        <p className="mt-3 text-sm leading-relaxed text-ink">{session.notes}</p>
-                      )}
-                    </div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        ) : (
-          <div className="hairline-list rounded-xl2 border border-sage-200 bg-white px-3 sm:px-5">
-            {list.map((session) => (
-              <div key={session.id}>
-                <SessionRow session={session} showDay={tab !== 'today'} onPrepare={setBriefFor} />
-                <p className="px-1 pb-3 text-2xs text-ink-faint md:hidden">
-                  {prepProgress(session).answered} of {prepProgress(session).total} preparation prompts completed
-                </p>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="border-b border-sage-line px-6 py-8 sm:px-10 lg:px-12">
+        <PageHeader
+          eyebrow="Sessions"
+          title="The shape of the week"
+          lede={`${sessionsOnDay(state, todayISO()).length} today · ${ahead.length} still ahead`}
+        />
       </div>
 
-      {tab === 'today' && upcoming.length > 0 && (
-        <Section eyebrow="Later this week" title="What is coming after today">
-          <div className="hairline-list rounded-xl2 border border-sage-200 bg-white px-3 sm:px-5">
-            {upcoming.slice(0, 4).map((session) => (
-              <SessionRow key={session.id} session={session} showDay compact onPrepare={setBriefFor} />
+      <div className="px-6 py-7 sm:px-10 lg:px-12">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex gap-1.5" role="tablist" aria-label="Session view">
+            {(['day', 'week', 'agenda'] as View[]).map((option) => (
+              <button
+                key={option}
+                role="tab"
+                aria-selected={option === view}
+                onClick={() => setView(option)}
+                className={cn(
+                  'min-h-[2.25rem] rounded-full border px-4 text-[0.8125rem] font-medium capitalize transition-colors',
+                  option === view
+                    ? 'border-forest bg-forest text-cream'
+                    : 'border-sage-line bg-white text-ink-soft hover:border-sage hover:text-ink',
+                )}
+              >
+                {option}
+              </button>
             ))}
           </div>
-        </Section>
-      )}
 
-      <SessionBriefDrawer sessionId={briefFor} open={briefFor !== null} onClose={() => setBriefFor(null)} />
+          {view !== 'agenda' && (
+            <div className="flex items-center gap-1.5">
+              <Button
+                size="sm"
+                className="w-10 px-0"
+                aria-label={view === 'day' ? 'Previous day' : 'Previous week'}
+                onClick={() => setAnchor(toISODate(addDays(anchor, view === 'day' ? -1 : -7)))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button size="sm" onClick={() => setAnchor(todayISO())} disabled={anchor === todayISO()}>
+                Today
+              </Button>
+              <Button
+                size="sm"
+                className="w-10 px-0"
+                aria-label={view === 'day' ? 'Next day' : 'Next week'}
+                onClick={() => setAnchor(toISODate(addDays(anchor, view === 'day' ? 1 : 7)))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {view === 'day' && (
+          <section className="mt-7">
+            <h2 className="font-display text-[1.625rem] leading-tight text-ink">{fullDate(anchor)}</h2>
+            {day.length === 0 ? (
+              <div className="mt-5">
+                <EmptyState title="Nothing scheduled on this day" />
+              </div>
+            ) : (
+              <div className="mt-4 hairlines border-y border-sage-line">
+                {day.map((session) => (
+                  <SessionItem key={session.id} session={session} showFinished />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {view === 'week' && (
+          <section className="mt-7">
+            <div className="grid gap-3 md:grid-cols-7">
+              {week.map((column) => {
+                const isToday = column.date === todayISO();
+                return (
+                  <div
+                    key={column.date}
+                    className={cn(
+                      'rounded-card border p-3',
+                      isToday ? 'border-sage bg-sage-wash/40' : 'border-sage-line bg-white',
+                    )}
+                  >
+                    <p
+                      className={cn(
+                        'text-2xs font-semibold uppercase tracking-eyebrow',
+                        isToday ? 'text-forest' : 'text-ink-faint',
+                      )}
+                    >
+                      {weekdayShort(column.date)} {Number(column.date.slice(8))}
+                    </p>
+                    <ul className="mt-2.5 space-y-2">
+                      {column.sessions.map((session) => {
+                        const client = state.clients.find((c) => c.id === session.clientId);
+                        return (
+                          <li key={session.id}>
+                            <a
+                              href={`/practitioner/sessions/${session.id}`}
+                              className="block rounded-[8px] border border-sage-line bg-cream/70 px-2.5 py-2 transition-colors hover:border-sage"
+                            >
+                              <span className="block text-2xs tabular-nums text-ink-soft">
+                                {session.startsAt.slice(11, 16)}
+                              </span>
+                              <span className="block truncate text-[0.8125rem] font-medium text-ink">
+                                {client?.name}
+                              </span>
+                            </a>
+                          </li>
+                        );
+                      })}
+                      {column.sessions.length === 0 && (
+                        <li className="text-2xs text-ink-faint">—</li>
+                      )}
+                    </ul>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {view === 'agenda' && (
+          <section className="mt-7 space-y-9">
+            <div>
+              <Eyebrow className="mb-3">Ahead</Eyebrow>
+              <div className="hairlines border-y border-sage-line">
+                {ahead.map((session) => (
+                  <SessionItem key={session.id} session={session} showDay />
+                ))}
+              </div>
+            </div>
+            <div>
+              <Eyebrow className="mb-3">Recently held</Eyebrow>
+              <ul className="hairlines border-y border-sage-line">
+                {held.map((session) => {
+                  const client = state.clients.find((c) => c.id === session.clientId);
+                  return (
+                    <li key={session.id}>
+                      <a
+                        href={`/practitioner/sessions/${session.id}`}
+                        className="flex items-center justify-between gap-4 py-3.5 transition-colors hover:bg-cream/50"
+                      >
+                        <span className="min-w-0">
+                          <span className="block text-[0.9375rem] text-ink">{client?.name}</span>
+                          <span className="block text-[0.8125rem] text-ink-soft">{session.focus}</span>
+                        </span>
+                        <span className="shrink-0 text-[0.8125rem] text-ink-soft">
+                          {relativeDay(session.startsAt)}
+                        </span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

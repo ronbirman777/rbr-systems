@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { Check } from 'lucide-react';
 
-interface ToastMessage {
+interface ToastItem {
   id: number;
   text: string;
 }
@@ -9,17 +9,17 @@ interface ToastMessage {
 const ToastContext = createContext<(text: string) => void>(() => {});
 
 /**
- * Deliberately sparing. Practice completions do NOT raise a toast — the
- * therapist's Recent Activity updates quietly instead. This exists only to
- * confirm an action the person on screen just took themselves.
+ * Used sparingly, and only to confirm something the person on screen just did
+ * themselves. A client completing a practice never raises one in the
+ * practitioner workspace — that would turn the product into a notifier.
  */
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<ToastMessage[]>([]);
+  const [items, setItems] = useState<ToastItem[]>([]);
 
   const push = useCallback((text: string) => {
     const id = Date.now() + Math.random();
     setItems((current) => [...current, { id, text }]);
-    window.setTimeout(() => setItems((current) => current.filter((i) => i.id !== id)), 3200);
+    window.setTimeout(() => setItems((current) => current.filter((i) => i.id !== id)), 3000);
   }, []);
 
   const value = useMemo(() => push, [push]);
@@ -34,9 +34,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {items.map((item) => (
           <div
             key={item.id}
-            className="pointer-events-auto flex items-center gap-2.5 rounded-full bg-forest-900 px-5 py-3 text-sm text-cream shadow-lift animate-rise"
+            className="pointer-events-auto flex items-center gap-2.5 rounded-full bg-forest px-5 py-3 text-[0.8125rem] text-cream shadow-raised animate-rise"
           >
-            <Check className="h-4 w-4 text-sage-300" aria-hidden="true" />
+            <Check className="h-3.5 w-3.5 text-sage" aria-hidden="true" />
             {item.text}
           </div>
         ))}

@@ -1,7 +1,7 @@
 {
-  "name": "RBR Therapist Companion",
-  "short_name": "Companion",
-  "description": "A connected therapist and client ecosystem. Therapy does not end when the session ends.",
+  "name": "RBR Client Journey Hub",
+  "short_name": "Journey Hub",
+  "description": "Supportive continuity between therapeutic sessions.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

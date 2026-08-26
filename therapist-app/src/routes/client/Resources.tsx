@@ -1,90 +1,111 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { BookOpen, ClipboardList, Headphones, ListChecks, PlayCircle } from 'lucide-react';
-import { useEcosystem } from '@/state/EcosystemProvider';
-import { resourcesForClient } from '@/services/selectors';
-import { Drawer } from '@/components/ui/Drawer';
-import { AudioPlayer } from '@/components/client/AudioPlayer';
-import { resourceTypeLabel } from '@/utils/format';
-import type { ResourceType } from '@/types';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowRight, BookOpen, Headphones, NotebookPen, Wind } from 'lucide-react';
+import type { ResourceCategoryId } from '@/types';
+import { useApp } from '@/state/AppProvider';
+import { resourcesFor } from '@/services/selectors';
+import { Card, Eyebrow, IconTile } from '@/components/ui/Primitives';
+import { resourceFormatLabel } from '@/utils/format';
 
-const typeIcon: Record<ResourceType, typeof Headphones> = {
-  audio: Headphones,
-  worksheet: ClipboardList,
+const categoryIcon: Record<ResourceCategoryId, typeof Headphones> = {
+  meditations: Headphones,
+  breathwork: Wind,
+  'journal-prompts': NotebookPen,
   reading: BookOpen,
-  video: PlayCircle,
-  questionnaire: ListChecks,
 };
 
+/**
+ * The two-column category grid from the reference, with the space beneath it
+ * carrying what has actually been shared rather than decoration.
+ */
 export default function ClientResources() {
   const { clientId = 'emma' } = useParams();
-  const { state, dispatch } = useEcosystem();
-  const [openId, setOpenId] = useState<string | null>(null);
-
+  const { state } = useApp();
   const client = state.clients.find((c) => c.id === clientId) ?? state.clients[0];
-  const resources = resourcesForClient(state, client.id);
-  const open = resources.find((r) => r.id === openId);
+  const base = `/client/${client.id}`;
+
+  const assigned = resourcesFor(state, client.id);
+  const opened = state.events
+    .filter((e) => e.clientId === client.id && e.kind === 'resource-opened')
+    .slice(0, 2)
+    .map((e) => state.resources.find((r) => e.label.endsWith(r.title)))
+    .filter(Boolean);
 
   return (
     <div className="animate-fade-in">
-      <header className="pb-6">
-        <h1 className="editorial text-[2rem] leading-tight">Resources for you</h1>
-        <p className="mt-2 text-sm text-ink-muted">
-          Chosen by {state.therapist.firstName} for the work you are doing together.
-        </p>
-      </header>
+      <h1 className="font-display text-[1.875rem] leading-tight text-ink">Resources</h1>
 
-      <div className="space-y-3">
-        {resources.map((resource) => {
-          const Icon = typeIcon[resource.type];
+      <div className="mt-6 grid grid-cols-2 gap-3">
+        {state.resourceCategories.map((category) => {
+          const Icon = categoryIcon[category.id];
           return (
-            <button
-              key={resource.id}
-              type="button"
-              onClick={() => {
-                setOpenId(resource.id);
-                dispatch({ type: 'resource/open', clientId: client.id, resourceId: resource.id });
-              }}
-              className="flex w-full items-start gap-4 rounded-xl2 border border-sage-200 bg-white px-4 py-4 text-left transition hover:border-forest-600/40"
+            <Link
+              key={category.id}
+              to={`${base}/resources/${category.id}`}
+              className="group flex min-h-[8.5rem] flex-col rounded-card border border-sage-line bg-white p-4 transition-colors hover:border-sage"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-cream text-forest-600">
-                <Icon className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-[0.95rem] font-medium leading-snug text-ink">{resource.title}</p>
-                <p className="mt-1 text-xs leading-relaxed text-ink-muted">{resource.summary}</p>
-                <p className="mt-1.5 text-2xs uppercase tracking-widest2 text-ink-faint">
-                  {resourceTypeLabel[resource.type]} · {resource.durationMin} min
-                </p>
-              </div>
-            </button>
+              <IconTile size="sm">
+                <Icon className="h-4 w-4" aria-hidden="true" />
+              </IconTile>
+              <h2 className="mt-3.5 text-[0.9375rem] font-semibold leading-snug text-ink">{category.title}</h2>
+              <p className="mt-0.5 text-[0.75rem] leading-relaxed text-ink-soft">{category.blurb}</p>
+              <ArrowRight
+                className="mt-auto h-4 w-4 text-ink-faint transition-transform group-hover:translate-x-0.5"
+                aria-hidden="true"
+              />
+            </Link>
           );
         })}
       </div>
 
-      <Drawer
-        open={open !== undefined}
-        onClose={() => setOpenId(null)}
-        eyebrow={open ? `${resourceTypeLabel[open.type]} · ${open.durationMin} min` : ''}
-        title={open?.title ?? ''}
-        description={open?.summary}
-      >
-        {open && (
-          <div className="space-y-6 pb-6">
-            {open.type === 'audio' && <AudioPlayer title={open.title} durationMin={open.durationMin} />}
-            <ol className="space-y-3">
-              {open.preview.map((line, index) => (
-                <li key={line} className="flex gap-3.5 text-[0.95rem] leading-relaxed text-ink">
-                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cream text-2xs font-semibold text-forest-600">
-                    {index + 1}
-                  </span>
-                  {line}
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
-      </Drawer>
+      <p className="mt-5 text-center text-[0.8125rem] text-ink-faint">
+        Shared by {state.practitioner.name}
+      </p>
+
+      {assigned.length > 0 && (
+        <section className="mt-9 border-t border-sage-line pt-7">
+          <Eyebrow>Assigned to you</Eyebrow>
+          <ul className="mt-3 space-y-2.5">
+            {assigned.slice(0, 4).map((resource) => (
+              <li key={resource.id}>
+                <Link to={`${base}/resource/${resource.id}`}>
+                  <Card className="flex items-center justify-between gap-3 p-3.5 transition-colors hover:border-sage">
+                    <span className="min-w-0">
+                      <span className="block text-[0.875rem] font-medium leading-snug text-ink">
+                        {resource.title}
+                      </span>
+                      <span className="mt-0.5 block text-[0.75rem] text-ink-soft">
+                        {resourceFormatLabel[resource.format]} · {resource.durationMin} min
+                      </span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 shrink-0 text-ink-faint" aria-hidden="true" />
+                  </Card>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {opened.length > 0 && (
+        <section className="mt-8">
+          <Eyebrow>Continue</Eyebrow>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {opened.map(
+              (resource) =>
+                resource && (
+                  <li key={resource.id}>
+                    <Link
+                      to={`${base}/resource/${resource.id}`}
+                      className="inline-flex min-h-[2.25rem] items-center rounded-full border border-sage-line bg-white px-3.5 text-[0.8125rem] text-ink-soft transition-colors hover:border-sage hover:text-ink"
+                    >
+                      {resource.title}
+                    </Link>
+                  </li>
+                ),
+            )}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

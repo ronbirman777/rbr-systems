@@ -1,9 +1,9 @@
 {
-  "name": "rbr-therapist-companion",
+  "name": "rbr-client-journey-hub",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "RBR Therapist Companion — a connected therapist & client ecosystem demo.",
+  "description": "RBR Client Journey Hub — supportive continuity between therapeutic sessions.",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

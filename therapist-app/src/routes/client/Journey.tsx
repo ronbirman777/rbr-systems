@@ -1,50 +1,74 @@
 import { useParams } from 'react-router-dom';
-import { useEcosystem } from '@/state/EcosystemProvider';
-import { chaptersForClient, sessionsFor } from '@/services/selectors';
-import { JourneyTimeline } from '@/components/client/JourneyTimeline';
-import { plural } from '@/utils/format';
+import { useApp } from '@/state/AppProvider';
+import { chaptersFor } from '@/services/selectors';
+import { Eyebrow } from '@/components/ui/Primitives';
+import { cn } from '@/utils/cn';
 
+const STATE_LABEL = { completed: 'Completed', 'in-progress': 'In Progress', upcoming: 'Upcoming' } as const;
+
+/**
+ * The client's own journey. The same chapters the practitioner sees, and none
+ * of the analytics — no percentages, no rhythm, no scores.
+ */
 export default function ClientJourney() {
   const { clientId = 'emma' } = useParams();
-  const { state } = useEcosystem();
+  const { state } = useApp();
   const client = state.clients.find((c) => c.id === clientId) ?? state.clients[0];
-  const chapters = chaptersForClient(state, client.id);
-  const current = chapters.find((c) => c.current);
-  const sessionsHeld = sessionsFor(state, client.id).filter((s) => s.status === 'completed').length;
+  const chapters = chaptersFor(state, client.id);
+  const current = chapters.find((c) => c.state === 'in-progress');
 
   return (
     <div className="animate-fade-in">
-      <header className="pb-8">
-        <p className="eyebrow mb-2">Your journey</p>
-        <h1 className="editorial text-[2rem] leading-tight">
-          {plural(client.weeksTogether, 'week')} of work
-        </h1>
-        <p className="mt-3 text-sm leading-relaxed text-ink-muted">
-          Not a score and not a level. This is the story of what you and {state.therapist.firstName} have
-          been working on, chapter by chapter.
-        </p>
-        <dl className="mt-6 grid grid-cols-3 gap-3">
-          {[
-            { label: 'Weeks', value: client.weeksTogether },
-            { label: 'Sessions', value: sessionsHeld },
-            { label: 'Chapters', value: chapters.length },
-          ].map((stat) => (
-            <div key={stat.label} className="rounded-xl2 bg-cream px-4 py-4 text-center">
-              <dd className="editorial text-2xl text-forest-900">{stat.value}</dd>
-              <dt className="mt-0.5 text-2xs uppercase tracking-widest2 text-ink-faint">{stat.label}</dt>
-            </div>
-          ))}
-        </dl>
-      </header>
+      <h1 className="font-display text-[1.875rem] leading-tight text-ink">Your Journey</h1>
+      <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">
+        The work you and {state.practitioner.name} have been doing, told in chapters.
+      </p>
 
       {current && (
-        <section className="mb-9 rounded-4xl bg-forest-900 px-6 py-6 text-cream">
-          <p className="text-2xs uppercase tracking-widest2 text-sage-400">Current focus</p>
-          <p className="editorial mt-1.5 text-xl leading-snug">{client.focusDetail}</p>
+        <section className="mt-6 rounded-card bg-forest px-5 py-5 text-cream">
+          <p className="text-2xs font-semibold uppercase tracking-eyebrow text-sage">Current Focus</p>
+          <p className="mt-1.5 font-display text-[1.375rem] leading-snug">{current.title}</p>
+          <p className="mt-2 text-[0.875rem] leading-relaxed text-sage-soft/90">{current.focus}</p>
         </section>
       )}
 
-      <JourneyTimeline chapters={chapters} compact />
+      <ol className="mt-8 space-y-9 border-l border-sage-line pl-6">
+        {chapters.map((chapter) => (
+          <li key={chapter.id} className="relative">
+            <span
+              aria-hidden="true"
+              className={cn(
+                'absolute -left-[1.8rem] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-ivory',
+                chapter.state === 'in-progress'
+                  ? 'bg-forest'
+                  : chapter.state === 'completed'
+                    ? 'bg-sage'
+                    : 'bg-sage-line',
+              )}
+            />
+            <Eyebrow className="mb-1.5">
+              Chapter {chapter.index} · {chapter.weeks} · {STATE_LABEL[chapter.state]}
+            </Eyebrow>
+            <h2 className="font-display text-[1.375rem] leading-tight text-ink">{chapter.title}</h2>
+            <p className="mt-1.5 text-[0.875rem] leading-relaxed text-ink-soft">{chapter.focus}</p>
+
+            {chapter.milestones.length > 0 && (
+              <ul className="mt-3 space-y-1.5">
+                {chapter.milestones.map((milestone) => (
+                  <li key={milestone} className="flex gap-2.5 text-[0.875rem] leading-relaxed text-ink">
+                    <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-sage" aria-hidden="true" />
+                    {milestone}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </li>
+        ))}
+      </ol>
+
+      <p className="mt-9 border-t border-sage-line pt-6 font-display text-[1.0625rem] italic leading-relaxed text-ink-soft">
+        The next chapter is still being written.
+      </p>
     </div>
   );
 }

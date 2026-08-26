@@ -4,237 +4,205 @@ import type {
   ISODate,
   Practice,
   PracticeState,
+  Reflection,
+  Resource,
   Session,
-  Thread,
 } from '@/types';
-import type { EcosystemState } from '@/state/ecosystemReducer';
+import type { AppState } from '@/state/store';
 import {
-  defaultEngagementConfig,
-  evaluateEngagement,
+  defaultBaselineConfig,
+  readBaseline,
+  type BaselineReading,
+  type BaselineSignals,
   type DaySignal,
-  type EngagementReading,
-  type EngagementSignals,
-} from './engagementEngine';
-import { DEMO_NOW, atTime, daysBetween, lastDays, toISODate } from '@/utils/date';
+} from './baselineEngine';
+import { DEMO_NOW, atTime, dayDiff, lastDays, toISODate } from '@/utils/date';
 
-/* ------------------------------------------------------------- practices */
+/* -------------------------------------------------------------- practices */
 
-export function practiceScheduledAt(practice: Practice): Date {
-  return atTime(practice.date, practice.time);
-}
+export const practiceAt = (practice: Practice): Date => atTime(practice.date, practice.targetTime);
 
 export function practiceState(practice: Practice, at: Date = DEMO_NOW): PracticeState {
-  if (practice.completion) return 'completed';
-  const scheduled = practiceScheduledAt(practice);
-  if (scheduled > at) return 'upcoming';
-  return practice.date < toISODate(at) ? 'missed' : 'due';
+  if (practice.completedAt) return 'completed';
+  if (practice.optional) return 'optional';
+  const target = practiceAt(practice);
+  if (target > at) return 'later';
+  return practice.date < toISODate(at) ? 'not-completed' : 'available';
 }
 
-export const practicesFor = (state: EcosystemState, clientId: string): Practice[] =>
-  state.practices
-    .filter((p) => p.clientId === clientId)
-    .sort((a, b) => practiceScheduledAt(a).getTime() - practiceScheduledAt(b).getTime());
+const byTime = (a: Practice, b: Practice) => practiceAt(a).getTime() - practiceAt(b).getTime();
 
-export const practicesOn = (state: EcosystemState, clientId: string, date: ISODate): Practice[] =>
-  practicesFor(state, clientId).filter((p) => p.date === date);
+export const practicesOf = (state: AppState, clientId: string): Practice[] =>
+  state.practices.filter((p) => p.clientId === clientId).sort(byTime);
 
-/** Practices already due today, plus anything still ahead of the clock. */
-export function todaysPractices(state: EcosystemState, clientId: string): Practice[] {
-  return practicesOn(state, clientId, toISODate(DEMO_NOW));
+export const practicesOn = (state: AppState, clientId: string, date: ISODate): Practice[] =>
+  practicesOf(state, clientId).filter((p) => p.date === date);
+
+export const todaysPractices = (state: AppState, clientId: string): Practice[] =>
+  practicesOn(state, clientId, toISODate(DEMO_NOW));
+
+/** Completed / total for a day, counting the whole day's plan. */
+export function dayProgress(state: AppState, clientId: string, date: ISODate) {
+  const list = practicesOn(state, clientId, date);
+  return { completed: list.filter((p) => p.completedAt).length, total: list.length };
 }
 
-/* ------------------------------------------------------------- engagement */
+/* --------------------------------------------------------------- baseline */
 
-export function buildDaySignals(
-  state: EcosystemState,
-  clientId: string,
-  dayCount = 7,
-): DaySignal[] {
-  const days = lastDays(dayCount);
-  const all = practicesFor(state, clientId);
-
-  return days.map((date) => {
+export function buildDaySignals(state: AppState, clientId: string, count = 21): DaySignal[] {
+  const all = practicesOf(state, clientId);
+  return lastDays(count).map((date) => {
     const onDay = all.filter((p) => p.date === date);
-    const completed = onDay.filter((p) => p.completion).length;
-    const overdue = onDay.filter((p) => practiceState(p) === 'missed' || practiceState(p) === 'due');
+    // A pattern is only read from days that have finished. A practice that was
+    // due two hours ago may still happen today, and counting it would overstate
+    // the signal.
+    const missed = onDay.filter((p) => practiceState(p) === 'not-completed');
     return {
       date,
       assigned: onDay.length,
-      completed,
-      missedTitles: overdue.map((p) => p.title),
-      missedPartsOfDay: overdue.map((p) => p.partOfDay),
+      completed: onDay.filter((p) => p.completedAt).length,
+      missedPartsOfDay: missed.map((p) => p.partOfDay),
     };
   });
 }
 
-/** Consecutive assigned-and-due practices not completed, most recent run. */
-function missedStreak(state: EcosystemState, clientId: string): number {
-  const due = practicesFor(state, clientId).filter((p) => practiceState(p) !== 'upcoming');
-  let streak = 0;
-  for (let i = due.length - 1; i >= 0; i -= 1) {
-    if (due[i].completion) break;
-    streak += 1;
-  }
-  return streak;
-}
-
-function lastReplyHours(thread: Thread | undefined): number | undefined {
-  if (!thread) return undefined;
-  for (let i = thread.messages.length - 1; i >= 0; i -= 1) {
-    const reply = thread.messages[i];
-    if (reply.author !== 'client') continue;
-    const prompt = thread.messages
-      .slice(0, i)
-      .reverse()
-      .find((m) => m.author === 'therapist');
-    if (!prompt) return undefined;
-    return (
-      (new Date(reply.sentAt).getTime() - new Date(prompt.sentAt).getTime()) / 3_600_000
-    );
-  }
-  return undefined;
-}
-
-export function buildSignals(state: EcosystemState, client: Client): EngagementSignals {
-  const recentDays = buildDaySignals(state, client.id, 7);
-  const window = recentDays.slice(-defaultEngagementConfig.window);
-  const thread = state.threads.find((t) => t.clientId === client.id);
-  const nextSession = nextSessionFor(state, client.id);
-
+export function buildSignals(state: AppState, client: Client): BaselineSignals {
+  const days = buildDaySignals(state, client.id, client.baselineDays);
+  const next = nextSessionFor(state, client.id);
   return {
-    usualCompletionRate: client.usualRhythm,
-    recentDays,
-    assignedRecent: window.reduce((sum, d) => sum + d.assigned, 0),
-    completedRecent: window.reduce((sum, d) => sum + d.completed, 0),
-    missedStreak: missedStreak(state, client.id),
-    daysInactive: daysBetween(client.lastActiveAt),
-    typicalReplyHours: client.typicalReplyHours,
-    lastReplyHours: lastReplyHours(thread),
-    sessionPrep: nextSession
-      ? {
-          answered: nextSession.prepPrompts.filter((q) => q.answer).length,
-          total: nextSession.prepPrompts.length,
-        }
+    usualRhythm: client.usualRhythm,
+    baselineDays: client.baselineDays,
+    days,
+    daysInactive: dayDiff(client.lastActivityAt),
+    weeksTogether: client.weeksTogether,
+    recentReflections: state.reflections.filter(
+      (r) => r.clientId === client.id && dayDiff(r.submittedAt) <= defaultBaselineConfig.window,
+    ).length,
+    sessionPrep: next
+      ? { answered: next.preSession?.length ?? 0, total: 3 }
       : undefined,
     resourceOpens: state.events.filter(
-      (e) => e.clientId === client.id && e.kind === 'resource-opened' && daysBetween(e.at) <= 3,
+      (e) => e.clientId === client.id && e.kind === 'resource-opened' && dayDiff(e.at) <= 3,
     ).length,
-    weeksTogether: client.weeksTogether,
   };
 }
 
-export function readingFor(state: EcosystemState, clientId: string): EngagementReading {
+/**
+ * The practitioner's reading of a client. Private by construction — nothing in
+ * `routes/client/**` imports this.
+ */
+export const readingFor = (state: AppState, clientId: string): BaselineReading => {
   const client = state.clients.find((c) => c.id === clientId)!;
-  return evaluateEngagement(buildSignals(state, client));
-}
+  return readBaseline(buildSignals(state, client));
+};
 
-export interface ClientWithReading {
+export interface ClientReading {
   client: Client;
-  reading: EngagementReading;
+  reading: BaselineReading;
   nextSession?: Session;
-  unread: number;
+  lastActivity?: ActivityEvent;
 }
 
-export function clientsWithReadings(state: EcosystemState): ClientWithReading[] {
-  return state.clients.map((client) => ({
+export const allReadings = (state: AppState): ClientReading[] =>
+  state.clients.map((client) => ({
     client,
     reading: readingFor(state, client.id),
     nextSession: nextSessionFor(state, client.id),
-    unread: unreadForTherapist(state, client.id),
+    lastActivity: state.events.find((e) => e.clientId === client.id),
+  }));
+
+/**
+ * A 21-day series of daily completion rates, for the rhythm visualisation.
+ * `recent` marks the days inside the current window.
+ */
+export function rhythmSeries(state: AppState, clientId: string, days = 21) {
+  const signals = buildDaySignals(state, clientId, days);
+  const windowStart = days - defaultBaselineConfig.window;
+  return signals.map((day, index) => ({
+    date: day.date,
+    value: day.assigned === 0 ? null : Math.round((day.completed / day.assigned) * 100),
+    recent: index >= windowStart,
   }));
 }
 
 /* --------------------------------------------------------------- sessions */
 
-export const sessionsFor = (state: EcosystemState, clientId: string): Session[] =>
-  state.sessions
-    .filter((s) => s.clientId === clientId)
-    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+const bySoonest = (a: Session, b: Session) =>
+  new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime();
 
-export function nextSessionFor(state: EcosystemState, clientId: string): Session | undefined {
-  return sessionsFor(state, clientId).find(
-    (s) => s.status === 'upcoming' && new Date(s.startsAt) >= DEMO_NOW,
-  );
-}
+export const sessionsOf = (state: AppState, clientId: string): Session[] =>
+  state.sessions.filter((s) => s.clientId === clientId).sort(bySoonest);
 
-export function lastSessionFor(state: EcosystemState, clientId: string): Session | undefined {
-  return sessionsFor(state, clientId)
-    .filter((s) => new Date(s.startsAt) < DEMO_NOW)
+const sessionEnd = (session: Session) =>
+  new Date(new Date(session.startsAt).getTime() + session.durationMin * 60_000);
+
+/** The next session that has not finished yet. */
+export const nextSessionFor = (state: AppState, clientId: string): Session | undefined =>
+  sessionsOf(state, clientId).find((s) => s.status === 'upcoming' && sessionEnd(s) > DEMO_NOW);
+
+export const lastSessionFor = (state: AppState, clientId: string): Session | undefined =>
+  sessionsOf(state, clientId)
+    .filter((s) => sessionEnd(s) <= DEMO_NOW)
     .pop();
-}
 
-export function todaysSessions(state: EcosystemState): Session[] {
-  const today = toISODate(DEMO_NOW);
-  return state.sessions
-    .filter((s) => toISODate(s.startsAt) === today)
-    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
-}
+export const sessionsOnDay = (state: AppState, date: ISODate): Session[] =>
+  state.sessions.filter((s) => toISODate(s.startsAt) === date).sort(bySoonest);
 
-/** Everything scheduled beyond today — today has its own view. */
-export function upcomingSessions(state: EcosystemState): Session[] {
-  const today = toISODate(DEMO_NOW);
-  return state.sessions
-    .filter((s) => s.status === 'upcoming' && toISODate(s.startsAt) > today)
-    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
-}
+export const todaysSessions = (state: AppState): Session[] => sessionsOnDay(state, toISODate(DEMO_NOW));
 
-export function pastSessions(state: EcosystemState): Session[] {
-  return state.sessions
-    .filter((s) => new Date(s.startsAt) < DEMO_NOW)
-    .sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime());
-}
+export const upcomingSessions = (state: AppState): Session[] =>
+  state.sessions.filter((s) => sessionEnd(s) > DEMO_NOW).sort(bySoonest);
 
-export const prepProgress = (session: Session) => ({
-  answered: session.prepPrompts.filter((q) => q.answer).length,
-  total: session.prepPrompts.length,
-});
+export const pastSessions = (state: AppState): Session[] =>
+  state.sessions.filter((s) => sessionEnd(s) <= DEMO_NOW).sort((a, b) => bySoonest(b, a));
 
-/* --------------------------------------------------------------- messages */
+export const hasFinished = (session: Session) => sessionEnd(session) <= DEMO_NOW;
 
-export const threadFor = (state: EcosystemState, clientId: string): Thread | undefined =>
-  state.threads.find((t) => t.clientId === clientId);
+/* ------------------------------------------------------------ reflections */
 
-export const unreadForTherapist = (state: EcosystemState, clientId: string): number =>
-  threadFor(state, clientId)?.messages.filter((m) => m.author === 'client' && !m.readByTherapist)
-    .length ?? 0;
+export const reflectionsOf = (state: AppState, clientId: string): Reflection[] =>
+  state.reflections
+    .filter((r) => r.clientId === clientId)
+    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
 
-export const unreadForClient = (state: EcosystemState, clientId: string): number =>
-  threadFor(state, clientId)?.messages.filter((m) => m.author === 'therapist' && !m.readByClient)
-    .length ?? 0;
+export const latestReflection = (state: AppState, clientId: string): Reflection | undefined =>
+  reflectionsOf(state, clientId)[0];
 
-export const totalUnreadForTherapist = (state: EcosystemState): number =>
-  state.clients.reduce((sum, c) => sum + unreadForTherapist(state, c.id), 0);
+export const unreadReflections = (state: AppState): Reflection[] =>
+  state.reflections
+    .filter((r) => !r.readByPractitioner)
+    .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
 
-/* ----------------------------------------------------------------- notes */
+/* -------------------------------------------------------------- resources */
 
-export const notesFor = (state: EcosystemState, clientId: string) =>
-  state.notes
-    .filter((n) => n.clientId === clientId)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+export const resourcesFor = (state: AppState, clientId: string): Resource[] => {
+  const viaPractice = new Set(
+    practicesOf(state, clientId)
+      .map((p) => p.resourceId)
+      .filter(Boolean) as string[],
+  );
+  return state.resources.filter((r) => r.assignedTo.includes(clientId) || viaPractice.has(r.id));
+};
 
 /* ---------------------------------------------------------------- events */
 
-export function recentActivity(state: EcosystemState, limit = 12): ActivityEvent[] {
-  return state.events.filter((e) => new Date(e.at) <= DEMO_NOW).slice(0, limit);
-}
+export const recentEvents = (state: AppState, limit = 12): ActivityEvent[] =>
+  state.events.filter((e) => new Date(e.at) <= DEMO_NOW).slice(0, limit);
 
-export const activityFor = (state: EcosystemState, clientId: string, limit = 20) =>
+export const eventsOf = (state: AppState, clientId: string, limit = 20): ActivityEvent[] =>
   state.events.filter((e) => e.clientId === clientId && new Date(e.at) <= DEMO_NOW).slice(0, limit);
 
 /* --------------------------------------------------------------- journey */
 
-export const chaptersForClient = (state: EcosystemState, clientId: string) =>
-  state.chapters
+export const chaptersFor = (state: AppState, clientId: string) =>
+  state.chapters.filter((c) => c.clientId === clientId).sort((a, b) => a.index - b.index);
+
+/* -------------------------------------------------------------- check-ins */
+
+export const checkInsOf = (state: AppState, clientId: string) =>
+  state.checkIns
     .filter((c) => c.clientId === clientId)
-    .sort((a, b) => a.weekFrom - b.weekFrom);
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-/* -------------------------------------------------------------- resources */
-
-export const resourcesForClient = (state: EcosystemState, clientId: string) => {
-  const assigned = new Set(
-    practicesFor(state, clientId)
-      .map((p) => p.resourceId)
-      .filter(Boolean) as string[],
-  );
-  return state.resources.filter((r) => assigned.has(r.id) || r.clientsUsing.includes(clientId));
-};
+export const draftCheckIn = (state: AppState, clientId: string) =>
+  state.checkIns.find((c) => c.clientId === clientId && c.status === 'draft');
