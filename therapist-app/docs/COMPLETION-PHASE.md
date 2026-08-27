@@ -133,7 +133,7 @@ edited, and keeps a cancelled occurrence in history while the others stand.
 **Layout** — 19 routes × 8 widths from 375px to 1728px: no horizontal overflow, no console
 or page errors.
 
-**Controls** — 202 enabled buttons across 17 routes, each clicked from a clean state and
+**Controls** — around 200 enabled buttons across 17 routes, each clicked from a clean state and
 checked for an effect. Every no-op was then verified by hand; all are correct behaviour —
 an already-selected filter chip, and the demo reset on a store that is already pristine.
 
@@ -141,7 +141,7 @@ an already-selected filter chip, and the demo reset on a store that is already p
 check-in → assign → complete → resource → prepare → John sees it → survives a refresh) still
 passes end to end.
 
-### Five defects this found and fixed
+### Six defects this found and fixed
 
 1. **No booking request could ever be accepted.** A pending request overlaps the time it is
    asking for, so it was detected as a conflict with itself and the Accept button was
@@ -162,6 +162,11 @@ passes end to end.
    *no recording is bundled* note stays with the formats that would have had one.
 5. **Two lists could render nothing and say nothing** — a client's sessions and their journey
    chapters. Both now have an empty state, as does the client's own journey view.
+6. **The session brief contradicted the screen it sat on.** It counted preparation from the
+   older free-form questions against a hard-coded total of three, so it read
+   *0 of 3 session preparation questions answered* directly above *1 of 1 completed* and the
+   answer itself. It now counts what is actually attached, and falls back to the older
+   questions only for a session with nothing attached.
 
 Two smaller corrections: a session more than a week out now reads *"Tuesday Sep 22, 2:00 PM"*
 rather than an ambiguous *"Tuesday"*, and completing a session is reachable before the hour

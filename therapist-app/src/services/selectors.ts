@@ -78,6 +78,15 @@ export function buildDaySignals(state: AppState, clientId: string, count = 21): 
   });
 }
 
+function preparationSignal(state: AppState, session: Session) {
+  const attached = state.preparations.filter((p) => p.sessionId === session.id);
+  if (attached.length > 0) {
+    return { answered: attached.filter((p) => p.completedAt).length, total: attached.length };
+  }
+  const answered = session.preSession?.length ?? 0;
+  return { answered, total: 3 };
+}
+
 export function buildSignals(state: AppState, client: Client): BaselineSignals {
   const days = buildDaySignals(state, client.id, client.baselineDays);
   const next = nextSessionFor(state, client.id);
@@ -90,9 +99,10 @@ export function buildSignals(state: AppState, client: Client): BaselineSignals {
     recentReflections: state.reflections.filter(
       (r) => r.clientId === client.id && dayDiff(r.submittedAt) <= defaultBaselineConfig.window,
     ).length,
-    sessionPrep: next
-      ? { answered: next.preSession?.length ?? 0, total: 3 }
-      : undefined,
+    // Preparation attached to the next session is what the practitioner is
+    // actually waiting on; the older free-form questions are the fallback for a
+    // session that has none.
+    sessionPrep: next ? preparationSignal(state, next) : undefined,
     resourceOpens: state.events.filter(
       (e) => e.clientId === client.id && e.kind === 'resource-opened' && dayDiff(e.at) <= 3,
     ).length,
