@@ -3,6 +3,7 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useApp } from '@/state/AppProvider';
 import { preSessionQuestions } from '@/data';
+import { preparationsFor } from '@/services/selectors';
 import { Button } from '@/components/ui/Button';
 import { TextArea } from '@/components/ui/Field';
 import { Eyebrow } from '@/components/ui/Primitives';
@@ -22,15 +23,19 @@ export default function ClientPreSession() {
   const base = `/client/${client.id}`;
   const session = state.sessions.find((s) => s.id === sessionId && s.clientId === client.id);
 
+  const attached = session ? preparationsFor(state, session.id).filter((p) => !p.completedAt) : [];
+  // What John actually asked for, when he asked for something specific.
+  const questions = attached.length > 0 ? attached.map((p) => p.prompt) : preSessionQuestions;
+
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<string[]>(() =>
-    preSessionQuestions.map((_, i) => session?.preSession?.[i]?.answer ?? ''),
+    questions.map((_, i) => (attached.length > 0 ? '' : (session?.preSession?.[i]?.answer ?? ''))),
   );
   const [submitted, setSubmitted] = useState(false);
 
   if (!session) return <Navigate to={`${base}/sessions`} replace />;
 
-  const last = step === preSessionQuestions.length - 1;
+  const last = step === questions.length - 1;
 
   if (submitted) {
     return (
@@ -61,8 +66,8 @@ export default function ClientPreSession() {
 
       <Eyebrow className="mt-5">Preparing for {sessionWhen(session.startsAt)}</Eyebrow>
 
-      <ol className="mt-4 flex gap-1.5" aria-label={`Question ${step + 1} of ${preSessionQuestions.length}`}>
-        {preSessionQuestions.map((question, index) => (
+      <ol className="mt-4 flex gap-1.5" aria-label={`Question ${step + 1} of ${questions.length}`}>
+        {questions.map((question, index) => (
           <li
             key={question}
             aria-current={index === step ? 'step' : undefined}
@@ -74,9 +79,10 @@ export default function ClientPreSession() {
         ))}
       </ol>
 
-      <h1 className="mt-7 font-display text-[1.625rem] leading-snug text-ink">
-        {preSessionQuestions[step]}
-      </h1>
+      {attached.length > 0 && (
+        <p className="mt-6 text-[0.8125rem] text-ink-soft">{attached[step]?.title}</p>
+      )}
+      <h1 className="mt-2 font-display text-[1.625rem] leading-snug text-ink">{questions[step]}</h1>
 
       <TextArea
         rows={7}
@@ -84,7 +90,7 @@ export default function ClientPreSession() {
         value={answers[step]}
         onChange={(e) => setAnswers((current) => current.map((a, i) => (i === step ? e.target.value : a)))}
         placeholder="Take as much or as little space as you need."
-        aria-label={preSessionQuestions[step]}
+        aria-label={questions[step]}
       />
 
       <div className="mt-6 flex items-center justify-between gap-3">
@@ -96,14 +102,24 @@ export default function ClientPreSession() {
           <Button
             variant="primary"
             onClick={() => {
-              dispatch({
-                type: 'session/pre-session',
-                sessionId: session.id,
-                answers: preSessionQuestions.map((question, i) => ({
-                  question,
-                  answer: answers[i].trim() || 'Nothing to add today.',
-                })),
-              });
+              if (attached.length > 0) {
+                attached.forEach((preparation, i) =>
+                  dispatch({
+                    type: 'preparation/complete',
+                    preparationId: preparation.id,
+                    response: answers[i].trim() || 'Nothing to add today.',
+                  }),
+                );
+              } else {
+                dispatch({
+                  type: 'session/pre-session',
+                  sessionId: session.id,
+                  answers: questions.map((question, i) => ({
+                    question,
+                    answer: answers[i].trim() || 'Nothing to add today.',
+                  })),
+                });
+              }
               setSubmitted(true);
             }}
           >

@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { ChevronRight, Plus } from 'lucide-react';
 import { useApp } from '@/state/AppProvider';
-import { AssignPracticeDrawer } from '@/components/therapist/AssignPracticeDrawer';
+import { clientsUsing } from '@/services/selectors';
+import { AssignResourceDrawer } from '@/components/therapist/AssignResourceDrawer';
+import { ResourceFormDrawer } from '@/components/therapist/ResourceFormDrawer';
 import { AudioPlayer } from '@/components/client/AudioPlayer';
 import { BreathingGuide } from '@/components/client/BreathingGuide';
 import { Button } from '@/components/ui/Button';
 import { Monogram } from '@/components/ui/Monogram';
 import { Eyebrow } from '@/components/ui/Primitives';
-import { resourceFormatLabel } from '@/utils/format';
+import { formatLabel, hasTransport, isPlayable } from '@/components/shared/resourceMeta';
 import { shortDate } from '@/utils/date';
 
 /** The resource as the client will meet it, plus who already has it. */
@@ -16,13 +18,14 @@ export default function SanctuaryResource() {
   const { resourceId = '' } = useParams();
   const { state } = useApp();
   const [assignOpen, setAssignOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [playing, setPlaying] = useState(false);
 
   const resource = state.resources.find((r) => r.id === resourceId);
   if (!resource) return <Navigate to="/practitioner/sanctuary" replace />;
 
   const category = state.resourceCategories.find((c) => c.id === resource.categoryId);
-  const using = state.clients.filter((c) => resource.assignedTo.includes(c.id));
+  const using = clientsUsing(state, resource.id);
 
   return (
     <div className="animate-fade-in">
@@ -38,15 +41,20 @@ export default function SanctuaryResource() {
         <header className="mt-5 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
           <div className="min-w-0 max-w-2xl">
             <Eyebrow>
-              {resourceFormatLabel[resource.format]} · {resource.durationMin} min · added{' '}
+              {formatLabel[resource.format]} · {resource.durationMin} min · added{' '}
               {shortDate(resource.addedOn)}
             </Eyebrow>
             <h1 className="mt-2 font-display text-[2rem] leading-tight text-ink">{resource.title}</h1>
             <p className="mt-2 text-[0.9375rem] text-ink-soft">{resource.summary}</p>
           </div>
-          <Button variant="primary" size="sm" onClick={() => setAssignOpen(true)} icon={<Plus className="h-4 w-4" />}>
-            Assign to a client
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="primary" size="sm" onClick={() => setAssignOpen(true)} icon={<Plus className="h-4 w-4" />}>
+              Assign to a client
+            </Button>
+            <Button size="sm" onClick={() => setEditOpen(true)}>
+              Edit
+            </Button>
+          </div>
         </header>
       </div>
 
@@ -58,7 +66,7 @@ export default function SanctuaryResource() {
             </div>
           )}
 
-          {resource.format === 'audio' && (
+          {hasTransport(resource.format) && (
             <div className="mt-6 max-w-lg">
               <AudioPlayer
                 durationMin={resource.durationMin}
@@ -66,10 +74,12 @@ export default function SanctuaryResource() {
                 playing={playing}
                 onPlayingChange={setPlaying}
               />
-              <p className="mt-4 rounded-card border border-sage-line bg-cream/60 px-4 py-3 text-2xs leading-relaxed text-ink-soft">
-                This prototype has no recording behind the player. The transport and timing are real; no audio
-                file is bundled.
-              </p>
+              {isPlayable(resource.format) && (
+                <p className="mt-4 rounded-card border border-sage-line bg-cream/60 px-4 py-3 text-2xs leading-relaxed text-ink-soft">
+                  This prototype has no recording behind the player. The transport and timing are real; no
+                  audio file is bundled.
+                </p>
+              )}
             </div>
           )}
 
@@ -113,7 +123,8 @@ export default function SanctuaryResource() {
         </aside>
       </div>
 
-      <AssignPracticeDrawer open={assignOpen} onClose={() => setAssignOpen(false)} resourceId={resource.id} />
+      <AssignResourceDrawer open={assignOpen} onClose={() => setAssignOpen(false)} resourceId={resource.id} />
+      <ResourceFormDrawer open={editOpen} onClose={() => setEditOpen(false)} resource={resource} />
     </div>
   );
 }

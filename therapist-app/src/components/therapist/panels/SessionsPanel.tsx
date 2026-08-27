@@ -6,7 +6,7 @@ import { useApp } from '@/state/AppProvider';
 import { hasFinished, sessionsOf } from '@/services/selectors';
 import { PrepBadge } from '@/components/ui/StatusBadge';
 import { PrivateNote } from '@/components/shared/PrivateNote';
-import { Eyebrow } from '@/components/ui/Primitives';
+import { EmptyState, Eyebrow } from '@/components/ui/Primitives';
 import { clockTime, fullDate, sessionWhen } from '@/utils/date';
 import { sessionModeLabel } from '@/utils/format';
 import { cn } from '@/utils/cn';
@@ -23,6 +23,14 @@ export function SessionsPanel({ client }: { client: Client }) {
       <p className="mt-1.5 text-[0.9375rem] text-ink-soft">
         {list.filter((s) => hasFinished(s)).length} held · {list.filter((s) => !hasFinished(s)).length} ahead
       </p>
+
+      {list.length === 0 && (
+        <EmptyState
+          className="mt-7"
+          title="No sessions yet"
+          description={`Nothing has been booked with ${client.name}. Schedule the first one from the calendar.`}
+        />
+      )}
 
       <ul className="mt-7 hairlines border-y border-sage-line">
         {list.map((session) => {

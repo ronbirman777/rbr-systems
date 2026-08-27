@@ -61,11 +61,20 @@ export function fullDate(value: Date | ISODate): string {
   return `${WEEKDAY[d.getDay()]}, ${MONTH[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
 
-/** "Friday, 10:30 AM" — the format used for a session. */
+/**
+ * "Friday, 10:30 AM" — the format used for a session.
+ *
+ * A weekday on its own only reads unambiguously inside the coming week. Past
+ * that (a client can book four weeks out) the date is spelled out, so
+ * "Tuesday" never quietly means a Tuesday three weeks from now.
+ */
 export function sessionWhen(value: Date | ISODateTime): string {
   const d = asDate(value);
   const diff = dayDiff(d);
-  const day = diff === 0 ? 'Today' : diff === 1 ? 'Yesterday' : diff === -1 ? 'Tomorrow' : WEEKDAY[d.getDay()];
+  if (diff === 0) return `Today, ${clockTime(d)}`;
+  if (diff === 1) return `Yesterday, ${clockTime(d)}`;
+  if (diff === -1) return `Tomorrow, ${clockTime(d)}`;
+  const day = Math.abs(diff) <= 6 ? WEEKDAY[d.getDay()] : `${WEEKDAY[d.getDay()]} ${shortDate(d)}`;
   return `${day}, ${clockTime(d)}`;
 }
 

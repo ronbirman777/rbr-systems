@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useApp } from '@/state/AppProvider';
 import { Sidebar } from './Sidebar';
+import { QuickCreate } from './QuickCreate';
 import { ModeSwitch } from './ModeSwitch';
 
 /**
@@ -36,14 +37,17 @@ export function PractitionerShell() {
           </span>
           <span className="font-display text-lg leading-none text-ink">RBR</span>
         </div>
-        <button
-          type="button"
-          onClick={() => setNavOpen(true)}
-          className="tap-target -mr-2 rounded-control text-ink-soft transition-colors hover:bg-sage-wash"
-          aria-label="Open navigation"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-1.5">
+          <QuickCreate />
+          <button
+            type="button"
+            onClick={() => setNavOpen(true)}
+            className="tap-target -mr-2 rounded-control text-ink-soft transition-colors hover:bg-sage-wash"
+            aria-label="Open navigation"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+        </div>
       </header>
 
       {navOpen && (
@@ -67,9 +71,14 @@ export function PractitionerShell() {
         </div>
       )}
 
-      <main className="min-w-0 flex-1 pb-24">
-        <Outlet />
-      </main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="sticky top-0 z-20 hidden justify-end border-b border-sage-line bg-ivory/95 px-6 py-2.5 backdrop-blur sm:px-10 lg:flex lg:px-12">
+          <QuickCreate />
+        </div>
+        <main className="min-w-0 flex-1 pb-24">
+          <Outlet />
+        </main>
+      </div>
 
       <ModeSwitch />
     </div>

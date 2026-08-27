@@ -1,7 +1,7 @@
 import type { Client } from '@/types';
 import { useApp } from '@/state/AppProvider';
 import { chaptersFor } from '@/services/selectors';
-import { Eyebrow } from '@/components/ui/Primitives';
+import { EmptyState, Eyebrow } from '@/components/ui/Primitives';
 import { cn } from '@/utils/cn';
 
 const STATE_LABEL = { completed: 'Completed', 'in-progress': 'In Progress', upcoming: 'Upcoming' } as const;
@@ -18,6 +18,14 @@ export function JourneyPanel({ client }: { client: Client }) {
         Chapters rather than milestones to hit. This is the same story {client.name} sees, told in their
         companion.
       </p>
+
+      {chapters.length === 0 && (
+        <EmptyState
+          className="mt-8"
+          title="The story has not started yet"
+          description="Chapters appear as sessions are held and practices are carried between them."
+        />
+      )}
 
       <ol className="mt-9 space-y-10 border-l border-sage-line pl-7">
         {chapters.map((chapter) => (

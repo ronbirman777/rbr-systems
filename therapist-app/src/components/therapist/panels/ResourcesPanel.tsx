@@ -1,23 +1,18 @@
 import { Link } from 'react-router-dom';
-import { BookOpen, Headphones, NotebookPen } from 'lucide-react';
-import type { Client, ResourceFormat } from '@/types';
+import type { Client } from '@/types';
 import { useApp } from '@/state/AppProvider';
 import { resourcesFor } from '@/services/selectors';
 import { Button } from '@/components/ui/Button';
 import { Card, EmptyState, IconTile } from '@/components/ui/Primitives';
-import { resourceFormatLabel } from '@/utils/format';
-
-const formatIcon: Record<ResourceFormat, typeof Headphones> = {
-  audio: Headphones,
-  prompt: NotebookPen,
-  document: BookOpen,
-};
+import { formatIcon, formatLabel } from '@/components/shared/resourceMeta';
 
 /** What this client already has, and a way to send them something else. */
 export function ResourcesPanel({ client, onAssign }: { client: Client; onAssign: () => void }) {
   const { state } = useApp();
   const shared = resourcesFor(state, client.id);
-  const others = state.resources.filter((r) => !shared.some((s) => s.id === r.id));
+  const others = state.resources.filter(
+    (r) => r.status === 'active' && !shared.some((s) => s.id === r.id),
+  );
 
   return (
     <div className="px-6 py-8 sm:px-10 lg:px-12">
@@ -46,7 +41,7 @@ export function ResourcesPanel({ client, onAssign }: { client: Client; onAssign:
                     <Icon className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
                   </IconTile>
                   <span className="text-2xs uppercase tracking-eyebrow text-ink-faint">
-                    {resourceFormatLabel[resource.format]} · {resource.durationMin} min
+                    {formatLabel[resource.format]} · {resource.durationMin} min
                   </span>
                 </div>
                 <h3 className="mt-3.5 text-[0.9375rem] font-medium leading-snug text-ink">{resource.title}</h3>

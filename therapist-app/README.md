@@ -34,6 +34,19 @@ on one side is visible on the other immediately.
 
 Settings & Workspace has a reset that returns every screen to its opening state.
 
+There is a second path through the same store — the one the scheduling work opened up.
+It is written out in **[docs/COMPLETION-PHASE.md](docs/COMPLETION-PHASE.md)**:
+
+| Step | Where | What it shows |
+|---|---|---|
+| 1 | **Calendar & Sessions** | Day, week and month, with appointments, bookable hours and blocked time kept distinct |
+| 2 | **Manage Availability** | The weekly pattern clients can book into |
+| 3 | **Client View → Book a Session** | Emma is offered times, and never a reason one is missing |
+| 4 | **Practitioner View** | The request arrives; accept it, or suggest another time |
+| 5 | **Session Prep** | Something attached for Emma to do before the hour |
+| 6 | **Client View → Prepare** | She answers; John sees *1 of 1 completed* and what she wrote |
+| 7 | **Complete Session** | A private note, and the follow-ups that carry into the week |
+
 ---
 
 ## Two rules the code enforces
@@ -108,21 +121,24 @@ therapist-app/
     ├── app/App.tsx             Providers and the route table
     ├── components/
     │   ├── ui/                 Button, Monogram, StatusBadge, Overlay, Field, Toast…
-    │   ├── layout/             Sidebar, PractitionerShell, ClientShell, ModeSwitch
-    │   ├── shared/             RhythmMetrics, RhythmChart, PrivateNote
-    │   ├── therapist/          PageHeader, SessionItem, CheckInModal,
-    │   │   └── panels/         AssignPracticeDrawer, and the seven workspace panels
+    │   ├── layout/             Sidebar, PractitionerShell, ClientShell, ModeSwitch,
+    │   │                       QuickCreate
+    │   ├── shared/             RhythmMetrics, RhythmChart, PrivateNote, MessageThread
+    │   ├── therapist/          PageHeader, SessionItem, CheckInModal, and the drawers
+    │   │                       for sessions, availability, blocked time, preparation,
+    │   │                       completion, resources and assignment
+    │   │   └── panels/         AssignPracticeDrawer, and the eight workspace panels
     │   └── client/             PracticeCard, AudioPlayer, BreathingGuide
     ├── data/                   people, assignments, practices, sessions, reflections,
-    │                           resources, journey, checkIns, events
+    │                           resources, journey, availability, messages, events
     ├── routes/
     │   ├── therapist/          Today, Clients, ClientWorkspace, ContinuousCare,
     │   │                       Sessions, SessionDetail, Sanctuary, SanctuaryResource,
     │   │                       Settings
     │   └── client/             Today, Journey, Resources, ResourceCategory,
     │                           ResourcePlayer, Sessions, SessionDetail, PreSession,
-    │                           Practice
-    ├── services/               baselineEngine, selectors, checkInSuggestion
+    │                           Practice, Book, Messages
+    ├── services/               baselineEngine, scheduling, selectors, checkInSuggestion
     ├── state/                  store (reducer), AppProvider, persistence
     ├── types/                  the domain model
     └── utils/                  date, format, cn
@@ -140,6 +156,8 @@ therapist-app/
 /practitioner/sanctuary                  /client/:id/sessions/:sessionId
 /practitioner/sanctuary/:resourceId      /client/:id/sessions/:sessionId/prepare
 /practitioner/settings                   /client/:id/practice/:practiceId
+                                         /client/:id/book
+                                         /client/:id/messages
 ```
 
 The seven workspace tabs are real routes, so back and forward behave and any tab can be
@@ -198,5 +216,8 @@ practitioner field, resources, check-ins, and an append-only activity stream.
 - **Audio players have no recording behind them.** The transport, clock and breathing pace are
   real; no audio file is bundled, and the screens say so.
 - **Reminders and notifications exist in the data model but are not delivered.**
+- **Availability is a weekly pattern plus dated exceptions**, in one timezone, with no
+  calendar sync and no video provider behind Start Video. Recurrence covers weekly,
+  biweekly and monthly, with no end date and an 84-day expansion horizon.
 - **Join Session is intentionally inert**, labelled with when it opens rather than pretending
   to connect a call.

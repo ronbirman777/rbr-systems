@@ -54,7 +54,7 @@ export function PracticeCard({ practice, basePath }: { practice: Practice; baseP
         {!done && (
           <Button
             size="sm"
-            className="shrink-0"
+            className="relative z-10 shrink-0"
             onClick={() => {
               if (writes) navigate(`${basePath}/practice/${practice.id}`);
               else dispatch({ type: 'practice/complete', practiceId: practice.id });
@@ -80,13 +80,14 @@ export function PracticeCard({ practice, basePath }: { practice: Practice; baseP
         <p className="mt-1.5 text-[0.8125rem] text-ink-faint">For {clockTime(practice.targetTime)}</p>
       )}
 
+      {/* The whole card opens the practice. It sits above the card's own
+          background rather than behind it — behind, it could never be tapped —
+          and the action button above lifts itself clear of it. */}
       <button
         type="button"
         onClick={() => navigate(`${basePath}/practice/${practice.id}`)}
-        className="absolute inset-0 rounded-card"
+        className="absolute inset-0 z-0 rounded-card"
         aria-label={`Open ${practice.title}`}
-        tabIndex={-1}
-        style={{ zIndex: -1 }}
       />
     </article>
   );

@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Link, Navigate, NavLink, useParams } from 'react-router-dom';
 import { ChevronRight, MapPin, Video } from 'lucide-react';
 import { useApp } from '@/state/AppProvider';
-import { nextSessionFor, readingFor } from '@/services/selectors';
+import { nextSessionFor, readingFor, unreadForPractitioner } from '@/services/selectors';
 import { Monogram } from '@/components/ui/Monogram';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Button, ButtonLink } from '@/components/ui/Button';
+import { Button } from '@/components/ui/Button';
 import { CheckInModal } from '@/components/therapist/CheckInModal';
 import { AssignPracticeDrawer } from '@/components/therapist/AssignPracticeDrawer';
 import { OverviewPanel } from '@/components/therapist/panels/OverviewPanel';
@@ -15,6 +15,10 @@ import { SessionsPanel } from '@/components/therapist/panels/SessionsPanel';
 import { ReflectionsPanel } from '@/components/therapist/panels/ReflectionsPanel';
 import { ResourcesPanel } from '@/components/therapist/panels/ResourcesPanel';
 import { PrivateNotesPanel } from '@/components/therapist/panels/PrivateNotesPanel';
+import { MessagesPanel } from '@/components/therapist/panels/MessagesPanel';
+import { SessionFormDrawer } from '@/components/therapist/SessionFormDrawer';
+import { AssignResourceDrawer } from '@/components/therapist/AssignResourceDrawer';
+import { PreparationDrawer } from '@/components/therapist/PreparationDrawer';
 import { sessionWhen } from '@/utils/date';
 import { sessionModeLabel } from '@/utils/format';
 import { cn } from '@/utils/cn';
@@ -25,6 +29,7 @@ const TABS = [
   { slug: 'journey', label: 'Journey' },
   { slug: 'sessions', label: 'Sessions' },
   { slug: 'reflections', label: 'Reflections' },
+  { slug: 'messages', label: 'Messages' },
   { slug: 'resources', label: 'Resources' },
   { slug: 'notes', label: 'Private Notes' },
 ] as const;
@@ -36,6 +41,9 @@ export default function ClientWorkspace() {
   const { state } = useApp();
   const [checkInOpen, setCheckInOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [resourceOpen, setResourceOpen] = useState(false);
+  const [prepOpen, setPrepOpen] = useState(false);
 
   const client = state.clients.find((c) => c.id === clientId);
   if (!client) return <Navigate to="/practitioner/clients" replace />;
@@ -45,6 +53,7 @@ export default function ClientWorkspace() {
 
   const reading = readingFor(state, client.id);
   const next = nextSessionFor(state, client.id);
+  const unread = unreadForPractitioner(state, client.id);
   const ModeIcon = next?.mode === 'in-person' ? MapPin : Video;
   const active = tab as Tab;
 
@@ -85,16 +94,22 @@ export default function ClientWorkspace() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button variant="primary" size="sm" onClick={() => setCheckInOpen(true)}>
-              Send Check In
+            <Button variant="primary" size="sm" onClick={() => setScheduleOpen(true)}>
+              Schedule Session
             </Button>
             <Button size="sm" onClick={() => setAssignOpen(true)}>
               Assign Practice
             </Button>
+            <Button size="sm" onClick={() => setResourceOpen(true)}>
+              Assign Resource
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setCheckInOpen(true)}>
+              Message
+            </Button>
             {next && (
-              <ButtonLink to={`/practitioner/sessions/${next.id}`} size="sm">
-                Session Prep
-              </ButtonLink>
+              <Button size="sm" variant="ghost" onClick={() => setPrepOpen(true)}>
+                Prepare Session
+              </Button>
             )}
           </div>
         </header>
@@ -116,6 +131,11 @@ export default function ClientWorkspace() {
               )}
             >
               {item.label}
+              {item.slug === 'messages' && unread > 0 && (
+                <span className="ml-1.5 rounded-full bg-amber px-1.5 py-0.5 text-3xs font-semibold text-white">
+                  {unread}
+                </span>
+              )}
               <span
                 aria-hidden="true"
                 className={cn(
@@ -140,11 +160,21 @@ export default function ClientWorkspace() {
       {active === 'journey' && <JourneyPanel client={client} />}
       {active === 'sessions' && <SessionsPanel client={client} />}
       {active === 'reflections' && <ReflectionsPanel client={client} />}
+      {active === 'messages' && <MessagesPanel client={client} />}
       {active === 'resources' && <ResourcesPanel client={client} onAssign={() => setAssignOpen(true)} />}
       {active === 'notes' && <PrivateNotesPanel client={client} />}
 
       <CheckInModal clientId={client.id} open={checkInOpen} onClose={() => setCheckInOpen(false)} />
       <AssignPracticeDrawer open={assignOpen} onClose={() => setAssignOpen(false)} clientId={client.id} />
+      <SessionFormDrawer open={scheduleOpen} onClose={() => setScheduleOpen(false)} clientId={client.id} />
+      <AssignResourceDrawer
+        open={resourceOpen}
+        onClose={() => setResourceOpen(false)}
+        presetClientIds={[client.id]}
+      />
+      {next && (
+        <PreparationDrawer open={prepOpen} onClose={() => setPrepOpen(false)} sessionId={next.id} />
+      )}
     </div>
   );
 }

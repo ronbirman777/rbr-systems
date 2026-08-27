@@ -1,13 +1,25 @@
 import type {
   ActivityEvent,
+  AppNotification,
+  BookingRequest,
   Client,
   ISODate,
+  Message,
   Practice,
   PracticeState,
   Reflection,
   Resource,
   Session,
+  SessionPreparation,
 } from '@/types';
+import {
+  bookableSlotsOn,
+  datesWithAvailability,
+  findConflicts,
+  type BookableSlot,
+  type Conflict,
+  type ConflictSource,
+} from './scheduling';
 import type { AppState } from '@/state/store';
 import {
   defaultBaselineConfig,
@@ -133,30 +145,157 @@ const bySoonest = (a: Session, b: Session) =>
 export const sessionsOf = (state: AppState, clientId: string): Session[] =>
   state.sessions.filter((s) => s.clientId === clientId).sort(bySoonest);
 
-const sessionEnd = (session: Session) =>
-  new Date(new Date(session.startsAt).getTime() + session.durationMin * 60_000);
+const sessionEnd = (session: Session) => new Date(session.endsAt);
 
-/** The next session that has not finished yet. */
+export const isLive = (session: Session) => session.status !== 'cancelled';
+
+/** The next session that has not finished and has not been cancelled. */
 export const nextSessionFor = (state: AppState, clientId: string): Session | undefined =>
-  sessionsOf(state, clientId).find((s) => s.status === 'upcoming' && sessionEnd(s) > DEMO_NOW);
+  sessionsOf(state, clientId).find(
+    (s) => s.status === 'scheduled' && sessionEnd(s) > DEMO_NOW,
+  );
 
 export const lastSessionFor = (state: AppState, clientId: string): Session | undefined =>
   sessionsOf(state, clientId)
-    .filter((s) => sessionEnd(s) <= DEMO_NOW)
+    .filter((s) => isLive(s) && sessionEnd(s) <= DEMO_NOW)
     .pop();
 
 export const sessionsOnDay = (state: AppState, date: ISODate): Session[] =>
   state.sessions.filter((s) => toISODate(s.startsAt) === date).sort(bySoonest);
 
-export const todaysSessions = (state: AppState): Session[] => sessionsOnDay(state, toISODate(DEMO_NOW));
+export const todaysSessions = (state: AppState): Session[] =>
+  sessionsOnDay(state, toISODate(DEMO_NOW)).filter(isLive);
 
 export const upcomingSessions = (state: AppState): Session[] =>
-  state.sessions.filter((s) => sessionEnd(s) > DEMO_NOW).sort(bySoonest);
+  state.sessions.filter((s) => s.status === 'scheduled' && sessionEnd(s) > DEMO_NOW).sort(bySoonest);
 
 export const pastSessions = (state: AppState): Session[] =>
-  state.sessions.filter((s) => sessionEnd(s) <= DEMO_NOW).sort((a, b) => bySoonest(b, a));
+  state.sessions
+    .filter((s) => sessionEnd(s) <= DEMO_NOW && isLive(s))
+    .sort((a, b) => bySoonest(b, a));
 
 export const hasFinished = (session: Session) => sessionEnd(session) <= DEMO_NOW;
+
+/* -------------------------------------------------------- scheduling reads */
+
+/** Everything a slot or conflict calculation needs, in one place. */
+export const conflictSource = (state: AppState): ConflictSource => ({
+  sessions: state.sessions,
+  series: state.series,
+  exceptions: state.exceptions,
+  requests: state.bookingRequests,
+});
+
+export const conflictsFor = (
+  state: AppState,
+  startsAt: Date,
+  durationMin: number,
+  options: { ignoreSessionId?: string; ignoreRequestId?: string; forClientId?: string } = {},
+): Conflict[] =>
+  findConflicts(
+    { start: startsAt, end: new Date(startsAt.getTime() + durationMin * 60_000) },
+    conflictSource(state),
+    options,
+  );
+
+/**
+ * The slots a client may book. Returns times only — never the reason a time is
+ * missing, and never anything about another client.
+ */
+export const bookableSlots = (
+  state: AppState,
+  date: ISODate,
+  durationMin: number,
+  forClientId?: string,
+): BookableSlot[] =>
+  bookableSlotsOn(date, state.availability, conflictSource(state), {
+    durationMin,
+    stepMin: 60,
+    minNoticeMin: 120,
+    now: DEMO_NOW,
+    forClientId,
+  });
+
+export const bookableDates = (
+  state: AppState,
+  days: number,
+  durationMin: number,
+  forClientId?: string,
+): ISODate[] =>
+  datesWithAvailability(DEMO_NOW, days, state.availability, conflictSource(state), {
+    durationMin,
+    stepMin: 60,
+    minNoticeMin: 120,
+    now: DEMO_NOW,
+    forClientId,
+  });
+
+export const pendingRequests = (state: AppState): BookingRequest[] =>
+  state.bookingRequests
+    .filter((r) => r.status === 'pending')
+    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime());
+
+export const requestsOf = (state: AppState, clientId: string): BookingRequest[] =>
+  state.bookingRequests
+    .filter((r) => r.clientId === clientId)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+export const exceptionsOn = (state: AppState, date: ISODate) =>
+  state.exceptions.filter((e) => e.date === date);
+
+/* ------------------------------------------------------------ preparation */
+
+export const preparationsFor = (state: AppState, sessionId: string): SessionPreparation[] =>
+  state.preparations.filter((p) => p.sessionId === sessionId);
+
+export const preparationProgress = (state: AppState, sessionId: string) => {
+  const list = preparationsFor(state, sessionId);
+  return { completed: list.filter((p) => p.completedAt).length, total: list.length };
+};
+
+export const openPreparationsFor = (state: AppState, clientId: string): SessionPreparation[] =>
+  state.preparations.filter((p) => p.clientId === clientId && !p.completedAt);
+
+/* --------------------------------------------------------------- messages */
+
+export const messagesOf = (state: AppState, clientId: string): Message[] =>
+  state.messages
+    .filter((m) => m.clientId === clientId && m.status === 'sent')
+    .sort((a, b) => new Date(a.sentAt ?? a.createdAt).getTime() - new Date(b.sentAt ?? b.createdAt).getTime());
+
+export const draftMessage = (state: AppState, clientId: string): Message | undefined =>
+  state.messages.find((m) => m.clientId === clientId && m.status === 'draft');
+
+export const unreadForPractitioner = (state: AppState, clientId?: string): number =>
+  state.messages.filter(
+    (m) =>
+      m.status === 'sent' &&
+      m.author === 'client' &&
+      !m.readByPractitioner &&
+      (!clientId || m.clientId === clientId),
+  ).length;
+
+export const unreadForClient = (state: AppState, clientId: string): number =>
+  state.messages.filter(
+    (m) => m.status === 'sent' && m.author === 'practitioner' && !m.readByClient && m.clientId === clientId,
+  ).length;
+
+/* ---------------------------------------------------------- notifications */
+
+export const notificationsFor = (
+  state: AppState,
+  audience: 'practitioner' | 'client',
+  clientId?: string,
+): AppNotification[] =>
+  state.notifications
+    .filter((n) => n.audience === audience && (audience === 'practitioner' || n.clientId === clientId))
+    .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
+export const unreadNotifications = (
+  state: AppState,
+  audience: 'practitioner' | 'client',
+  clientId?: string,
+): number => notificationsFor(state, audience, clientId).filter((n) => !n.read).length;
 
 /* ------------------------------------------------------------ reflections */
 
@@ -175,14 +314,36 @@ export const unreadReflections = (state: AppState): Reflection[] =>
 
 /* -------------------------------------------------------------- resources */
 
+/** Only what has actually been shared with this client, never the whole library. */
 export const resourcesFor = (state: AppState, clientId: string): Resource[] => {
   const viaPractice = new Set(
     practicesOf(state, clientId)
       .map((p) => p.resourceId)
       .filter(Boolean) as string[],
   );
-  return state.resources.filter((r) => r.assignedTo.includes(clientId) || viaPractice.has(r.id));
+  const assigned = new Set(
+    state.resourceAssignments.filter((a) => a.clientId === clientId).map((a) => a.resourceId),
+  );
+  return state.resources.filter(
+    (r) => r.status === 'active' && (assigned.has(r.id) || viaPractice.has(r.id)),
+  );
 };
+
+export const assignmentFor = (state: AppState, clientId: string, resourceId: string) =>
+  state.resourceAssignments.find((a) => a.clientId === clientId && a.resourceId === resourceId);
+
+export const clientsUsing = (state: AppState, resourceId: string): Client[] => {
+  const ids = new Set(
+    state.resourceAssignments.filter((a) => a.resourceId === resourceId).map((a) => a.clientId),
+  );
+  for (const practice of state.practices) {
+    if (practice.resourceId === resourceId) ids.add(practice.clientId);
+  }
+  return state.clients.filter((c) => ids.has(c.id));
+};
+
+export const activeResources = (state: AppState): Resource[] =>
+  state.resources.filter((r) => r.status === 'active');
 
 /* ---------------------------------------------------------------- events */
 
@@ -197,12 +358,4 @@ export const eventsOf = (state: AppState, clientId: string, limit = 20): Activit
 export const chaptersFor = (state: AppState, clientId: string) =>
   state.chapters.filter((c) => c.clientId === clientId).sort((a, b) => a.index - b.index);
 
-/* -------------------------------------------------------------- check-ins */
 
-export const checkInsOf = (state: AppState, clientId: string) =>
-  state.checkIns
-    .filter((c) => c.clientId === clientId)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
-export const draftCheckIn = (state: AppState, clientId: string) =>
-  state.checkIns.find((c) => c.clientId === clientId && c.status === 'draft');

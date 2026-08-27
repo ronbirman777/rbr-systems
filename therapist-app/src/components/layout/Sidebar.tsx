@@ -8,7 +8,7 @@ export const NAV = [
   { to: '/practitioner/today', label: 'Today', icon: Home },
   { to: '/practitioner/clients', label: 'Clients', icon: Users },
   { to: '/practitioner/care', label: 'Continuous Care', icon: Activity },
-  { to: '/practitioner/sessions', label: 'Sessions', icon: CalendarDays },
+  { to: '/practitioner/sessions', label: 'Calendar', icon: CalendarDays },
   { to: '/practitioner/sanctuary', label: 'Sanctuary', icon: Leaf },
 ];
 

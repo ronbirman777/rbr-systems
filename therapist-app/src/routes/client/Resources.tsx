@@ -1,17 +1,9 @@
 import { Link, useParams } from 'react-router-dom';
-import { ArrowRight, BookOpen, Headphones, NotebookPen, Wind } from 'lucide-react';
-import type { ResourceCategoryId } from '@/types';
+import { ArrowRight } from 'lucide-react';
 import { useApp } from '@/state/AppProvider';
 import { resourcesFor } from '@/services/selectors';
 import { Card, Eyebrow, IconTile } from '@/components/ui/Primitives';
-import { resourceFormatLabel } from '@/utils/format';
-
-const categoryIcon: Record<ResourceCategoryId, typeof Headphones> = {
-  meditations: Headphones,
-  breathwork: Wind,
-  'journal-prompts': NotebookPen,
-  reading: BookOpen,
-};
+import { categoryIcon, formatLabel } from '@/components/shared/resourceMeta';
 
 /**
  * The two-column category grid from the reference, with the space beneath it
@@ -74,7 +66,7 @@ export default function ClientResources() {
                         {resource.title}
                       </span>
                       <span className="mt-0.5 block text-[0.75rem] text-ink-soft">
-                        {resourceFormatLabel[resource.format]} · {resource.durationMin} min
+                        {formatLabel[resource.format]} · {resource.durationMin} min
                       </span>
                     </span>
                     <ArrowRight className="h-4 w-4 shrink-0 text-ink-faint" aria-hidden="true" />

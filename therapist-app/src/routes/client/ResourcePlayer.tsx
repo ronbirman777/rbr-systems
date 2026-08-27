@@ -5,7 +5,7 @@ import { useApp } from '@/state/AppProvider';
 import { AudioPlayer } from '@/components/client/AudioPlayer';
 import { BreathingGuide } from '@/components/client/BreathingGuide';
 import { Eyebrow } from '@/components/ui/Primitives';
-import { resourceFormatLabel } from '@/utils/format';
+import { formatLabel, hasTransport, isPlayable } from '@/components/shared/resourceMeta';
 
 /** One resource, focused. Audio, a breathing pace, or something to read. */
 export default function ClientResourcePlayer() {
@@ -34,14 +34,14 @@ export default function ClientResourcePlayer() {
       </Link>
 
       <Eyebrow className="mt-5">
-        {resourceFormatLabel[resource.format]} · {resource.durationMin} min
+        {formatLabel[resource.format]} · {resource.durationMin} min
       </Eyebrow>
       <h1 className="mt-1.5 font-display text-[1.75rem] leading-tight text-ink">{resource.title}</h1>
       <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">{resource.summary}</p>
 
       {resource.breathPattern && <BreathingGuide pattern={resource.breathPattern} running={playing} />}
 
-      {resource.format === 'audio' && (
+      {hasTransport(resource.format) && (
         <div className="mt-6">
           <AudioPlayer
             durationMin={resource.durationMin}
@@ -63,7 +63,7 @@ export default function ClientResourcePlayer() {
         ))}
       </ol>
 
-      {resource.format === 'audio' && (
+      {isPlayable(resource.format) && (
         <p className="mt-7 rounded-card border border-sage-line bg-cream/60 px-4 py-3 text-2xs leading-relaxed text-ink-soft">
           This prototype has no recording behind the player. The transport and the timing are real; the audio
           is not bundled.

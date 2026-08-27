@@ -1,7 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useApp } from '@/state/AppProvider';
 import { chaptersFor } from '@/services/selectors';
-import { Eyebrow } from '@/components/ui/Primitives';
+import { EmptyState, Eyebrow } from '@/components/ui/Primitives';
 import { cn } from '@/utils/cn';
 
 const STATE_LABEL = { completed: 'Completed', 'in-progress': 'In Progress', upcoming: 'Upcoming' } as const;
@@ -30,6 +30,14 @@ export default function ClientJourney() {
           <p className="mt-1.5 font-display text-[1.375rem] leading-snug">{current.title}</p>
           <p className="mt-2 text-[0.875rem] leading-relaxed text-sage-soft/90">{current.focus}</p>
         </section>
+      )}
+
+      {chapters.length === 0 && (
+        <EmptyState
+          className="mt-8"
+          title="Your story starts with the first session"
+          description="Chapters appear here as you and John work through them together."
+        />
       )}
 
       <ol className="mt-8 space-y-9 border-l border-sage-line pl-6">

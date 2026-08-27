@@ -1,4 +1,4 @@
-import type { ActivityEvent, CheckIn, Practice, Reflection, Session } from '@/types';
+import type { ActivityEvent, Message, Practice, Reflection, ResourceAssignment, Session } from '@/types';
 import { findResource } from './resources';
 
 /**
@@ -33,8 +33,9 @@ const seeded: ActivityEvent[] = [
 export function buildEvents(
   practices: Practice[],
   reflections: Reflection[],
-  checkIns: CheckIn[],
+  messages: Message[],
   sessions: Session[],
+  resourceAssignments: ResourceAssignment[] = [],
 ): ActivityEvent[] {
   const events: ActivityEvent[] = [...seeded];
 
@@ -62,15 +63,34 @@ export function buildEvents(
     });
   }
 
-  for (const checkIn of checkIns) {
-    if (checkIn.status !== 'sent' || !checkIn.sentAt) continue;
+  for (const message of messages) {
+    if (message.status !== 'sent' || !message.sentAt) continue;
+    const fromPractitioner = message.author === 'practitioner';
     events.push({
-      id: `ev-ci-${checkIn.id}`,
-      clientId: checkIn.clientId,
-      kind: 'check-in-sent',
-      label: 'You sent a gentle check in',
-      detail: checkIn.body.slice(0, 92),
-      at: checkIn.sentAt,
+      id: `ev-ms-${message.id}`,
+      clientId: message.clientId,
+      kind: fromPractitioner
+        ? message.kind === 'check-in'
+          ? 'check-in-sent'
+          : 'message-sent'
+        : 'message-received',
+      label: fromPractitioner
+        ? message.kind === 'check-in'
+          ? 'You sent a gentle check in'
+          : 'You sent a message'
+        : 'Replied to you',
+      detail: message.body.slice(0, 92),
+      at: message.sentAt,
+    });
+  }
+
+  for (const assignment of resourceAssignments) {
+    events.push({
+      id: `ev-ra-${assignment.id}`,
+      clientId: assignment.clientId,
+      kind: 'resource-assigned',
+      label: 'You shared a resource',
+      at: assignment.assignedAt,
     });
   }
 

@@ -4,7 +4,8 @@ import { Plus } from 'lucide-react';
 import { useApp } from '@/state/AppProvider';
 import {
   allReadings,
-  checkInsOf,
+  messagesOf,
+  pendingRequests,
   practiceState,
   unreadReflections,
   upcomingSessions,
@@ -40,9 +41,14 @@ export default function ContinuousCare() {
     .sort((a, b) => b.reading.attentionWeight - a.reading.attentionWeight);
   const ahead = upcomingSessions(state).slice(0, 5);
   const recentCheckIns = state.clients
-    .flatMap((c) => checkInsOf(state, c.id).filter((ci) => ci.status === 'sent').slice(0, 1))
+    .flatMap((c) =>
+      messagesOf(state, c.id)
+        .filter((m) => m.author === 'practitioner' && m.kind === 'check-in')
+        .slice(-1),
+    )
     .sort((a, b) => new Date(b.sentAt ?? 0).getTime() - new Date(a.sentAt ?? 0).getTime())
     .slice(0, 3);
+  const requests = pendingRequests(state);
 
   const nameOf = (id: string) => state.clients.find((c) => c.id === id)?.name ?? '';
 
@@ -67,7 +73,7 @@ export default function ContinuousCare() {
             { label: 'Practices today', value: activeToday.length },
             { label: 'Completed today', value: completedToday.length },
             { label: 'Still open today', value: openToday.length },
-            { label: 'Sessions ahead', value: ahead.length },
+            { label: 'Booking requests', value: requests.length },
           ].map((stat) => (
             <div key={stat.label}>
               <dt className="eyebrow">{stat.label}</dt>

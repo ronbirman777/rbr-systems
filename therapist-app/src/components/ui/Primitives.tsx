@@ -47,9 +47,22 @@ export function Block({
   );
 }
 
-export function EmptyState({ title, description }: { title: string; description?: string }) {
+export function EmptyState({
+  title,
+  description,
+  className,
+}: {
+  title: string;
+  description?: string;
+  className?: string;
+}) {
   return (
-    <div className="rounded-card border border-dashed border-sage-line bg-cream/40 px-6 py-9 text-center">
+    <div
+      className={cn(
+        'rounded-card border border-dashed border-sage-line bg-cream/40 px-6 py-9 text-center',
+        className,
+      )}
+    >
       <p className="font-display text-lg text-forest-accent">{title}</p>
       {description && <p className="mx-auto mt-1.5 max-w-sm text-[0.8125rem] text-ink-soft">{description}</p>}
     </div>

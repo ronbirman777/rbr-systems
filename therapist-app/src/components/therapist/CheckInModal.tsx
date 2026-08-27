@@ -7,7 +7,7 @@ import { Monogram } from '@/components/ui/Monogram';
 import { PrivateNote } from '@/components/shared/PrivateNote';
 import { useApp } from '@/state/AppProvider';
 import { useToast } from '@/components/ui/Toast';
-import { draftCheckIn, readingFor } from '@/services/selectors';
+import { draftMessage, readingFor } from '@/services/selectors';
 import { suggestCheckIn } from '@/services/checkInSuggestion';
 
 /**
@@ -32,7 +32,7 @@ export function CheckInModal({
 
   const client = state.clients.find((c) => c.id === clientId);
   const reading = client ? readingFor(state, client.id) : null;
-  const existingDraft = client ? draftCheckIn(state, client.id) : undefined;
+  const existingDraft = client ? draftMessage(state, client.id) : undefined;
 
   useEffect(() => {
     if (!open || !client || !reading) return;
@@ -54,7 +54,7 @@ export function CheckInModal({
           <Button
             variant="ghost"
             onClick={() => {
-              dispatch({ type: 'checkIn/save-draft', clientId: client.id, body });
+              dispatch({ type: 'message/save-draft', clientId: client.id, body });
               toast('Draft saved');
               onClose();
             }}
@@ -66,7 +66,13 @@ export function CheckInModal({
             disabled={!body.trim()}
             icon={<Send className="h-4 w-4" />}
             onClick={() => {
-              dispatch({ type: 'checkIn/send', clientId: client.id, body: body.trim() });
+              dispatch({
+                type: 'message/send',
+                clientId: client.id,
+                body: body.trim(),
+                author: 'practitioner',
+                kind: 'check-in',
+              });
               toast(`Check in sent to ${client.name}`);
               onClose();
             }}

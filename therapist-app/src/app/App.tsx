@@ -9,7 +9,7 @@ import Today from '@/routes/therapist/Today';
 import Clients from '@/routes/therapist/Clients';
 import ClientWorkspace from '@/routes/therapist/ClientWorkspace';
 import ContinuousCare from '@/routes/therapist/ContinuousCare';
-import Sessions from '@/routes/therapist/Sessions';
+import CalendarAndSessions from '@/routes/therapist/Sessions';
 import SessionDetail from '@/routes/therapist/SessionDetail';
 import Sanctuary from '@/routes/therapist/Sanctuary';
 import SanctuaryResource from '@/routes/therapist/SanctuaryResource';
@@ -24,6 +24,8 @@ import ClientSessions from '@/routes/client/Sessions';
 import ClientSessionDetail from '@/routes/client/SessionDetail';
 import ClientPreSession from '@/routes/client/PreSession';
 import ClientPractice from '@/routes/client/Practice';
+import ClientBook from '@/routes/client/Book';
+import ClientMessages from '@/routes/client/Messages';
 
 export function App() {
   return (
@@ -41,7 +43,7 @@ export function App() {
               <Route path="clients/:clientId" element={<ClientWorkspace />} />
               <Route path="clients/:clientId/:tab" element={<ClientWorkspace />} />
               <Route path="care" element={<ContinuousCare />} />
-              <Route path="sessions" element={<Sessions />} />
+              <Route path="sessions" element={<CalendarAndSessions />} />
               <Route path="sessions/:sessionId" element={<SessionDetail />} />
               <Route path="sanctuary" element={<Sanctuary />} />
               <Route path="sanctuary/:resourceId" element={<SanctuaryResource />} />
@@ -55,6 +57,8 @@ export function App() {
               <Route path="resources" element={<ClientResources />} />
               <Route path="resources/:categoryId" element={<ClientResourceCategory />} />
               <Route path="resource/:resourceId" element={<ClientResourcePlayer />} />
+              <Route path="book" element={<ClientBook />} />
+              <Route path="messages" element={<ClientMessages />} />
               <Route path="sessions" element={<ClientSessions />} />
               <Route path="sessions/:sessionId" element={<ClientSessionDetail />} />
               <Route path="sessions/:sessionId/prepare" element={<ClientPreSession />} />

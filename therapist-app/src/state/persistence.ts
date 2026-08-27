@@ -6,7 +6,7 @@ import type { AppState } from './store';
  * The key carries a version: if the shape of the state changes, older payloads
  * are ignored rather than loaded into a build that cannot read them.
  */
-const KEY = 'rbr-journey-hub/v1';
+const KEY = 'rbr-journey-hub/v2';
 
 export function loadState(): AppState | undefined {
   try {
@@ -14,7 +14,13 @@ export function loadState(): AppState | undefined {
     if (!raw) return undefined;
     const parsed = JSON.parse(raw) as AppState;
     // A cheap sanity check — anything unexpected falls back to a fresh demo.
-    if (!parsed?.clients?.length || !parsed?.practices?.length || !parsed?.resources?.length) {
+    if (
+      !parsed?.clients?.length ||
+      !parsed?.practices?.length ||
+      !parsed?.resources?.length ||
+      !parsed?.availability?.length ||
+      !parsed?.messages
+    ) {
       return undefined;
     }
     return parsed;

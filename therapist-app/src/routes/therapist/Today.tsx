@@ -1,17 +1,18 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '@/state/AppProvider';
-import { allReadings, todaysSessions } from '@/services/selectors';
+import { allReadings, pendingRequests, preparationProgress, todaysSessions, upcomingSessions } from '@/services/selectors';
 import { attentionStates } from '@/services/baselineEngine';
 import { PageHeader } from '@/components/therapist/PageHeader';
 import { SessionItem } from '@/components/therapist/SessionItem';
 import { CheckInModal } from '@/components/therapist/CheckInModal';
+import { BookingRequestCard } from '@/components/therapist/BookingRequestCard';
 import { Monogram } from '@/components/ui/Monogram';
 import { Button, ButtonLink } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { RhythmMetrics } from '@/components/shared/RhythmMetrics';
 import { Card, EmptyState, Eyebrow } from '@/components/ui/Primitives';
-import { briefingDate, greeting } from '@/utils/date';
+import { briefingDate, greeting, relativeDay } from '@/utils/date';
 
 /**
  * Today's Briefing.
@@ -26,6 +27,15 @@ export default function Today() {
 
   const readings = useMemo(() => allReadings(state), [state]);
   const sessions = useMemo(() => todaysSessions(state), [state]);
+  const requests = useMemo(() => pendingRequests(state), [state]);
+  const awaitingPrep = useMemo(
+    () =>
+      upcomingSessions(state)
+        .map((session) => ({ session, prep: preparationProgress(state, session.id) }))
+        .filter(({ prep }) => prep.total > 0 && prep.completed < prep.total)
+        .slice(0, 3),
+    [state],
+  );
 
   const attention = readings
     .filter((entry) => attentionStates.includes(entry.reading.state))
@@ -51,6 +61,19 @@ export default function Today() {
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_23.5rem]">
         {/* ------------------------------------------------------- briefing */}
         <div className="min-w-0 px-6 py-8 sm:px-10 lg:px-12">
+          {requests.length > 0 && (
+            <section className="mb-10">
+              <Eyebrow className="mb-4">
+                Booking {requests.length === 1 ? 'Request' : 'Requests'}
+              </Eyebrow>
+              <div className="space-y-3">
+                {requests.map((request) => (
+                  <BookingRequestCard key={request.id} request={request} />
+                ))}
+              </div>
+            </section>
+          )}
+
           <section>
             <Eyebrow className="mb-4">Needs Attention</Eyebrow>
 
@@ -169,8 +192,32 @@ export default function Today() {
             </div>
           )}
           <ButtonLink to="/practitioner/sessions" variant="ghost" size="sm" className="-ml-3.5 mt-4">
-            All sessions
+            Open calendar
           </ButtonLink>
+
+          {awaitingPrep.length > 0 && (
+            <section className="mt-9 border-t border-sage-line pt-7">
+              <Eyebrow className="mb-3">Preparation Waiting</Eyebrow>
+              <ul className="space-y-2.5">
+                {awaitingPrep.map(({ session, prep }) => {
+                  const client = state.clients.find((c) => c.id === session.clientId);
+                  return (
+                    <li key={session.id}>
+                      <Link
+                        to={`/practitioner/sessions/${session.id}`}
+                        className="block rounded-card px-1 py-1.5 transition-colors hover:bg-cream/60"
+                      >
+                        <span className="block text-[0.875rem] text-ink">{client?.name}</span>
+                        <span className="block text-2xs text-ink-soft">
+                          {prep.completed} of {prep.total} completed · {relativeDay(session.startsAt)}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
         </aside>
       </div>
 

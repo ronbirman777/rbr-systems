@@ -1,4 +1,4 @@
-import type { PracticeType, ResourceFormat, SessionMode, SessionPrepState, AttentionState } from '@/types';
+import type { PracticeType, SessionMode, SessionPrepState, AttentionState } from '@/types';
 
 export const practiceTypeLabel: Record<PracticeType, string> = {
   breathing: 'Breathwork',
@@ -9,15 +9,11 @@ export const practiceTypeLabel: Record<PracticeType, string> = {
   listen: 'Listen',
 };
 
-export const resourceFormatLabel: Record<ResourceFormat, string> = {
-  audio: 'Audio',
-  prompt: 'Journal Prompt',
-  document: 'Reading',
-};
-
 export const sessionModeLabel: Record<SessionMode, string> = {
   video: 'Video',
   'in-person': 'In Person',
+  phone: 'Phone',
+  custom: 'Custom',
 };
 
 export const prepStateLabel: Record<SessionPrepState, string> = {

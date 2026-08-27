@@ -2,7 +2,7 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { useApp } from '@/state/AppProvider';
 import { Card, EmptyState } from '@/components/ui/Primitives';
-import { resourceFormatLabel } from '@/utils/format';
+import { formatLabel } from '@/components/shared/resourceMeta';
 
 export default function ClientResourceCategory() {
   const { clientId = 'emma', categoryId = '' } = useParams();
@@ -37,7 +37,7 @@ export default function ClientResourceCategory() {
               <Link to={`${base}/resource/${resource.id}`}>
                 <Card className="p-4 transition-colors hover:border-sage">
                   <p className="text-3xs font-semibold uppercase tracking-eyebrow text-ink-faint">
-                    {resourceFormatLabel[resource.format]} · {resource.durationMin} MIN
+                    {formatLabel[resource.format]} · {resource.durationMin} MIN
                   </p>
                   <div className="mt-1.5 flex items-start justify-between gap-3">
                     <div className="min-w-0">
