@@ -1,0 +1,334 @@
+/* ============================================================
+   WONDERLAND HEALING CENTER — PROPERTY FACTSHEET
+   Two-page A4 print document (210 × 297 mm).
+
+   PDF export:  Chrome › Print › Destination "Save as PDF"
+                Paper A4 · Margins "None" · Background graphics ON
+   ============================================================ */
+
+/* --- Typefaces (self-hosted latin subset, no network) ----- */
+@font-face{font-family:'Inter';font-style:normal;font-weight:300;font-display:block;src:url('fonts/Inter-300-normal-latin.woff2') format('woff2');}
+@font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:block;src:url('fonts/Inter-400-normal-latin.woff2') format('woff2');}
+@font-face{font-family:'Inter';font-style:normal;font-weight:500;font-display:block;src:url('fonts/Inter-500-normal-latin.woff2') format('woff2');}
+@font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:block;src:url('fonts/Inter-600-normal-latin.woff2') format('woff2');}
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:400;font-display:block;src:url('fonts/PlayfairDisplay-400-normal-latin.woff2') format('woff2');}
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:500;font-display:block;src:url('fonts/PlayfairDisplay-500-normal-latin.woff2') format('woff2');}
+@font-face{font-family:'Playfair Display';font-style:normal;font-weight:600;font-display:block;src:url('fonts/PlayfairDisplay-600-normal-latin.woff2') format('woff2');}
+@font-face{font-family:'Playfair Display';font-style:italic;font-weight:400;font-display:block;src:url('fonts/PlayfairDisplay-400-italic-latin.woff2') format('woff2');}
+@font-face{font-family:'Playfair Display';font-style:italic;font-weight:500;font-display:block;src:url('fonts/PlayfairDisplay-500-italic-latin.woff2') format('woff2');}
+
+/* --- Visual system ---------------------------------------- */
+:root{
+  --parchment:#F4EFE5;
+  --parchment-deep:#E8E0D2;
+  --forest:#2D4A32;
+  --forest-deep:#22391F;
+  --sage:#7A9E7E;
+  --gold:#C4A35A;
+  --ink:#33302A;                       /* dark warm charcoal */
+  --ink-soft:#5B554B;
+  --ink-mute:#7C7568;
+  --rule:rgba(122,158,126,.60);
+  --rule-fine:rgba(122,158,126,.42);
+
+  --serif:'Playfair Display', Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+  --sans:'Inter', -apple-system, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+  --margin:16mm;                       /* print-safe side margin */
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+
+html{background:#9D9A92;}
+body{
+  font-family:var(--sans);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:geometricPrecision;
+}
+
+/* --- Sheet ------------------------------------------------ */
+.sheet{
+  position:relative;
+  width:210mm;
+  height:297mm;
+  overflow:hidden;
+  background:var(--parchment);
+  page-break-after:always;
+  break-after:page;
+  page-break-inside:avoid;
+  break-inside:avoid;
+}
+.sheet:last-of-type{page-break-after:auto;break-after:auto;}
+
+/* Screen presentation only — never printed */
+@media screen{
+  body{padding:14mm 0;display:flex;flex-direction:column;align-items:center;gap:12mm;}
+  .sheet{box-shadow:0 2mm 9mm rgba(0,0,0,.34);}
+}
+
+.pad{padding-left:var(--margin);padding-right:var(--margin);}
+.block{break-inside:avoid;page-break-inside:avoid;}
+
+/* ============================================================
+   PAGE 1 — Identity & Factsheet
+   ============================================================ */
+
+/* --- Cinematic hero, full bleed, 34.7% of page height ----- */
+.hero{
+  position:relative;
+  width:210mm;
+  height:103mm;
+  overflow:hidden;
+  background:var(--forest-deep);
+}
+.hero img{
+  width:100%;height:100%;
+  object-fit:cover;
+  object-position:center 52%;
+  display:block;
+}
+/* Flat, very subtle darkening for tonal depth — not a gradient */
+.hero-veil{position:absolute;inset:0;background:rgba(34,57,31,.13);}
+/* Hairline seating the image against the parchment */
+.hero-edge{position:absolute;left:0;right:0;bottom:0;height:.6mm;background:var(--forest);}
+
+/* --- Identity block --------------------------------------- */
+.identity{
+  text-align:center;
+  padding-top:10mm;
+  padding-bottom:7.5mm;
+}
+.emblem{
+  width:15mm;height:9.4mm;
+  margin:0 auto 5.4mm;
+  display:block;
+}
+.masthead{
+  font-family:var(--serif);
+  font-weight:500;
+  font-size:30pt;
+  line-height:1.06;
+  letter-spacing:.014em;               /* deliberately restrained */
+  color:var(--forest);
+  white-space:nowrap;
+}
+.locale{
+  margin-top:5.8mm;
+  font-weight:500;
+  font-size:8pt;
+  letter-spacing:.28em;
+  text-indent:.28em;
+  text-transform:uppercase;
+  color:var(--ink-soft);
+}
+.disciplines{
+  margin-top:4.2mm;
+  font-weight:500;
+  font-size:7.6pt;
+  letter-spacing:.24em;
+  text-indent:.24em;
+  text-transform:uppercase;
+  color:var(--gold);
+}
+.intro{
+  margin:8mm auto 0;
+  max-width:126mm;
+  font-family:var(--serif);
+  font-style:italic;
+  font-weight:400;
+  font-size:11pt;
+  line-height:1.72;
+  color:var(--ink-soft);
+}
+
+/* --- Four-section factsheet grid -------------------------- */
+.facts{
+  display:grid;
+  /* Deliberately unequal — Accommodation and Facilities carry more space */
+  grid-template-columns:16fr 25fr 25fr 34fr;
+  column-gap:9mm;
+  border-top:.3mm solid var(--rule);
+  padding-top:7mm;
+}
+.facts > section{position:relative;}
+/* Thin sage dividers seated in the gutters — structural, not decorative */
+.facts > section + section::before{
+  content:"";
+  position:absolute;
+  left:-4.5mm;top:.4mm;bottom:0;
+  width:.3mm;
+  background:var(--rule-fine);
+}
+/* Fixed label height keeps every column's keyline on one baseline */
+.f-label{
+  height:4.8mm;
+  font-weight:600;
+  font-size:6.9pt;
+  line-height:1.36;
+  letter-spacing:.16em;
+  text-indent:.16em;
+  text-transform:uppercase;
+  color:var(--forest);
+}
+.f-keyline{height:.35mm;background:var(--gold);margin-bottom:5.4mm;}
+
+.f-list{list-style:none;}
+.f-list li{
+  font-weight:400;
+  font-size:8.6pt;
+  line-height:1.46;
+  color:var(--ink);
+  padding-bottom:2mm;
+}
+.f-list li:last-child{padding-bottom:0;}
+.f-lead{font-weight:500;color:var(--forest);}
+
+/* --- Page 1 foot ------------------------------------------ */
+.p1-foot{
+  position:absolute;
+  left:var(--margin);right:var(--margin);
+  bottom:13mm;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  padding-top:4.2mm;
+  border-top:.3mm solid var(--rule-fine);
+  font-weight:500;
+  font-size:6.8pt;
+  letter-spacing:.19em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+}
+
+/* ============================================================
+   PAGE 2 — Experience, Gallery & Contact
+   ============================================================ */
+.p2-head{padding-top:17mm;text-align:center;}
+.p2-title{
+  font-family:var(--serif);
+  font-weight:500;
+  font-size:23pt;
+  line-height:1.1;
+  letter-spacing:.055em;
+  text-indent:.055em;
+  text-transform:uppercase;
+  color:var(--forest);
+}
+.p2-rule{width:46mm;height:.3mm;background:var(--sage);margin:6mm auto 0;}
+
+/* --- Two-column composition ------------------------------- */
+.composition{
+  display:grid;
+  grid-template-columns:52fr 44fr;
+  column-gap:11mm;
+  margin-top:12mm;
+  align-items:stretch;
+}
+.highlight{
+  padding-bottom:6.4mm;
+  margin-bottom:6.4mm;
+  border-bottom:.3mm solid var(--rule-fine);
+}
+.highlight:last-child{padding-bottom:0;margin-bottom:0;border-bottom:0;}
+.h-title{
+  font-weight:600;
+  font-size:7.6pt;
+  letter-spacing:.2em;
+  text-indent:.2em;
+  text-transform:uppercase;
+  color:var(--gold);
+  margin-bottom:3.4mm;
+}
+.h-body{
+  font-weight:400;
+  font-size:9.2pt;
+  line-height:1.68;
+  color:var(--ink);
+}
+
+/* --- Shared image-plate treatment (anchor + gallery) ------ */
+.plate{display:flex;flex-direction:column;overflow:hidden;}
+.plate figure{flex:1;overflow:hidden;background:var(--parchment-deep);}
+.plate img{width:100%;height:100%;object-fit:cover;display:block;}
+.plate figcaption{
+  flex:0 0 auto;
+  padding-top:2.4mm;
+  font-weight:500;
+  font-size:6.2pt;
+  letter-spacing:.17em;
+  text-indent:.17em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  white-space:nowrap;
+  overflow:hidden;
+}
+
+/* --- Editorial gallery ------------------------------------ */
+.gallery-head{
+  display:flex;align-items:center;gap:5mm;
+  margin-top:12mm;margin-bottom:5.5mm;
+}
+.gallery-head span{
+  font-weight:600;
+  font-size:6.9pt;
+  letter-spacing:.22em;
+  text-indent:.22em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+  white-space:nowrap;
+}
+.gallery-head i{flex:1;height:.3mm;background:var(--rule-fine);display:block;}
+
+.gallery{
+  display:grid;
+  grid-template-columns:repeat(12,1fr);
+  grid-template-rows:46mm 39mm;
+  column-gap:4.5mm;
+  row-gap:4.5mm;
+}
+/* Asymmetric placement — varied spans, one tall plate, one wide plate */
+.t1{grid-column:1  / span 4; grid-row:1;}
+.t2{grid-column:5  / span 3; grid-row:1 / span 2;}
+.t3{grid-column:8  / span 5; grid-row:1;}
+.t4{grid-column:1  / span 4; grid-row:2;}
+.t5{grid-column:8  / span 2; grid-row:2;}
+.t6{grid-column:10 / span 3; grid-row:2;}
+
+/* --- Footer strip ----------------------------------------- */
+.p2-foot{
+  position:absolute;left:0;right:0;bottom:0;
+  height:16mm;
+  background:var(--forest);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 var(--margin);
+}
+.foot-mark{
+  font-weight:500;
+  font-size:7.2pt;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:rgba(244,239,229,.94);
+}
+.foot-mark em{font-style:normal;color:rgba(244,239,229,.48);padding:0 .9em;}
+.foot-web{
+  font-weight:500;
+  font-size:7.2pt;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--gold);
+}
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+@page{size:A4 portrait;margin:0;}
+
+@media print{
+  html,body{background:#fff;width:210mm;}
+  body{padding:0;display:block;gap:0;}
+  .sheet{margin:0;box-shadow:none;}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+}

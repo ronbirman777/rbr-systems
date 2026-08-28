@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-Resample the two photographs that land below print resolution in the layout.
+Resample the photographs that land below print resolution in the layout.
 
 Every image in `images/` is placed at a known width on the A4 sheet, which fixes
-its effective dpi. Most of them clear 300 dpi comfortably. Two do not, because the
-only originals available are small:
+its effective dpi. Most clear 300 dpi comfortably. These do not, because the only
+originals available are small:
 
-    hero-pool-resort.jpg        placed 210.0 mm full bleed   1000 px -> 121 dpi
-    shala-outdoor-meditation.jpg  placed  76.5 mm             576 px -> 191 dpi
+    hero-pool-resort.jpg          placed 210.0 mm full bleed  1000 px -> 121 dpi
+    hero-shala-interior.jpg       placed 210.0 mm full bleed  1125 px -> 136 dpi
+    shala-outdoor-meditation.jpg  placed  76.5 mm              576 px -> 191 dpi
 
-This script resamples those two up to 300 dpi at their placed size with Lanczos,
+This script resamples those up to 300 dpi at their placed size with Lanczos,
 then restores the local contrast that interpolation flattens. It does NOT recover
 detail that was never in the file — it only replaces the naive scaling a PDF
 viewer or printer RIP would otherwise do at output time, which measurably reduces
@@ -34,6 +35,7 @@ TARGET_DPI = 300
 # filename -> width in mm at which the layout places it
 PLACEMENTS = {
     "hero-pool-resort.jpg": 210.0,
+    "hero-shala-interior.jpg": 210.0,
     "shala-outdoor-meditation.jpg": 76.5,
 }
 

@@ -2,12 +2,19 @@
 """
 Build the distributable outputs for the Wonderland Healing Center factsheet.
 
-  wonderland-factsheet.html             source (local fonts/ and images/)
-    -> wonderland-factsheet-standalone.html   single file, everything inlined
-    -> wonderland-factsheet.pdf               2 x A4, no browser margins
+Each variant's source HTML references factsheet.css, fonts/ and images/ locally:
 
-Usage:  python3 build.py            # build both
-        python3 build.py --html     # skip the PDF (no Chrome needed)
+  wonderland-factsheet.html         pool hero
+  wonderland-factsheet-shala.html   shala-interior hero
+
+and produces, alongside itself,
+
+  <name>-standalone.html            single file, CSS + fonts + photos inlined
+  <name>.pdf                        2 x A4, no browser margins
+
+Usage:  python3 build.py                    # every variant
+        python3 build.py --html             # skip the PDFs (no Chrome needed)
+        python3 build.py wonderland-factsheet-shala.html    # just one
 
 The PDF step needs a Chrome/Chromium binary; set CHROME to override the path.
 """
@@ -20,9 +27,7 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "wonderland-factsheet.html")
-STANDALONE = os.path.join(HERE, "wonderland-factsheet-standalone.html")
-PDF = os.path.join(HERE, "wonderland-factsheet.pdf")
+VARIANTS = ["wonderland-factsheet.html", "wonderland-factsheet-shala.html"]
 
 CHROME_CANDIDATES = [
     os.environ.get("CHROME"),
@@ -43,15 +48,18 @@ def data_uri(relpath):
         return "data:%s;base64,%s" % (mime, base64.b64encode(fh.read()).decode())
 
 
-def build_standalone():
-    html = open(SRC, encoding="utf-8").read()
-    # url('fonts/…woff2')  and  src="images/….jpg"
+def build_standalone(src, out):
+    html = open(src, encoding="utf-8").read()
+    # Fold the shared stylesheet in, then the fonts it names and the photographs.
+    html = re.sub(r'<link rel="stylesheet" href="([^"]+)">',
+                  lambda m: "<style>\n%s</style>" % open(
+                      os.path.join(HERE, m.group(1)), encoding="utf-8").read(), html)
     html = re.sub(r"url\('(fonts/[^']+)'\)",
                   lambda m: "url('%s')" % data_uri(m.group(1)), html)
     html = re.sub(r'src="(images/[^"]+)"',
                   lambda m: 'src="%s"' % data_uri(m.group(1)), html)
-    open(STANDALONE, "w", encoding="utf-8").write(html)
-    print("standalone -> %s (%.1f MB)" % (STANDALONE, os.path.getsize(STANDALONE) / 1e6))
+    open(out, "w", encoding="utf-8").write(html)
+    print("  standalone -> %s (%.1f MB)" % (os.path.basename(out), os.path.getsize(out) / 1e6))
 
 
 def find_chrome():
@@ -64,23 +72,31 @@ def find_chrome():
     return None
 
 
-def build_pdf():
-    chrome = find_chrome()
-    if not chrome:
-        print("PDF skipped: no Chrome/Chromium found (set CHROME=/path/to/chrome)")
-        return False
+def build_pdf(src, out, chrome):
     subprocess.run([
         chrome, "--headless", "--disable-gpu", "--no-sandbox",
         "--no-pdf-header-footer",
-        "--print-to-pdf=" + PDF,
+        "--print-to-pdf=" + out,
         "--virtual-time-budget=10000",
-        "file://" + SRC,
+        "file://" + src,
     ], check=True, stderr=subprocess.DEVNULL)
-    print("pdf        -> %s (%.1f MB)" % (PDF, os.path.getsize(PDF) / 1e6))
-    return True
+    print("  pdf        -> %s (%.1f MB)" % (os.path.basename(out), os.path.getsize(out) / 1e6))
 
 
 if __name__ == "__main__":
-    build_standalone()
+    named = [a for a in sys.argv[1:] if not a.startswith("-")]
+    variants = named or VARIANTS
+
+    chrome = None
     if "--html" not in sys.argv:
-        build_pdf()
+        chrome = find_chrome()
+        if not chrome:
+            print("PDFs skipped: no Chrome/Chromium found (set CHROME=/path/to/chrome)")
+
+    for name in variants:
+        stem = os.path.join(HERE, name[:-len(".html")])
+        src = os.path.join(HERE, name)
+        print(name)
+        build_standalone(src, stem + "-standalone.html")
+        if chrome:
+            build_pdf(src, stem + ".pdf", chrome)

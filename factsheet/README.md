@@ -6,12 +6,17 @@ operators.
 
 ## Files
 
+There are two variants of the same document. They are identical apart from the
+page 1 hero photograph — layout, copy and the whole of page 2 are shared.
+
 | File | Purpose |
 | --- | --- |
-| `wonderland-factsheet.html` | **Source.** Edit this. References `fonts/` and `images/` locally. |
-| `wonderland-factsheet-standalone.html` | Single self-contained file (fonts + photos inlined). Use this to email or hand off without the folder. |
-| `wonderland-factsheet.pdf` | Exported 2-page A4 PDF. |
-| `build.py` | Regenerates the standalone HTML and the PDF from the source. |
+| `wonderland-factsheet.html` | **Source, pool hero.** Edit this. |
+| `wonderland-factsheet-shala.html` | **Source, shala-interior hero.** |
+| `factsheet.css` | The layout, shared by both variants so they cannot drift apart. |
+| `*-standalone.html` | One self-contained file per variant (CSS, fonts and photos inlined). Use these to email or hand off without the folder. |
+| `*.pdf` | Exported 2-page A4 PDF per variant. |
+| `build.py` | Regenerates the standalone HTML and the PDF for every variant. |
 | `prepare_images.py` | Resamples the two photographs that fall below print resolution. |
 | `images/` | Print-ready Wonderland photography. |
 | `images/source/` | Untouched originals of the two resampled photographs. |
@@ -20,14 +25,15 @@ operators.
 ## Rebuilding
 
 ```
-python3 build.py            # standalone HTML + PDF
-python3 build.py --html     # standalone HTML only (no Chrome needed)
+python3 build.py                                  # both variants
+python3 build.py --html                           # standalone HTML only (no Chrome)
+python3 build.py wonderland-factsheet-shala.html  # one variant
 CHROME=/path/to/chrome python3 build.py
 ```
 
 ## Manual PDF export
 
-Open `wonderland-factsheet.html` in Chrome › **Print**:
+Open either source HTML in Chrome › **Print**:
 
 - Destination: **Save as PDF**
 - Paper size: **A4**
@@ -73,7 +79,8 @@ the repository's `enviorment pics/` set.
 
 | Slot | File |
 | --- | --- |
-| Page 1 hero | `hero-pool-resort.jpg` |
+| Page 1 hero (pool variant) | `hero-pool-resort.jpg` |
+| Page 1 hero (shala variant) | `hero-shala-interior.jpg` |
 | Page 2 anchor | `shala-outdoor-meditation.jpg` |
 | Gallery | `tropical-pathway.jpg`, `shala-yoga-class.jpg`, `shala-flower-ceremony.jpg`, `pool-wellness.jpg`, `lotus-pond.jpg`, `plantbased-coconut.jpg` |
 
@@ -94,21 +101,23 @@ To drop them in later, replace the `src` of the corresponding `.plate` in
 
 ### Resolution
 
-Each image is placed at a known width, which fixes its effective dpi. Six of the
-eight clear 300 dpi as supplied. Two did not, because the only originals available
-are small:
+Each image is placed at a known width, which fixes its effective dpi. Most clear
+300 dpi as supplied. Three did not, because the only originals available are small:
 
 | Image | Placed at | Original | As supplied | Now |
 | --- | --- | --- | --- | --- |
 | `hero-pool-resort.jpg` | 210 mm full bleed | 1000 px | 121 dpi | 2480 px, 300 dpi |
+| `hero-shala-interior.jpg` | 210 mm full bleed | 1125 px | 136 dpi | 2480 px, 300 dpi |
 | `shala-outdoor-meditation.jpg` | 76.5 mm | 576 px | 191 dpi | 904 px, 300 dpi |
 
-`prepare_images.py` resamples those two from `images/source/` with Lanczos and
+`prepare_images.py` resamples those from `images/source/` with Lanczos and
 restores the local contrast interpolation flattens. This replaces the naive
 scaling a PDF viewer or printer RIP would do at output time, and measurably
 reduces softness at 300 dpi — but it does not recover detail that was never in
-the file. **A higher-resolution original of the pool photograph is still the real
-fix for offset litho**; ask the property for the camera file.
+the file. **Higher-resolution originals of the hero photographs are still the real
+fix for offset litho**; ask the property for the camera files. The shala interior
+is a phone frame held portrait, so the 2.04:1 hero band keeps only 28 % of its
+height — the same room shot landscape would lose far less.
 
 `pool-wellness.jpg` sits at 240 dpi and was left alone — that is within normal
 print tolerance, and resampling it would add artefacts without adding detail.
