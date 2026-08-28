@@ -116,14 +116,17 @@ the corresponding `.plate` at it in **both** HTML variants, then rerun
 the layout places each photograph, which fixes the pixel width it needs at
 300 dpi. The script resamples every original to exactly that, in both directions:
 
-- **Upsampled** — the two heroes (121 and 136 dpi as supplied) and
+- **Upsampled** — the two heroes (242 and 136 dpi as supplied) and
   `pool-wellness.jpg` (240 dpi). Lanczos plus an unsharp pass replaces the naive
   scaling a PDF viewer or printer RIP would do at output time, which measurably
   reduces softness. It does **not** recover detail that was never in the file, so
-  **higher-resolution originals of the two heroes are still the real fix for
-  offset litho** — ask the property for the camera files.
+  a genuinely higher-resolution original is always the better answer. The pool
+  hero at 242 dpi is close enough to hold up in print; **the shala-interior hero
+  at 136 dpi is the one still worth replacing with a camera file.**
 - **Downsampled** — everything else. `herbal-sauna-dome.jpg` arrived at 1471 dpi
   for its 26 mm plate; those pixels cannot print and only inflate the PDF.
 
-The shala-interior hero is a phone frame held portrait, so the 2.04:1 hero band
-keeps only 28 % of its height. The same room shot landscape would lose far less.
+Framing matters as much as pixel count here. The pool hero is a landscape frame
+at 1.50:1, so the 2.04:1 hero band keeps 74 % of its height. The shala-interior
+hero is a phone frame held portrait, so the same band keeps only 28 % — the same
+room shot landscape would lose far less.
