@@ -12,7 +12,9 @@ operators.
 | `wonderland-factsheet-standalone.html` | Single self-contained file (fonts + photos inlined). Use this to email or hand off without the folder. |
 | `wonderland-factsheet.pdf` | Exported 2-page A4 PDF. |
 | `build.py` | Regenerates the standalone HTML and the PDF from the source. |
-| `images/` | Wonderland photography used in the layout. |
+| `prepare_images.py` | Resamples the two photographs that fall below print resolution. |
+| `images/` | Print-ready Wonderland photography. |
+| `images/source/` | Untouched originals of the two resampled photographs. |
 | `fonts/` | Playfair Display + Inter, latin subset, self-hosted so print output is identical offline. |
 
 ## Rebuilding
@@ -90,10 +92,23 @@ To drop them in later, replace the `src` of the corresponding `.plate` in
 `wonderland-factsheet.html` and rerun `build.py`. Suggested swaps: accommodation →
 `t1`, cuisine → `t6`, sauna/plunge → `t5`.
 
-### Resolution note
+### Resolution
 
-The hero photograph is 1000 × 666 px, which is roughly 120 dpi when placed at full
-A4 width. That is fine for a PDF that will be read on screen or desk-printed, but
-it is below the 300 dpi wanted for offset litho. A higher-resolution original of
-the pool image would lift the hero for commercial print; every other image is
-placed small enough that its resolution holds up.
+Each image is placed at a known width, which fixes its effective dpi. Six of the
+eight clear 300 dpi as supplied. Two did not, because the only originals available
+are small:
+
+| Image | Placed at | Original | As supplied | Now |
+| --- | --- | --- | --- | --- |
+| `hero-pool-resort.jpg` | 210 mm full bleed | 1000 px | 121 dpi | 2480 px, 300 dpi |
+| `shala-outdoor-meditation.jpg` | 76.5 mm | 576 px | 191 dpi | 904 px, 300 dpi |
+
+`prepare_images.py` resamples those two from `images/source/` with Lanczos and
+restores the local contrast interpolation flattens. This replaces the naive
+scaling a PDF viewer or printer RIP would do at output time, and measurably
+reduces softness at 300 dpi — but it does not recover detail that was never in
+the file. **A higher-resolution original of the pool photograph is still the real
+fix for offset litho**; ask the property for the camera file.
+
+`pool-wellness.jpg` sits at 240 dpi and was left alone — that is within normal
+print tolerance, and resampling it would add artefacts without adding detail.
