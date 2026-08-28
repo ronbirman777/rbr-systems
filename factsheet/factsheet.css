@@ -262,6 +262,7 @@ body{
   color:var(--ink-mute);
   white-space:nowrap;
   overflow:hidden;
+  text-overflow:ellipsis;   /* a caption too wide for its plate fails visibly, not silently */
 }
 
 /* --- Editorial gallery ------------------------------------ */

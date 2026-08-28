@@ -17,9 +17,9 @@ page 1 hero photograph — layout, copy and the whole of page 2 are shared.
 | `*-standalone.html` | One self-contained file per variant (CSS, fonts and photos inlined). Use these to email or hand off without the folder. |
 | `*.pdf` | Exported 2-page A4 PDF per variant. |
 | `build.py` | Regenerates the standalone HTML and the PDF for every variant. |
-| `prepare_images.py` | Resamples the two photographs that fall below print resolution. |
+| `prepare_images.py` | Normalises every photograph to 300 dpi at the size the layout places it. |
 | `images/` | Print-ready Wonderland photography. |
-| `images/source/` | Untouched originals of the two resampled photographs. |
+| `images/source/` | Untouched originals. The only thing `prepare_images.py` reads. |
 | `fonts/` | Playfair Display + Inter, latin subset, self-hosted so print output is identical offline. |
 
 ## Rebuilding
@@ -77,47 +77,53 @@ Deep Forest footer strip.
 All imagery is real Wonderland material, taken from the 2026/27 retreat flyer and
 the repository's `enviorment pics/` set.
 
-| Slot | File |
-| --- | --- |
-| Page 1 hero (pool variant) | `hero-pool-resort.jpg` |
-| Page 1 hero (shala variant) | `hero-shala-interior.jpg` |
-| Page 2 anchor | `shala-outdoor-meditation.jpg` |
-| Gallery | `tropical-pathway.jpg`, `shala-yoga-class.jpg`, `shala-flower-ceremony.jpg`, `pool-wellness.jpg`, `lotus-pond.jpg`, `plantbased-coconut.jpg` |
+| Slot | File | Caption |
+| --- | --- | --- |
+| Page 1 hero (pool variant) | `hero-pool-resort.jpg` | — |
+| Page 1 hero (shala variant) | `hero-shala-interior.jpg` | — |
+| Page 2 anchor | `restaurant-lounge.jpg` | Open-Air Restaurant |
+| Gallery `t1` | `tropical-pathway.jpg` | Tropical Grounds |
+| Gallery `t2` | `shala-yoga-class.jpg` | Yoga Shala |
+| Gallery `t3` | `group-poolside.jpg` | Groups & Trainings |
+| Gallery `t4` | `pool-wellness.jpg` | Swimming Pool |
+| Gallery `t5` | `herbal-sauna-dome.jpg` | Herbal Sauna |
+| Gallery `t6` | `aerial-yoga.jpg` | Aerial Yoga |
+
+Each plate has a fixed aspect ratio, and `object-fit: cover` crops the photograph
+to it. A source wider than its plate loses its sides, a narrower one loses top and
+bottom — so when swapping a photograph, check which way it crops and set
+`object-position` accordingly. The group photograph sits in `t3`, the widest
+plate, precisely so that no one is cropped out of it.
 
 ### Known gaps
 
-Three gallery subjects from the design brief have **no Wonderland photograph
-available** in the supplied material, so nothing was invented or substituted for
-them:
+One subject from the design brief still has **no Wonderland photograph
+available**, so nothing was invented or substituted for it:
 
-1. **Private accommodation** (guest rooms / dormitories)
-2. **Plant-based cuisine** — a plated meal or restaurant shot. The gallery
-   currently uses a fresh coconut, which is genuine but is not the dining room.
-3. **Herbal steam sauna / cold plunge**
+- **Private accommodation** — guest rooms and dormitories.
 
-To drop them in later, replace the `src` of the corresponding `.plate` in
-`wonderland-factsheet.html` and rerun `build.py`. Suggested swaps: accommodation →
-`t1`, cuisine → `t6`, sauna/plunge → `t5`.
+The dining room is covered indirectly: the page 2 anchor shows the open-air
+restaurant, but there is still no photograph of the food itself.
+
+To add a photograph later, drop the original into `images/source/`, add it to
+`PLACEMENTS` in `prepare_images.py` with the width of the plate it goes in, point
+the corresponding `.plate` at it in **both** HTML variants, then rerun
+`prepare_images.py` and `build.py`.
 
 ### Resolution
 
-Each image is placed at a known width, which fixes its effective dpi. Most clear
-300 dpi as supplied. Three did not, because the only originals available are small:
+`PLACEMENTS` in `prepare_images.py` records the width in millimetres at which
+the layout places each photograph, which fixes the pixel width it needs at
+300 dpi. The script resamples every original to exactly that, in both directions:
 
-| Image | Placed at | Original | As supplied | Now |
-| --- | --- | --- | --- | --- |
-| `hero-pool-resort.jpg` | 210 mm full bleed | 1000 px | 121 dpi | 2480 px, 300 dpi |
-| `hero-shala-interior.jpg` | 210 mm full bleed | 1125 px | 136 dpi | 2480 px, 300 dpi |
-| `shala-outdoor-meditation.jpg` | 76.5 mm | 576 px | 191 dpi | 904 px, 300 dpi |
+- **Upsampled** — the two heroes (121 and 136 dpi as supplied) and
+  `pool-wellness.jpg` (240 dpi). Lanczos plus an unsharp pass replaces the naive
+  scaling a PDF viewer or printer RIP would do at output time, which measurably
+  reduces softness. It does **not** recover detail that was never in the file, so
+  **higher-resolution originals of the two heroes are still the real fix for
+  offset litho** — ask the property for the camera files.
+- **Downsampled** — everything else. `herbal-sauna-dome.jpg` arrived at 1471 dpi
+  for its 26 mm plate; those pixels cannot print and only inflate the PDF.
 
-`prepare_images.py` resamples those from `images/source/` with Lanczos and
-restores the local contrast interpolation flattens. This replaces the naive
-scaling a PDF viewer or printer RIP would do at output time, and measurably
-reduces softness at 300 dpi — but it does not recover detail that was never in
-the file. **Higher-resolution originals of the hero photographs are still the real
-fix for offset litho**; ask the property for the camera files. The shala interior
-is a phone frame held portrait, so the 2.04:1 hero band keeps only 28 % of its
-height — the same room shot landscape would lose far less.
-
-`pool-wellness.jpg` sits at 240 dpi and was left alone — that is within normal
-print tolerance, and resampling it would add artefacts without adding detail.
+The shala-interior hero is a phone frame held portrait, so the 2.04:1 hero band
+keeps only 28 % of its height. The same room shot landscape would lose far less.

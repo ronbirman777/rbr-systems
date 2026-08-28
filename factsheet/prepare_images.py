@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 """
-Resample the photographs that land below print resolution in the layout.
+Normalise every photograph in the layout to 300 dpi at the size it is placed.
 
-Every image in `images/` is placed at a known width on the A4 sheet, which fixes
-its effective dpi. Most clear 300 dpi comfortably. These do not, because the only
-originals available are small:
+The A4 sheet places each image at a fixed width in millimetres, which fixes the
+pixel width it actually needs. PLACEMENTS below records those widths, so this
+file doubles as the resolution spec for the document.
 
-    hero-pool-resort.jpg          placed 210.0 mm full bleed  1000 px -> 121 dpi
-    hero-shala-interior.jpg       placed 210.0 mm full bleed  1125 px -> 136 dpi
-    shala-outdoor-meditation.jpg  placed  76.5 mm              576 px -> 191 dpi
+Originals rarely arrive at that size:
 
-This script resamples those up to 300 dpi at their placed size with Lanczos,
-then restores the local contrast that interpolation flattens. It does NOT recover
-detail that was never in the file — it only replaces the naive scaling a PDF
-viewer or printer RIP would otherwise do at output time, which measurably reduces
-the softness. A genuinely higher-resolution original is still the real fix.
+  * Too small — a 1000 px pool photograph across the 210 mm full-bleed hero is
+    121 dpi. Upsampling with Lanczos and restoring the local contrast that
+    interpolation flattens replaces the naive scaling a PDF viewer or printer
+    RIP would do at output time, which measurably reduces softness. It does NOT
+    recover detail that was never in the file — a higher-resolution camera
+    original is still the real fix.
 
-Untouched originals live in `images/source/`; this script only ever reads from
-there, so it is safe to re-run and the resampling is reversible.
+  * Too large — a 1500 px photograph in a 26 mm gallery tile is 1470 dpi. Those
+    pixels cannot print; they only inflate the PDF, so they are resampled down.
+
+Originals live untouched in `images/source/` and are the only thing this script
+reads, so it is safe to re-run and every step is reversible.
 
 Usage:  python3 prepare_images.py
 """
@@ -34,31 +36,46 @@ TARGET_DPI = 300
 
 # filename -> width in mm at which the layout places it
 PLACEMENTS = {
+    # page 1 hero, full bleed (one per variant)
     "hero-pool-resort.jpg": 210.0,
     "hero-shala-interior.jpg": 210.0,
-    "shala-outdoor-meditation.jpg": 76.5,
+    # page 2 anchor
+    "restaurant-lounge.jpg": 76.5,
+    # page 2 gallery: spans of 4, 3, 5, 4, 2 and 3 of the 12 columns
+    "tropical-pathway.jpg": 56.3,
+    "shala-yoga-class.jpg": 41.1,
+    "group-poolside.jpg": 71.5,
+    "pool-wellness.jpg": 56.3,
+    "herbal-sauna-dome.jpg": 25.9,
+    "aerial-yoga.jpg": 41.1,
 }
 
 
 def prepare(name, placed_mm):
     src = Image.open(os.path.join(SOURCE, name)).convert("RGB")
     target_w = round(TARGET_DPI * placed_mm / MM_PER_INCH)
-    if src.width >= target_w:
-        print("%-30s already %d px, no resampling needed" % (name, src.width))
+    if src.width == target_w:
+        print("%-28s already %d px" % (name, src.width))
         return
 
     out = src.resize((target_w, round(target_w * src.height / src.width)), Image.LANCZOS)
-    # Radius scaled to the upsample factor so the halo stays sub-pixel at 300 dpi.
-    out = out.filter(ImageFilter.UnsharpMask(radius=1.6, percent=72, threshold=3))
+    # Upsampling needs the stronger pass; downsampling only needs the edge
+    # definition that any resample softens.
+    if target_w > src.width:
+        out = out.filter(ImageFilter.UnsharpMask(radius=1.6, percent=72, threshold=3))
+        verb = "up"
+    else:
+        out = out.filter(ImageFilter.UnsharpMask(radius=0.8, percent=40, threshold=3))
+        verb = "down"
+
     path = os.path.join(OUT, name)
     out.save(path, quality=90, subsampling=0, progressive=True, optimize=True)
-
-    print("%-30s %d -> %d px  (%d -> %d dpi at %.1f mm)  %.0f KB" % (
-        name, src.width, out.width,
+    print("%-28s %5d -> %4d px  %-4s (%4d -> %d dpi at %5.1f mm)  %4.0f KB" % (
+        name, src.width, out.width, verb,
         round(src.width * MM_PER_INCH / placed_mm), TARGET_DPI, placed_mm,
         os.path.getsize(path) / 1024))
 
 
 if __name__ == "__main__":
-    for name, placed_mm in PLACEMENTS.items():
+    for name, placed_mm in sorted(PLACEMENTS.items()):
         prepare(name, placed_mm)
