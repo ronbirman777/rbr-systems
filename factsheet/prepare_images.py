@@ -42,12 +42,12 @@ PLACEMENTS = {
     # page 2 anchor
     "restaurant-lounge.jpg": 76.5,
     # page 2 gallery: spans of 4, 3, 5, 4, 2 and 3 of the 12 columns
-    "tropical-pathway.jpg": 56.3,
-    "shala-yoga-class.jpg": 41.1,
-    "group-poolside.jpg": 71.5,
-    "pool-wellness.jpg": 56.3,
-    "herbal-sauna-dome.jpg": 25.9,
-    "aerial-yoga.jpg": 41.1,
+    "bungalows-pond.jpg": 56.3,       # t1
+    "shala-yoga-class.jpg": 41.1,     # t2
+    "lounge-community.jpg": 71.5,     # t3
+    "yoga-class-studio.jpg": 56.3,    # t4
+    "aerial-yoga.jpg": 25.9,          # t5
+    "herbal-sauna-dome.jpg": 41.1,    # t6
 }
 
 

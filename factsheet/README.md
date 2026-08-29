@@ -82,28 +82,30 @@ the repository's `enviorment pics/` set.
 | Page 1 hero (pool variant) | `hero-pool-resort.jpg` | — |
 | Page 1 hero (shala variant) | `hero-shala-interior.jpg` | — |
 | Page 2 anchor | `restaurant-lounge.jpg` | Open-Air Restaurant |
-| Gallery `t1` | `tropical-pathway.jpg` | Tropical Grounds |
+| Gallery `t1` | `bungalows-pond.jpg` | Grounds & Bungalows |
 | Gallery `t2` | `shala-yoga-class.jpg` | Yoga Shala |
-| Gallery `t3` | `group-poolside.jpg` | Groups & Trainings |
-| Gallery `t4` | `pool-wellness.jpg` | Swimming Pool |
-| Gallery `t5` | `herbal-sauna-dome.jpg` | Herbal Sauna |
-| Gallery `t6` | `aerial-yoga.jpg` | Aerial Yoga |
+| Gallery `t3` | `lounge-community.jpg` | Community |
+| Gallery `t4` | `yoga-class-studio.jpg` | Daily Classes |
+| Gallery `t5` | `aerial-yoga.jpg` | Aerial Yoga |
+| Gallery `t6` | `herbal-sauna-dome.jpg` | Herbal Sauna |
 
 Each plate has a fixed aspect ratio, and `object-fit: cover` crops the photograph
 to it. A source wider than its plate loses its sides, a narrower one loses top and
 bottom — so when swapping a photograph, check which way it crops and set
-`object-position` accordingly. The group photograph sits in `t3`, the widest
-plate, precisely so that no one is cropped out of it.
+`object-position` accordingly. Two placements exist for that reason: the lounge
+photograph sits in `t3`, the widest plate, so that no one is cropped out of it;
+and the sauna sits in `t6` rather than the narrow `t5`, because `t5` at 0.76:1
+kept barely half the frame's width and cut the dome down to its doorway.
 
 ### Known gaps
 
-One subject from the design brief still has **no Wonderland photograph
-available**, so nothing was invented or substituted for it:
+Two subjects from the design brief are still only covered indirectly, and
+nothing was invented or substituted for either:
 
-- **Private accommodation** — guest rooms and dormitories.
-
-The dining room is covered indirectly: the page 2 anchor shows the open-air
-restaurant, but there is still no photograph of the food itself.
+- **Private accommodation** — `t1` shows the guest bungalows from outside, but
+  there is no photograph of a room or dormitory interior.
+- **Plant-based cuisine** — the anchor shows the open-air restaurant and `t3`
+  shows guests at its tables, but there is no photograph of the food itself.
 
 To add a photograph later, drop the original into `images/source/`, add it to
 `PLACEMENTS` in `prepare_images.py` with the width of the plate it goes in, point
@@ -123,8 +125,8 @@ the layout places each photograph, which fixes the pixel width it needs at
   a genuinely higher-resolution original is always the better answer. The pool
   hero at 242 dpi is close enough to hold up in print; **the shala-interior hero
   at 136 dpi is the one still worth replacing with a camera file.**
-- **Downsampled** — everything else. `herbal-sauna-dome.jpg` arrived at 1471 dpi
-  for its 26 mm plate; those pixels cannot print and only inflate the PDF.
+- **Downsampled** — everything else. `aerial-yoga.jpg` arrives at 1340 dpi for
+  its 26 mm plate; those pixels cannot print and only inflate the PDF.
 
 Framing matters as much as pixel count here. The pool hero is a landscape frame
 at 1.50:1, so the 2.04:1 hero band keeps 74 % of its height. The shala-interior
