@@ -4,8 +4,9 @@ Build the distributable outputs for the Wonderland Healing Center factsheet.
 
 Each variant's source HTML references factsheet.css, fonts/ and images/ locally:
 
-  wonderland-factsheet.html         pool hero
-  wonderland-factsheet-shala.html   shala-interior hero
+  wonderland-factsheet.html             wide pool hero
+  wonderland-factsheet-pool-salas.html  original pool-and-salas hero
+  wonderland-factsheet-shala.html       shala-interior hero
 
 and produces, alongside itself,
 
@@ -27,7 +28,11 @@ import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-VARIANTS = ["wonderland-factsheet.html", "wonderland-factsheet-shala.html"]
+VARIANTS = [
+    "wonderland-factsheet.html",
+    "wonderland-factsheet-pool-salas.html",
+    "wonderland-factsheet-shala.html",
+]
 
 CHROME_CANDIDATES = [
     os.environ.get("CHROME"),

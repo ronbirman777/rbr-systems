@@ -38,6 +38,7 @@ TARGET_DPI = 300
 PLACEMENTS = {
     # page 1 hero, full bleed (one per variant)
     "hero-pool-resort.jpg": 210.0,
+    "hero-pool-salas.jpg": 210.0,
     "hero-shala-interior.jpg": 210.0,
     # page 2 anchor
     "restaurant-lounge.jpg": 76.5,

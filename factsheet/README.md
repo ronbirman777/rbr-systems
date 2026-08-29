@@ -6,12 +6,14 @@ operators.
 
 ## Files
 
-There are two variants of the same document. They are identical apart from the
-page 1 hero photograph — layout, copy and the whole of page 2 are shared.
+There are three variants of the same document. They are identical apart from
+the page 1 hero photograph — layout, copy and the whole of page 2 are shared,
+and the build verifies that page 2 renders pixel identical across all three.
 
 | File | Purpose |
 | --- | --- |
-| `wonderland-factsheet.html` | **Source, pool hero.** Edit this. |
+| `wonderland-factsheet.html` | **Source, wide pool hero.** Edit this. |
+| `wonderland-factsheet-pool-salas.html` | **Source, pool-and-salas hero** — the closer frame from the 2026/27 flyer. |
 | `wonderland-factsheet-shala.html` | **Source, shala-interior hero.** |
 | `factsheet.css` | The layout, shared by both variants so they cannot drift apart. |
 | `*-standalone.html` | One self-contained file per variant (CSS, fonts and photos inlined). Use these to email or hand off without the folder. |
@@ -25,7 +27,7 @@ page 1 hero photograph — layout, copy and the whole of page 2 are shared.
 ## Rebuilding
 
 ```
-python3 build.py                                  # both variants
+python3 build.py                                  # all three variants
 python3 build.py --html                           # standalone HTML only (no Chrome)
 python3 build.py wonderland-factsheet-shala.html  # one variant
 CHROME=/path/to/chrome python3 build.py
@@ -79,7 +81,8 @@ the repository's `enviorment pics/` set.
 
 | Slot | File | Caption |
 | --- | --- | --- |
-| Page 1 hero (pool variant) | `hero-pool-resort.jpg` | — |
+| Page 1 hero (wide pool variant) | `hero-pool-resort.jpg` | — |
+| Page 1 hero (pool-salas variant) | `hero-pool-salas.jpg` | — |
 | Page 1 hero (shala variant) | `hero-shala-interior.jpg` | — |
 | Page 2 anchor | `restaurant-lounge.jpg` | Open-Air Restaurant |
 | Gallery `t1` | `bungalows-pond.jpg` | Grounds & Bungalows |
@@ -118,17 +121,18 @@ the corresponding `.plate` at it in **both** HTML variants, then rerun
 the layout places each photograph, which fixes the pixel width it needs at
 300 dpi. The script resamples every original to exactly that, in both directions:
 
-- **Upsampled** — the two heroes (242 and 136 dpi as supplied) and
+- **Upsampled** — the three heroes (242, 121 and 136 dpi as supplied) and
   `pool-wellness.jpg` (240 dpi). Lanczos plus an unsharp pass replaces the naive
   scaling a PDF viewer or printer RIP would do at output time, which measurably
   reduces softness. It does **not** recover detail that was never in the file, so
-  a genuinely higher-resolution original is always the better answer. The pool
-  hero at 242 dpi is close enough to hold up in print; **the shala-interior hero
-  at 136 dpi is the one still worth replacing with a camera file.**
+  a genuinely higher-resolution original is always the better answer. The wide
+  pool hero at 242 dpi is close enough to hold up in print; **the pool-salas
+  hero at 121 dpi and the shala-interior hero at 136 dpi are the two still worth
+  replacing with camera files.**
 - **Downsampled** — everything else. `aerial-yoga.jpg` arrives at 1340 dpi for
   its 26 mm plate; those pixels cannot print and only inflate the PDF.
 
-Framing matters as much as pixel count here. The pool hero is a landscape frame
-at 1.50:1, so the 2.04:1 hero band keeps 74 % of its height. The shala-interior
-hero is a phone frame held portrait, so the same band keeps only 28 % — the same
-room shot landscape would lose far less.
+Framing matters as much as pixel count here. Both pool heroes are landscape
+frames at 1.50:1, so the 2.04:1 hero band keeps 74 % of their height. The
+shala-interior hero is a phone frame held portrait, so the same band keeps only
+28 % — the same room shot landscape would lose far less.
