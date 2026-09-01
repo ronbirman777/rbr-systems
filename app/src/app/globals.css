@@ -1,27 +1,62 @@
 @import "tailwindcss";
 
 /*
- * The RBR product app uses its own fixed brand palette (cream/forest),
- * not a system-dark-mode-responsive theme - so unlike the create-next-app
- * default, there is deliberately no `prefers-color-scheme: dark` override
- * here. Without this, form inputs and any other unstyled text silently
- * inherit a near-white foreground color on dark-mode systems, becoming
- * unreadable against their white/cream backgrounds.
+ * InnerDweS platform brand - fixed colors for the platform's OWN chrome
+ * (auth, Create Your Space, configurator shell, dashboards). Independent
+ * from the customer theme engine (src/lib/theme/*), which computes a
+ * tenant's own colors at runtime and applies them via inline style, scoped
+ * to that DOM subtree only - the two systems never share a token.
+ *
+ * There is deliberately no `prefers-color-scheme: dark` override: InnerDweS
+ * uses its own fixed parchment/forest identity regardless of system theme,
+ * not a system-dark-mode-responsive one. Without this, form inputs and any
+ * other unstyled text would silently inherit a near-white foreground color
+ * on dark-mode systems, becoming unreadable against light surfaces.
  */
 :root {
-  --background: #fbf9f5;
-  --foreground: #1b2e24;
+  --background: #f3efe7;
+  --foreground: #192b21;
+
+  --idw-forest: #192b21;
+  --idw-parchment: #f3efe7;
+  --idw-clay: #a86750;
+  --idw-sage: #bac5b2;
+  --idw-graphite: #232926;
+  --idw-linen: #ebe1d5;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-idw-forest: var(--idw-forest);
+  --color-idw-parchment: var(--idw-parchment);
+  --color-idw-clay: var(--idw-clay);
+  --color-idw-sage: var(--idw-sage);
+  --color-idw-graphite: var(--idw-graphite);
+  --color-idw-linen: var(--idw-linen);
+
+  /*
+   * Three intentional typography roles, not a single global serif swap:
+   *  - font-brand: the InnerDweS wordmark and other highly distinctive
+   *    brand moments only.
+   *  - font-editorial: Fraunces, used deliberately for selected expressive
+   *    headings, hero statements and editorial messaging.
+   *  - font-ui: interface typography - configurator controls, dashboards,
+   *    navigation, forms, functional product headings. Restrained and
+   *    highly readable, not expressive.
+   * font-brand and font-editorial both resolve to Fraunces today but stay
+   * separate tokens so they can diverge later without touching call sites.
+   */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-ui: var(--font-geist-sans);
+  --font-brand: var(--font-fraunces);
+  --font-editorial: var(--font-fraunces);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }

@@ -31,7 +31,7 @@ export default async function ResumeRetreatConfiguratorPage({
     .maybeSingle();
 
   return (
-    <main className="flex-1 flex flex-col min-h-0 bg-[#FBF9F5]">
+    <main className="flex-1 flex flex-col min-h-0 bg-idw-parchment">
       <RetreatConfigurator
         initialTenantId={tenant.id}
         initialName={tenant.name}
