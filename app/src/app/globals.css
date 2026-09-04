@@ -60,3 +60,13 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Guest app tab bar: horizontal scroll without a visible scrollbar, so the
+   nav keeps working cleanly as the module catalog grows past what fits. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

@@ -1,20 +1,32 @@
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
+import { todaysItems, upcomingItems, type PublicScheduleItem } from "@/lib/schedule/types";
 import type { CSSProperties } from "react";
 
 export type TodayScreenProps = {
   tenantName: string;
   brand: BrandConfig;
+  schedule: PublicScheduleItem[];
+  /** ISO date ("YYYY-MM-DD"), passed explicitly so server and client render
+   * identically rather than each calling `new Date()` independently. */
+  todayIso: string;
+  /** Present only when the Schedule module is enabled - Today answers "what's
+   * now / what's next", Schedule answers "what's the whole program"; this is
+   * the one deliberate cross-link between those two different questions. */
+  onViewSchedule?: () => void;
 };
 
 /**
  * The one real, data-driven screen this pass proves the preview-engine
  * architecture with: the exact same component renders inside the
- * configurator's live-preview pane and (once wired) the published app route,
- * from the exact same config shape. No screenshots, no drift.
+ * configurator's live-preview pane (fed by the private schedule_items table)
+ * and the public guest route (fed by the published_spaces snapshot). Same
+ * component, same props shape - no screenshots, no drift.
  */
-export function TodayScreen({ tenantName, brand }: TodayScreenProps) {
+export function TodayScreen({ tenantName, brand, schedule, todayIso, onViewSchedule }: TodayScreenProps) {
   const vars = deriveThemeVars(brand) as CSSProperties;
+  const today = todaysItems(schedule, todayIso);
+  const upcoming = upcomingItems(schedule, todayIso, 3);
 
   return (
     <div
@@ -48,15 +60,38 @@ export function TodayScreen({ tenantName, brand }: TodayScreenProps) {
           borderRadius: "var(--rbr-radius-md)",
           padding: "var(--rbr-spacing-unit)",
         }}
-        className="flex-1"
+        className="flex-1 overflow-y-auto"
       >
         <div className="text-[10px] uppercase tracking-[0.16em] text-black/40">
-          Happening Now
+          {today.length ? "Happening Today" : "Coming Up"}
         </div>
-        <div className="text-sm font-medium mt-2" style={{ color: "var(--rbr-primary)" }}>
-          Morning Session
+        {(today.length ? today : upcoming).length === 0 && (
+          <div className="text-xs text-black/40 mt-2">Nothing scheduled yet.</div>
+        )}
+        <div className="flex flex-col gap-3 mt-2">
+          {(today.length ? today : upcoming).map((item, i) => (
+            <div key={i}>
+              <div className="text-sm font-medium" style={{ color: "var(--rbr-primary)" }}>
+                {item.title}
+              </div>
+              <div className="text-xs text-black/50 mt-0.5">
+                {!today.length && item.date !== todayIso ? `${item.date} · ` : ""}
+                {item.startTime}
+                {item.location ? ` · ${item.location}` : ""}
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="text-xs text-black/50 mt-0.5">9:00 AM</div>
+        {onViewSchedule && (
+          <button
+            type="button"
+            onClick={onViewSchedule}
+            className="text-xs font-medium mt-3 underline"
+            style={{ color: "var(--rbr-primary)" }}
+          >
+            Full schedule →
+          </button>
+        )}
       </div>
     </div>
   );

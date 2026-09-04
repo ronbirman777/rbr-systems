@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { RetreatConfigurator } from "./retreat-configurator";
+import { DEFAULT_TIMEZONE } from "@/lib/timezone";
+import { EMPTY_ARRIVAL_INFO } from "@/lib/modules/arrival";
 
 export default async function NewRetreatConfiguratorPage() {
   const supabase = await createClient();
@@ -14,8 +16,17 @@ export default async function NewRetreatConfiguratorPage() {
       <RetreatConfigurator
         initialTenantId={null}
         initialName=""
+        initialTimezone={DEFAULT_TIMEZONE}
         initialPalette="forest-sage"
         initialAtmosphere="calm-organic"
+        initialSchedule={[]}
+        initialFacilitators={[]}
+        initialMeals={[]}
+        initialTreatments={[]}
+        initialFacilities={[]}
+        initialArrivalInfo={EMPTY_ARRIVAL_INFO}
+        initialEnabledModules={[]}
+        initialPublishedAt={null}
       />
     </main>
   );
