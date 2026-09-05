@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Netlify CLI's local build/deploy output (gitignored, vendors its own
+    // dependency source under edge-functions/.../edge-runtime/lib) - never
+    // present before a `netlify deploy`, so this gap went unnoticed until now.
+    ".netlify/**",
   ]),
 ]);
 
