@@ -8,6 +8,7 @@ import { RetreatIdentitySection } from "@/components/marketing/retreat-identity-
 import { PhilosophySection } from "@/components/marketing/philosophy-section";
 import { PricingSection } from "@/components/marketing/pricing-section";
 import { AboutSection } from "@/components/marketing/about-section";
+import { SelectedWorkSection } from "@/components/marketing/selected-work-section";
 import { FinalCtaSection } from "@/components/marketing/final-cta-section";
 
 export const metadata: Metadata = {
@@ -27,6 +28,7 @@ export default function MarketingHomePage() {
       <PhilosophySection />
       <PricingSection />
       <AboutSection />
+      <SelectedWorkSection />
       <FinalCtaSection />
     </>
   );
