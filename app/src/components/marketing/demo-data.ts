@@ -3,6 +3,11 @@ import type { PublicScheduleItem } from "@/lib/schedule/types";
 import type { DisplayFacilitator } from "@/lib/modules/facilitator";
 import type { DisplayMeal } from "@/lib/modules/meal";
 import type { DisplayTreatment } from "@/lib/modules/treatment";
+import type { TodayVisualItem } from "./product-visuals/today-visual";
+import type { ScheduleVisualDay, ScheduleVisualItem } from "./product-visuals/schedule-visual";
+import type { MealsVisualItem } from "./product-visuals/meals-visual";
+import type { TeamVisualPerson } from "./product-visuals/team-visual";
+import type { TreatmentsVisualItem } from "./product-visuals/treatments-visual";
 
 /**
  * Curated demo content for a single fictional retreat ("Samadhi Retreat"),
@@ -209,4 +214,72 @@ export const DEMO_IDENTITIES: {
       { date: DEMO_TODAY_ISO, startTime: "12:30", endTime: "13:30", title: "Highland Lunch", facilitator: null, location: "Bothy", description: null, category: null },
     ],
   },
+];
+
+/**
+ * Content for the purpose-built marketing product-visuals (Hero, Flow
+ * Showcase) - see product-visuals/*.tsx for why these exist instead of the
+ * real screen components. Matches the Figma reference's content/hierarchy,
+ * re-skinned into the light product direction.
+ */
+export const DEMO_TODAY_VISUAL_ITEMS: TodayVisualItem[] = [
+  { time: "06:30", title: "Morning Grounding", meta: "Breathwork · 20 min", current: true },
+  { time: "08:00", title: "Jungle Walk", meta: "Outdoor movement · 45 min" },
+  { time: "09:30", title: "Breakfast", meta: "Terrace · Plant-based" },
+  { time: "11:00", title: "Yoga Nidra", meta: "Studio A · 75 min" },
+  { time: "14:00", title: "Thai Massage", meta: "Treatment Room 2 · 90 min" },
+  { time: "19:00", title: "Dinner & Sharing", meta: "Open Fire Terrace" },
+];
+
+export const DEMO_SCHEDULE_VISUAL_DAYS: ScheduleVisualDay[] = [
+  { label: "Mon", day: "11", selected: true },
+  { label: "Tue", day: "12" },
+  { label: "Wed", day: "13" },
+  { label: "Thu", day: "14" },
+  { label: "Fri", day: "15" },
+];
+
+export const DEMO_SCHEDULE_VISUAL_ITEMS: ScheduleVisualItem[] = [
+  { time: "06:30", title: "Morning Grounding", meta: "Maya R.", tag: "Breathwork", tagTone: "clay" },
+  { time: "08:00", title: "Jungle Walk", meta: "Tomás V.", tag: "Movement", tagTone: "sage" },
+  { time: "11:00", title: "Yoga Nidra", meta: "Studio A", tag: "Rest", tagTone: "sage" },
+  { time: "19:00", title: "Dinner & Sharing", meta: "Open Fire Terrace", tag: "Sharing", tagTone: "clay" },
+];
+
+export const DEMO_MEALS_VISUAL_ITEMS: MealsVisualItem[] = [
+  {
+    mealType: "Breakfast",
+    time: "07:30–09:30",
+    name: "Garden Terrace Breakfast",
+    location: "Garden Terrace",
+    description: "Açaí bowls, fresh papaya, avocado on sourdough, green juices.",
+  },
+  {
+    mealType: "Lunch",
+    time: "13:00–14:00",
+    name: "Lemongrass Broth Lunch",
+    location: "Main Hall",
+    description: "Lemongrass broth, nourish bowl, coconut water.",
+    current: true,
+  },
+  {
+    mealType: "Dinner",
+    time: "19:00–20:30",
+    name: "Open Fire Dinner",
+    location: "Open Fire Terrace",
+    description: "Roasted vegetables, wild rice, miso-glazed aubergine.",
+  },
+];
+
+export const DEMO_TEAM_VISUAL_PEOPLE: TeamVisualPerson[] = [
+  { initials: "MR", name: "Maya Rodriguez", role: "Lead Facilitator", color: "clay" },
+  { initials: "TV", name: "Tomás Vargas", role: "Yoga & Breathwork", color: "forest" },
+  { initials: "AM", name: "Asha Mehta", role: "Nutrition & Ayurveda", color: "clay-text" },
+  { initials: "JL", name: "James Liu", role: "Integration Support", color: "forest" },
+];
+
+export const DEMO_TREATMENTS_VISUAL_ITEMS: TreatmentsVisualItem[] = [
+  { name: "Abhyanga Massage", detail: "90 min · Warm oil, full body", booking: "Tomorrow · 14:00", tagTone: "clay" },
+  { name: "Sound Bath", detail: "60 min · Group session", booking: "Wednesday · 17:00", tagTone: "sage" },
+  { name: "Private Ceremony", detail: "120 min · Lead facilitator", booking: "Enroll for an additional treatment", tagTone: "sage" },
 ];

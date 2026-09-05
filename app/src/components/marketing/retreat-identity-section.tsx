@@ -1,5 +1,6 @@
 import { PhoneFrame } from "./phone-frame";
 import { TodayScreen } from "@/components/today-screen";
+import { ATMOSPHERES, PALETTES } from "@/lib/theme/tokens";
 import { DEMO_IDENTITIES, DEMO_TODAY_ISO } from "./demo-data";
 
 export function RetreatIdentitySection() {
@@ -19,14 +20,26 @@ export function RetreatIdentitySection() {
 
         <div className="mt-16 flex flex-wrap justify-center gap-10">
           {DEMO_IDENTITIES.map((identity) => (
-            <PhoneFrame key={identity.tenantName} width={230}>
-              <TodayScreen
-                tenantName={identity.tenantName}
-                brand={identity.brand}
-                schedule={identity.schedule}
-                todayIso={DEMO_TODAY_ISO}
-              />
-            </PhoneFrame>
+            <div key={identity.tenantName} className="flex flex-col items-center gap-4">
+              <PhoneFrame width={230}>
+                <TodayScreen
+                  tenantName={identity.tenantName}
+                  brand={identity.brand}
+                  schedule={identity.schedule}
+                  todayIso={DEMO_TODAY_ISO}
+                />
+              </PhoneFrame>
+              {/* Real product config labels, not invented ones - shows the
+                  actual palette + atmosphere axes driving the difference. */}
+              <div className="text-center">
+                <div className="font-ui text-xs font-semibold text-idw-forest/70">
+                  {ATMOSPHERES[identity.brand.atmosphere].label}
+                </div>
+                <div className="font-ui text-[11px] text-idw-forest/45 mt-0.5">
+                  {PALETTES[identity.brand.palette].label} palette
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       </div>

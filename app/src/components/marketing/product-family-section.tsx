@@ -4,7 +4,7 @@ import { InnerDweSMark } from "@/components/brand/wordmark";
 const FAMILIES = [
   {
     key: "flow",
-    eyebrow: null,
+    eyebrow: "Time to Flow",
     kicker: "Retreats · Programs · Trainings",
     quote: "One calm digital space for the entire retreat experience.",
     bg: "bg-idw-clay",
@@ -54,12 +54,8 @@ export function ProductFamilySection() {
               <div className={`w-9 h-9 rounded-full border ${f.ring} flex items-center justify-center mb-6`}>
                 <InnerDweSMark size={16} />
               </div>
-              {f.eyebrow && (
-                <div className="font-ui text-[11px] font-semibold uppercase tracking-[0.16em] opacity-70 mb-1">
-                  {f.eyebrow}
-                </div>
-              )}
-              <div className="font-ui text-sm opacity-80 mb-4">{f.kicker}</div>
+              <div className="font-editorial italic text-2xl leading-tight mb-1.5">{f.eyebrow}</div>
+              <div className="font-ui text-[13px] font-medium opacity-75 mb-4">{f.kicker}</div>
               <p className="font-editorial italic text-xl leading-snug flex-1">&ldquo;{f.quote}&rdquo;</p>
               <div className="mt-8 flex items-center justify-between gap-3">
                 {f.status}

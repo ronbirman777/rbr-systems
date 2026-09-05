@@ -2,9 +2,9 @@ import Image from "next/image";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { HeroParallax } from "./hero-parallax";
 import { PhoneFrame } from "./phone-frame";
-import { ScheduleScreen } from "@/components/schedule-screen";
-import { MealsScreen } from "@/components/meals-screen";
-import { DEMO_BRAND, DEMO_MEALS, DEMO_NOW_TIME, DEMO_SCHEDULE, DEMO_TODAY_ISO } from "./demo-data";
+import { ScheduleVisual } from "./product-visuals/schedule-visual";
+import { MealsVisual } from "./product-visuals/meals-visual";
+import { DEMO_MEALS_VISUAL_ITEMS, DEMO_SCHEDULE_VISUAL_DAYS, DEMO_SCHEDULE_VISUAL_ITEMS } from "./demo-data";
 
 /**
  * Entry sequence: mark -> eyebrow -> headline -> supporting copy -> CTAs,
@@ -44,7 +44,7 @@ export function Hero() {
       <div className="relative z-10 mx-auto max-w-[1280px] w-full px-6 py-28 grid lg:grid-cols-[1.1fr_0.9fr] gap-16 items-center">
         <div className="max-w-xl">
           <div className="idw-animate-fade-rise idw-delay-0 mb-6">
-            <InnerDweSMark size={40} />
+            <InnerDweSMark size={40} tone="on-dark" />
           </div>
           <div className="idw-animate-fade-rise idw-delay-1 font-ui text-xs font-semibold uppercase tracking-[0.22em] text-idw-clay border-b border-idw-clay/40 pb-3 inline-block">
             Digital Wellness Solutions
@@ -74,18 +74,13 @@ export function Hero() {
 
         <div className="idw-animate-fade-rise idw-delay-3 hidden lg:flex justify-center items-center gap-6 [perspective:1200px]">
           <div className="rotate-[-6deg] translate-y-6">
-            <PhoneFrame width={220}>
-              <MealsScreen brand={DEMO_BRAND} meals={DEMO_MEALS} />
+            <PhoneFrame width={230}>
+              <MealsVisual items={DEMO_MEALS_VISUAL_ITEMS} />
             </PhoneFrame>
           </div>
           <div className="rotate-[4deg] -translate-y-4">
-            <PhoneFrame width={240}>
-              <ScheduleScreen
-                brand={DEMO_BRAND}
-                schedule={DEMO_SCHEDULE}
-                todayIso={DEMO_TODAY_ISO}
-                nowTime={DEMO_NOW_TIME}
-              />
+            <PhoneFrame width={250}>
+              <ScheduleVisual days={DEMO_SCHEDULE_VISUAL_DAYS} items={DEMO_SCHEDULE_VISUAL_ITEMS} />
             </PhoneFrame>
           </div>
         </div>

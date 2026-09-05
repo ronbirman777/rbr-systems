@@ -40,7 +40,19 @@ const ARC_VISIBLE_PERCENT = 5;
 // its short visible stroke at 6 o'clock, inside the ring's opening.
 const ARC_ROTATION = 90 - ARC_VISIBLE_PERCENT * 1.8;
 
-export function InnerDweSMark({ className, size = 32 }: { className?: string; size?: number }) {
+export function InnerDweSMark({
+  className,
+  size = 32,
+  tone = "on-light",
+}: {
+  className?: string;
+  size?: number;
+  /** "on-dark" swaps only the ring's stroke color (Forest -> Parchment) for
+   * use on dark photographic surfaces (e.g. the Hero) - same geometry,
+   * same Clay arc/dot, never a redraw. */
+  tone?: "on-light" | "on-dark";
+}) {
+  const ringColor = tone === "on-dark" ? INNERDWES_BRAND.parchment : INNERDWES_BRAND.forest;
   return (
     <svg
       viewBox="0 0 100 100"
@@ -55,7 +67,7 @@ export function InnerDweSMark({ className, size = 32 }: { className?: string; si
         cy="50"
         r="36"
         fill="none"
-        stroke={INNERDWES_BRAND.forest}
+        stroke={ringColor}
         strokeWidth={6}
         strokeLinecap="round"
         pathLength={100}
