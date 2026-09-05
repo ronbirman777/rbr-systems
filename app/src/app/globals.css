@@ -23,6 +23,15 @@
   --idw-sage: #bac5b2;
   --idw-graphite: #232926;
   --idw-linen: #ebe1d5;
+  /*
+   * Text-only variant for small Clay text on Parchment/Linen - the
+   * canonical --idw-clay (#A86750) measures ~3.9:1 there, which clears
+   * WCAG AA for large text but not small text (needs 4.5:1). This is
+   * Clay's foreground-text luminance corrected, not a new brand color -
+   * ~5:1 on Parchment. Never used for backgrounds, only for small
+   * text-idw-clay-text usages where the surface behind it is light.
+   */
+  --idw-clay-text: #8f5844;
 }
 
 @theme inline {
@@ -35,6 +44,7 @@
   --color-idw-sage: var(--idw-sage);
   --color-idw-graphite: var(--idw-graphite);
   --color-idw-linen: var(--idw-linen);
+  --color-idw-clay-text: var(--idw-clay-text);
 
   /*
    * Three intentional typography roles, not a single global serif swap:
@@ -69,4 +79,72 @@ body {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/*
+ * Marketing homepage motion - CSS-only by design (see the InnerDweS
+ * marketing implementation plan): a slow "breathing" ambient drift on the
+ * Hero's background image, and a staggered fade-rise entrance for the
+ * mark/eyebrow/headline/copy/CTAs, modeled directly on the inspected
+ * Superdesign cinematic-hero reference's own technique (plain @keyframes,
+ * no animation library). Both are fully inert under prefers-reduced-motion.
+ */
+@keyframes idw-fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.idw-animate-fade-rise {
+  animation: idw-fade-rise 0.75s ease-out forwards;
+  opacity: 0;
+}
+.idw-delay-0 {
+  animation-delay: 0s;
+}
+.idw-delay-1 {
+  animation-delay: 0.15s;
+}
+.idw-delay-2 {
+  animation-delay: 0.3s;
+}
+.idw-delay-3 {
+  animation-delay: 0.45s;
+}
+.idw-delay-4 {
+  animation-delay: 0.6s;
+}
+
+@keyframes idw-hero-drift {
+  from {
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.06) translate3d(-0.5%, -0.5%, 0);
+  }
+}
+.idw-hero-drift {
+  animation: idw-hero-drift 26s ease-in-out infinite alternate;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .idw-animate-fade-rise {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .idw-hero-drift {
+    animation: none;
+  }
+}
+
+/* Visible keyboard focus everywhere on the marketing site - custom button/
+   link styling elsewhere doesn't rely on the browser's own default ring. */
+:focus-visible {
+  outline: 2px solid var(--idw-clay);
+  outline-offset: 2px;
 }

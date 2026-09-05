@@ -1,12 +1,14 @@
 import { INNERDWES_BRAND } from "@/lib/brand/platform";
 
 /**
- * The InnerDweS circular symbol, reconstructed from the approved brand
- * board (no vector source available): a deep forest ring covering most of
- * the circle, a deliberate open threshold at the bottom, a restrained clay
- * arc integrated into the lower-right portion of that opening (not
- * touching the forest ring on either side), and a small offset clay dot
- * floating in the upper-right interior.
+ * The InnerDweS circular symbol, reconstructed from the approved Concept 03
+ * brand board: a deep forest ring that is almost fully closed, with one
+ * small, deliberate "threshold" opening at the bottom - not a wide
+ * quarter-circle gap. Inside that opening sits a short clay arc, shorter
+ * than the gap itself, so empty breathing space remains on both sides of
+ * it (the ring doesn't hand off directly to the arc). A small solid clay
+ * dot floats independently in the upper-right interior, offset from
+ * center, touching neither the ring nor the arc.
  *
  * Built with `pathLength` + `stroke-dasharray` on plain <circle> elements
  * rather than hand-authored SVG arc-path commands (`A rx,ry ... large-arc
@@ -18,12 +20,26 @@ import { INNERDWES_BRAND } from "@/lib/brand/platform";
  * circumference, so there's no geometry to get wrong - this is the more
  * reliable technique.
  *
- * Clock positions (visual, not exact degrees) for future adjustment:
- *  - Forest ring: 8 o'clock, clockwise all the way around, to 5 o'clock (270 deg)
- *  - Open threshold: 5 o'clock to 8 o'clock (the remaining 90 deg)
- *  - Clay arc: 6 o'clock to 7:30, i.e. the lower-right part of that opening,
- *    leaving visible negative space on both sides of it
+ * Proportions (tuned from the brand board image, not measured from a vector
+ * source - nudge GAP_PERCENT/ARC_PERCENT/rotation here if a closer look at
+ * the reference calls for it):
+ *  - Ring: ~88% visible, ~12% opening, opening centered at 6 o'clock (bottom)
+ *  - Clay arc: ~5% of the circle, centered in that same opening, leaving
+ *    roughly equal empty space flanking it on both sides
+ *  - Dot: offset up-and-right of center, at 1:30, clear of the ring's inner edge
  */
+const RING_VISIBLE_PERCENT = 88;
+const RING_GAP_PERCENT = 100 - RING_VISIBLE_PERCENT;
+// Rotation (degrees) that centers the ring's gap at 6 o'clock - derived from
+// SVG circles starting their path at 3 o'clock: centerOfGap = visible*1.8 + rotation + 180,
+// solved for rotation so centerOfGap lands on 90 (6 o'clock, mod 360).
+const RING_ROTATION = 270 - RING_VISIBLE_PERCENT * 1.8;
+
+const ARC_VISIBLE_PERCENT = 5;
+// Same circle, opposite role (visible arc instead of visible ring): centering
+// its short visible stroke at 6 o'clock, inside the ring's opening.
+const ARC_ROTATION = 90 - ARC_VISIBLE_PERCENT * 1.8;
+
 export function InnerDweSMark({ className, size = 32 }: { className?: string; size?: number }) {
   return (
     <svg
@@ -33,7 +49,7 @@ export function InnerDweSMark({ className, size = 32 }: { className?: string; si
       className={className}
       aria-hidden="true"
     >
-      {/* forest ring: visible from 8 o'clock, clockwise, to 5 o'clock (270 deg / 75%) */}
+      {/* forest ring: ~88% visible, small threshold opening at the bottom */}
       <circle
         cx="50"
         cy="50"
@@ -43,10 +59,10 @@ export function InnerDweSMark({ className, size = 32 }: { className?: string; si
         strokeWidth={6}
         strokeLinecap="round"
         pathLength={100}
-        strokeDasharray="75 25"
-        transform="rotate(150 50 50)"
+        strokeDasharray={`${RING_VISIBLE_PERCENT} ${RING_GAP_PERCENT}`}
+        transform={`rotate(${RING_ROTATION} 50 50)`}
       />
-      {/* clay arc: visible from 6 o'clock to 7:30 (45 deg / 12.5%), inside the opening */}
+      {/* clay arc: short, centered in the opening, with breathing space on both sides */}
       <circle
         cx="50"
         cy="50"
@@ -56,11 +72,11 @@ export function InnerDweSMark({ className, size = 32 }: { className?: string; si
         strokeWidth={6}
         strokeLinecap="round"
         pathLength={100}
-        strokeDasharray="12.5 87.5"
-        transform="rotate(90 50 50)"
+        strokeDasharray={`${ARC_VISIBLE_PERCENT} ${100 - ARC_VISIBLE_PERCENT}`}
+        transform={`rotate(${ARC_ROTATION} 50 50)`}
       />
-      {/* inner dot - clay, offset upper-right, not touching the ring */}
-      <circle cx="61.3" cy="38.7" r="5" fill={INNERDWES_BRAND.clay} />
+      {/* inner dot - clay, offset upper-right at ~1:30, independent of the ring */}
+      <circle cx="64" cy="36" r="4.5" fill={INNERDWES_BRAND.clay} />
     </svg>
   );
 }

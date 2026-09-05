@@ -8,6 +8,15 @@ import {
 import { sha256Hex, timingSafeEqual } from "@/lib/preview-gate/hash";
 
 /**
+ * Public InnerDweS marketing routes - deliberately excluded from the
+ * preview-password gate below. Everything else (sign-up, log-in, create,
+ * the configurator, the published guest route) keeps exactly the gating
+ * behavior it had before the marketing site existed - this list only ever
+ * grows to admit more marketing pages, never product/account routes.
+ */
+const PUBLIC_MARKETING_PATHS = new Set(["/", "/time-to-heal", "/time-to-elevate"]);
+
+/**
  * Two independent checks, in order:
  *
  * 1. The temporary InnerDweS preview password gate (see lib/preview-gate) -
@@ -57,6 +66,7 @@ async function checkPreviewGate(request: NextRequest): Promise<NextResponse | nu
 
   const { pathname, search } = request.nextUrl;
   if (pathname === PREVIEW_GATE_PATH) return null; // the gate page itself - never gate it
+  if (PUBLIC_MARKETING_PATHS.has(pathname)) return null; // public InnerDweS marketing pages
 
   const cookieValue = request.cookies.get(PREVIEW_COOKIE_NAME)?.value;
   if (cookieValue) {
