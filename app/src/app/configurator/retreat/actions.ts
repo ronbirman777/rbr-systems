@@ -90,11 +90,30 @@ export async function saveDraft(
 
 export type SaveScheduleState = { error: string | null };
 
+type ScheduleItemUpsert = {
+  id: string;
+  tenant_id: string;
+  date: string;
+  start_time: string;
+  end_time: string | null;
+  title: string;
+  facilitator: string | null;
+  location: string | null;
+  description: string | null;
+  category: string | null;
+};
+
 /**
- * Replace-all: the simplest correct approach for an MVP schedule editor -
- * deletes the tenant's existing schedule_items and inserts the submitted
- * set. RLS (member-scoped) is what actually stops this from touching
- * another tenant's schedule, not anything in this function's own logic.
+ * Upsert-by-id, delete-only-removed - the same invariant already proven for
+ * Meals/Treatments/Facilities/Facilitators via saveModuleItemsGeneric,
+ * brought to Schedule's own table. Schedule previously deleted every row
+ * for the tenant and reinserted from scratch on every Save, which let
+ * Postgres mint a fresh id on every save (confirmed live: two consecutive
+ * saves of identical content produced two different row ids) - the exact
+ * duplicate-row race already fixed everywhere else. schedule_items has no
+ * image_ref/media concern, so this is simpler than saveModuleItemsGeneric,
+ * not a variant of it - a shared abstraction across two different tables'
+ * shapes would cost more clarity than the ~15 lines of duplication saves.
  */
 export async function saveSchedule(
   _prevState: SaveScheduleState,
@@ -109,38 +128,108 @@ export async function saveSchedule(
   const tenantId = String(formData.get("tenantId") ?? "");
   if (!tenantId) return { error: "Missing space." };
 
-  let items: unknown;
-  try {
-    items = JSON.parse(String(formData.get("items") ?? "[]"));
-  } catch {
-    return { error: "Could not read the schedule." };
-  }
+  const parsed = parseItemsWithIds(formData, publicScheduleItemSchema);
+  if ("error" in parsed) return { error: parsed.error };
 
-  const parsed = z.array(publicScheduleItemSchema).safeParse(items);
-  if (!parsed.success) return { error: "Some schedule details weren't valid." };
+  const rows: ScheduleItemUpsert[] = parsed.data.map((item) => ({
+    id: item.id,
+    tenant_id: tenantId,
+    date: item.date,
+    start_time: item.startTime,
+    end_time: item.endTime,
+    title: item.title,
+    facilitator: item.facilitator,
+    location: item.location,
+    description: item.description,
+    category: item.category,
+  }));
 
-  const { error: deleteError } = await supabase
+  const incomingIds = new Set(rows.map((r) => r.id));
+  const { data: existingRows } = await supabase
     .from("schedule_items")
-    .delete()
+    .select("id")
     .eq("tenant_id", tenantId);
-  if (deleteError) return { error: deleteError.message };
+  const removedIds = (existingRows ?? []).filter((r) => !incomingIds.has(r.id)).map((r) => r.id);
 
-  if (parsed.data.length > 0) {
-    const { error: insertError } = await supabase.from("schedule_items").insert(
-      parsed.data.map((item) => ({
-        tenant_id: tenantId,
-        date: item.date,
-        start_time: item.startTime,
-        end_time: item.endTime,
-        title: item.title,
-        facilitator: item.facilitator,
-        location: item.location,
-        description: item.description,
-        category: item.category,
-      }))
-    );
-    if (insertError) return { error: insertError.message };
+  if (removedIds.length > 0) {
+    const { error: deleteError } = await supabase
+      .from("schedule_items")
+      .delete()
+      .eq("tenant_id", tenantId)
+      .in("id", removedIds);
+    if (deleteError) return { error: deleteError.message };
   }
+
+  if (rows.length > 0) {
+    const { error: upsertError } = await supabase.from("schedule_items").upsert(rows, { onConflict: "id" });
+    if (upsertError) return { error: upsertError.message };
+  }
+
+  return { error: null };
+}
+
+export type ScheduleItemStubState = { error: string | null };
+
+/**
+ * Schedule's counterpart to createModuleItemStub - a brand-new schedule
+ * item must exist in the database from the moment it's added, not only
+ * once the organizer clicks Save, for the same reason every other module
+ * already works this way (see the Time to Flow persistence-consistency
+ * fix). ON CONFLICT DO NOTHING: this call only guarantees the row exists,
+ * never overwrites content a later Save (or a since-resolved earlier one)
+ * already wrote.
+ */
+export async function createScheduleItemStub(
+  _prevState: ScheduleItemStubState,
+  formData: FormData
+): Promise<ScheduleItemStubState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You need to be logged in." };
+
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const itemId = String(formData.get("itemId") ?? "");
+  const date = String(formData.get("date") ?? "");
+  const startTime = String(formData.get("startTime") ?? "");
+  if (!tenantId || !itemId) return { error: "Missing space or item." };
+
+  const { error } = await supabase.from("schedule_items").upsert(
+    {
+      id: itemId,
+      tenant_id: tenantId,
+      date: date || new Date().toISOString().slice(0, 10),
+      start_time: startTime || "09:00",
+      title: "Untitled",
+    },
+    { onConflict: "id", ignoreDuplicates: true }
+  );
+  if (error) return { error: error.message };
+
+  return { error: null };
+}
+
+export type DeleteScheduleItemState = { error: string | null };
+
+/** Schedule's counterpart to deleteModuleItem - no media to clean up, so
+ * just the row. */
+export async function deleteScheduleItem(
+  _prevState: DeleteScheduleItemState,
+  formData: FormData
+): Promise<DeleteScheduleItemState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You need to be logged in." };
+
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const itemId = String(formData.get("itemId") ?? "");
+  if (!tenantId || !itemId) return { error: "Missing space or item." };
+
+  const { error } = await supabase.from("schedule_items").delete().eq("id", itemId).eq("tenant_id", tenantId);
+  if (error) return { error: error.message };
 
   return { error: null };
 }

@@ -1,14 +1,65 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
 import { InnerDweSMark } from "@/components/brand/wordmark";
-import { signUp, type AuthActionState } from "../actions";
+import { signUp, resendConfirmationEmail, type SignUpState } from "../actions";
 
-const initialState: AuthActionState = { error: null };
+const initialState: SignUpState = { error: null, checkEmail: false, email: null };
+
+function CheckEmailState({ email }: { email: string }) {
+  const [pending, startTransition] = useTransition();
+  const [resendResult, setResendResult] = useState<"idle" | "sent" | "error">("idle");
+
+  function handleResend() {
+    startTransition(async () => {
+      const result = await resendConfirmationEmail(email);
+      setResendResult(result.error ? "error" : "sent");
+    });
+  }
+
+  return (
+    <main className="flex-1 flex items-center justify-center bg-idw-parchment px-6 py-16">
+      <div className="w-full max-w-sm text-center">
+        <InnerDweSMark size={28} className="mx-auto mb-6" />
+        <h1 className="font-ui text-[26px] tracking-[-0.01em] text-idw-forest">Check your email</h1>
+        <p className="text-sm text-idw-forest/60 mt-3 leading-relaxed">
+          We sent a confirmation link to <span className="font-medium text-idw-forest">{email}</span>.
+          Open it to confirm your account — you&apos;ll come straight back here and continue to
+          Create Your Space.
+        </p>
+
+        <button
+          type="button"
+          onClick={handleResend}
+          disabled={pending || resendResult === "sent"}
+          className="mt-8 text-xs font-semibold uppercase tracking-wide text-idw-forest underline disabled:opacity-50 disabled:no-underline"
+        >
+          {pending ? "Sending…" : resendResult === "sent" ? "Confirmation email sent" : "Resend confirmation email"}
+        </button>
+        {resendResult === "error" && (
+          <p className="text-sm text-red-700 mt-3" role="alert">
+            Couldn&apos;t resend that email. Please try again in a moment.
+          </p>
+        )}
+
+        <p className="text-sm text-idw-forest/60 mt-8">
+          Already confirmed?{" "}
+          <Link href="/log-in" className="underline">
+            Log in
+          </Link>
+        </p>
+      </div>
+    </main>
+  );
+}
 
 export default function SignUpPage() {
   const [state, formAction, pending] = useActionState(signUp, initialState);
+
+  if (state.checkEmail && state.email) {
+    return <CheckEmailState email={state.email} />;
+  }
 
   return (
     <main className="flex-1 flex items-center justify-center bg-idw-parchment px-6 py-16">

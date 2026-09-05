@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { GuestApp } from "@/components/guest-app";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { ModuleItemPhotoField } from "@/components/module-item-photo-field";
-import { persistNewItemStub, persistItemRemoval } from "@/lib/modules/persistItem";
+import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
+import { persistNewScheduleItemStub, persistScheduleItemRemoval } from "@/lib/modules/persistSchedule";
 import { MealsStep } from "./meals-step";
 import { TreatmentsStep } from "./treatments-step";
 import { FacilitiesStep } from "./facilities-step";
@@ -129,11 +130,40 @@ export function RetreatConfigurator({
     tenantId: initialTenantId,
   });
   const [modulesState, modulesFormAction, modulesPending] = useActionState(saveModules, modulesInitialState);
-  const [scheduleState, scheduleFormAction, schedulePending] = useActionState(saveSchedule, scheduleInitialState);
-  const [facilitatorsState, facilitatorsFormAction, facilitatorsPending] = useActionState(
-    saveFacilitators,
-    facilitatorsInitialState
-  );
+  const [scheduleState, setScheduleState] = useState<SaveScheduleState>(scheduleInitialState);
+  const [schedulePending, setSchedulePending] = useState(false);
+  const [facilitatorsState, setFacilitatorsState] = useState<SaveFacilitatorsState>(facilitatorsInitialState);
+  const [facilitatorsPending, setFacilitatorsPending] = useState(false);
+
+  async function handleSaveSchedule() {
+    const formData = new FormData();
+    formData.set("tenantId", tenantId ?? "");
+    formData.set("items", JSON.stringify(schedule));
+    const ids = schedule.map((s) => s.id);
+    setSchedulePending(true);
+    // Queued behind every currently-in-flight write for these items (a
+    // stub create) so Save is always applied after anything already
+    // requested for them, and becomes the new queue position so a Remove
+    // clicked right after this Save correctly waits for it - see
+    // enqueueItemsOp in persistItem.ts.
+    const result = await enqueueItemsOp(ids, () => saveSchedule(scheduleInitialState, formData));
+    setSchedulePending(false);
+    setScheduleState(result);
+  }
+
+  async function handleSaveFacilitators() {
+    const formData = new FormData();
+    formData.set("tenantId", tenantId ?? "");
+    formData.set(
+      "items",
+      JSON.stringify(facilitators.map(({ id, name, role, bio, imageRef }) => ({ id, name, role, bio, imageRef })))
+    );
+    const ids = facilitators.map((f) => f.id);
+    setFacilitatorsPending(true);
+    const result = await enqueueItemsOp(ids, () => saveFacilitators(facilitatorsInitialState, formData));
+    setFacilitatorsPending(false);
+    setFacilitatorsState(result);
+  }
 
   const [publishState, publishFormAction, publishPending] = useActionState(publishSpace, {
     ...publishInitialState,
@@ -142,6 +172,7 @@ export function RetreatConfigurator({
 
   const tenantId = draftState.tenantId ?? initialTenantId;
   const currentPublishedAt = publishState.publishedAt ?? initialPublishedAt;
+
 
   function toggleModule(key: OptionalModuleKey) {
     setEnabledModules((prev) => {
@@ -443,9 +474,7 @@ export function RetreatConfigurator({
         )}
 
         {step === "schedule" && tenantId && (
-          <form action={scheduleFormAction} className="max-w-lg">
-            <input type="hidden" name="tenantId" value={tenantId} />
-            <input type="hidden" name="items" value={JSON.stringify(schedule)} />
+          <form className="max-w-lg">
             <h1 className="font-ui text-[26px] tracking-[-0.01em] text-idw-forest">Schedule</h1>
             <p className="text-sm text-idw-forest/60 mt-1">
               What&apos;s happening, and when. This becomes what guests see.
@@ -463,7 +492,10 @@ export function RetreatConfigurator({
                     />
                     <button
                       type="button"
-                      onClick={() => setSchedule((items) => items.filter((it) => it.id !== item.id))}
+                      onClick={() => {
+                        setSchedule((items) => items.filter((it) => it.id !== item.id));
+                        persistScheduleItemRemoval(tenantId, item.id);
+                      }}
                       className="text-idw-forest/30 hover:text-idw-forest text-xs shrink-0"
                     >
                       Remove
@@ -499,7 +531,11 @@ export function RetreatConfigurator({
               ))}
               <button
                 type="button"
-                onClick={() => setSchedule((items) => [...items, blankScheduleItem()])}
+                onClick={() => {
+                  const item = blankScheduleItem();
+                  setSchedule((items) => [...items, item]);
+                  persistNewScheduleItemStub(tenantId, item.id, item.date, item.startTime);
+                }}
                 className="rounded-lg border border-dashed border-idw-forest/25 text-idw-forest/60 hover:text-idw-forest hover:border-idw-forest/50 text-sm py-3 transition-colors"
               >
                 + Add schedule item
@@ -521,8 +557,9 @@ export function RetreatConfigurator({
                 Back
               </button>
               <button
-                type="submit"
+                type="button"
                 disabled={schedulePending}
+                onClick={handleSaveSchedule}
                 className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
               >
                 {schedulePending ? "Saving…" : "Save Schedule"}
@@ -539,13 +576,7 @@ export function RetreatConfigurator({
         )}
 
         {step === "facilitators" && tenantId && (
-          <form action={facilitatorsFormAction} className="max-w-lg">
-            <input type="hidden" name="tenantId" value={tenantId} />
-            <input
-              type="hidden"
-              name="items"
-              value={JSON.stringify(facilitators.map(({ id, name, role, bio, imageRef }) => ({ id, name, role, bio, imageRef })))}
-            />
+          <form className="max-w-lg">
             <h1 className="font-ui text-[26px] tracking-[-0.01em] text-idw-forest">Facilitators</h1>
             <p className="text-sm text-idw-forest/60 mt-1">Who&apos;s leading your retreat.</p>
 
@@ -625,8 +656,9 @@ export function RetreatConfigurator({
                 Back
               </button>
               <button
-                type="submit"
+                type="button"
                 disabled={facilitatorsPending}
+                onClick={handleSaveFacilitators}
                 className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
               >
                 {facilitatorsPending ? "Saving…" : "Save Facilitators"}

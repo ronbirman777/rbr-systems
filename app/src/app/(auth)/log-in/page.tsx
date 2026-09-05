@@ -1,11 +1,28 @@
 "use client";
 
-import { useActionState } from "react";
+import { Suspense, useActionState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { signIn, type AuthActionState } from "../actions";
 
 const initialState: AuthActionState = { error: null };
+
+function ConfirmErrorNotice() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("confirmError") !== "1") return null;
+
+  return (
+    <p className="text-sm text-idw-forest/70 bg-idw-forest/5 rounded-lg px-3 py-2.5 mt-4">
+      That confirmation link is invalid or has expired. If you&apos;ve already confirmed your
+      email, just log in below — otherwise{" "}
+      <Link href="/sign-up" className="underline">
+        sign up again
+      </Link>{" "}
+      to get a new confirmation email.
+    </p>
+  );
+}
 
 export default function LogInPage() {
   const [state, formAction, pending] = useActionState(signIn, initialState);
@@ -15,6 +32,10 @@ export default function LogInPage() {
       <div className="w-full max-w-sm">
         <InnerDweSMark size={28} className="mb-6" />
         <h1 className="font-ui text-[28px] tracking-[-0.01em] text-idw-forest">Log in</h1>
+
+        <Suspense fallback={null}>
+          <ConfirmErrorNotice />
+        </Suspense>
 
         <form action={formAction} className="mt-8 flex flex-col gap-4">
           <div>

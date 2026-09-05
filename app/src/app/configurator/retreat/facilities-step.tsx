@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState, type Dispatch, type SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import { ModuleItemPhotoField } from "@/components/module-item-photo-field";
-import { persistNewItemStub, persistItemRemoval } from "@/lib/modules/persistItem";
+import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import type { EditableFacility } from "@/lib/modules/facility";
 import { saveFacilities, type SaveFacilitiesState } from "./actions";
 
@@ -36,30 +36,39 @@ export function FacilitiesStep({
   onBack,
   onContinue,
 }: FacilitiesStepProps) {
-  const [state, formAction, pending] = useActionState(saveFacilities, initialState);
+  const [state, setState] = useState<SaveFacilitiesState>(initialState);
+  const [pending, setPending] = useState(false);
 
   function update(id: string, patch: Partial<EditableFacility>) {
     setFacilities((items) => items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   }
 
+  async function handleSave() {
+    const formData = new FormData();
+    formData.set("tenantId", tenantId);
+    formData.set(
+      "items",
+      JSON.stringify(
+        facilities.map(({ id, name, description, imageRef, openingHours, location, importantInfo }) => ({
+          id,
+          name,
+          description,
+          imageRef,
+          openingHours,
+          location,
+          importantInfo,
+        }))
+      )
+    );
+    const ids = facilities.map((f) => f.id);
+    setPending(true);
+    const result = await enqueueItemsOp(ids, () => saveFacilities(initialState, formData));
+    setPending(false);
+    setState(result);
+  }
+
   return (
-    <form action={formAction} className="max-w-lg">
-      <input type="hidden" name="tenantId" value={tenantId} />
-      <input
-        type="hidden"
-        name="items"
-        value={JSON.stringify(
-          facilities.map(({ id, name, description, imageRef, openingHours, location, importantInfo }) => ({
-            id,
-            name,
-            description,
-            imageRef,
-            openingHours,
-            location,
-            importantInfo,
-          }))
-        )}
-      />
+    <form className="max-w-lg">
       <h1 className="font-ui text-[26px] tracking-[-0.01em] text-idw-forest">Facilities</h1>
       <p className="text-sm text-idw-forest/60 mt-1">The spaces guests will want to find.</p>
 
@@ -152,8 +161,9 @@ export function FacilitiesStep({
           Back
         </button>
         <button
-          type="submit"
+          type="button"
           disabled={pending}
+          onClick={handleSave}
           className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
         >
           {pending ? "Saving…" : "Save Facilities"}

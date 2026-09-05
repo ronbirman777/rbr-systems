@@ -1,13 +1,13 @@
 "use client";
 
-import { startTransition, useActionState, useEffect, useRef, type ChangeEvent } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import {
   uploadModuleItemPhoto,
   removeModuleItemPhoto,
   type UploadModuleItemPhotoState,
   type RemoveModuleItemPhotoState,
 } from "@/app/configurator/retreat/actions";
-import { registerPendingWrite } from "@/lib/modules/persistItem";
+import { enqueueItemOp } from "@/lib/modules/persistItem";
 
 const uploadInitialState: UploadModuleItemPhotoState = { error: null, imageRef: null, imageUrl: null };
 const removeInitialState: RemoveModuleItemPhotoState = { error: null };
@@ -32,18 +32,13 @@ export type ModuleItemPhotoFieldProps = {
  * One organizer-facing photo control per module_items row: upload, replace
  * (re-upload at the same path), and remove. Shared by every module_items-
  * backed module (Facilitators, Meals, Treatments, Facilities) - only the
- * moduleKey and the item's own fields vary per caller. Each row gets its
- * own instance (and so its own useActionState pair) since these lists are
- * dynamic-length - hooks stay fixed per component instance, only the
- * number of instances varies.
+ * moduleKey and the item's own fields vary per caller.
  *
- * Both actions are invoked directly with a FormData, not via nested
- * <form> elements with requestSubmit()/native submission - this component
- * is always rendered inside its module's own outer <form>, and HTML
- * forbids a <form> nesting inside another <form>. Calling the action
- * function returned by useActionState directly with a payload - the
- * officially supported alternative to a form submission - sidesteps that
- * entirely (found and fixed as a real bug during the Facilitators slice).
+ * Upload and photo-remove are both called directly (not via useActionState)
+ * and queued through the same per-item queue Save/create/item-remove use
+ * (see persistItem.ts) - so an item Remove clicked right after an upload
+ * correctly waits for the upload to actually finish first, deterministically,
+ * regardless of real network timing.
  */
 export function ModuleItemPhotoField({
   tenantId,
@@ -57,34 +52,14 @@ export function ModuleItemPhotoField({
   imageUrl,
   onChange,
 }: ModuleItemPhotoFieldProps) {
-  const [uploadState, uploadAction, uploadPending] = useActionState(uploadModuleItemPhoto, uploadInitialState);
-  const [removeState, removeAction, removePending] = useActionState(removeModuleItemPhoto, removeInitialState);
+  const [uploadState, setUploadState] = useState<UploadModuleItemPhotoState>(uploadInitialState);
+  const [uploadPending, setUploadPending] = useState(false);
+  const [removeState, setRemoveState] = useState<RemoveModuleItemPhotoState>(removeInitialState);
+  const [removePending, setRemovePending] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const removeSubmittedRef = useRef(false);
-  const uploadSettleRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    if (uploadState.imageRef && uploadState.imageUrl) {
-      onChange({ imageRef: uploadState.imageRef, imageUrl: uploadState.imageUrl });
-    }
-    // Settle the tracked pending-write promise either way (success or
-    // error) - a Remove waiting on it must never hang over an upload that
-    // failed.
-    uploadSettleRef.current?.();
-    uploadSettleRef.current = null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uploadState.imageRef, uploadState.imageUrl, uploadState.error]);
-
-  useEffect(() => {
-    if (!removePending && removeSubmittedRef.current) {
-      removeSubmittedRef.current = false;
-      if (!removeState.error) onChange({ imageRef: null, imageUrl: null });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [removePending]);
-
-  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+  async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
@@ -100,25 +75,27 @@ export function ModuleItemPhotoField({
     formData.set("sortOrder", String(sortOrder));
     formData.set("file", file);
 
-    // Register a promise a same-item Remove can wait on, so it can never
-    // race ahead of this upload's own row-write (see persistItem.ts) -
-    // resolved by the effect above once the server has actually responded.
-    const pending = new Promise<void>((resolve) => {
-      uploadSettleRef.current = resolve;
-    });
-    registerPendingWrite(itemId, pending);
-
-    startTransition(() => uploadAction(formData));
+    setUploadPending(true);
+    const result = await enqueueItemOp(itemId, () => uploadModuleItemPhoto(uploadInitialState, formData));
+    setUploadPending(false);
+    setUploadState(result);
+    if (result.imageRef && result.imageUrl) {
+      onChange({ imageRef: result.imageRef, imageUrl: result.imageUrl });
+    }
   }
 
-  function handleRemove() {
+  async function handleRemove() {
     if (!imageRef) return;
     const formData = new FormData();
     formData.set("tenantId", tenantId);
     formData.set("itemId", itemId);
     formData.set("imageRef", imageRef);
-    removeSubmittedRef.current = true;
-    startTransition(() => removeAction(formData));
+
+    setRemovePending(true);
+    const result = await enqueueItemOp(itemId, () => removeModuleItemPhoto(removeInitialState, formData));
+    setRemovePending(false);
+    setRemoveState(result);
+    if (!result.error) onChange({ imageRef: null, imageUrl: null });
   }
 
   return (

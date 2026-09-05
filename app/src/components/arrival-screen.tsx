@@ -27,6 +27,17 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
   const vars = deriveThemeVars(brand) as CSSProperties;
   const hasContact = info.contactName || info.contactPhone || info.contactWhatsapp;
+  const hasAnyContent =
+    info.welcomeMessage ||
+    info.checkInTime ||
+    info.checkOutTime ||
+    info.address ||
+    info.mapUrl ||
+    info.transportationInfo ||
+    info.arrivalInstructions ||
+    info.whatToBring ||
+    info.importantNotes ||
+    hasContact;
 
   return (
     <div
@@ -40,6 +51,8 @@ export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
       className="w-full h-full flex flex-col gap-3 overflow-y-auto"
     >
       <div className="text-[10px] uppercase tracking-[0.16em] text-black/40 px-1">Arrival</div>
+
+      {!hasAnyContent && <div className="text-xs text-black/40 px-1">Nothing here yet.</div>}
 
       {info.welcomeMessage && (
         <div
