@@ -20,16 +20,44 @@ export function AboutSection() {
             About InnerDweS
           </div>
           <h2 className="font-editorial italic font-light text-[32px] sm:text-[40px] leading-[1.2] text-idw-parchment text-balance">
-            Built from inside the wellness world.
+            Built from real experience inside retreat spaces.
           </h2>
           <div className="font-ui text-idw-parchment/70 mt-6 space-y-4 leading-relaxed max-w-md">
-            <p>We built InnerDweS from inside the wellness world.</p>
             <p>
-              After years of working closely with retreats, facilitators and guests, we kept
-              seeing the same gap: extraordinary human experiences supported by fragmented
-              digital tools.
+              For the past three years, we&apos;ve been managing a retreat center in Thailand,
+              while also producing retreats of our own and working closely with facilitators,
+              teachers, and groups from around the world.
             </p>
-            <p>InnerDweS was created to close that gap.</p>
+            <p>
+              That experience showed us the same problems again and again: scattered
+              information, repeated questions, confusing schedule communication, resources
+              guests couldn&apos;t find when they needed them, and a steady stream of
+              administrative noise that pulled facilitators away from the people in front of
+              them.
+            </p>
+            <p>
+              Guests shouldn&apos;t need to search for a printed schedule or ask the same
+              practical questions throughout the day. They should be able to stay present,
+              connect more deeply with their teacher or facilitator, and access everything that
+              supports their journey without technology getting in the way.
+            </p>
+            <p>
+              At the same time, facilitators shouldn&apos;t have to spend their energy
+              repeatedly sharing information, managing scattered resources, or answering
+              questions that could be handled beautifully and instantly.
+            </p>
+            <p>That&apos;s why we created InnerDweS.</p>
+            <p>
+              We build digital experiences that bridge those two worlds. Guests get a simple,
+              intuitive way to experience the retreat at its best, while facilitators and
+              retreat centers get an effortless way to organize and share everything their
+              participants need.
+            </p>
+            <p>
+              Technology should create more space for people to be present, not become another
+              distraction. Simple enough to disappear into the background, thoughtful enough to
+              make everything easier, and beautifully integrated into the experience itself.
+            </p>
           </div>
         </div>
 
