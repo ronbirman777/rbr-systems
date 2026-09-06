@@ -288,11 +288,16 @@ export const DEMO_MEALS_VISUAL: { category: string; name: string; time: string; 
   location: "Garden Terrace",
 };
 
+/**
+ * Deliberately minimal - a fictional demo facilitator, not a real person or
+ * claimed credential (see team-visual.tsx's synthetic portrait). No years
+ * of experience, no qualifications, no therapeutic claims invented.
+ */
 export const DEMO_TEAM_VISUAL: { name: string; role: string; tags: string[]; bio: string } = {
-  name: "Maya Rodriguez",
-  role: "Yoga & Breathwork Facilitator",
-  tags: ["Vinyasa Flow", "Pranayama", "Yin Yoga", "Breathwork"],
-  bio: "Ten years teaching across Asia, blending vinyasa flow with pranayama practice.",
+  name: "Maya",
+  role: "Breathwork & Mindfulness",
+  tags: ["Vinyasa Flow", "Breathwork"],
+  bio: "",
 };
 
 export const DEMO_TREATMENTS_VISUAL: { name: string; detail: string; booking: string } = {
