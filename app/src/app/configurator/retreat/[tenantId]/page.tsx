@@ -24,10 +24,13 @@ async function resolveImageUrl(supabase: SupabaseClient, imageRef: string | null
 
 export default async function ResumeRetreatConfiguratorPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ tenantId: string }>;
+  searchParams: Promise<{ step?: string }>;
 }) {
   const { tenantId } = await params;
+  const { step } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -38,7 +41,7 @@ export default async function ResumeRetreatConfiguratorPage({
   // belonging to someone else simply won't come back, regardless of the id.
   const { data: tenant } = await supabase
     .from("tenants")
-    .select("id, name, timezone")
+    .select("id, name, timezone, slug")
     .eq("id", tenantId)
     .maybeSingle();
   if (!tenant) notFound();
@@ -189,6 +192,8 @@ export default async function ResumeRetreatConfiguratorPage({
       <RetreatConfigurator
         initialTenantId={tenant.id}
         initialName={tenant.name}
+        initialSlug={tenant.slug ?? null}
+        initialStep={step === "publish" ? "publish" : undefined}
         initialTimezone={tenant.timezone ?? DEFAULT_TIMEZONE}
         initialPalette={(brand?.palette as PaletteKey) ?? "forest-sage"}
         initialAtmosphere={(brand?.atmosphere as AtmosphereKey) ?? "calm-organic"}

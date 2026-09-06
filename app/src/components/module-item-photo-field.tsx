@@ -99,43 +99,49 @@ export function ModuleItemPhotoField({
   }
 
   return (
-    <div className="flex items-center gap-3 mt-3">
-      {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
-      ) : (
-        <div className="w-11 h-11 rounded-full bg-idw-forest/10 shrink-0" aria-hidden="true" />
-      )}
+    <div className="mt-3">
+      <div className="flex items-center gap-3">
+        {imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageUrl} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
+        ) : (
+          <div className="w-11 h-11 rounded-full bg-idw-forest/10 shrink-0" aria-hidden="true" />
+        )}
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/jpeg,image/png,image/webp"
-        className="hidden"
-        onChange={handleFileChange}
-      />
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={uploadPending}
-        className="text-xs font-semibold text-idw-forest underline disabled:opacity-50"
-      >
-        {uploadPending ? "Uploading…" : imageUrl ? "Replace photo" : "Upload photo"}
-      </button>
-
-      {imageRef && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          onChange={handleFileChange}
+        />
         <button
           type="button"
-          onClick={handleRemove}
-          disabled={removePending}
-          className="text-xs text-idw-forest/40 hover:text-idw-forest disabled:opacity-50"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploadPending}
+          className="text-xs font-semibold text-idw-forest underline disabled:opacity-50"
         >
-          {removePending ? "Removing…" : "Remove"}
+          {uploadPending ? "Uploading…" : imageUrl ? "Replace photo" : "Upload photo"}
         </button>
-      )}
+
+        {imageRef && (
+          <button
+            type="button"
+            onClick={handleRemove}
+            disabled={removePending}
+            className="text-xs text-idw-forest/40 hover:text-idw-forest disabled:opacity-50"
+          >
+            {removePending ? "Removing…" : "Remove"}
+          </button>
+        )}
+      </div>
+
+      <p className="text-[11px] text-idw-forest/40 mt-1.5">
+        Images up to 8MB. We automatically optimize them for fast loading.
+      </p>
 
       {(uploadState.error || removeState.error) && (
-        <p className="text-xs text-red-700">{uploadState.error || removeState.error}</p>
+        <p className="text-xs text-red-700 mt-1">{uploadState.error || removeState.error}</p>
       )}
     </div>
   );

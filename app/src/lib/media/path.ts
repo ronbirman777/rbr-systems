@@ -13,7 +13,7 @@
  */
 export const MEDIA_BUCKET = "tenant-media";
 
-export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+export const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
 const EXTENSION_BY_TYPE: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -26,6 +26,28 @@ export const ALLOWED_IMAGE_TYPES = Object.keys(EXTENSION_BY_TYPE);
 export function extensionForMimeType(type: string): string | null {
   return EXTENSION_BY_TYPE[type] ?? null;
 }
+
+/** Pulled out as its own pure function so the accept/reject boundary is
+ * unit-testable without a real upload - see uploadModuleItemPhoto in
+ * configurator/retreat/actions.ts, the only caller. */
+export function isFileSizeAllowed(sizeBytes: number): boolean {
+  return sizeBytes > 0 && sizeBytes <= MAX_IMAGE_BYTES;
+}
+
+/**
+ * Every accepted upload is re-encoded (see optimizeUploadedImage in
+ * actions.ts) before it's stored, regardless of the input format - so the
+ * object we actually write always has this extension, never the source
+ * file's own one. Keeps the draft/published path convention (below)
+ * single-format instead of needing to track/derive the original type at
+ * every consumer.
+ */
+export const OPTIMIZED_IMAGE_EXTENSION = "webp";
+export const OPTIMIZED_IMAGE_MIME = "image/webp";
+
+/** Long-edge cap applied by optimizeUploadedImage - guests never receive
+ * an original file larger than this, no matter what was uploaded. */
+export const MAX_IMAGE_DIMENSION = 2000;
 
 /**
  * The DRAFT object an organizer is actively editing in the configurator.

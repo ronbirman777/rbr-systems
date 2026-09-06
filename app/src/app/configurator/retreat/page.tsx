@@ -16,6 +16,7 @@ export default async function NewRetreatConfiguratorPage() {
       <RetreatConfigurator
         initialTenantId={null}
         initialName=""
+        initialSlug={null}
         initialTimezone={DEFAULT_TIMEZONE}
         initialPalette="forest-sage"
         initialAtmosphere="calm-organic"

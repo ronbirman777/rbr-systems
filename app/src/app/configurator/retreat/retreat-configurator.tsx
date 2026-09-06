@@ -20,22 +20,29 @@ import type { EditableFacility } from "@/lib/modules/facility";
 import type { ArrivalInfo } from "@/lib/modules/arrival";
 import { IMPLEMENTED_OPTIONAL_MODULES, OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
 import { todayInTimezone, currentTimeInTimezone, listTimezones, DEFAULT_TIMEZONE } from "@/lib/timezone";
+import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
 import {
   saveDraft,
   saveSchedule,
   saveModules,
   saveFacilitators,
   publishSpace,
+  checkSlugAvailability,
+  reserveSlug,
   type SaveDraftState,
   type SaveScheduleState,
   type SaveModulesState,
   type SaveFacilitatorsState,
   type PublishState,
+  type SlugCheckState,
+  type ReserveSlugState,
 } from "./actions";
 
 export type RetreatConfiguratorProps = {
   initialTenantId: string | null;
   initialName: string;
+  initialSlug: string | null;
+  initialStep?: StepKey;
   initialTimezone: string;
   initialPalette: PaletteKey;
   initialAtmosphere: AtmosphereKey;
@@ -54,6 +61,8 @@ const scheduleInitialState: SaveScheduleState = { error: null };
 const modulesInitialState: SaveModulesState = { error: null };
 const facilitatorsInitialState: SaveFacilitatorsState = { error: null };
 const publishInitialState: PublishState = { error: null, publishedAt: null };
+const slugCheckInitialState: SlugCheckState = { status: "idle", slug: "", error: null };
+const reserveSlugInitialState: ReserveSlugState = { error: null, slug: null, tenantId: null };
 
 function blankScheduleItem(): EditableScheduleItem {
   return {
@@ -97,6 +106,8 @@ const STEP_LABELS: Record<Exclude<StepKey, "identity" | "brand" | "modules" | "p
 export function RetreatConfigurator({
   initialTenantId,
   initialName,
+  initialSlug,
+  initialStep,
   initialTimezone,
   initialPalette,
   initialAtmosphere,
@@ -110,7 +121,7 @@ export function RetreatConfigurator({
   initialPublishedAt,
 }: RetreatConfiguratorProps) {
   const router = useRouter();
-  const [step, setStep] = useState<StepKey>("identity");
+  const [step, setStep] = useState<StepKey>(initialStep ?? "identity");
   const [name, setName] = useState(initialName);
   const [timezone, setTimezone] = useState(initialTimezone || DEFAULT_TIMEZONE);
   const [palette, setPalette] = useState<PaletteKey>(initialPalette);
@@ -170,8 +181,47 @@ export function RetreatConfigurator({
     publishedAt: initialPublishedAt,
   });
 
-  const tenantId = draftState.tenantId ?? initialTenantId;
+  const [slugInput, setSlugInput] = useState(initialSlug ?? "");
+  const [slugCheckState, setSlugCheckState] = useState<SlugCheckState>(slugCheckInitialState);
+  const [slugCheckPending, setSlugCheckPending] = useState(false);
+  const [reserveState, setReserveState] = useState<ReserveSlugState>({
+    ...reserveSlugInitialState,
+    slug: initialSlug,
+  });
+  const [reservePending, setReservePending] = useState(false);
+
+  const tenantId = reserveState.tenantId ?? draftState.tenantId ?? initialTenantId;
   const currentPublishedAt = publishState.publishedAt ?? initialPublishedAt;
+  const currentSlug = reserveState.slug ?? initialSlug;
+  const localSlugStatus = checkSlugLocally(slugInput);
+
+  async function handleCheckSlug() {
+    const formData = new FormData();
+    formData.set("slug", slugInput);
+    setSlugCheckPending(true);
+    const result = await checkSlugAvailability(slugCheckInitialState, formData);
+    setSlugCheckPending(false);
+    setSlugCheckState(result);
+  }
+
+  async function handleReserveSlug() {
+    const formData = new FormData();
+    formData.set("tenantId", tenantId ?? "");
+    formData.set("name", name);
+    formData.set("timezone", timezone);
+    formData.set("slug", slugInput);
+    setReservePending(true);
+    const result = await reserveSlug(reserveSlugInitialState, formData);
+    setReservePending(false);
+    setReserveState(result);
+    if (result.tenantId && !tenantId) {
+      // A brand-new tenant was just created by reserving its address before
+      // any other Save happened - swap the URL to the resume link the same
+      // way saveDraft's own first save implicitly does, so a refresh (or
+      // the "resume this draft later" link below) keeps working.
+      router.replace(`/configurator/retreat/${result.tenantId}`);
+    }
+  }
 
 
   function toggleModule(key: OptionalModuleKey) {
@@ -246,11 +296,14 @@ export function RetreatConfigurator({
         </ol>
         {tenantId && (
           <div className="mt-8 pt-6 border-t border-idw-forest/10 text-xs text-idw-forest/50">
+            {currentSlug && (
+              <div className="mb-2 text-idw-forest/70">{currentSlug}.innerdwes.com</div>
+            )}
             {currentPublishedAt ? (
               <>
                 Live since {new Date(currentPublishedAt).toLocaleDateString()}
                 <a
-                  href={`/g/${tenantId}`}
+                  href={currentSlug ? `/s/${currentSlug}` : `/g/${tenantId}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block mt-1 text-idw-forest underline"
@@ -302,6 +355,75 @@ export function RetreatConfigurator({
                 </option>
               ))}
             </select>
+
+            <label className="block mt-6 text-xs font-semibold uppercase tracking-wide text-idw-forest/70">
+              Choose your address
+            </label>
+            <p className="text-xs text-idw-forest/50 mt-0.5">
+              This is where guests will find your Space once it&apos;s live. You can reserve it now and
+              keep building - it won&apos;t go anywhere.
+            </p>
+            <div className="mt-1 flex items-center rounded-lg border border-idw-forest/15 bg-white overflow-hidden focus-within:border-idw-sage">
+              <input
+                value={slugInput}
+                onChange={(e) => {
+                  setSlugInput(normalizeSlug(e.target.value));
+                  setSlugCheckState(slugCheckInitialState);
+                }}
+                placeholder="samadhi"
+                className="flex-1 min-w-0 px-3 py-2.5 text-sm outline-none"
+              />
+              <span className="pr-3 text-sm text-idw-forest/40 whitespace-nowrap">.innerdwes.com</span>
+            </div>
+
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={handleCheckSlug}
+                disabled={slugCheckPending || !slugInput || localSlugStatus !== "ok"}
+                className="text-xs font-semibold uppercase tracking-wide text-idw-forest underline disabled:opacity-40"
+              >
+                {slugCheckPending ? "Checking…" : "Check availability"}
+              </button>
+              <span className="text-xs text-idw-forest/50">
+                {slugInput.length === 0
+                  ? null
+                  : currentSlug === slugInput
+                    ? "This is your Space's current address."
+                    : localSlugStatus === "invalid"
+                      ? "Use lowercase letters, numbers and hyphens only (3-63 characters)."
+                      : localSlugStatus === "reserved"
+                        ? "That address is reserved."
+                        : slugCheckState.slug === slugInput
+                          ? slugCheckState.status === "available"
+                            ? "Available."
+                            : slugCheckState.status === "unavailable"
+                              ? "That address is already taken."
+                              : slugCheckState.error
+                          : null}
+              </span>
+            </div>
+
+            {slugCheckState.status === "available" &&
+              slugCheckState.slug === slugInput &&
+              currentSlug !== slugInput && (
+                <button
+                  type="button"
+                  onClick={handleReserveSlug}
+                  disabled={reservePending}
+                  className="mt-3 rounded-full border border-idw-forest text-idw-forest text-xs font-semibold uppercase tracking-wide px-5 py-2.5 disabled:opacity-50"
+                >
+                  {reservePending ? "Reserving…" : "Reserve this address"}
+                </button>
+              )}
+            {reserveState.error && (
+              <p className="text-sm text-red-700 mt-2" role="alert">
+                {reserveState.error}
+              </p>
+            )}
+            {reserveState.slug && reserveState.slug === slugInput && !reserveState.error && (
+              <p className="text-xs text-idw-forest/60 mt-2">Reserved successfully.</p>
+            )}
 
             <button
               type="button"
@@ -731,6 +853,18 @@ export function RetreatConfigurator({
                   ? `Live · last published ${new Date(currentPublishedAt).toLocaleString()}`
                   : "Draft · never published"}
               </div>
+              <div className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 mt-4">
+                Public address
+              </div>
+              <div className="text-sm text-idw-forest mt-1">
+                {currentSlug ? (
+                  `${currentSlug}.innerdwes.com`
+                ) : (
+                  <button type="button" onClick={() => setStep("identity")} className="underline">
+                    Choose one in Identity →
+                  </button>
+                )}
+              </div>
             </div>
 
             {publishState.error && (
@@ -758,7 +892,7 @@ export function RetreatConfigurator({
 
             {currentPublishedAt && (
               <a
-                href={`/g/${tenantId}`}
+                href={currentSlug ? `/s/${currentSlug}` : `/g/${tenantId}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block mt-6 text-xs text-idw-forest underline"

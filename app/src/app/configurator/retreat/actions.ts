@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import sharp from "sharp";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { brandConfigSchema } from "@/lib/theme/tokens";
@@ -12,15 +13,42 @@ import { facilitySchema } from "@/lib/modules/facility";
 import { arrivalInfoSchema } from "@/lib/modules/arrival";
 import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
+import { normalizeSlug, slugFormatError, isReservedSlug } from "@/lib/slug";
 import {
   MEDIA_BUCKET,
-  MAX_IMAGE_BYTES,
+  MAX_IMAGE_DIMENSION,
   ALLOWED_IMAGE_TYPES,
-  extensionForMimeType,
+  OPTIMIZED_IMAGE_EXTENSION,
+  OPTIMIZED_IMAGE_MIME,
+  isFileSizeAllowed,
   tenantMediaPath,
   publishedMediaPath,
   mediaItemFolder,
 } from "@/lib/media/path";
+
+/**
+ * Guests must never be served an original, unoptimized upload - see the
+ * Self Service Phase 1 media-safeguards requirement. This is the one
+ * place any organizer-uploaded image is re-encoded before it's stored:
+ * downscaled to a sane maximum display dimension and transcoded to WebP,
+ * regardless of the source format (jpg/png/webp all normalize to the
+ * same output). withoutEnlargement means a small source image is
+ * compressed but never upscaled. Runs in the Server Action's Node.js
+ * runtime (not Edge) - sharp requires Node.
+ */
+async function optimizeUploadedImage(file: File): Promise<Buffer> {
+  const input = Buffer.from(await file.arrayBuffer());
+  return sharp(input)
+    .rotate() // apply EXIF orientation, then strip it - avoids sideways photos
+    .resize({
+      width: MAX_IMAGE_DIMENSION,
+      height: MAX_IMAGE_DIMENSION,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .webp({ quality: 82 })
+    .toBuffer();
+}
 
 export type SaveDraftState = {
   error: string | null;
@@ -631,24 +659,35 @@ export async function uploadModuleItemPhoto(
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     return { error: "Please upload a JPG, PNG or WEBP image.", imageRef: null, imageUrl: null };
   }
-  if (file.size > MAX_IMAGE_BYTES) {
-    return { error: "Image must be under 5MB.", imageRef: null, imageUrl: null };
+  if (!isFileSizeAllowed(file.size)) {
+    return { error: "Image must be under 8MB.", imageRef: null, imageUrl: null };
   }
 
-  const ext = extensionForMimeType(file.type);
-  if (!ext) return { error: "Unsupported image type.", imageRef: null, imageUrl: null };
+  // Every accepted upload is re-encoded here - downscaled to a sane
+  // maximum dimension and transcoded to WebP - so guests are never served
+  // an original heavy file, no matter what was uploaded. The stored path
+  // always uses OPTIMIZED_IMAGE_EXTENSION regardless of the source
+  // format; see optimizeUploadedImage's own comment.
+  let optimized: Buffer;
+  try {
+    optimized = await optimizeUploadedImage(file);
+  } catch {
+    return { error: "That image could not be processed. Try a different file.", imageRef: null, imageUrl: null };
+  }
 
-  const path = tenantMediaPath(tenantId, moduleKey, itemId, ext);
+  const path = tenantMediaPath(tenantId, moduleKey, itemId, OPTIMIZED_IMAGE_EXTENSION);
 
-  // A different extension than before (e.g. replacing a .png with a .jpg)
-  // would otherwise leave the stale object behind at its old path.
+  // A previous upload may have been stored under a different path only if
+  // it predates this optimization pass (back when the extension followed
+  // the source file's own type) - clean it up so it doesn't linger as an
+  // orphan now that every new upload lands at the same .webp path.
   if (previousRef && previousRef !== path) {
     await supabase.storage.from(MEDIA_BUCKET).remove([previousRef]);
   }
 
   const { error: uploadError } = await supabase.storage
     .from(MEDIA_BUCKET)
-    .upload(path, file, { upsert: true, contentType: file.type });
+    .upload(path, optimized, { upsert: true, contentType: OPTIMIZED_IMAGE_MIME });
   if (uploadError) return { error: uploadError.message, imageRef: null, imageUrl: null };
 
   const { data: signed, error: signError } = await supabase.storage
@@ -891,6 +930,105 @@ export async function publishSpace(
   if (error) return { error: error.message, publishedAt: null };
 
   return { error: null, publishedAt: data as string };
+}
+
+// ---------------------------------------------------------------------
+// Space public address (slug) - Self Service Phase 1. See
+// supabase/migrations/0010_self_service_spaces.sql for the actual
+// enforcement (format check constraint, reserved-word trigger, partial
+// unique index); everything here is either a friendly pre-check or a
+// plain write through the same owner-scoped RLS every other tenants
+// update already goes through - no new bypass, no admin client.
+// ---------------------------------------------------------------------
+
+export type SlugCheckState = {
+  status: "idle" | "invalid" | "reserved" | "available" | "unavailable";
+  slug: string;
+  error: string | null;
+};
+
+/**
+ * Advisory-only: calls the is_slug_available(text) RPC (SECURITY DEFINER,
+ * returns a boolean and nothing else - see the migration). Never the
+ * source of truth for uniqueness; two people can both be told "available"
+ * for the same slug and race each other to reserveSlug below - the
+ * database's unique index is what actually resolves that, not this check.
+ */
+export async function checkSlugAvailability(
+  _prevState: SlugCheckState,
+  formData: FormData
+): Promise<SlugCheckState> {
+  const slug = normalizeSlug(String(formData.get("slug") ?? ""));
+
+  if (slugFormatError(slug)) return { status: "invalid", slug, error: null };
+  if (isReservedSlug(slug)) return { status: "reserved", slug, error: null };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("is_slug_available", { check_slug: slug });
+  if (error) return { status: "idle", slug, error: error.message };
+
+  return { status: data ? "available" : "unavailable", slug, error: null };
+}
+
+export type ReserveSlugState = { error: string | null; slug: string | null; tenantId: string | null };
+
+/**
+ * Claims a public address for a Space. Creates the tenant (same lazy-
+ * create behavior as saveDraft) if this is the very first save, so the
+ * address can be reserved before the rest of the build is complete rather
+ * than only at the end - otherwise just updates the existing tenant's
+ * slug column, through the ordinary RLS-enforcing client (the existing
+ * "tenants: owners can update" policy from 0001_init.sql already covers
+ * this column, nothing new needed there).
+ *
+ * A unique-violation (Postgres code 23505) means someone else claimed the
+ * same slug in the moment between this organizer's availability check and
+ * this submit - reported as a plain, expected "try another one" outcome,
+ * not a server error.
+ */
+export async function reserveSlug(_prevState: ReserveSlugState, formData: FormData): Promise<ReserveSlugState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You need to be logged in to save.", slug: null, tenantId: null };
+
+  let tenantId = String(formData.get("tenantId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const timezone = String(formData.get("timezone") ?? DEFAULT_TIMEZONE);
+  const slug = normalizeSlug(String(formData.get("slug") ?? ""));
+
+  if (slugFormatError(slug)) {
+    return { error: "That address isn't valid.", slug: null, tenantId: tenantId || null };
+  }
+  if (isReservedSlug(slug)) {
+    return { error: "That address is reserved.", slug: null, tenantId: tenantId || null };
+  }
+
+  if (!tenantId) {
+    const { data: tenant, error: tenantError } = await supabase
+      .from("tenants")
+      .insert({ name: name || "Untitled Retreat", product_type: "retreat", timezone, slug })
+      .select("id")
+      .single();
+    if (tenantError) {
+      if (tenantError.code === "23505") {
+        return { error: "That address was just taken - try another.", slug: null, tenantId: null };
+      }
+      return { error: tenantError.message, slug: null, tenantId: null };
+    }
+    tenantId = tenant.id;
+  } else {
+    const { error: updateError } = await supabase.from("tenants").update({ slug }).eq("id", tenantId);
+    if (updateError) {
+      if (updateError.code === "23505") {
+        return { error: "That address was just taken - try another.", slug: null, tenantId };
+      }
+      return { error: updateError.message, slug: null, tenantId };
+    }
+  }
+
+  return { error: null, slug, tenantId };
 }
 
 export type { OptionalModuleKey };
