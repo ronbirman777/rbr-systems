@@ -1,41 +1,51 @@
-/**
- * Purpose-built marketing recreation of Time to Flow's Meals screen - see
- * today-visual.tsx for why. Matches Figma's text-forward meal cards (no
- * photography in the reference); the "current" meal gets a soft Clay-tinted
- * block, same pattern as Today, instead of a badge on every row.
- */
-export type MealsVisualItem = {
-  mealType: string;
-  time: string;
-  name: string;
-  location: string;
-  description: string;
-  current?: boolean;
-};
+import Image from "next/image";
 
-export function MealsVisual({ items }: { items: MealsVisualItem[] }) {
+/**
+ * Purpose-built marketing recreation of Time to Flow's Meals screen,
+ * rebuilt to match the Explore-style photography-forward treatment: one
+ * large immersive photo card (real retreat food photography, not a stock
+ * substitute) with an editorial title overlay, rather than compressed text
+ * rows. A single beautiful card reads as premium; three tiny ones read as
+ * cheap - the marketing-scale rule this whole pass is about.
+ */
+export function MealsVisual({
+  category,
+  name,
+  time,
+  location,
+}: {
+  category: string;
+  name: string;
+  time: string;
+  location: string;
+}) {
   return (
-    <div className="w-full h-full bg-idw-parchment flex flex-col gap-3 p-3.5 overflow-y-auto no-scrollbar">
+    <div className="w-full h-full bg-idw-parchment flex flex-col p-3.5 gap-3">
       <div className="font-ui text-[10px] font-semibold uppercase tracking-[0.16em] text-idw-forest/40">
         Meals
       </div>
-      <div className="flex flex-col gap-2">
-        {items.map((item, i) => (
-          <div
-            key={i}
-            className={`rounded-xl px-3.5 py-3 ${item.current ? "bg-idw-clay/10" : "bg-white/70"}`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="font-ui text-[9px] font-semibold uppercase tracking-wide text-idw-clay-text">
-                {item.mealType}
-              </span>
-              <span className="font-ui text-idw-forest/40 text-[10px]">{item.time}</span>
-            </div>
-            <div className="font-editorial text-idw-forest text-[15px] leading-snug mt-1">{item.name}</div>
-            <div className="font-ui text-idw-forest/45 text-[11px] mt-0.5">{item.location}</div>
-            <div className="font-ui text-idw-forest/55 text-[11px] mt-1 leading-relaxed">{item.description}</div>
+      <div className="relative w-full flex-1 rounded-2xl overflow-hidden shadow-sm">
+        <Image
+          src="/marketing/product/meals-spread.jpg"
+          alt=""
+          fill
+          className="object-cover"
+          sizes="400px"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(180deg, rgba(25,43,33,0) 45%, rgba(25,43,33,0.75) 100%)" }}
+        />
+        <div className="absolute bottom-3.5 left-4 right-4">
+          <div className="font-ui text-[9px] font-semibold uppercase tracking-[0.14em] text-idw-parchment/70">
+            {category}
           </div>
-        ))}
+          <div className="font-editorial italic text-idw-parchment text-xl leading-tight mt-0.5">{name}</div>
+          <div className="font-ui text-idw-parchment/70 text-[10px] mt-1">
+            {time} · {location}
+          </div>
+        </div>
       </div>
     </div>
   );

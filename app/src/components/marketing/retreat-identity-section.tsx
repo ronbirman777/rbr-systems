@@ -1,7 +1,6 @@
 import { PhoneFrame } from "./phone-frame";
-import { TodayScreen } from "@/components/today-screen";
-import { ATMOSPHERES, PALETTES } from "@/lib/theme/tokens";
-import { DEMO_IDENTITIES, DEMO_TODAY_ISO } from "./demo-data";
+import { TodayVisual } from "./product-visuals/today-visual";
+import { DEMO_IDENTITIES } from "./demo-data";
 
 export function RetreatIdentitySection() {
   return (
@@ -22,22 +21,22 @@ export function RetreatIdentitySection() {
           {DEMO_IDENTITIES.map((identity) => (
             <div key={identity.tenantName} className="flex flex-col items-center gap-4">
               <PhoneFrame width={230}>
-                <TodayScreen
-                  tenantName={identity.tenantName}
-                  brand={identity.brand}
-                  schedule={identity.schedule}
-                  todayIso={DEMO_TODAY_ISO}
+                <TodayVisual
+                  guestName={identity.guestName}
+                  dayLabel={identity.tenantName}
+                  intention={identity.intention}
+                  live={identity.live}
+                  photoSrc={identity.photoSrc}
+                  photoFilter={identity.photoFilter}
+                  radius={identity.radius}
+                  accent={identity.accent}
                 />
               </PhoneFrame>
               {/* Real product config labels, not invented ones - shows the
                   actual palette + atmosphere axes driving the difference. */}
               <div className="text-center">
-                <div className="font-ui text-xs font-semibold text-idw-forest/70">
-                  {ATMOSPHERES[identity.brand.atmosphere].label}
-                </div>
-                <div className="font-ui text-[11px] text-idw-forest/45 mt-0.5">
-                  {PALETTES[identity.brand.palette].label} palette
-                </div>
+                <div className="font-ui text-xs font-semibold text-idw-forest/70">{identity.atmosphereLabel}</div>
+                <div className="font-ui text-[11px] text-idw-forest/45 mt-0.5">{identity.paletteLabel} palette</div>
               </div>
             </div>
           ))}

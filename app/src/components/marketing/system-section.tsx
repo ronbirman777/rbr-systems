@@ -1,7 +1,7 @@
 import { PhoneFrame } from "./phone-frame";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { TodayVisual } from "./product-visuals/today-visual";
-import { DEMO_TODAY_VISUAL_ITEMS } from "./demo-data";
+import { DEMO_TODAY_VISUAL } from "./demo-data";
 
 /**
  * Creator Workspace marketing representation, designed fresh in InnerDweS's
@@ -56,28 +56,40 @@ export function SystemSection() {
                   </span>
                 ))}
               </div>
-              <div className="p-6 font-ui text-[15px] bg-idw-parchment">
-                <div className="flex items-center justify-between mb-5">
-                  <span className="text-idw-forest/60">Content · Today Overview</span>
-                  <span className="text-[12px] text-idw-forest/35">All saved</span>
+              <div className="p-7 font-ui text-[15px] bg-idw-parchment">
+                <div className="flex items-center justify-between mb-6">
+                  <span className="font-editorial italic text-idw-forest text-lg">Today Overview</span>
+                  <span className="text-[11px] text-idw-forest/35">Autosaved 2 min ago</span>
                 </div>
-                {["Welcome Message", "Daily Schedule", "Team Profiles"].map((row, i) => (
+
+                <div className="rounded-xl bg-white border border-idw-clay/30 px-4 py-3.5 mb-3 shadow-[0_1px_2px_rgba(25,43,33,0.04)]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-idw-forest/85">Daily Schedule</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-idw-clay/15 text-idw-clay-text">
+                      Editing
+                    </span>
+                  </div>
+                  <div className="h-px bg-idw-forest/8 my-2.5" />
+                  <div className="text-[13px] text-idw-forest/45">Morning Grounding · 06:30 · Yoga Shala</div>
+                </div>
+
+                {["Welcome Message", "Team Profiles"].map((row) => (
                   <div
                     key={row}
-                    className="rounded-xl bg-white/80 border border-idw-forest/8 px-4 py-3.5 mb-2.5 flex items-center justify-between text-idw-forest/85 shadow-sm"
+                    className="rounded-xl bg-white/60 px-4 py-3.5 mb-3 flex items-center justify-between text-idw-forest/70"
                   >
                     <span>{row}</span>
-                    <span
-                      className={`text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full ${
-                        i === 1 ? "bg-idw-clay/15 text-idw-clay-text" : "bg-idw-sage/35 text-idw-forest"
-                      }`}
-                    >
-                      {i === 1 ? "Editing" : "Published"}
+                    <span className="text-[10px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-idw-sage/35 text-idw-forest">
+                      Published
                     </span>
                   </div>
                 ))}
-                <div className="mt-4 inline-flex items-center rounded-full bg-idw-clay text-idw-parchment font-ui text-[13px] font-semibold px-5 py-2.5">
-                  Publish →
+
+                <div className="mt-5 flex items-center gap-3">
+                  <div className="inline-flex items-center rounded-full bg-idw-clay text-idw-parchment font-ui text-[13px] font-semibold px-5 py-2.5 transition-transform hover:-translate-y-0.5">
+                    Publish →
+                  </div>
+                  <span className="font-ui text-[12px] text-idw-forest/40 underline underline-offset-2">Preview first</span>
                 </div>
               </div>
             </div>
@@ -94,7 +106,7 @@ export function SystemSection() {
           </div>
 
           <PhoneFrame width={250} widthLg={300}>
-            <TodayVisual retreatName="Samadhi Retreat" dayLabel="Day 2 of 7" items={DEMO_TODAY_VISUAL_ITEMS} />
+            <TodayVisual {...DEMO_TODAY_VISUAL} />
           </PhoneFrame>
         </div>
       </div>

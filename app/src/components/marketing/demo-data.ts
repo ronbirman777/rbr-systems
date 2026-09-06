@@ -3,11 +3,7 @@ import type { PublicScheduleItem } from "@/lib/schedule/types";
 import type { DisplayFacilitator } from "@/lib/modules/facilitator";
 import type { DisplayMeal } from "@/lib/modules/meal";
 import type { DisplayTreatment } from "@/lib/modules/treatment";
-import type { TodayVisualItem } from "./product-visuals/today-visual";
-import type { ScheduleVisualDay, ScheduleVisualItem } from "./product-visuals/schedule-visual";
-import type { MealsVisualItem } from "./product-visuals/meals-visual";
-import type { TeamVisualPerson } from "./product-visuals/team-visual";
-import type { TreatmentsVisualItem } from "./product-visuals/treatments-visual";
+import type { ScheduleVisualDay, ScheduleVisualSession } from "./product-visuals/schedule-visual";
 
 /**
  * Curated demo content for a single fictional retreat ("Samadhi Retreat"),
@@ -183,103 +179,122 @@ export const DEMO_TREATMENTS: DisplayTreatment[] = [
  * invented here. Each has its own small schedule, rendered through the
  * real TodayScreen.
  */
+/**
+ * Three retreat identities for "Your Retreat, Your Identity" - now built on
+ * the same premium TodayVisual used everywhere else on this site (per
+ * explicit direction: the simplified real TodayScreen undersold the
+ * product here), varied along real, currently-supported theme axes only
+ * (imagery/color-grade, card radius, spacing rhythm, accent color) - no
+ * customization capability invented beyond what Time to Flow's theme
+ * system actually has. atmosphereLabel/paletteLabel surface the real
+ * ATMOSPHERES/PALETTES config labels so the differentiation is legible
+ * even without reading the phone content closely.
+ */
 export const DEMO_IDENTITIES: {
   tenantName: string;
-  brand: BrandConfig;
-  schedule: PublicScheduleItem[];
+  guestName: string;
+  intention: string;
+  live: { category: string; title: string; time: string; facilitator: string; location: string };
+  photoSrc: string;
+  photoFilter: string;
+  radius: "soft" | "sharp" | "generous";
+  accent: "clay" | "sage" | "clay-text";
+  atmosphereLabel: string;
+  paletteLabel: string;
 }[] = [
   {
     tenantName: "Samadhi Retreat",
-    brand: { ...DEMO_BRAND, palette: "warm-earth", atmosphere: "warm-earthy" },
-    schedule: [
-      { date: DEMO_TODAY_ISO, startTime: "14:00", endTime: "15:30", title: "Massage", facilitator: null, location: "Treatment Room 2", description: null, category: null },
-      { date: DEMO_TODAY_ISO, startTime: "19:00", endTime: "20:30", title: "Dinner", facilitator: null, location: "Open Fire Terrace", description: null, category: null },
-    ],
+    guestName: "Lucia",
+    intention: "Warmth is a practice. Let the terrace hold you today.",
+    live: { category: "Bodywork", title: "Abhyanga Massage", time: "14:00 · 90 min", facilitator: "Maya R.", location: "Treatment Room 2" },
+    photoSrc: "/marketing/hero-pathway.jpg",
+    photoFilter: "saturate(1.15) brightness(0.75) sepia(0.15) hue-rotate(-6deg)",
+    radius: "generous",
+    accent: "clay",
+    atmosphereLabel: "Warm & Earthy",
+    paletteLabel: "Warm Earth",
   },
   {
     tenantName: "Soma Sanctuary",
-    brand: { ...DEMO_BRAND, palette: "deep-forest", atmosphere: "clean-minimal", imageStyle: "square" },
-    schedule: [
-      { date: DEMO_TODAY_ISO, startTime: "05:45", endTime: "06:45", title: "Sunrise Yoga", facilitator: null, location: "Open Pavilion", description: null, category: null },
-      { date: DEMO_TODAY_ISO, startTime: "07:30", endTime: "08:30", title: "Balinese Breakfast", facilitator: null, location: "Garden", description: null, category: null },
-      { date: DEMO_TODAY_ISO, startTime: "10:00", endTime: "11:00", title: "Sound Healing", facilitator: null, location: "Sala", description: null, category: null },
-    ],
+    guestName: "Anders",
+    intention: "Stillness first. Everything else follows.",
+    live: { category: "Sound", title: "Sound Healing", time: "10:00 · 60 min", facilitator: "Studio Team", location: "Sala" },
+    photoSrc: "/marketing/problem-lotus.jpg",
+    photoFilter: "saturate(0.7) brightness(0.65) contrast(1.05)",
+    radius: "sharp",
+    accent: "sage",
+    atmosphereLabel: "Clean & Minimal",
+    paletteLabel: "Deep Forest",
   },
   {
     tenantName: "Threshold",
-    brand: { ...DEMO_BRAND, palette: "soft-sand", atmosphere: "calm-organic" },
-    schedule: [
-      { date: DEMO_TODAY_ISO, startTime: "07:00", endTime: "08:00", title: "Dawn Walk", facilitator: null, location: "Glen Trail", description: null, category: null },
-      { date: DEMO_TODAY_ISO, startTime: "09:00", endTime: "10:00", title: "Stillness Practice", facilitator: null, location: "Stone Circle", description: null, category: null },
-      { date: DEMO_TODAY_ISO, startTime: "12:30", endTime: "13:30", title: "Highland Lunch", facilitator: null, location: "Bothy", description: null, category: null },
-    ],
+    guestName: "Rowan",
+    intention: "The highland air asks for nothing but your attention.",
+    live: { category: "Movement", title: "Dawn Walk", time: "07:00 · 60 min", facilitator: "Trail Guide", location: "Glen Trail" },
+    photoSrc: "/marketing/hero-pathway.jpg",
+    photoFilter: "saturate(0.55) brightness(0.85) grayscale(0.25)",
+    radius: "soft",
+    accent: "clay-text",
+    atmosphereLabel: "Calm & Organic",
+    paletteLabel: "Soft Sand",
   },
 ];
 
 /**
  * Content for the purpose-built marketing product-visuals (Hero, Flow
- * Showcase) - see product-visuals/*.tsx for why these exist instead of the
- * real screen components. Matches the Figma reference's content/hierarchy,
- * re-skinned into the light product direction.
+ * Showcase, Creator -> Guest, Retreat Identity) - see product-visuals/*.tsx
+ * for why these exist instead of the real screen components. Matches the
+ * supplied premium product reference screenshots' content/hierarchy.
  */
-export const DEMO_TODAY_VISUAL_ITEMS: TodayVisualItem[] = [
-  { time: "06:30", title: "Morning Grounding", meta: "Breathwork · 20 min", current: true },
-  { time: "08:00", title: "Jungle Walk", meta: "Outdoor movement · 45 min" },
-  { time: "09:30", title: "Breakfast", meta: "Terrace · Plant-based" },
-  { time: "11:00", title: "Yoga Nidra", meta: "Studio A · 75 min" },
-  { time: "14:00", title: "Thai Massage", meta: "Treatment Room 2 · 90 min" },
-  { time: "19:00", title: "Dinner & Sharing", meta: "Open Fire Terrace" },
-];
+export const DEMO_TODAY_VISUAL: {
+  guestName: string;
+  dayLabel: string;
+  intention: string;
+  live: { category: string; title: string; time: string; facilitator: string; location: string };
+  upNextLabel: string;
+} = {
+  guestName: "Maya",
+  dayLabel: "Day 2 · Samadhi Retreat",
+  intention: "Take your time today. There is nowhere else you need to be.",
+  live: {
+    category: "Yoga",
+    title: "Morning Grounding",
+    time: "06:30 · 20 min",
+    facilitator: "Maya R.",
+    location: "Yoga Shala",
+  },
+  upNextLabel: "Jungle Walk, 08:00",
+};
 
 export const DEMO_SCHEDULE_VISUAL_DAYS: ScheduleVisualDay[] = [
-  { label: "Mon", day: "11", selected: true },
+  { label: "Mon", day: "11" },
   { label: "Tue", day: "12" },
-  { label: "Wed", day: "13" },
+  { label: "Wed", day: "13", selected: true },
   { label: "Thu", day: "14" },
-  { label: "Fri", day: "15" },
 ];
 
-export const DEMO_SCHEDULE_VISUAL_ITEMS: ScheduleVisualItem[] = [
-  { time: "06:30", title: "Morning Grounding", meta: "Maya R.", tag: "Breathwork", tagTone: "clay" },
-  { time: "08:00", title: "Jungle Walk", meta: "Tomás V.", tag: "Movement", tagTone: "sage" },
-  { time: "11:00", title: "Yoga Nidra", meta: "Studio A", tag: "Rest", tagTone: "sage" },
-  { time: "19:00", title: "Dinner & Sharing", meta: "Open Fire Terrace", tag: "Sharing", tagTone: "clay" },
+export const DEMO_SCHEDULE_VISUAL_SESSIONS: ScheduleVisualSession[] = [
+  { time: "06:30", title: "Sunrise Meditation", meta: "Maya R. · Meditation Deck", tag: "Meditation", state: "past" },
+  { time: "08:30", title: "Morning Grounding", meta: "Maya R. · Yoga Shala", tag: "Yoga", state: "now" },
+  { time: "11:00", title: "Breathwork & Pranayama", meta: "Maya R. · Yoga Shala", tag: "Breathwork", state: "upcoming" },
 ];
 
-export const DEMO_MEALS_VISUAL_ITEMS: MealsVisualItem[] = [
-  {
-    mealType: "Breakfast",
-    time: "07:30–09:30",
-    name: "Garden Terrace Breakfast",
-    location: "Garden Terrace",
-    description: "Açaí bowls, fresh papaya, avocado on sourdough, green juices.",
-  },
-  {
-    mealType: "Lunch",
-    time: "13:00–14:00",
-    name: "Lemongrass Broth Lunch",
-    location: "Main Hall",
-    description: "Lemongrass broth, nourish bowl, coconut water.",
-    current: true,
-  },
-  {
-    mealType: "Dinner",
-    time: "19:00–20:30",
-    name: "Open Fire Dinner",
-    location: "Open Fire Terrace",
-    description: "Roasted vegetables, wild rice, miso-glazed aubergine.",
-  },
-];
+export const DEMO_MEALS_VISUAL: { category: string; name: string; time: string; location: string } = {
+  category: "Lunch",
+  name: "Garden Terrace Buffet",
+  time: "13:00 – 14:00",
+  location: "Garden Terrace",
+};
 
-export const DEMO_TEAM_VISUAL_PEOPLE: TeamVisualPerson[] = [
-  { initials: "MR", name: "Maya Rodriguez", role: "Lead Facilitator", color: "clay" },
-  { initials: "TV", name: "Tomás Vargas", role: "Yoga & Breathwork", color: "forest" },
-  { initials: "AM", name: "Asha Mehta", role: "Nutrition & Ayurveda", color: "clay-text" },
-  { initials: "JL", name: "James Liu", role: "Integration Support", color: "forest" },
-];
+export const DEMO_TEAM_VISUAL: { name: string; role: string; tags: string[]; bio: string } = {
+  name: "Maya Rodriguez",
+  role: "Yoga & Breathwork Facilitator",
+  tags: ["Vinyasa Flow", "Pranayama", "Yin Yoga", "Breathwork"],
+  bio: "Ten years teaching across Asia, blending vinyasa flow with pranayama practice.",
+};
 
-export const DEMO_TREATMENTS_VISUAL_ITEMS: TreatmentsVisualItem[] = [
-  { name: "Abhyanga Massage", detail: "90 min · Warm oil, full body", booking: "Tomorrow · 14:00", tagTone: "clay" },
-  { name: "Sound Bath", detail: "60 min · Group session", booking: "Wednesday · 17:00", tagTone: "sage" },
-  { name: "Private Ceremony", detail: "120 min · Lead facilitator", booking: "Enroll for an additional treatment", tagTone: "sage" },
-];
+export const DEMO_TREATMENTS_VISUAL: { name: string; detail: string; booking: string } = {
+  name: "Abhyanga Massage",
+  detail: "90 min · Warm oil, full body",
+  booking: "Tomorrow · 14:00",
+};

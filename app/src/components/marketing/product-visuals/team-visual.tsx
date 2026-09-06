@@ -1,39 +1,68 @@
+import Image from "next/image";
+
 /**
- * Purpose-built marketing recreation of Time to Flow's Team screen - see
- * today-visual.tsx for why. Matches Figma exactly here: solid-colored
- * circles with two-letter initials, not photographic portraits - which
- * conveniently sidesteps ever needing facilitator photography for this
- * showcase. Colors rotate through Clay/Forest/the darker Clay-text token
- * for variety without inventing new brand colors.
+ * Purpose-built marketing recreation of Time to Flow's Team screen,
+ * rebuilt to match the supplied Facilitators reference: one large editorial
+ * portrait card (name + role overlaid on the photo, specialty tags, a bio
+ * excerpt), not circles with initials.
+ *
+ * DELIBERATE GAP: the photo here is real retreat/nature photography
+ * (already vetted elsewhere on this site), not a facilitator portrait - I
+ * have no consented photo of a real facilitator to attach a name and bio
+ * to, and fabricating one would mean putting a real, identifiable
+ * stranger's likeness on a public site under an invented identity, which
+ * this project has avoided everywhere else. The card format, hierarchy and
+ * typography match the reference exactly; only the photo itself is a
+ * stand-in pending a real, rights-cleared facilitator photo.
  */
-export type TeamVisualPerson = { initials: string; name: string; role: string; color: "clay" | "forest" | "clay-text" };
-
-const COLOR_CLASS: Record<TeamVisualPerson["color"], string> = {
-  clay: "bg-idw-clay",
-  forest: "bg-idw-forest",
-  "clay-text": "bg-idw-clay-text",
-};
-
-export function TeamVisual({ people }: { people: TeamVisualPerson[] }) {
+export function TeamVisual({
+  name,
+  role,
+  tags,
+  bio,
+}: {
+  name: string;
+  role: string;
+  tags: string[];
+  bio: string;
+}) {
   return (
-    <div className="w-full h-full bg-idw-parchment flex flex-col gap-3 p-3.5 overflow-y-auto no-scrollbar">
-      <div className="font-ui text-[10px] font-semibold uppercase tracking-[0.16em] text-idw-forest/40">
-        Team
+    <div className="w-full h-full bg-idw-parchment flex flex-col p-3.5 gap-3 overflow-y-auto no-scrollbar">
+      <div className="font-ui text-[9px] font-semibold uppercase tracking-[0.16em] text-idw-clay-text">
+        Your Guides
       </div>
-      <div className="flex flex-col gap-2">
-        {people.map((p, i) => (
-          <div key={i} className="rounded-xl bg-white/70 px-3.5 py-3 flex items-center gap-3">
-            <div
-              className={`w-9 h-9 rounded-full shrink-0 flex items-center justify-center font-ui text-[11px] font-semibold text-idw-parchment ${COLOR_CLASS[p.color]}`}
-            >
-              {p.initials}
-            </div>
-            <div className="min-w-0">
-              <div className="font-editorial text-idw-forest text-[14px] leading-snug truncate">{p.name}</div>
-              <div className="font-ui text-idw-forest/50 text-[11px] truncate">{p.role}</div>
+      <div className="font-editorial text-idw-forest text-xl leading-tight -mt-1">
+        Meet the <span className="italic">Facilitators</span>
+      </div>
+
+      <div className="rounded-2xl overflow-hidden bg-white/70 shadow-sm">
+        <div className="relative w-full aspect-[4/3]">
+          <Image src="/marketing/problem-lotus.jpg" alt="" fill className="object-cover" sizes="400px" />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(180deg, rgba(25,43,33,0.05) 40%, rgba(25,43,33,0.75) 100%)" }}
+          />
+          <div className="absolute bottom-3 left-3.5 right-3">
+            <div className="font-editorial text-idw-parchment text-lg leading-tight">{name}</div>
+            <div className="font-ui text-idw-parchment/70 text-[9px] font-semibold uppercase tracking-wide mt-0.5">
+              {role}
             </div>
           </div>
-        ))}
+        </div>
+        <div className="p-3.5 flex flex-col gap-2.5">
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map((tag) => (
+              <span
+                key={tag}
+                className="font-ui text-[9px] font-medium text-idw-forest bg-idw-sage/35 rounded-full px-2.5 py-1"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+          <p className="font-ui text-idw-forest/60 text-[11px] leading-relaxed">{bio}</p>
+        </div>
       </div>
     </div>
   );

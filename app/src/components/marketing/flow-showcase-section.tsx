@@ -5,20 +5,24 @@ import { MealsVisual } from "./product-visuals/meals-visual";
 import { TeamVisual } from "./product-visuals/team-visual";
 import { TreatmentsVisual } from "./product-visuals/treatments-visual";
 import {
-  DEMO_MEALS_VISUAL_ITEMS,
+  DEMO_MEALS_VISUAL,
   DEMO_SCHEDULE_VISUAL_DAYS,
-  DEMO_SCHEDULE_VISUAL_ITEMS,
-  DEMO_TEAM_VISUAL_PEOPLE,
-  DEMO_TODAY_VISUAL_ITEMS,
-  DEMO_TREATMENTS_VISUAL_ITEMS,
+  DEMO_SCHEDULE_VISUAL_SESSIONS,
+  DEMO_TEAM_VISUAL,
+  DEMO_TODAY_VISUAL,
+  DEMO_TREATMENTS_VISUAL,
 } from "./demo-data";
 
 /**
  * Purpose-built marketing recreations of the five Time to Flow screens (see
- * product-visuals/*.tsx) - not the real Guest App components. The section
- * background stays Deep Forest deliberately (an immersive website moment);
- * the devices themselves are light cream/parchment product UI throughout -
- * dark section, light software, on purpose, never the other way round.
+ * product-visuals/*.tsx), rebuilt to match the supplied premium product
+ * reference screenshots directly - photography-forward, editorial, fewer
+ * and larger elements per screen. Section background stays Deep Forest
+ * deliberately; the devices themselves are light cream/parchment product UI
+ * throughout. Editorial fan composition: Today dominant but not towering,
+ * Schedule and Team with substantial presence, Meals and Treatments
+ * slightly smaller - overlap and rotation for depth, not five equal phones
+ * in a row and not four tiny satellites clinging to one giant center.
  */
 export function FlowShowcaseSection() {
   return (
@@ -34,30 +38,34 @@ export function FlowShowcaseSection() {
           treatments, arrival and more.
         </p>
 
-        <div className="mt-20 flex items-end justify-center gap-3 flex-wrap lg:flex-nowrap">
-          <div className="hidden sm:block translate-y-10 opacity-90 scale-95 z-0 lg:-mr-8">
-            <PhoneFrame width={160}>
-              <MealsVisual items={DEMO_MEALS_VISUAL_ITEMS} />
+        <div className="mt-20 flex items-end justify-center gap-2 flex-wrap lg:flex-nowrap">
+          <div className="hidden sm:block translate-y-8 rotate-[-8deg] opacity-95 z-0 lg:-mr-6">
+            <PhoneFrame width={185}>
+              <MealsVisual {...DEMO_MEALS_VISUAL} />
             </PhoneFrame>
           </div>
-          <div className="hidden lg:block translate-y-4 opacity-95 z-[5] -mr-6">
-            <PhoneFrame width={195}>
-              <ScheduleVisual days={DEMO_SCHEDULE_VISUAL_DAYS} items={DEMO_SCHEDULE_VISUAL_ITEMS} />
+          <div className="hidden lg:block translate-y-2 rotate-[-4deg] z-[5] -mr-4">
+            <PhoneFrame width={230}>
+              <ScheduleVisual
+                retreatName="InnerDweS Review Retreat"
+                days={DEMO_SCHEDULE_VISUAL_DAYS}
+                sessions={DEMO_SCHEDULE_VISUAL_SESSIONS}
+              />
             </PhoneFrame>
           </div>
           <div className="z-20 relative">
-            <PhoneFrame width={260} widthLg={370}>
-              <TodayVisual retreatName="Samadhi Retreat" dayLabel="Day 2 of 7" items={DEMO_TODAY_VISUAL_ITEMS} />
+            <PhoneFrame width={260} widthLg={320}>
+              <TodayVisual {...DEMO_TODAY_VISUAL} />
             </PhoneFrame>
           </div>
-          <div className="hidden lg:block translate-y-4 opacity-95 z-[5] -ml-6">
-            <PhoneFrame width={195}>
-              <TeamVisual people={DEMO_TEAM_VISUAL_PEOPLE} />
+          <div className="hidden lg:block translate-y-2 rotate-[4deg] z-[5] -ml-4">
+            <PhoneFrame width={230}>
+              <TeamVisual {...DEMO_TEAM_VISUAL} />
             </PhoneFrame>
           </div>
-          <div className="hidden sm:block translate-y-10 opacity-90 scale-95 z-0 lg:-ml-8">
-            <PhoneFrame width={160}>
-              <TreatmentsVisual items={DEMO_TREATMENTS_VISUAL_ITEMS} />
+          <div className="hidden sm:block translate-y-8 rotate-[8deg] opacity-95 z-0 lg:-ml-6">
+            <PhoneFrame width={185}>
+              <TreatmentsVisual {...DEMO_TREATMENTS_VISUAL} />
             </PhoneFrame>
           </div>
         </div>
