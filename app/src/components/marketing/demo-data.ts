@@ -251,7 +251,7 @@ export const DEMO_TODAY_VISUAL: {
   dayLabel: string;
   intention: string;
   live: { category: string; title: string; time: string; facilitator: string; location: string };
-  upNextLabel: string;
+  upNext: { title: string; time: string };
 } = {
   guestName: "Maya",
   dayLabel: "Day 2 · Samadhi Retreat",
@@ -263,14 +263,16 @@ export const DEMO_TODAY_VISUAL: {
     facilitator: "Maya R.",
     location: "Yoga Shala",
   },
-  upNextLabel: "Jungle Walk, 08:00",
+  upNext: { title: "Jungle Walk", time: "08:00" },
 };
 
 export const DEMO_SCHEDULE_VISUAL_DAYS: ScheduleVisualDay[] = [
   { label: "Mon", day: "11" },
   { label: "Tue", day: "12" },
-  { label: "Wed", day: "13", selected: true },
+  { label: "Wed", day: "13", selected: true, isToday: true },
   { label: "Thu", day: "14" },
+  { label: "Fri", day: "15" },
+  { label: "Sat", day: "16" },
 ];
 
 export const DEMO_SCHEDULE_VISUAL_SESSIONS: ScheduleVisualSession[] = [
