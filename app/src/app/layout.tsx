@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -24,6 +25,10 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
+  // Required so page-level openGraph/twitter image paths (see the
+  // marketing route group's opengraph-image.tsx) resolve to an absolute
+  // URL for social crawlers rather than a bare relative path.
+  metadataBase: new URL(SITE_URL),
   title: "InnerDweS · Digital Wellness Solutions",
   description: "We are giving digital solutions to the wellness world.",
 };

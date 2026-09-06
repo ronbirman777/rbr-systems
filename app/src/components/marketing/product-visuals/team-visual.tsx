@@ -41,7 +41,7 @@ export function TeamVisual({
           <div className="relative w-full aspect-[4/3]">
             <Image
               src="/marketing/product/facilitator-ron.webp"
-              alt=""
+              alt="Ron Birman"
               fill
               className="object-cover"
               sizes="400px"

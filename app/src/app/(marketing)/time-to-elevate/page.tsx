@@ -2,9 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 
+const TITLE = "Time to Elevate · InnerDweS";
+const DESCRIPTION = "Bespoke digital ecosystems for wellness organizations. Talk to us.";
+
 export const metadata: Metadata = {
-  title: "Time to Elevate · InnerDweS",
-  description: "Bespoke digital ecosystems for wellness organizations. Talk to us.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { title: TITLE, description: DESCRIPTION, type: "website" },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 /**

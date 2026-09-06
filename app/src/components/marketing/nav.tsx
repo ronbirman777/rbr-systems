@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { InnerDweSMark } from "@/components/brand/wordmark";
+import { MobileNavToggle } from "./mobile-nav-toggle";
 
 const LINKS = [
   { href: "#product-family", label: "Products" },
@@ -28,7 +29,7 @@ export function MarketingNav() {
           </span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8" aria-label="Primary">
+        <nav className="hidden lg:flex items-center gap-8" aria-label="Primary">
           {LINKS.map((link) => (
             <a
               key={link.href}
@@ -40,12 +41,15 @@ export function MarketingNav() {
           ))}
         </nav>
 
-        <Link
-          href="/sign-up"
-          className="shrink-0 rounded-full bg-idw-forest text-idw-parchment font-ui text-xs sm:text-sm font-semibold px-3.5 py-2 sm:px-5 sm:py-2.5 whitespace-nowrap transition-transform hover:-translate-y-0.5"
-        >
-          Create Your Space
-        </Link>
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <Link
+            href="/sign-up"
+            className="shrink-0 rounded-full bg-idw-forest text-idw-parchment font-ui text-xs sm:text-sm font-semibold px-3.5 py-2 sm:px-5 sm:py-2.5 whitespace-nowrap transition-transform hover:-translate-y-0.5"
+          >
+            Create Your Space
+          </Link>
+          <MobileNavToggle links={LINKS} />
+        </div>
       </div>
     </header>
   );

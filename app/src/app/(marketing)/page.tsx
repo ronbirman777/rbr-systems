@@ -11,9 +11,14 @@ import { AboutSection } from "@/components/marketing/about-section";
 import { SelectedWorkSection } from "@/components/marketing/selected-work-section";
 import { FinalCtaSection } from "@/components/marketing/final-cta-section";
 
+const TITLE = "InnerDweS | Digital Wellness Solutions";
+const DESCRIPTION = "Thoughtful digital experiences for retreats, practitioners and the people they support.";
+
 export const metadata: Metadata = {
-  title: "InnerDweS · Digital Wellness Solutions",
-  description: "Thoughtful digital experiences for retreats, practitioners and the people they support.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { title: TITLE, description: DESCRIPTION, type: "website" },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 export default function MarketingHomePage() {

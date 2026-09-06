@@ -2,9 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 
+const TITLE = "Time to Heal · InnerDweS";
+const DESCRIPTION = "Thoughtful continuity between sessions, for therapists, healers and practitioners. Coming soon.";
+
 export const metadata: Metadata = {
-  title: "Time to Heal · InnerDweS",
-  description: "Thoughtful continuity between sessions, for therapists, healers and practitioners. Coming soon.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: { title: TITLE, description: DESCRIPTION, type: "website" },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
 export default function TimeToHealPage() {

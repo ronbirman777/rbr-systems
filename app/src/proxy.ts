@@ -14,7 +14,14 @@ import { sha256Hex, timingSafeEqual } from "@/lib/preview-gate/hash";
  * behavior it had before the marketing site existed - this list only ever
  * grows to admit more marketing pages, never product/account routes.
  */
-const PUBLIC_MARKETING_PATHS = new Set(["/", "/time-to-heal", "/time-to-elevate"]);
+const PUBLIC_MARKETING_PATHS = new Set([
+  "/",
+  "/time-to-heal",
+  "/time-to-elevate",
+  "/robots.txt",
+  "/sitemap.xml",
+  "/icon",
+]);
 
 /**
  * Two independent checks, in order:
@@ -67,6 +74,11 @@ async function checkPreviewGate(request: NextRequest): Promise<NextResponse | nu
   const { pathname, search } = request.nextUrl;
   if (pathname === PREVIEW_GATE_PATH) return null; // the gate page itself - never gate it
   if (PUBLIC_MARKETING_PATHS.has(pathname)) return null; // public InnerDweS marketing pages
+  // Next.js appends a content hash to a route-group-colocated opengraph-image
+  // file (e.g. /opengraph-image-abc123) - not a fixed path we can list
+  // exactly, so this one's checked by prefix. Social crawlers fetching it
+  // must never hit the gate, or every shared marketing link loses its preview.
+  if (pathname.startsWith("/opengraph-image")) return null;
 
   const cookieValue = request.cookies.get(PREVIEW_COOKIE_NAME)?.value;
   if (cookieValue) {
