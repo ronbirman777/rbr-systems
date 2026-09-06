@@ -38,14 +38,14 @@ export function FlowShowcaseSection() {
           treatments, arrival and more.
         </p>
 
-        <div className="mt-20 flex items-end justify-center gap-2 flex-wrap lg:flex-nowrap">
-          <div className="hidden sm:block translate-y-8 rotate-[-8deg] opacity-95 z-0 lg:-mr-6">
-            <PhoneFrame width={185}>
+        <div className="mt-16 flex items-end justify-center gap-2 flex-wrap lg:flex-nowrap">
+          <div className="hidden sm:block translate-y-9 rotate-[-8deg] opacity-95 z-0 lg:-mr-7">
+            <PhoneFrame width={220}>
               <MealsVisual {...DEMO_MEALS_VISUAL} />
             </PhoneFrame>
           </div>
-          <div className="hidden lg:block translate-y-2 rotate-[-4deg] z-[5] -mr-4">
-            <PhoneFrame width={230}>
+          <div className="hidden lg:block translate-y-3 rotate-[-4deg] z-[5] -mr-5">
+            <PhoneFrame width={275}>
               <ScheduleVisual
                 retreatName="InnerDweS Review Retreat"
                 days={DEMO_SCHEDULE_VISUAL_DAYS}
@@ -54,17 +54,17 @@ export function FlowShowcaseSection() {
             </PhoneFrame>
           </div>
           <div className="z-20 relative">
-            <PhoneFrame width={260} widthLg={320}>
+            <PhoneFrame width={300} widthLg={370}>
               <TodayVisual {...DEMO_TODAY_VISUAL} />
             </PhoneFrame>
           </div>
-          <div className="hidden lg:block translate-y-2 rotate-[4deg] z-[5] -ml-4">
-            <PhoneFrame width={230}>
+          <div className="hidden lg:block translate-y-3 rotate-[4deg] z-[5] -ml-5">
+            <PhoneFrame width={275}>
               <TeamVisual {...DEMO_TEAM_VISUAL} />
             </PhoneFrame>
           </div>
-          <div className="hidden sm:block translate-y-8 rotate-[8deg] opacity-95 z-0 lg:-ml-6">
-            <PhoneFrame width={185}>
+          <div className="hidden sm:block translate-y-9 rotate-[8deg] opacity-95 z-0 lg:-ml-7">
+            <PhoneFrame width={220}>
               <TreatmentsVisual {...DEMO_TREATMENTS_VISUAL} />
             </PhoneFrame>
           </div>

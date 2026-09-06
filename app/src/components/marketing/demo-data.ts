@@ -281,23 +281,33 @@ export const DEMO_SCHEDULE_VISUAL_SESSIONS: ScheduleVisualSession[] = [
   { time: "11:00", title: "Breathwork & Pranayama", meta: "Maya R. · Yoga Shala", tag: "Breathwork", state: "upcoming" },
 ];
 
-export const DEMO_MEALS_VISUAL: { category: string; name: string; time: string; location: string } = {
+export const DEMO_MEALS_VISUAL: {
+  category: string;
+  name: string;
+  time: string;
+  location: string;
+  description: string;
+  tags: string[];
+} = {
   category: "Lunch",
   name: "Garden Terrace Buffet",
   time: "13:00 – 14:00",
   location: "Garden Terrace",
+  description: "Lemongrass broth, nourish bowl, coconut water.",
+  tags: ["Vegan", "Gluten-Free"],
 };
 
 /**
- * Deliberately minimal - a fictional demo facilitator, not a real person or
- * claimed credential (see team-visual.tsx's synthetic portrait). No years
- * of experience, no qualifications, no therapeutic claims invented.
+ * Ron's real name/portrait, with explicit permission for this specific
+ * reuse - only professional information already established by the site's
+ * own About copy (founded InnerDweS, years running retreats firsthand). No
+ * therapist/yoga-teacher/clinical credential is invented.
  */
 export const DEMO_TEAM_VISUAL: { name: string; role: string; tags: string[]; bio: string } = {
-  name: "Maya",
-  role: "Breathwork & Mindfulness",
-  tags: ["Vinyasa Flow", "Breathwork"],
-  bio: "",
+  name: "Ron Birman",
+  role: "Founder & Facilitator",
+  tags: ["Retreat Design", "Guest Experience"],
+  bio: "Built InnerDweS from years of running retreats firsthand.",
 };
 
 export const DEMO_TREATMENTS_VISUAL: { name: string; detail: string; booking: string } = {
