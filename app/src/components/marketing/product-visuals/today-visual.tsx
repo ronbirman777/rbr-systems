@@ -24,7 +24,6 @@ const ACCENT_CLASS = {
 } as const;
 
 export function TodayVisual({
-  guestName,
   dayLabel,
   intention,
   live,
@@ -35,7 +34,11 @@ export function TodayVisual({
   accent = "clay",
   showNav = true,
 }: {
-  guestName: string;
+  /** Retreat/space identity shown under the greeting - e.g. "Samadhi
+   * Retreat" or "Day 2 · Samadhi Retreat". Deliberately no guest first-name
+   * personalization: Time to Flow is tenant/retreat-based, not a
+   * per-guest-generated experience, and the marketing representation
+   * should never imply otherwise. */
   dayLabel: string;
   intention: string;
   live: { category: string; title: string; time: string; facilitator: string; location: string };
@@ -71,9 +74,7 @@ export function TodayVisual({
             InnerDweS · Time to Flow
           </div>
           <div className="absolute bottom-7 left-3.5 right-3">
-            <div className="font-editorial text-idw-parchment text-2xl leading-tight">
-              Good morning, <span className="italic">{guestName}</span>
-            </div>
+            <div className="font-editorial text-idw-parchment text-2xl leading-tight">Good morning.</div>
             <div className="font-ui text-idw-parchment/70 text-[10px] mt-1">{dayLabel}</div>
           </div>
         </div>

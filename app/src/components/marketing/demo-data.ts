@@ -192,7 +192,6 @@ export const DEMO_TREATMENTS: DisplayTreatment[] = [
  */
 export const DEMO_IDENTITIES: {
   tenantName: string;
-  guestName: string;
   intention: string;
   live: { category: string; title: string; time: string; facilitator: string; location: string };
   photoSrc: string;
@@ -204,7 +203,6 @@ export const DEMO_IDENTITIES: {
 }[] = [
   {
     tenantName: "Samadhi Retreat",
-    guestName: "Lucia",
     intention: "Warmth is a practice. Let the terrace hold you today.",
     live: { category: "Bodywork", title: "Abhyanga Massage", time: "14:00 · 90 min", facilitator: "Maya R.", location: "Treatment Room 2" },
     photoSrc: "/marketing/hero-pathway.jpg",
@@ -216,7 +214,6 @@ export const DEMO_IDENTITIES: {
   },
   {
     tenantName: "Soma Sanctuary",
-    guestName: "Anders",
     intention: "Stillness first. Everything else follows.",
     live: { category: "Sound", title: "Sound Healing", time: "10:00 · 60 min", facilitator: "Studio Team", location: "Sala" },
     photoSrc: "/marketing/problem-lotus.jpg",
@@ -228,7 +225,6 @@ export const DEMO_IDENTITIES: {
   },
   {
     tenantName: "Threshold",
-    guestName: "Rowan",
     intention: "The highland air asks for nothing but your attention.",
     live: { category: "Movement", title: "Dawn Walk", time: "07:00 · 60 min", facilitator: "Trail Guide", location: "Glen Trail" },
     photoSrc: "/marketing/hero-pathway.jpg",
@@ -247,13 +243,11 @@ export const DEMO_IDENTITIES: {
  * supplied premium product reference screenshots' content/hierarchy.
  */
 export const DEMO_TODAY_VISUAL: {
-  guestName: string;
   dayLabel: string;
   intention: string;
   live: { category: string; title: string; time: string; facilitator: string; location: string };
   upNext: { title: string; time: string };
 } = {
-  guestName: "Maya",
   dayLabel: "Day 2 · Samadhi Retreat",
   intention: "Take your time today. There is nowhere else you need to be.",
   live: {

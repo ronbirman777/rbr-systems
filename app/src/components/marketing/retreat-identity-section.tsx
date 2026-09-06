@@ -22,7 +22,6 @@ export function RetreatIdentitySection() {
             <div key={identity.tenantName} className="flex flex-col items-center gap-4">
               <PhoneFrame width={230}>
                 <TodayVisual
-                  guestName={identity.guestName}
                   dayLabel={identity.tenantName}
                   intention={identity.intention}
                   live={identity.live}
