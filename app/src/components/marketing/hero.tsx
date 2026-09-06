@@ -13,8 +13,7 @@ import { DEMO_MEALS_VISUAL, DEMO_SCHEDULE_VISUAL_DAYS, DEMO_SCHEDULE_VISUAL_SESS
  * animation library. The background is a real, owned environment
  * photograph (not the unlicensed reference video) with a slow CSS-only
  * "breathing" drift, color-graded toward Deep Forest/Sage rather than the
- * photo's original warm grade - flagged in the implementation report as
- * needing explicit licensing confirmation before launch.
+ * photo's original warm grade - commercial usage rights confirmed.
  */
 export function Hero() {
   return (

@@ -3,13 +3,10 @@ import { InnerDweSMark } from "@/components/brand/wordmark";
 
 /**
  * Company-first positioning per the approved direction - no founder
- * portrait, WE language throughout. The panel now uses the same pathway
+ * portrait, WE language throughout. The panel uses the same pathway
  * environment photograph as the Hero (real retreat architecture/tropical
- * pathway, no people) rather than a placeholder - it's one of only two
- * images currently treated as provisional staging assets (see Hero,
- * Problem), reused here rather than introducing a third unreviewed one.
- * STILL REQUIRES EXPLICIT RIGHTS CONFIRMATION before production, same as
- * its other uses.
+ * pathway, no people) rather than a placeholder, reused here rather than
+ * introducing a third asset. Commercial usage rights confirmed.
  */
 export function AboutSection() {
   return (

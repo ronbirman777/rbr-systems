@@ -4,18 +4,21 @@ import { TodayVisual } from "./product-visuals/today-visual";
 import { DEMO_TODAY_VISUAL } from "./demo-data";
 
 /**
- * Creator Workspace marketing representation, designed fresh in InnerDweS's
- * light product direction (Parchment/Linen surfaces, warm-white cards, Sage
- * for quiet secondary surfaces, Clay for interaction/active states, Forest
- * reserved for typography and the selected nav item) - a deliberate
- * departure from the dark-toned Creator mock in the original homepage
- * Figma reference, per explicit approval. The information architecture
- * (Home/Brand/Modules/Content/Preview/Publish, content rows with a
- * Published/Editing status) mirrors what the real Creator Workspace
- * actually does - nothing here is an invented capability, only the visual
- * skin changed. Right side reuses TodayVisual (not the real TodayScreen)
- * so both halves of "Creator -> Publish -> Guest" read as one consistent
- * premium system rather than two different visual languages.
+ * "Time to Flow Studio" marketing representation (public-facing name for
+ * what the product internally still calls the Creator/configurator - see
+ * the terminology note in the commercial positioning update; internal
+ * routes/code aren't renamed yet, this is a marketing-copy-only label),
+ * designed fresh in InnerDweS's light product direction (Parchment/Linen
+ * surfaces, warm-white cards, Sage for quiet secondary surfaces, Clay for
+ * interaction/active states, Forest reserved for typography and the
+ * selected nav item) - a deliberate departure from the dark-toned mock in
+ * the original homepage Figma reference, per explicit approval. The
+ * information architecture (Home/Brand/Modules/Content/Preview/Publish,
+ * content rows with a Published/Editing status) mirrors what the real
+ * Creator Workspace actually does - nothing here is an invented
+ * capability, only the visual skin and the public-facing name changed.
+ * Right side reuses TodayVisual (not the real TodayScreen) so both halves
+ * of "Studio -> Publish -> Guest" read as one consistent premium system.
  */
 export function SystemSection() {
   return (
@@ -42,6 +45,9 @@ export function SystemSection() {
             </div>
             <div className="grid grid-cols-[170px_1fr] gap-0 min-h-[380px]">
               <div className="border-r border-idw-forest/10 py-5 px-4 font-ui text-[15px] text-idw-forest/55 flex flex-col gap-2 bg-idw-linen/50">
+                <span className="font-ui text-[9px] font-semibold uppercase tracking-[0.14em] text-idw-clay-text">
+                  Time to Flow Studio
+                </span>
                 <span className="font-editorial italic text-idw-forest text-base mb-2">Samadhi Retreat</span>
                 {["Home", "Brand", "Modules", "Content", "Preview", "Publish"].map((item) => (
                   <span
@@ -95,7 +101,7 @@ export function SystemSection() {
             </div>
           </div>
 
-          {/* Explicit Creator -> Publish -> Guest connector, not just an
+          {/* Explicit Studio -> Publish -> Guest connector, not just an
               arrow - makes the value proposition legible without body copy. */}
           <div className="flex lg:flex-col items-center gap-2 shrink-0 px-2">
             <span className="text-idw-clay-text text-2xl rotate-90 lg:rotate-0">→</span>

@@ -6,7 +6,8 @@ import { GuestNav } from "./guest-nav";
  * matching the Explore/Facilities reference's immersive-photography
  * treatment: one large photo card with an editorial title and calm
  * metadata, not a compressed text list. Real treatment-session photography
- * (framed to keep the recipient's face out of shot).
+ * (framed to keep the recipient's face out of shot). Commercial usage
+ * rights confirmed.
  */
 export function TreatmentsVisual({
   name,
