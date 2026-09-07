@@ -32,7 +32,10 @@ const PUBLIC_MARKETING_PATHS = new Set([
  *    apex; app.innerdwes.com's bare root becomes the Studio entry point;
  *    a guest Space subdomain's bare root is rewritten to the exact same
  *    /s/[slug] route that already exists - a lookup key only, nothing
- *    here ever grants access to anything. None of this fires for
+ *    here ever grants access to anything. A hostname recognizably under
+ *    *.innerdwes.com but not a valid target (reserved word, malformed
+ *    label, multi-level subdomain) fails closed with a 404 rather than
+ *    ever falling through to marketing content. None of this fires for
  *    localhost or a Netlify preview hostname, so local dev and staging
  *    are completely unaffected until the real DNS names exist - see the
  *    Domain Phase 2 report for how to exercise these paths before then
@@ -56,6 +59,20 @@ export async function proxy(request: NextRequest) {
     url.hostname = PRODUCTION_APEX;
     url.port = "";
     return NextResponse.redirect(url, 308);
+  }
+
+  // Domain Phase 2 hardening: a hostname recognizably under
+  // *.innerdwes.com that isn't a valid target (reserved word, malformed
+  // label, multi-level subdomain - see hostname.ts's "blocked" kind)
+  // must never silently render the marketing homepage. Rewritten to a
+  // path nothing defines, so Next's own existing not-found handling
+  // renders (the same 404 already used everywhere else) - no new error
+  // system, no branded page of its own.
+  if (hostResult.kind === "blocked") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/__blocked-hostname__";
+    url.search = "";
+    return NextResponse.rewrite(url);
   }
 
   let rewriteTo: string | null = null;

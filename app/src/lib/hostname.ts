@@ -20,6 +20,10 @@ import { isReservedSlug, slugFormatError } from "@/lib/slug";
  *                              looked up the exact same way /s/[slug]
  *                              already does - the hostname is a lookup
  *                              key only, never an authorization decision.
+ *   anything else under
+ *   *.innerdwes.com        -> fails closed (see the "blocked" kind below
+ *                              and proxy.ts) - never falls through to
+ *                              marketing content.
  */
 
 export const PRODUCTION_APEX = "innerdwes.com";
@@ -33,6 +37,17 @@ export type HostnameKind =
   | { kind: "guest"; slug: string }
   | { kind: "localhost" }
   | { kind: "netlify-preview" }
+  /** Recognizably under the production innerdwes.com namespace (matches
+   * the apex suffix) but not a valid target: a reserved/infrastructure
+   * word, a malformed label, or a multi-level subdomain. Deliberately
+   * distinct from "unknown" - proxy.ts fails these closed (404) rather
+   * than letting them fall through to the marketing homepage, per the
+   * Domain Phase 2 hardening requirement. */
+  | { kind: "blocked" }
+  /** Not recognizably part of the innerdwes.com namespace at all (an
+   * unrelated domain, or a missing/empty Host header). No special
+   * handling - ordinary routing applies, exactly as it did before this
+   * module existed. */
   | { kind: "unknown" };
 
 /**
@@ -71,15 +86,16 @@ export function classifyHostname(hostHeader: string | null | undefined): Hostnam
 
     // Defense in depth against a spoofed/malformed Host header, not just a
     // format nicety: a label containing another dot (e.g. a Host of
-    // "a.b.innerdwes.com" or an attempted "evil.innerdwes.com.attacker.com"
-    // trick that still happens to end in the right suffix), an empty
-    // label, a reserved infrastructure word, or anything that wouldn't
-    // pass the exact same format check the database enforces on slugs is
-    // never treated as a guest lookup - it falls through to "unknown"
-    // instead, so nothing downstream ever constructs a lookup or a
-    // redirect from unvalidated attacker-controlled input.
+    // "foo.bar.innerdwes.com" or an attempted
+    // "evil.innerdwes.com.attacker.com" trick that still happens to end in
+    // the right suffix), an empty label, a reserved infrastructure word,
+    // or anything that wouldn't pass the exact same format check the
+    // database enforces on slugs is never treated as a guest lookup - it's
+    // "blocked" instead, so nothing downstream ever constructs a lookup or
+    // a redirect from unvalidated attacker-controlled input, and proxy.ts
+    // fails it closed rather than serving marketing content for it.
     if (!label || label.includes(".") || isReservedSlug(label) || slugFormatError(label)) {
-      return { kind: "unknown" };
+      return { kind: "blocked" };
     }
     return { kind: "guest", slug: label };
   }

@@ -42,37 +42,46 @@ describe("classifyHostname - guest Space subdomains", () => {
   });
 });
 
-describe("classifyHostname - reserved words never resolve as a guest lookup", () => {
+describe("classifyHostname - reserved words are 'blocked', never a guest lookup or marketing fallthrough", () => {
   // www/app are deliberately excluded here - they get their own dedicated
   // "marketing-www"/"app" kinds (tested above), not the generic reserved-
   // word fallthrough this covers.
   it.each(["admin", "api", "auth", "mail", "smtp", "support", "staging", "dashboard"])(
-    "treats %s.innerdwes.com as unknown, not a guest slug",
+    "treats %s.innerdwes.com as blocked, not a guest slug",
     (word) => {
-      expect(classifyHostname(`${word}.innerdwes.com`)).toEqual({ kind: "unknown" });
+      expect(classifyHostname(`${word}.innerdwes.com`)).toEqual({ kind: "blocked" });
     }
   );
 });
 
-describe("classifyHostname - malformed / spoofed Host values", () => {
-  it("rejects a multi-label subdomain smuggled ahead of the apex", () => {
-    expect(classifyHostname("evil.samadhi.innerdwes.com")).toEqual({ kind: "unknown" });
+describe("classifyHostname - malformed / spoofed Host values under *.innerdwes.com are 'blocked' (fail closed, per the Domain Phase 2 hardening requirement - proxy.ts 404s these rather than falling through to marketing)", () => {
+  it("blocks a multi-label subdomain smuggled ahead of the apex", () => {
+    expect(classifyHostname("evil.samadhi.innerdwes.com")).toEqual({ kind: "blocked" });
   });
 
-  it("rejects an attempted suffix-match trick with an extra domain appended", () => {
+  it("blocks the exact multi-level example from the hardening spec", () => {
+    expect(classifyHostname("foo.bar.innerdwes.com")).toEqual({ kind: "blocked" });
+  });
+
+  it("blocks an empty label", () => {
+    expect(classifyHostname(".innerdwes.com")).toEqual({ kind: "blocked" });
+  });
+
+  it("blocks an invalid-format label (uppercase/underscore/too short)", () => {
+    expect(classifyHostname("NotValid_Slug.innerdwes.com")).toEqual({ kind: "blocked" });
+    expect(classifyHostname("ab.innerdwes.com")).toEqual({ kind: "blocked" });
+  });
+});
+
+describe("classifyHostname - hosts NOT actually within the innerdwes.com namespace stay 'unknown' (no fail-closed handling needed - ordinary routing already applies)", () => {
+  it("does not match a suffix-trick domain that only looks similar", () => {
+    // Ends in ".example", not ".innerdwes.com" - never reaches the guest/
+    // blocked branch at all, so this is genuinely "unrelated", not
+    // "invalid within our namespace".
     expect(classifyHostname("innerdwes.com.attacker.example")).toEqual({ kind: "unknown" });
   });
 
-  it("rejects an empty label", () => {
-    expect(classifyHostname(".innerdwes.com")).toEqual({ kind: "unknown" });
-  });
-
-  it("rejects an invalid-format label (uppercase/underscore/too short)", () => {
-    expect(classifyHostname("NotValid_Slug.innerdwes.com")).toEqual({ kind: "unknown" });
-    expect(classifyHostname("ab.innerdwes.com")).toEqual({ kind: "unknown" });
-  });
-
-  it("rejects a completely unrelated domain", () => {
+  it("does not match a completely unrelated domain", () => {
     expect(classifyHostname("evil.example.com")).toEqual({ kind: "unknown" });
   });
 
