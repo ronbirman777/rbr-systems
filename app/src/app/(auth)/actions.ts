@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { friendlyAuthError } from "@/lib/supabase/authErrors";
-import { SITE_URL } from "@/lib/site-url";
+import { APP_URL } from "@/lib/site-url";
 
 export type AuthActionState = { error: string | null };
 
@@ -30,7 +30,7 @@ export async function signUp(
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${SITE_URL}/auth/confirm?next=/create` },
+    options: { emailRedirectTo: `${APP_URL}/auth/confirm?next=/create` },
   });
   if (error) return { error: friendlyAuthError(error.message), checkEmail: false, email: null };
 
@@ -48,7 +48,7 @@ export async function resendConfirmationEmail(email: string): Promise<{ error: s
   const { error } = await supabase.auth.resend({
     type: "signup",
     email,
-    options: { emailRedirectTo: `${SITE_URL}/auth/confirm?next=/create` },
+    options: { emailRedirectTo: `${APP_URL}/auth/confirm?next=/create` },
   });
   if (error) return { error: friendlyAuthError(error.message) };
   return { error: null };

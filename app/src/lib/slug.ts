@@ -13,7 +13,10 @@
 export const SLUG_MIN_LENGTH = 3;
 export const SLUG_MAX_LENGTH = 63;
 
-/** Keep in sync with the `reserved_slugs` seed rows in migration 0010. */
+/**
+ * Keep in sync with the `reserved_slugs` seed rows in migrations 0010 and
+ * 0012 (0012 adds "smtp" only - see the Domain Phase 2 report for why).
+ */
 export const RESERVED_SLUGS = new Set([
   "www",
   "app",
@@ -27,6 +30,7 @@ export const RESERVED_SLUGS = new Set([
   "support",
   "help",
   "mail",
+  "smtp",
   "preview",
   "staging",
   "dashboard",
