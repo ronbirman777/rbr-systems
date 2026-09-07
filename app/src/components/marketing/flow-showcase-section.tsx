@@ -1,17 +1,4 @@
-import { PhoneFrame } from "./phone-frame";
-import { TodayVisual } from "./product-visuals/today-visual";
-import { ScheduleVisual } from "./product-visuals/schedule-visual";
-import { MealsVisual } from "./product-visuals/meals-visual";
-import { TeamVisual } from "./product-visuals/team-visual";
-import { TreatmentsVisual } from "./product-visuals/treatments-visual";
-import {
-  DEMO_MEALS_VISUAL,
-  DEMO_SCHEDULE_VISUAL_DAYS,
-  DEMO_SCHEDULE_VISUAL_SESSIONS,
-  DEMO_TEAM_VISUAL,
-  DEMO_TODAY_VISUAL,
-  DEMO_TREATMENTS_VISUAL,
-} from "./demo-data";
+import { FlowShowcaseDeck } from "./flow-showcase-deck";
 
 /**
  * Purpose-built marketing recreations of the five Time to Flow screens (see
@@ -23,6 +10,10 @@ import {
  * Schedule and Team with substantial presence, Meals and Treatments
  * slightly smaller - overlap and rotation for depth, not five equal phones
  * in a row and not four tiny satellites clinging to one giant center.
+ *
+ * The phone row itself lives in flow-showcase-deck.tsx (a client
+ * component) - it owns the hover/focus "spotlight" interaction, kept
+ * separate so this section stays a server component for everything else.
  */
 export function FlowShowcaseSection() {
   return (
@@ -38,37 +29,7 @@ export function FlowShowcaseSection() {
           treatments, arrival and more.
         </p>
 
-        <div className="mt-16 flex items-end justify-center gap-2 flex-wrap lg:flex-nowrap">
-          <div className="hidden sm:block translate-y-9 rotate-[-8deg] opacity-95 z-0 lg:-mr-7">
-            <PhoneFrame width={220}>
-              <MealsVisual {...DEMO_MEALS_VISUAL} />
-            </PhoneFrame>
-          </div>
-          <div className="hidden lg:block translate-y-3 rotate-[-4deg] z-[5] -mr-5">
-            <PhoneFrame width={275}>
-              <ScheduleVisual
-                retreatName="InnerDweS Review Retreat"
-                days={DEMO_SCHEDULE_VISUAL_DAYS}
-                sessions={DEMO_SCHEDULE_VISUAL_SESSIONS}
-              />
-            </PhoneFrame>
-          </div>
-          <div className="z-20 relative">
-            <PhoneFrame width={300} widthLg={370}>
-              <TodayVisual {...DEMO_TODAY_VISUAL} />
-            </PhoneFrame>
-          </div>
-          <div className="hidden lg:block translate-y-3 rotate-[4deg] z-[5] -ml-5">
-            <PhoneFrame width={275}>
-              <TeamVisual {...DEMO_TEAM_VISUAL} />
-            </PhoneFrame>
-          </div>
-          <div className="hidden sm:block translate-y-9 rotate-[8deg] opacity-95 z-0 lg:-ml-7">
-            <PhoneFrame width={220}>
-              <TreatmentsVisual {...DEMO_TREATMENTS_VISUAL} />
-            </PhoneFrame>
-          </div>
-        </div>
+        <FlowShowcaseDeck />
       </div>
     </section>
   );
