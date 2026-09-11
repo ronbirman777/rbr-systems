@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
 import { PublishedSpaceScreen, type PublishedSpaceRow } from "@/components/guest/published-space-screen";
+import { isSpacePubliclyAvailable } from "@/lib/entitlements/isSpacePubliclyAvailable";
 
 /**
  * The genuinely unauthenticated guest route, looked up by tenant id. No
@@ -17,15 +18,16 @@ import { PublishedSpaceScreen, type PublishedSpaceRow } from "@/components/guest
  * /s/[slug] (see that route) - this one is unchanged and keeps working
  * during the transition, exactly as required. Both routes share their
  * fetched-row shaping and rendering via PublishedSpaceScreen; only the
- * lookup key differs.
+ * lookup key differs. Kept fully public and fully enforced (Guest
+ * Commercial Enforcement) rather than deprecated - still the only public
+ * address for a Space that published without reserving a slug.
  *
- * revalidate: guest traffic is many-readers/few-writers (see the Self
- * Service Phase 1 cost-safeguard notes) - a published snapshot only
- * changes on an explicit Republish, so serving it from Next's route cache
- * for up to a minute between republishes is a safe, well-understood
- * staleness tradeoff, not a correctness risk.
+ * No route-level cache (Guest Commercial Enforcement): commercial
+ * availability is an authorization decision, not content - see the
+ * matching comment in /s/[slug]/page.tsx for why this can no longer use
+ * Next's route cache the way it did before.
  */
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function GuestSpacePage({
   params,
@@ -42,6 +44,7 @@ export default async function GuestSpacePage({
     .maybeSingle<PublishedSpaceRow>();
 
   if (!space) notFound();
+  if (!(await isSpacePubliclyAvailable(tenantId))) notFound();
 
   return <PublishedSpaceScreen space={space} />;
 }

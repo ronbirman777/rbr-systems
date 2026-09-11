@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
 import { PublishedSpaceScreen, type PublishedSpaceRow } from "@/components/guest/published-space-screen";
+import { isSpacePubliclyAvailable } from "@/lib/entitlements/isSpacePubliclyAvailable";
 
 /**
  * The slug-addressed counterpart to /g/[tenantId] - same unauthenticated,
@@ -10,14 +11,21 @@ import { PublishedSpaceScreen, type PublishedSpaceRow } from "@/components/guest
  * ("samadhi") is reachable today, at /s/samadhi, before any DNS work
  * happens.
  *
- * This is deliberately the shape Phase 2's wildcard hostname routing will
- * reuse: given request hostname "samadhi.innerdwes.com", a future
- * middleware only needs to extract "samadhi" and rewrite to this same
- * route (NextResponse.rewrite) - the lookup-by-slug logic already lives
- * here, unchanged, rather than being invented later. No DNS or wildcard
- * routing is configured in this phase; only this path exists.
+ * This is deliberately the shape Phase 2's wildcard hostname routing
+ * reuses: given request hostname "samadhi.innerdwes.com", proxy.ts
+ * rewrites straight to this same route - the lookup-by-slug logic (and,
+ * since Guest Commercial Enforcement, the availability check below) lives
+ * here, unchanged, rather than being duplicated in middleware.
+ *
+ * No route-level cache (Guest Commercial Enforcement): commercial
+ * availability is an authorization decision, not content - it must never
+ * stay publicly served past the instant it expires, and must become
+ * available again the instant it's reactivated, with no cache window
+ * either way. `dynamic = "force-dynamic"` opts this route out of the
+ * Full Route Cache entirely so both the published_spaces read and the
+ * isSpacePubliclyAvailable() check run fresh on every request.
  */
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export default async function GuestSpaceBySlugPage({
   params,
@@ -29,11 +37,12 @@ export default async function GuestSpaceBySlugPage({
 
   const { data: space } = await supabase
     .from("published_spaces")
-    .select("name, theme, timezone, enabled_modules, modules")
+    .select("tenant_id, name, theme, timezone, enabled_modules, modules")
     .eq("slug", slug)
-    .maybeSingle<PublishedSpaceRow>();
+    .maybeSingle<PublishedSpaceRow & { tenant_id: string }>();
 
   if (!space) notFound();
+  if (!(await isSpacePubliclyAvailable(space.tenant_id))) notFound();
 
   return <PublishedSpaceScreen space={space} />;
 }
