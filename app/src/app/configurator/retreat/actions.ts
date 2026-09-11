@@ -14,6 +14,8 @@ import { arrivalInfoSchema } from "@/lib/modules/arrival";
 import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { normalizeSlug, slugFormatError, isReservedSlug } from "@/lib/slug";
+import { getSpaceEntitlement } from "@/lib/entitlements/getSpaceEntitlement";
+import { deriveCommercialAvailability } from "@/lib/entitlements/availability";
 import {
   MEDIA_BUCKET,
   MAX_IMAGE_DIMENSION,
@@ -882,6 +884,19 @@ export async function publishSpace(
 
   const tenantId = String(formData.get("tenantId") ?? "");
   if (!tenantId) return { error: "Missing space.", publishedAt: null };
+
+  // UX-only pre-check, fails fast before the media Storage work below -
+  // the authoritative enforcement is inside publish_space() itself (the
+  // RPC call at the end of this function), which cannot be bypassed even
+  // if this check were removed or called incorrectly.
+  const entitlement = await getSpaceEntitlement(supabase, tenantId);
+  const availability = deriveCommercialAvailability(entitlement);
+  if (!availability.canPublish) {
+    return {
+      error: "This Space needs active commercial access before it can be published.",
+      publishedAt: null,
+    };
+  }
 
   // All rows across every image-bearing module, not just ones with a
   // current photo - a row whose photo was just removed (image_ref now

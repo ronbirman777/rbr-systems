@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { PRODUCT_FAMILIES, type ProductTypeKey } from "@/lib/brand/productFamilies";
 import { PublishSpaceButton } from "@/components/publish-space-button";
+import { deriveCommercialAvailability } from "@/lib/entitlements/availability";
+import type { SpaceEntitlementRow } from "@/lib/entitlements/types";
 
 type PublishedRow = { published_at: string } | { published_at: string }[] | null;
 
@@ -30,6 +32,20 @@ export default async function MySpacePage() {
     .from("tenants")
     .select("id, name, product_type, status, slug, content_updated_at, published_spaces(published_at)")
     .order("content_updated_at", { ascending: false });
+
+  // Commercial Access Phase 1: one additive query for every listed
+  // tenant's entitlement row, fed through the same
+  // deriveCommercialAvailability() authority publish_space() enforces
+  // server-side - no separate date logic here. A missing row (no
+  // redemption yet) is expected and resolves to inactive.
+  const tenantIds = (tenants ?? []).map((t) => t.id);
+  const { data: entitlementRows } = await supabase
+    .from("space_entitlements")
+    .select("*")
+    .in("tenant_id", tenantIds.length > 0 ? tenantIds : ["00000000-0000-0000-0000-000000000000"]);
+  const entitlementByTenant = new Map<string, SpaceEntitlementRow>(
+    (entitlementRows ?? []).map((row) => [row.tenant_id, row as SpaceEntitlementRow])
+  );
 
   function publishedAt(row: PublishedRow): string | null {
     if (!row) return null;
@@ -69,6 +85,7 @@ export default async function MySpacePage() {
             const family = PRODUCT_FAMILIES[t.product_type as ProductTypeKey];
             const slug = (t as { slug: string | null }).slug;
             const liveHref = slug ? `/s/${slug}` : `/g/${t.id}`;
+            const availability = deriveCommercialAvailability(entitlementByTenant.get(t.id) ?? null);
 
             return (
               <div key={t.id} className="rounded-2xl border border-idw-forest/10 bg-white p-6">
@@ -103,6 +120,15 @@ export default async function MySpacePage() {
                         <>No public address reserved yet - set one in Manage Space</>
                       )}
                     </div>
+                    <div className="text-xs text-idw-forest/40 mt-1">
+                      {availability.effectiveStatus === "complimentary" &&
+                        `Complimentary access${availability.daysRemaining !== null ? ` · ${availability.daysRemaining}d remaining` : ""}`}
+                      {availability.effectiveStatus === "active" &&
+                        `Active access${availability.daysRemaining !== null ? ` · ${availability.daysRemaining}d remaining` : ""}`}
+                      {availability.effectiveStatus === "grace" &&
+                        `Access expired · ${availability.daysRemaining ?? 0}d left before offline`}
+                      {availability.effectiveStatus === "inactive" && "No active access"}
+                    </div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-4 mt-5 items-center text-xs font-semibold uppercase tracking-wide">
@@ -112,7 +138,7 @@ export default async function MySpacePage() {
                   <Link href={`/configurator/retreat/${t.id}?step=publish`} className="text-idw-forest underline">
                     Preview
                   </Link>
-                  <PublishSpaceButton tenantId={t.id} isLive={Boolean(published)} />
+                  <PublishSpaceButton tenantId={t.id} isLive={Boolean(published)} canPublish={availability.canPublish} />
                   {published && (
                     <a href={liveHref} target="_blank" rel="noopener noreferrer" className="text-idw-forest underline">
                       View Live App
