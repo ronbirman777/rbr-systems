@@ -21,12 +21,21 @@ const THROTTLED_ERROR = "Too many attempts. Please wait a few minutes and try ag
  * this Server Action is the only code path with a service-role client
  * that can reach them. Order matters and is fixed:
  *   1. commercial/public availability (existing, authoritative gate)
- *   2. per-IP throttle
- *   3. code verification
- *   4. cookie issuance
+ *   2. trusted client-IP resolution (must succeed to throttle at all)
+ *   3. per-IP throttle
+ *   4. code verification
+ *   5. cookie issuance
  * A Space that isn't publicly available never gets to the code check at
  * all, regardless of what mode it's configured for - a lapsed Space's
  * code cannot be used to route around the commercial gate.
+ *
+ * Step 2 fails closed: if no trusted client IP can be established (see
+ * ipHmac.ts - on Vercel that means Vercel's own edge header is absent or
+ * malformed), the request stops here. Proceeding would either throttle
+ * every unidentifiable client as one shared identity or skip throttling
+ * entirely, and the per-IP throttle is the only thing standing between a
+ * six-digit code and brute force - so no throttle means no verification
+ * and no cookie.
  */
 export async function verifyGuestCode(
   tenantId: string,
@@ -46,8 +55,14 @@ export async function verifyGuestCode(
     return { error: GENERIC_ERROR, success: false };
   }
 
-  const admin = createAdminClient();
   const ipHmac = await deriveRequestIpHmac();
+  if (ipHmac === null) {
+    // Same generic message as an incorrect code - never tell a guest that
+    // the failure was about request provenance rather than their code.
+    return { error: GENERIC_ERROR, success: false };
+  }
+
+  const admin = createAdminClient();
 
   const { data: allowed, error: throttleError } = await admin.rpc("check_and_record_guest_attempt", {
     p_tenant_id: tenantId,

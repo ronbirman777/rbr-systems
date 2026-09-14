@@ -110,12 +110,23 @@ describe("classifyHostname - localhost / development", () => {
   });
 });
 
-describe("classifyHostname - Netlify deploy preview hostnames", () => {
-  it("classifies a Netlify draft deploy hostname", () => {
-    expect(classifyHostname("6a9d4f3af3d134dcb79982b5--rbr-systems.netlify.app")).toEqual({ kind: "netlify-preview" });
+describe("classifyHostname - Vercel deploy preview hostnames", () => {
+  it("classifies a Vercel generated deployment hostname", () => {
+    expect(classifyHostname("innerdwes-ezrllorcq-inner-dwe-s.vercel.app")).toEqual({ kind: "platform-preview" });
   });
 
-  it("classifies the site's primary Netlify subdomain", () => {
-    expect(classifyHostname("rbr-systems.netlify.app")).toEqual({ kind: "netlify-preview" });
+  it("classifies the project's primary Vercel subdomain", () => {
+    expect(classifyHostname("innerdwes.vercel.app")).toEqual({ kind: "platform-preview" });
+  });
+
+  it("no longer recognizes the legacy Netlify suffix - it is simply unknown", () => {
+    expect(classifyHostname("rbr-systems.netlify.app")).toEqual({ kind: "unknown" });
+  });
+
+  it("a preview host gets no production-only classification", () => {
+    const preview = classifyHostname("innerdwes-abc123-inner-dwe-s.vercel.app");
+    expect(preview).not.toEqual({ kind: "app" });
+    expect(preview).not.toEqual({ kind: "marketing-apex" });
+    expect(preview).not.toEqual({ kind: "marketing-www" });
   });
 });

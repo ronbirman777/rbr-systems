@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState, type Dispatch, type SetStateAction, type MouseEvent } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { GuestApp } from "@/components/guest-app";
 import { InnerDweSMark } from "@/components/brand/wordmark";
@@ -19,6 +19,7 @@ import type { GuestAccessSettings } from "./guestAccessActions";
 import { FeaturedStep } from "./featured-step";
 import type { FeaturedSubmission } from "./featuredActions";
 import { useStudioDirtyState } from "./useStudioDirtyState";
+import { STUDIO_MODULE_SECTIONS, type StudioModuleSection, type StudioSectionEditorProps } from "./studioSection";
 import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
 import { BrandImageField } from "./brand-image-field";
 import { PALETTES, GUEST_BASE_PALETTE, BRAND_COLOR_PRESETS, type AtmosphereKey, type PaletteKey } from "@/lib/theme/tokens";
@@ -1174,11 +1175,37 @@ export function RetreatConfigurator({
   // immediately (brand image upload/remove, module-item photo upload/
   // remove, add/remove item), which never call markDirty at all, per
   // "do not fake dirty state around an already-persisted action". The
-  // per-file steps (Meals/Treatments/Facilities/FAQ/Custom Pages/Stay
-  // Connected/Arrival Info) are not wired into this guard yet - each
-  // already follows the identical local-state-plus-own-Save pattern, so
-  // extending the same markDirty/markClean calls into those files is
-  // mechanical, just not completed in this pass.
+  // The seven per-file module editors (Meals/Treatments/Facilities/FAQ/
+  // Custom Pages/Stay Connected/Arrival Info) are now wired into this same
+  // guard through the shared studioSection.ts contract: each marks its own
+  // section dirty on a meaningful edit, clears it only after a save that
+  // actually succeeded, and registers its save here so "Save and continue"
+  // below can run it.
+  /** Each mounted module editor publishes its own save here (see
+   * useRegisteredSave). A ref, not state: registering must never trigger a
+   * re-render of this tree, and the map is only read inside an event
+   * handler. */
+  const moduleSaversRef = useRef(new Map<StudioModuleSection, () => Promise<boolean>>());
+
+  /** Stable per-section props. markDirty/markClean are useCallback-stable,
+   * so these identities never change - the child's registration effect runs
+   * once per mount instead of on every render. */
+  const { markDirty, markClean } = dirty;
+  const moduleSectionProps = useMemo(() => {
+    const entries = STUDIO_MODULE_SECTIONS.map((section) => [
+      section,
+      {
+        onDirty: () => markDirty(section),
+        onSaved: () => markClean(section),
+        registerSave: (save: (() => Promise<boolean>) | null) => {
+          if (save) moduleSaversRef.current.set(section, save);
+          else moduleSaversRef.current.delete(section);
+        },
+      } satisfies StudioSectionEditorProps,
+    ]);
+    return Object.fromEntries(entries) as Record<StudioModuleSection, StudioSectionEditorProps>;
+  }, [markDirty, markClean]);
+
   async function saveAllDirtySections(): Promise<boolean> {
     let allSucceeded = true;
 
@@ -1214,6 +1241,22 @@ export function RetreatConfigurator({
 
     if (dirty.dirtySections.has("facilitators")) {
       const succeeded = await handleSaveFacilitators();
+      if (!succeeded) allSucceeded = false;
+    }
+
+    // The per-file module editors. Each registered its own save while
+    // mounted; the editor clears its own dirty flag on success, so nothing
+    // is marked clean here.
+    for (const section of STUDIO_MODULE_SECTIONS) {
+      if (!dirty.dirtySections.has(section)) continue;
+      const save = moduleSaversRef.current.get(section);
+      if (!save) {
+        // The owning editor isn't mounted, so its unsaved edits cannot be
+        // persisted from here - never report success and silently drop them.
+        allSucceeded = false;
+        continue;
+      }
+      const succeeded = await save();
       if (!succeeded) allSucceeded = false;
     }
 
@@ -2008,6 +2051,7 @@ export function RetreatConfigurator({
             setMeals={setMeals}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}
+            {...moduleSectionProps.meals}
           />
         )}
 
@@ -2018,6 +2062,7 @@ export function RetreatConfigurator({
             setTreatments={setTreatments}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}
+            {...moduleSectionProps.treatments}
           />
         )}
 
@@ -2028,6 +2073,7 @@ export function RetreatConfigurator({
             setFacilities={setFacilities}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}
+            {...moduleSectionProps.facilities}
           />
         )}
 
@@ -2038,11 +2084,19 @@ export function RetreatConfigurator({
             setInfo={setArrivalInfo}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}
+            {...moduleSectionProps.arrival}
           />
         )}
 
         {step === "faq" && tenantId && (
-          <FaqStep tenantId={tenantId} faq={faq} setFaq={setFaq} onBack={() => goToStep(-1)} onContinue={() => goToStep(1)} />
+          <FaqStep
+            tenantId={tenantId}
+            faq={faq}
+            setFaq={setFaq}
+            onBack={() => goToStep(-1)}
+            onContinue={() => goToStep(1)}
+            {...moduleSectionProps.faq}
+          />
         )}
 
         {step === "customPages" && tenantId && (
@@ -2052,6 +2106,7 @@ export function RetreatConfigurator({
             setCustomPages={setCustomPages}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}
+            {...moduleSectionProps.customPages}
           />
         )}
 
@@ -2062,6 +2117,7 @@ export function RetreatConfigurator({
             setLinks={setStayConnected}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}
+            {...moduleSectionProps.stayConnected}
           />
         )}
 

@@ -7,6 +7,7 @@ import type { EditableTreatment } from "@/lib/modules/treatment";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
 import { saveTreatments, type SaveTreatmentsState } from "./actions";
+import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
 const initialState: SaveTreatmentsState = { error: null };
 
@@ -31,7 +32,7 @@ export type TreatmentsStepProps = {
   setTreatments: Dispatch<SetStateAction<EditableTreatment[]>>;
   onBack: () => void;
   onContinue: () => void;
-};
+} & StudioSectionEditorProps;
 
 /**
  * Studio Completion pass - same reused Meals-editor pattern (see
@@ -39,12 +40,13 @@ export type TreatmentsStepProps = {
  * names Treatments as reusing this exact structure). Same underlying
  * state/persistence as before.
  */
-export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, onContinue }: TreatmentsStepProps) {
+export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, onContinue, onDirty, onSaved, registerSave }: TreatmentsStepProps) {
   const [state, setState] = useState<SaveTreatmentsState>(initialState);
   const [pending, setPending] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
   function update(id: string, patch: Partial<EditableTreatment>) {
+    onDirty();
     setTreatments((items) => items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   }
 
@@ -61,7 +63,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
     if (editId === id) setEditId(null);
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     const formData = new FormData();
     formData.set("tenantId", tenantId);
     formData.set(
@@ -87,7 +89,15 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
     const result = await enqueueItemsOp(ids, () => saveTreatments(initialState, formData));
     setPending(false);
     setState(result);
+    // A failed save must NOT clear the guard - the edits are still
+    // only in memory, so the section stays dirty and the Unsaved
+    // Changes dialog keeps protecting them.
+    if (result.error) return false;
+    onSaved();
+    return true;
   }
+
+  useRegisteredSave(registerSave, handleSave);
 
   const editing = editId ? (treatments.find((t) => t.id === editId) ?? null) : null;
   const editIdx = editing ? treatments.indexOf(editing) : -1;

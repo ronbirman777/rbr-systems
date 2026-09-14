@@ -36,7 +36,7 @@ const PUBLIC_MARKETING_PATHS = new Set([
  *    *.innerdwes.com but not a valid target (reserved word, malformed
  *    label, multi-level subdomain) fails closed with a 404 rather than
  *    ever falling through to marketing content. None of this fires for
- *    localhost or a Netlify preview hostname, so local dev and staging
+ *    localhost or a Vercel preview hostname, so local dev and preview
  *    are completely unaffected until the real DNS names exist - see the
  *    Domain Phase 2 report for how to exercise these paths before then
  *    (a spoofed Host header, e.g. `curl -H "Host: app.innerdwes.com"`).

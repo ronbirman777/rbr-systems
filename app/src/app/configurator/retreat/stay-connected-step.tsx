@@ -7,6 +7,7 @@ import { SocialIcon } from "@/components/guest/social-icon";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioHeading, StudioIntro } from "./studio-ui";
 import { saveStayConnected, type SaveStayConnectedState } from "./actions";
+import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
 const initialState: SaveStayConnectedState = { error: null };
 
@@ -16,7 +17,7 @@ export type StayConnectedStepProps = {
   setLinks: Dispatch<SetStateAction<SocialLink[]>>;
   onBack: () => void;
   onContinue: () => void;
-};
+} & StudioSectionEditorProps;
 
 /**
  * Space-level social/contact links - module_settings singleton
@@ -24,17 +25,19 @@ export type StayConnectedStepProps = {
  * Zero or more links, only configured ones ever render to guests. Same
  * shared platform vocabulary/icons as Facilitator social links.
  */
-export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinue }: StayConnectedStepProps) {
+export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinue, onDirty, onSaved, registerSave }: StayConnectedStepProps) {
   const [state, setState] = useState<SaveStayConnectedState>(initialState);
   const [pending, setPending] = useState(false);
 
   function update(index: number, patch: Partial<SocialLink>) {
+    onDirty();
     setLinks((items) => items.map((it, i) => (i === index ? { ...it, ...patch } : it)));
   }
 
   function move(index: number, direction: -1 | 1) {
     const target = index + direction;
     if (target < 0 || target >= links.length) return;
+    onDirty();
     setLinks((items) => {
       const next = [...items];
       [next[index], next[target]] = [next[target], next[index]];
@@ -43,16 +46,18 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
   }
 
   function handleAdd() {
+    onDirty();
     const used = new Set(links.map((l) => l.platform));
     const next = SOCIAL_PLATFORMS.find((p) => !used.has(p)) ?? SOCIAL_PLATFORMS[0];
     setLinks((items) => [...items, { platform: next, url: "" }]);
   }
 
   function handleRemove(index: number) {
+    onDirty();
     setLinks((items) => items.filter((_, i) => i !== index));
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     const formData = new FormData();
     formData.set("tenantId", tenantId);
     formData.set("links", JSON.stringify(links.filter((l) => l.url.trim().length > 0)));
@@ -60,7 +65,15 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
     const result = await saveStayConnected(initialState, formData);
     setPending(false);
     setState(result);
+    // A failed save must NOT clear the guard - the edits are still
+    // only in memory, so the section stays dirty and the Unsaved
+    // Changes dialog keeps protecting them.
+    if (result.error) return false;
+    onSaved();
+    return true;
   }
+
+  useRegisteredSave(registerSave, handleSave);
 
   return (
     <div className="max-w-2xl">

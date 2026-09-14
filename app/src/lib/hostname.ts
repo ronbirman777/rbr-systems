@@ -36,7 +36,7 @@ export type HostnameKind =
   | { kind: "app" }
   | { kind: "guest"; slug: string }
   | { kind: "localhost" }
-  | { kind: "netlify-preview" }
+  | { kind: "platform-preview" }
   /** Recognizably under the production innerdwes.com namespace (matches
    * the apex suffix) but not a valid target: a reserved/infrastructure
    * word, a malformed label, or a multi-level subdomain. Deliberately
@@ -70,10 +70,16 @@ export function classifyHostname(hostHeader: string | null | undefined): Hostnam
     return { kind: "localhost" };
   }
 
-  // Every Netlify preview/draft/branch deploy shares this suffix - the
-  // specific hash or branch prefix varies per deploy, the suffix doesn't.
-  if (host.endsWith(".netlify.app")) {
-    return { kind: "netlify-preview" };
+  // Every Vercel preview/branch deploy shares this suffix - the specific
+  // hash or branch prefix varies per deploy, the suffix doesn't. Vercel is
+  // the deployment platform (CLAUDE.md section 3); the legacy Netlify
+  // suffix is deliberately NOT recognized any more. Recognizing a preview
+  // host grants nothing - proxy.ts gives this kind exactly the same
+  // treatment as "unknown" (ordinary routing, preview gate still applies),
+  // so a preview host can never acquire production-only behavior. It exists
+  // to state the intent explicitly rather than to change routing.
+  if (host.endsWith(".vercel.app")) {
+    return { kind: "platform-preview" };
   }
 
   if (host === PRODUCTION_APEX) return { kind: "marketing-apex" };

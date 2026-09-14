@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, type Dispatch, type SetStateAction } from "react";
+import { useState, type Dispatch, type SetStateAction } from "react";
 import type { ArrivalInfo } from "@/lib/modules/arrival";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, StudioIntro } from "./studio-ui";
 import { saveArrivalInfo, type SaveArrivalInfoState } from "./actions";
+import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
 const initialState: SaveArrivalInfoState = { error: null };
 
@@ -13,7 +14,7 @@ export type ArrivalStepProps = {
   setInfo: Dispatch<SetStateAction<ArrivalInfo>>;
   onBack: () => void;
   onContinue: () => void;
-};
+} & StudioSectionEditorProps;
 
 function Field({
   label,
@@ -55,17 +56,35 @@ function Field({
  * Still a single structured form persisting to module_settings, exactly
  * as before - purely a visual restyle.
  */
-export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue }: ArrivalStepProps) {
-  const [state, formAction, pending] = useActionState(saveArrivalInfo, initialState);
+export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDirty, onSaved, registerSave }: ArrivalStepProps) {
+  const [state, setState] = useState<SaveArrivalInfoState>(initialState);
+  const [pending, setPending] = useState(false);
 
   function set<K extends keyof ArrivalInfo>(key: K, value: ArrivalInfo[K]) {
+    onDirty();
     setInfo((prev) => ({ ...prev, [key]: value }));
   }
 
+  async function handleSave(): Promise<boolean> {
+    const formData = new FormData();
+    formData.set("tenantId", tenantId);
+    formData.set("data", JSON.stringify(info));
+    setPending(true);
+    const result = await saveArrivalInfo(initialState, formData);
+    setPending(false);
+    setState(result);
+    // A failed save must NOT clear the guard - the edits are still
+    // only in memory, so the section stays dirty and the Unsaved
+    // Changes dialog keeps protecting them.
+    if (result.error) return false;
+    onSaved();
+    return true;
+  }
+
+  useRegisteredSave(registerSave, handleSave);
+
   return (
-    <form action={formAction} className="max-w-xl">
-      <input type="hidden" name="tenantId" value={tenantId} />
-      <input type="hidden" name="data" value={JSON.stringify(info)} />
+    <div className="max-w-xl">
       <StudioHeading>Prepare arrival information</StudioHeading>
       <StudioIntro>
         Everything guests need before and on arrival. Clear, calm information makes a big difference to first
@@ -123,7 +142,8 @@ export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue }: Arr
           Back
         </button>
         <button
-          type="submit"
+          type="button"
+          onClick={handleSave}
           disabled={pending}
           className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
         >
@@ -137,6 +157,6 @@ export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue }: Arr
           Continue →
         </button>
       </div>
-    </form>
+    </div>
   );
 }

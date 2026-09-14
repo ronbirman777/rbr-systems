@@ -7,6 +7,7 @@ import type { EditableFacility } from "@/lib/modules/facility";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
 import { saveFacilities, type SaveFacilitiesState } from "./actions";
+import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
 const initialState: SaveFacilitiesState = { error: null };
 
@@ -29,19 +30,20 @@ export type FacilitiesStepProps = {
   setFacilities: Dispatch<SetStateAction<EditableFacility[]>>;
   onBack: () => void;
   onContinue: () => void;
-};
+} & StudioSectionEditorProps;
 
 /**
  * Studio Completion pass - same reused Meals-editor pattern (see
  * meals-step.tsx's doc comment). Same underlying state/persistence as
  * before.
  */
-export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, onContinue }: FacilitiesStepProps) {
+export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, onContinue, onDirty, onSaved, registerSave }: FacilitiesStepProps) {
   const [state, setState] = useState<SaveFacilitiesState>(initialState);
   const [pending, setPending] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
   function update(id: string, patch: Partial<EditableFacility>) {
+    onDirty();
     setFacilities((items) => items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   }
 
@@ -58,7 +60,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
     if (editId === id) setEditId(null);
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     const formData = new FormData();
     formData.set("tenantId", tenantId);
     formData.set(
@@ -80,7 +82,15 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
     const result = await enqueueItemsOp(ids, () => saveFacilities(initialState, formData));
     setPending(false);
     setState(result);
+    // A failed save must NOT clear the guard - the edits are still
+    // only in memory, so the section stays dirty and the Unsaved
+    // Changes dialog keeps protecting them.
+    if (result.error) return false;
+    onSaved();
+    return true;
   }
+
+  useRegisteredSave(registerSave, handleSave);
 
   const editing = editId ? (facilities.find((f) => f.id === editId) ?? null) : null;
   const editIdx = editing ? facilities.indexOf(editing) : -1;

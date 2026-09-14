@@ -6,6 +6,7 @@ import type { EditableFaqItem } from "@/lib/modules/faq";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
 import { saveFaq, type SaveFaqState } from "./actions";
+import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
 const initialState: SaveFaqState = { error: null };
 
@@ -19,7 +20,7 @@ export type FaqStepProps = {
   setFaq: Dispatch<SetStateAction<EditableFaqItem[]>>;
   onBack: () => void;
   onContinue: () => void;
-};
+} & StudioSectionEditorProps;
 
 /**
  * Same list + expand-to-edit-panel pattern as every other module_items
@@ -28,12 +29,13 @@ export type FaqStepProps = {
  * writing to the same client-held item, so it round-trips through Save
  * exactly like every other field (see saveFaq's own comment).
  */
-export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue }: FaqStepProps) {
+export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, onSaved, registerSave }: FaqStepProps) {
   const [state, setState] = useState<SaveFaqState>(initialState);
   const [pending, setPending] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
   function update(id: string, patch: Partial<EditableFaqItem>) {
+    onDirty();
     setFaq((items) => items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   }
 
@@ -61,7 +63,7 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue }: FaqStepPr
     if (editId === id) setEditId(null);
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     const formData = new FormData();
     formData.set("tenantId", tenantId);
     formData.set("items", JSON.stringify(faq));
@@ -70,7 +72,15 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue }: FaqStepPr
     const result = await enqueueItemsOp(ids, () => saveFaq(initialState, formData));
     setPending(false);
     setState(result);
+    // A failed save must NOT clear the guard - the edits are still
+    // only in memory, so the section stays dirty and the Unsaved
+    // Changes dialog keeps protecting them.
+    if (result.error) return false;
+    onSaved();
+    return true;
   }
+
+  useRegisteredSave(registerSave, handleSave);
 
   const editing = editId ? (faq.find((f) => f.id === editId) ?? null) : null;
 

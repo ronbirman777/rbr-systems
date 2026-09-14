@@ -7,6 +7,7 @@ import { MEAL_TYPES, type EditableMeal, type MealType } from "@/lib/modules/meal
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
 import { saveMeals, type SaveMealsState } from "./actions";
+import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
 const initialState: SaveMealsState = { error: null };
 
@@ -31,7 +32,7 @@ export type MealsStepProps = {
   setMeals: Dispatch<SetStateAction<EditableMeal[]>>;
   onBack: () => void;
   onContinue: () => void;
-};
+} & StudioSectionEditorProps;
 
 /**
  * Studio Completion pass - ported from the Figma Make source's
@@ -43,12 +44,13 @@ export type MealsStepProps = {
  * persistNewItemStub, saveMeals via enqueueItemsOp) as before - a visual/
  * interaction restyle, not a data-model change.
  */
-export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue }: MealsStepProps) {
+export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDirty, onSaved, registerSave }: MealsStepProps) {
   const [state, setState] = useState<SaveMealsState>(initialState);
   const [pending, setPending] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
   function update(id: string, patch: Partial<EditableMeal>) {
+    onDirty();
     setMeals((items) => items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   }
 
@@ -65,7 +67,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue }: Mea
     if (editId === id) setEditId(null);
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     const formData = new FormData();
     formData.set("tenantId", tenantId);
     formData.set(
@@ -94,7 +96,15 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue }: Mea
     const result = await enqueueItemsOp(ids, () => saveMeals(initialState, formData));
     setPending(false);
     setState(result);
+    // A failed save must NOT clear the guard - the edits are still
+    // only in memory, so the section stays dirty and the Unsaved
+    // Changes dialog keeps protecting them.
+    if (result.error) return false;
+    onSaved();
+    return true;
   }
+
+  useRegisteredSave(registerSave, handleSave);
 
   const editing = editId ? (meals.find((m) => m.id === editId) ?? null) : null;
   const editIdx = editing ? meals.indexOf(editing) : -1;

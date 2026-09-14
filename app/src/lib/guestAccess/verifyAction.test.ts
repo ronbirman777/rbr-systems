@@ -105,3 +105,63 @@ describe("verifyGuestCode - ordering: commercial availability is checked BEFORE 
     expect(mockCookieSet).not.toHaveBeenCalled();
   });
 });
+
+describe("verifyGuestCode - fail-closed when no trusted client IP can be established", () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("never calls the rate-limit RPC when trusted-IP resolution fails", async () => {
+    mockIsSpacePubliclyAvailable.mockResolvedValue(true);
+    mockDeriveRequestIpHmac.mockResolvedValue(null);
+
+    const result = await verifyGuestCode("tenant-1", verifyGuestCodeInitialState, formDataWithCode("482731"));
+
+    expect(result.success).toBe(false);
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it("never verifies the guest code or issues a cookie after trusted-IP failure", async () => {
+    mockIsSpacePubliclyAvailable.mockResolvedValue(true);
+    mockDeriveRequestIpHmac.mockResolvedValue(null);
+
+    const result = await verifyGuestCode("tenant-1", verifyGuestCodeInitialState, formDataWithCode("482731"));
+
+    expect(result.success).toBe(false);
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(mockCookieSet).not.toHaveBeenCalled();
+  });
+
+  it("returns the same generic message, leaking nothing about request provenance", async () => {
+    mockIsSpacePubliclyAvailable.mockResolvedValue(true);
+    mockDeriveRequestIpHmac.mockResolvedValue(null);
+
+    const ipFailure = await verifyGuestCode("tenant-1", verifyGuestCodeInitialState, formDataWithCode("482731"));
+
+    vi.clearAllMocks();
+    mockIsSpacePubliclyAvailable.mockResolvedValue(true);
+    mockDeriveRequestIpHmac.mockResolvedValue("hmac-abc");
+    mockRpc
+      .mockResolvedValueOnce({ data: true, error: null })
+      .mockResolvedValueOnce({ data: null, error: null });
+    const wrongCode = await verifyGuestCode("tenant-1", verifyGuestCodeInitialState, formDataWithCode("000000"));
+
+    expect(ipFailure.error).toBe(wrongCode.error);
+    expect(ipFailure.error).not.toMatch(/ip|header|vercel|trust/i);
+  });
+
+  it("only ever passes the keyed HMAC identity to the rate-limit RPC, never a raw IP", async () => {
+    mockIsSpacePubliclyAvailable.mockResolvedValue(true);
+    mockDeriveRequestIpHmac.mockResolvedValue("f".repeat(64));
+    mockRpc
+      .mockResolvedValueOnce({ data: true, error: null })
+      .mockResolvedValueOnce({ data: 1, error: null });
+
+    await verifyGuestCode("tenant-1", verifyGuestCodeInitialState, formDataWithCode("482731"));
+
+    expect(mockRpc).toHaveBeenCalledWith("check_and_record_guest_attempt", {
+      p_tenant_id: "tenant-1",
+      p_ip_hmac: "f".repeat(64),
+    });
+    const throttleArgs = mockRpc.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(JSON.stringify(throttleArgs)).not.toMatch(/\d{1,3}(\.\d{1,3}){3}/);
+  });
+});

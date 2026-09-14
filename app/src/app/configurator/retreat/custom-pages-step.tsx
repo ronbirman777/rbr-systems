@@ -7,6 +7,7 @@ import type { EditableCustomPage } from "@/lib/modules/customPage";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
 import { saveCustomPages, type SaveCustomPagesState } from "./actions";
+import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 import { DEFAULT_CUSTOM_PAGES_LIMIT } from "@/lib/entitlements/customPagesLimit";
 
 const initialState: SaveCustomPagesState = { error: null };
@@ -21,7 +22,7 @@ export type CustomPagesStepProps = {
   setCustomPages: Dispatch<SetStateAction<EditableCustomPage[]>>;
   onBack: () => void;
   onContinue: () => void;
-};
+} & StudioSectionEditorProps;
 
 /**
  * Organizer-created generic information pages - "What to Bring",
@@ -31,12 +32,13 @@ export type CustomPagesStepProps = {
  * pattern, reorder via sort_order (drag isn't built this batch - the
  * up/down buttons already used by FAQ do the same job).
  */
-export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack, onContinue }: CustomPagesStepProps) {
+export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack, onContinue, onDirty, onSaved, registerSave }: CustomPagesStepProps) {
   const [state, setState] = useState<SaveCustomPagesState>(initialState);
   const [pending, setPending] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
 
   function update(id: string, patch: Partial<EditableCustomPage>) {
+    onDirty();
     setCustomPages((items) => items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
   }
 
@@ -65,7 +67,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
     if (editId === id) setEditId(null);
   }
 
-  async function handleSave() {
+  async function handleSave(): Promise<boolean> {
     const formData = new FormData();
     formData.set("tenantId", tenantId);
     formData.set(
@@ -77,7 +79,15 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
     const result = await enqueueItemsOp(ids, () => saveCustomPages(initialState, formData));
     setPending(false);
     setState(result);
+    // A failed save must NOT clear the guard - the edits are still
+    // only in memory, so the section stays dirty and the Unsaved
+    // Changes dialog keeps protecting them.
+    if (result.error) return false;
+    onSaved();
+    return true;
   }
+
+  useRegisteredSave(registerSave, handleSave);
 
   const editing = editId ? (customPages.find((p) => p.id === editId) ?? null) : null;
   const editIdx = editing ? customPages.indexOf(editing) : -1;
