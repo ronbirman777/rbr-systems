@@ -13,75 +13,140 @@ const MEAL_TYPE_LABEL: Record<string, string> = {
   brunch: "Brunch",
   lunch: "Lunch",
   dinner: "Dinner",
-  special: "Special Dinner",
+  special: "Special",
   other: "Meal",
 };
 
 /**
- * The dedicated InnerDweS-controlled renderer for the "meals" module -
- * hospitality-oriented, not a database list: each entry reads like a menu
- * card (photo, meal type, time, description, dietary tags) rather than a
- * row of fields. Same principle as every other module renderer - the
- * organizer supplies content, InnerDweS owns every pixel of layout.
+ * Visual Fidelity Phase 1 - ported from the approved Figma source's
+ * MealsScreen. Figma's example hardcodes a special photo-bleed treatment
+ * for exactly its 3rd meal - an artifact of that one fixed example, not a
+ * generalizable rule for a real, variably-sized meal list. Reproduced
+ * here as: the first meal gets the wide "featured" horizontal treatment,
+ * every other meal gets the standard photo-top card - the same varied-
+ * rhythm intent (not every card looks identical), generalized to any
+ * number of real meals rather than fitted to exactly three.
  */
 export function MealsScreen({ brand, meals }: MealsScreenProps) {
   const vars = deriveThemeVars(brand) as CSSProperties;
 
   return (
-    <div
-      style={{
-        ...vars,
-        background: "var(--rbr-background)",
-        borderRadius: "var(--rbr-radius-lg)",
-        padding: "var(--rbr-spacing-unit)",
-        fontFamily: "var(--font-geist-sans), sans-serif",
-      }}
-      className="w-full h-full flex flex-col gap-3 overflow-y-auto"
-    >
-      <div className="text-[10px] uppercase tracking-[0.16em] text-black/40 px-1">Meals</div>
-      {meals.length === 0 && <div className="text-xs text-black/40 px-1">Nothing planned yet.</div>}
-      {meals.map((meal, i) => (
-        <div
-          key={i}
-          style={{ background: "var(--rbr-surface)", borderRadius: "var(--rbr-radius-md)" }}
-          className="overflow-hidden flex gap-3"
-        >
-          {meal.imageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={meal.imageUrl} alt="" className="w-20 shrink-0 object-cover self-stretch" />
-          ) : (
-            <div className="w-20 shrink-0 self-stretch" style={{ background: "var(--rbr-secondary)" }} aria-hidden="true" />
-          )}
-          <div className="py-3 pr-3 flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
-                style={{ background: "var(--rbr-primary)", color: "var(--rbr-on-primary)" }}
-              >
-                {MEAL_TYPE_LABEL[meal.mealType] ?? meal.mealType}
-              </span>
-              <span className="text-[10px] text-black/45">
-                {meal.startTime}
-                {meal.endTime ? `–${meal.endTime}` : ""}
-              </span>
-            </div>
-            <div className="text-base font-serif mt-1" style={{ color: "var(--rbr-primary)" }}>
-              {meal.name}
-            </div>
-            {meal.location && <div className="text-xs text-black/45 mt-0.5">{meal.location}</div>}
-            {meal.description && <div className="text-xs text-black/60 mt-1.5 leading-relaxed">{meal.description}</div>}
-            {meal.dietaryTags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {meal.dietaryTags.map((tag, j) => (
-                  <span key={j} className="text-[9px] text-black/50 border border-black/15 rounded-full px-1.5 py-0.5">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
+    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+      <div className="px-6 pt-7 pb-5">
+        <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
+          Daily Nourishment
+        </p>
+        <h1 className="text-[24px] font-normal leading-tight" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
+          Today&apos;s <em>Meals</em>
+        </h1>
+      </div>
+
+      {meals.length === 0 && (
+        <div className="px-6 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
+          Nothing added yet.
         </div>
-      ))}
+      )}
+
+      <div className="px-4 pb-10 space-y-5">
+        {meals.map((meal, idx) =>
+          idx === 0 ? (
+            <div
+              key={idx}
+              className="rounded-3xl overflow-hidden shadow-sm flex h-[140px]"
+              style={{ background: "var(--rbr-cream)", border: "1px solid color-mix(in srgb, var(--rbr-sand) 30%, transparent)" }}
+            >
+              <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+                <div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-[10px] tracking-[0.18em] uppercase font-semibold" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
+                      {MEAL_TYPE_LABEL[meal.mealType] ?? meal.mealType}
+                    </span>
+                    <span className="text-[11px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-secondary-foreground)" }}>
+                      {meal.startTime}
+                    </span>
+                  </div>
+                  <h3 className="text-[16px] leading-snug mt-1" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
+                    {meal.name}
+                  </h3>
+                </div>
+                {meal.dietaryTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {meal.dietaryTags.map((t) => (
+                      <DietaryTag key={t} tag={t} />
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="w-[130px] flex-shrink-0">
+                {meal.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={meal.imageUrl} alt={meal.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full" style={{ background: "var(--rbr-sand)" }} />
+                )}
+              </div>
+            </div>
+          ) : (
+            <div
+              key={idx}
+              className="rounded-3xl overflow-hidden shadow-sm"
+              style={{ background: "var(--rbr-cream)", border: "1px solid color-mix(in srgb, var(--rbr-sand) 30%, transparent)" }}
+            >
+              <div className="relative h-[160px]">
+                {meal.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={meal.imageUrl} alt={meal.name} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full" style={{ background: "var(--rbr-sand)" }} />
+                )}
+              </div>
+              <div className="p-4">
+                <div className="flex items-baseline justify-between mb-1.5">
+                  <span className="text-[10px] tracking-[0.18em] uppercase font-semibold" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
+                    {MEAL_TYPE_LABEL[meal.mealType] ?? meal.mealType}
+                  </span>
+                  <span className="text-[11px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-clay)" }}>
+                    {meal.startTime}
+                  </span>
+                </div>
+                <h3 className="text-[18px] leading-snug" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
+                  {meal.name}
+                </h3>
+                {meal.description && (
+                  <p className="text-[12px] leading-relaxed mt-1.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
+                    {meal.description}
+                  </p>
+                )}
+                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  {meal.location && (
+                    <span className="text-[10px]" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
+                      {meal.location}
+                    </span>
+                  )}
+                  {meal.dietaryTags.map((t) => (
+                    <DietaryTag key={t} tag={t} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )
+        )}
+      </div>
     </div>
+  );
+}
+
+function DietaryTag({ tag }: { tag: string }) {
+  return (
+    <span
+      className="text-[9px] px-2 py-0.5 rounded-full font-medium tracking-wide"
+      style={{
+        fontFamily: "var(--rbr-font-ui)",
+        background: "var(--rbr-secondary-soft)",
+        color: "var(--rbr-secondary-foreground)",
+      }}
+    >
+      {tag}
+    </span>
   );
 }

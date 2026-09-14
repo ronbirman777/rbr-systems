@@ -2,6 +2,10 @@ import { notFound } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
 import { PublishedSpaceScreen, type PublishedSpaceRow } from "@/components/guest/published-space-screen";
 import { isSpacePubliclyAvailable } from "@/lib/entitlements/isSpacePubliclyAvailable";
+import { getGuestAccessMode } from "@/lib/guestAccess/mode";
+import { hasValidGuestAccessCookie } from "@/lib/guestAccess/checkCookie";
+import { GuestAccessScreen } from "@/components/guest/guest-access-screen";
+import { extractPublishedGuestIdentity } from "@/lib/guestAccess/publishedIdentity";
 
 /**
  * The genuinely unauthenticated guest route, looked up by tenant id. No
@@ -44,7 +48,16 @@ export default async function GuestSpacePage({
     .maybeSingle<PublishedSpaceRow>();
 
   if (!space) notFound();
+  // Commercial/public availability is authoritative and checked FIRST -
+  // a lapsed Space's guest-access code cannot be used to route around
+  // it, regardless of what mode it's configured for.
   if (!(await isSpacePubliclyAvailable(tenantId))) notFound();
+
+  const mode = await getGuestAccessMode(tenantId);
+  if (mode === "code" && !(await hasValidGuestAccessCookie(tenantId))) {
+    const identity = extractPublishedGuestIdentity(space);
+    return <GuestAccessScreen tenantId={tenantId} {...identity} />;
+  }
 
   return <PublishedSpaceScreen space={space} />;
 }

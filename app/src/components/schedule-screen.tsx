@@ -14,6 +14,21 @@ export type ScheduleScreenProps = {
   nowTime: string;
 };
 
+// Every category chip derives from the organizer's own Primary/Accent -
+// alternating between the two brand-derived soft/foreground pairs for
+// visual variety, never a fixed Forest/Sage/Clay text color. "Meal" stays
+// a neutral sand tone deliberately - not every tag needs to compete for
+// brand emphasis.
+const CATEGORY_CHIP_STYLE: Record<string, { background: string; color: string }> = {
+  Meditation: { background: "var(--rbr-primary-soft)", color: "var(--rbr-primary-foreground)" },
+  Yoga: { background: "var(--rbr-primary-soft)", color: "var(--rbr-primary-foreground)" },
+  Breathwork: { background: "var(--rbr-secondary-soft)", color: "var(--rbr-secondary-foreground)" },
+  Meal: { background: "color-mix(in srgb, var(--rbr-sand) 50%, transparent)", color: "var(--rbr-dusk)" },
+  Sound: { background: "var(--rbr-secondary-soft)", color: "var(--rbr-secondary-foreground)" },
+  Community: { background: "var(--rbr-primary-soft)", color: "var(--rbr-primary-foreground)" },
+};
+const DEFAULT_CHIP_STYLE = { background: "color-mix(in srgb, var(--rbr-sand) 50%, transparent)", color: "var(--rbr-dusk)" };
+
 function weekdayLabel(dateIso: string): { weekday: string; day: string } {
   const d = new Date(`${dateIso}T00:00:00`);
   return {
@@ -23,10 +38,14 @@ function weekdayLabel(dateIso: string): { weekday: string; day: string } {
 }
 
 /**
- * The dedicated Schedule module renderer - a different question than
- * TodayScreen answers. Today is "what's now / what's next"; this is "what
- * is the whole program, browsable by day." Both read from the exact same
- * PublicScheduleItem[] (private schedule_items in the configurator preview,
+ * Visual Fidelity Phase 1 - ported from the approved Figma source's
+ * ScheduleScreen: day strip + a genuine connecting timeline rail with a
+ * status dot per session (now/next/past/later), the "now" item getting a
+ * full primary-color card rather than a colored border strip. Same
+ * brand-color mapping rule as TodayScreen: Figma's "forest" accent fills
+ * -> --rbr-primary (tenant-driven); neutral text/surfaces -> the fixed
+ * --rbr-* base palette. Both read from the exact same PublicScheduleItem[]
+ * (private schedule_items in the configurator preview,
  * published_spaces.modules.schedule for guests) - there is no second
  * source of schedule truth, only a second way of looking at the same one.
  */
@@ -58,114 +77,154 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime }: ScheduleS
   const nowIndex = isToday
     ? items.findIndex((i) => i.startTime <= nowTime && (!i.endTime || i.endTime > nowTime))
     : -1;
-  // Independent of nowIndex - a guest mid-session still wants to see what's
-  // coming up next, not just what's happening right now.
   const nextIndex = isToday ? items.findIndex((i) => i.startTime > nowTime) : -1;
 
   return (
-    <div
-      style={{
-        ...vars,
-        background: "var(--rbr-background)",
-        borderRadius: "var(--rbr-radius-lg)",
-        padding: "var(--rbr-spacing-unit)",
-        fontFamily: "var(--font-geist-sans), sans-serif",
-      }}
-      className="w-full h-full flex flex-col gap-4 overflow-hidden"
-    >
-      <div className="text-[10px] uppercase tracking-[0.16em] text-black/40 px-1">Schedule</div>
+    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+      <div className="px-6 pt-8 pb-5">
+        <h1 className="text-[26px] font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
+          Schedule
+        </h1>
+      </div>
 
       {dates.length > 1 && (
-        <div className="flex gap-2 overflow-x-auto no-scrollbar px-1 shrink-0">
-          {dates.map((d) => {
-            const { weekday, day } = weekdayLabel(d);
-            const selected = d === activeDate;
-            return (
-              <button
-                key={d}
-                type="button"
-                onClick={() => setSelectedDate(d)}
-                style={
-                  selected
-                    ? { background: "var(--rbr-primary)", color: "var(--rbr-on-primary)" }
-                    : undefined
-                }
-                className={`shrink-0 rounded-xl px-3 py-2 text-center min-w-[52px] ${
-                  selected ? "" : "text-black/50"
-                }`}
-              >
-                <div className="text-[9px] uppercase tracking-wide opacity-80">{weekday}</div>
-                <div className="text-sm font-medium mt-0.5 flex items-center justify-center gap-1">
-                  {day}
-                  {d === todayIso && (
-                    <span
-                      className="w-1 h-1 rounded-full"
-                      style={{ background: selected ? "currentColor" : "var(--rbr-primary)" }}
-                    />
-                  )}
-                </div>
-              </button>
-            );
-          })}
+        <div className="px-4 mb-5">
+          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {dates.map((d) => {
+              const active = d === activeDate;
+              const { weekday, day } = weekdayLabel(d);
+              return (
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setSelectedDate(d)}
+                  className="flex-shrink-0 flex flex-col items-center justify-center w-[52px] h-[64px] rounded-2xl transition-all"
+                  style={
+                    active
+                      ? { background: "var(--rbr-navigation)", color: "var(--rbr-on-navigation)", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }
+                      : { background: "var(--rbr-cream)", color: "var(--rbr-dusk)", border: "1px solid color-mix(in srgb, var(--rbr-sand) 60%, transparent)" }
+                  }
+                >
+                  <span
+                    className="text-[9px] tracking-widest uppercase font-semibold"
+                    style={{
+                      fontFamily: "var(--rbr-font-ui)",
+                      opacity: active ? 0.75 : 1,
+                      color: active ? "var(--rbr-on-navigation)" : "var(--rbr-mist)",
+                    }}
+                  >
+                    {weekday}
+                  </span>
+                  <span className="text-[22px] leading-none mt-0.5 font-light" style={{ fontFamily: "var(--rbr-font-display)" }}>
+                    {day}
+                  </span>
+                  {active && <div className="w-1 h-1 rounded-full mt-1" style={{ background: "var(--rbr-secondary)" }} />}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      <div
-        style={{ background: "var(--rbr-surface)", borderRadius: "var(--rbr-radius-md)" }}
-        className="flex-1 overflow-y-auto p-3"
-      >
+      <div className="px-4 pb-10">
         {items.length === 0 && (
-          <div className="text-xs text-black/40 px-1 py-2">Nothing scheduled for this day.</div>
+          <div className="text-xs px-1 py-2" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
+            Nothing scheduled for this day.
+          </div>
         )}
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col">
           {items.map((item, i) => {
+            const isPast = isToday && item.endTime !== null && item.endTime <= nowTime;
             const isNow = i === nowIndex;
             const isNext = i === nextIndex;
+            const dotBackground = isNow
+              ? "var(--rbr-secondary)"
+              : isNext
+                ? "var(--rbr-primary)"
+                : "var(--rbr-sand)";
+            const chip = item.category ? (CATEGORY_CHIP_STYLE[item.category] ?? DEFAULT_CHIP_STYLE) : null;
+
             return (
-              <div key={i} className="flex gap-3">
-                <div className="w-12 shrink-0 text-right pt-0.5">
-                  <div className="text-xs font-medium text-black/70">{item.startTime}</div>
-                  {item.endTime && <div className="text-[10px] text-black/35">{item.endTime}</div>}
+              <div key={`${item.date}-${item.startTime}-${item.title}`} className={`flex gap-3 ${isPast ? "opacity-40" : ""}`}>
+                <div className="w-11 flex-shrink-0 pt-4 text-right">
+                  <span
+                    className="text-[11px] font-medium tabular-nums leading-none"
+                    style={{ fontFamily: "var(--rbr-font-ui)", color: isNow ? "var(--rbr-secondary)" : "var(--rbr-mist)" }}
+                  >
+                    {item.startTime}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center pt-4">
+                  <div
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={
+                      isNow
+                        ? { background: dotBackground, boxShadow: "0 0 0 2px color-mix(in srgb, var(--rbr-secondary) 25%, transparent)" }
+                        : { background: dotBackground }
+                    }
+                  />
+                  {i < items.length - 1 && (
+                    <div className="w-px flex-1 mt-1 min-h-[20px]" style={{ background: "color-mix(in srgb, var(--rbr-sand) 60%, transparent)" }} />
+                  )}
                 </div>
                 <div
-                  style={{
-                    background: isNow ? "var(--rbr-primary)" : "transparent",
-                    color: isNow ? "var(--rbr-on-primary)" : undefined,
-                    borderRadius: "var(--rbr-radius-sm)",
-                  }}
-                  className={`flex-1 pb-3 ${isNow ? "px-3 py-2.5" : "border-l pl-3 border-black/10"}`}
+                  className="flex-1 mb-1.5 rounded-[18px] p-4"
+                  style={
+                    isNow
+                      ? { background: "var(--rbr-primary)", color: "var(--rbr-on-primary)", boxShadow: "0 6px 24px rgba(45,74,62,0.18)" }
+                      : { background: "var(--rbr-cream)", border: "1px solid var(--rbr-primary-border)" }
+                  }
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium" style={!isNow ? { color: "var(--rbr-primary)" } : undefined}>
-                      {item.title}
-                    </span>
-                    {isNow && (
-                      <span className="text-[9px] font-semibold uppercase tracking-wide opacity-80">Now</span>
-                    )}
-                    {isNext && (
+                  {isNow && (
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ background: "var(--rbr-secondary)" }} />
                       <span
-                        className="text-[9px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-full"
-                        style={{ background: "var(--rbr-secondary)", color: "var(--rbr-on-primary)" }}
+                        className="text-[9px] tracking-[0.22em] uppercase font-semibold"
+                        style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-on-primary)", opacity: 0.85 }}
                       >
-                        Up next
+                        Now
                       </span>
-                    )}
-                    {item.category && (
-                      <span className={`text-[9px] uppercase tracking-wide ${isNow ? "opacity-70" : "text-black/35"}`}>
+                    </div>
+                  )}
+                  <div className="flex items-start gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h3
+                        className="text-[16px] leading-snug"
+                        style={{ fontFamily: "var(--rbr-font-display)", color: isNow ? "var(--rbr-on-primary)" : "var(--rbr-text)" }}
+                      >
+                        {item.title}
+                      </h3>
+                      {item.facilitator && (
+                        <p
+                          className="text-[11px] mt-0.5"
+                          style={{ fontFamily: "var(--rbr-font-ui)", color: isNow ? "color-mix(in srgb, var(--rbr-on-primary) 55%, transparent)" : "var(--rbr-dusk)" }}
+                        >
+                          {item.facilitator}
+                        </p>
+                      )}
+                      {(item.location || item.endTime) && (
+                        <div
+                          className="flex items-center gap-2 mt-2 flex-wrap text-[10px]"
+                          style={{ fontFamily: "var(--rbr-font-ui)", color: isNow ? "color-mix(in srgb, var(--rbr-on-primary) 45%, transparent)" : "var(--rbr-mist)" }}
+                        >
+                          {item.location && <span>{item.location}</span>}
+                          {item.endTime && <span>· until {item.endTime}</span>}
+                        </div>
+                      )}
+                    </div>
+                    {item.category && chip && (
+                      <span
+                        className="flex-shrink-0 text-[9px] px-2.5 py-0.5 rounded-full tracking-widest font-medium uppercase mt-0.5"
+                        style={{
+                          fontFamily: "var(--rbr-font-ui)",
+                          background: isNow ? "color-mix(in srgb, var(--rbr-on-primary) 20%, transparent)" : chip.background,
+                          color: isNow ? "var(--rbr-on-primary)" : chip.color,
+                        }}
+                      >
                         {item.category}
                       </span>
                     )}
                   </div>
-                  {(item.facilitator || item.location) && (
-                    <div className={`text-xs mt-0.5 ${isNow ? "opacity-85" : "text-black/50"}`}>
-                      {[item.facilitator, item.location].filter(Boolean).join(" · ")}
-                    </div>
-                  )}
-                  {item.description && (
-                    <div className={`text-xs mt-1 leading-relaxed ${isNow ? "opacity-85" : "text-black/55"}`}>
-                      {item.description}
-                    </div>
-                  )}
                 </div>
               </div>
             );

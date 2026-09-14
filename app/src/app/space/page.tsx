@@ -6,8 +6,20 @@ import { PRODUCT_FAMILIES, type ProductTypeKey } from "@/lib/brand/productFamili
 import { PublishSpaceButton } from "@/components/publish-space-button";
 import { deriveCommercialAvailability } from "@/lib/entitlements/availability";
 import type { SpaceEntitlementRow } from "@/lib/entitlements/types";
+import { SpaceThumbnail } from "@/components/space-thumbnail";
+import { MEDIA_BUCKET } from "@/lib/media/path";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type PublishedRow = { published_at: string } | { published_at: string }[] | null;
+
+/** Same signed-URL-via-RLS-scoped-session pattern used everywhere else a
+ * draft Storage object is previewed to its own organizer (see
+ * configurator/retreat/[tenantId]/page.tsx's resolveImageUrl). */
+async function resolveSpaceImageUrl(supabase: SupabaseClient, imageRef: string | null): Promise<string | null> {
+  if (!imageRef) return null;
+  const { data: signed } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(imageRef, 3600);
+  return signed?.signedUrl ?? null;
+}
 
 /**
  * Self Service Phase 1: formalizes My Spaces per the phase brief - public
@@ -45,6 +57,25 @@ export default async function MySpacePage() {
     .in("tenant_id", tenantIds.length > 0 ? tenantIds : ["00000000-0000-0000-0000-000000000000"]);
   const entitlementByTenant = new Map<string, SpaceEntitlementRow>(
     (entitlementRows ?? []).map((row) => [row.tenant_id, row as SpaceEntitlementRow])
+  );
+
+  // Manual QA Fixes phase - Space Image, resolved the same way as every
+  // other draft Storage preview on this page's sibling
+  // (configurator/retreat/[tenantId]/page.tsx): a fresh signed URL per
+  // request, through the signed-in user's own RLS-scoped session, never a
+  // persisted/cached URL. One query for every listed tenant's brand_configs
+  // row (same batching shape as the entitlements query above), then
+  // resolved in parallel.
+  const { data: brandRows } = await supabase
+    .from("brand_configs")
+    .select("tenant_id, space_image_ref")
+    .in("tenant_id", tenantIds.length > 0 ? tenantIds : ["00000000-0000-0000-0000-000000000000"]);
+  const spaceImageUrlByTenant = new Map<string, string | null>(
+    await Promise.all(
+      (brandRows ?? []).map(
+        async (row) => [row.tenant_id, await resolveSpaceImageUrl(supabase, row.space_image_ref)] as const
+      )
+    )
   );
 
   function publishedAt(row: PublishedRow): string | null {
@@ -86,11 +117,17 @@ export default async function MySpacePage() {
             const slug = (t as { slug: string | null }).slug;
             const liveHref = slug ? `/s/${slug}` : `/g/${t.id}`;
             const availability = deriveCommercialAvailability(entitlementByTenant.get(t.id) ?? null);
+            const spaceImageUrl = spaceImageUrlByTenant.get(t.id) ?? null;
 
             return (
               <div key={t.id} className="rounded-2xl border border-idw-forest/10 bg-white p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
+                <div className="flex items-start gap-4">
+                  <SpaceThumbnail
+                    imageUrl={spaceImageUrl}
+                    alt={`${t.name} cover`}
+                    className="w-20 h-20 rounded-xl shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
                     <div
                       className="text-xs font-semibold uppercase tracking-[0.12em]"
                       style={{ color: family?.accent ?? "#192B21" }}

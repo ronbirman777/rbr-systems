@@ -20,9 +20,12 @@ export const DEMO_NOW_TIME = "09:15";
 
 export const DEMO_BRAND: BrandConfig = {
   name: "Samadhi Retreat",
-  logoUrl: null,
+  logoRef: null,
   palette: "forest-sage",
   customPrimary: null,
+  customSecondary: null,
+  customNavigation: null,
+  customText: null,
   atmosphere: "calm-organic",
   imageStyle: "rounded",
 };
@@ -91,10 +94,10 @@ export const DEMO_SCHEDULE: PublicScheduleItem[] = [
 ];
 
 export const DEMO_FACILITATORS: DisplayFacilitator[] = [
-  { name: "Maya Rodriguez", role: "Lead Facilitator", bio: null, imageRef: null, imageUrl: null },
-  { name: "Tomás Vargas", role: "Yoga & Breathwork", bio: null, imageRef: null, imageUrl: null },
-  { name: "Asha Mehta", role: "Nutrition & Ayurveda", bio: null, imageRef: null, imageUrl: null },
-  { name: "James Liu", role: "Integration Support", bio: null, imageRef: null, imageUrl: null },
+  { name: "Maya Rodriguez", role: "Lead Facilitator", bio: null, imageRef: null, imageUrl: null, specialties: [], socialLinks: [], imagePosition: null },
+  { name: "Tomás Vargas", role: "Yoga & Breathwork", bio: null, imageRef: null, imageUrl: null, specialties: [], socialLinks: [], imagePosition: null },
+  { name: "Asha Mehta", role: "Nutrition & Ayurveda", bio: null, imageRef: null, imageUrl: null, specialties: [], socialLinks: [], imagePosition: null },
+  { name: "James Liu", role: "Integration Support", bio: null, imageRef: null, imageUrl: null, specialties: [], socialLinks: [], imagePosition: null },
 ];
 
 export const DEMO_MEALS: DisplayMeal[] = [

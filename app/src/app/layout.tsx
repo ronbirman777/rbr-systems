@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Fraunces } from "next/font/google";
+import { Geist, Geist_Mono, Fraunces, DM_Serif_Display, DM_Sans } from "next/font/google";
 import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
 
@@ -24,6 +24,24 @@ const fraunces = Fraunces({
   weight: ["300", "500", "600"],
 });
 
+// Time to Flow Visual Fidelity Phase 1 - the Guest App's own two-role
+// typography system (src/lib/theme/tokens.ts's GUEST_FONT_DISPLAY /
+// GUEST_FONT_UI), distinct from InnerDweS's own font-brand/font-editorial
+// above. DM Serif Display only ships weight 400 (normal + italic) on
+// Google Fonts - Figma's source never uses another weight for it either.
+const dmSerifDisplay = DM_Serif_Display({
+  variable: "--font-dm-serif-display",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  weight: "400",
+});
+
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+});
+
 export const metadata: Metadata = {
   // Required so page-level openGraph/twitter image paths (see the
   // marketing route group's opengraph-image.tsx) resolve to an absolute
@@ -37,7 +55,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} ${dmSerifDisplay.variable} ${dmSans.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

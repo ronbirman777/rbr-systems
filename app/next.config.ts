@@ -30,6 +30,33 @@ const SECURITY_HEADERS = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Next.js 16.3.3's default Server Action body limit is 1MB (confirmed
+    // by the exact runtime error a >1MB request produces: "Body exceeded
+    // 1 MB limit") - every image upload goes through a Server Action
+    // (uploadBrandImage/uploadModuleItemPhoto in
+    // src/app/configurator/retreat/actions.ts), so ANY image near or
+    // above 1MB was being rejected by Next's own transport layer before
+    // our 8MB product limit (MAX_IMAGE_BYTES, src/lib/media/path.ts) ever
+    // got a chance to run - client validation, server validation, and
+    // sharp optimization all happen strictly after the request body is
+    // already fully received.
+    //
+    // This raises ONLY that transport ceiling, to 10MB - comfortably
+    // above the 8MB product limit (an image this size travels as
+    // multipart/form-data, not base64, so its encoded size is the raw
+    // file size plus a few hundred bytes of multipart boundary/header
+    // overhead per field - 10MB leaves ~2MB of headroom, far more than
+    // that real overhead requires). It does NOT change what's actually
+    // accepted: MAX_IMAGE_BYTES stays 8MB, unchanged, in both
+    // clientValidation.ts (UX-only) and actions.ts's server-side
+    // isFileSizeAllowed check (the real, unbypassable enforcement) - a
+    // 9MB file still travels through this transport layer successfully,
+    // then still gets rejected by the unchanged 8MB check right after.
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
   async headers() {
     return [
       {
