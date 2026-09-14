@@ -11,11 +11,15 @@ import { mealSchema } from "@/lib/modules/meal";
 import { treatmentSchema } from "@/lib/modules/treatment";
 import { facilitySchema } from "@/lib/modules/facility";
 import { arrivalInfoSchema } from "@/lib/modules/arrival";
+import { faqItemSchema } from "@/lib/modules/faq";
+import { customPageSchema } from "@/lib/modules/customPage";
+import { socialLinksSchema } from "@/lib/modules/socialLinks";
 import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { normalizeSlug, slugFormatError, isReservedSlug } from "@/lib/slug";
 import { getSpaceEntitlement } from "@/lib/entitlements/getSpaceEntitlement";
 import { deriveCommercialAvailability } from "@/lib/entitlements/availability";
+import { getCustomPagesLimit } from "@/lib/entitlements/customPagesLimit";
 import {
   MEDIA_BUCKET,
   MAX_IMAGE_DIMENSION,
@@ -24,9 +28,9 @@ import {
   OPTIMIZED_IMAGE_MIME,
   isFileSizeAllowed,
   tenantMediaPath,
-  publishedMediaPath,
   mediaItemFolder,
 } from "@/lib/media/path";
+import { copyDraftToPublished } from "@/lib/media/publish";
 
 /**
  * Guests must never be served an original, unoptimized upload - see the
@@ -93,11 +97,24 @@ export async function saveDraft(
       .eq("id", tenantId);
   }
 
+  const rawCustomPrimary = String(formData.get("customPrimary") ?? "").trim();
+  const rawCustomSecondary = String(formData.get("customSecondary") ?? "").trim();
+  const rawCustomNavigation = String(formData.get("customNavigation") ?? "").trim();
+  const rawCustomText = String(formData.get("customText") ?? "").trim();
+
+  // logoRef is deliberately not read/written here - Logo has its own
+  // dedicated upload action (uploadBrandImage), scoped to just that
+  // column, the same way module-item photos are never touched by their
+  // module's bulk text-field save. This parse only validates the shape;
+  // logoRef: null is a placeholder that never reaches the upsert below.
   const parsed = brandConfigSchema.safeParse({
     name,
-    logoUrl: null,
+    logoRef: null,
     palette: String(formData.get("palette") ?? "forest-sage"),
-    customPrimary: null,
+    customPrimary: rawCustomPrimary || null,
+    customSecondary: rawCustomSecondary || null,
+    customNavigation: rawCustomNavigation || null,
+    customText: rawCustomText || null,
     atmosphere: String(formData.get("atmosphere") ?? "calm-organic"),
     imageStyle: "rounded",
   });
@@ -109,6 +126,10 @@ export async function saveDraft(
     tenant_id: tenantId,
     name: parsed.data.name,
     palette: parsed.data.palette,
+    custom_primary: parsed.data.customPrimary,
+    custom_secondary: parsed.data.customSecondary,
+    custom_navigation: parsed.data.customNavigation,
+    custom_text: parsed.data.customText,
     atmosphere: parsed.data.atmosphere,
     image_style: parsed.data.imageStyle,
     updated_at: new Date().toISOString(),
@@ -442,6 +463,14 @@ export async function saveFacilitators(
   const parsed = parseItemsWithIds(formData, facilitatorSchema);
   if ("error" in parsed) return { error: parsed.error };
 
+  // metadata is rebuilt from the FULL item every save (socialLinks AND
+  // specialties together, from the same parsed object) - never a
+  // hardcoded/partial object. This is the fix for the metadata round-trip
+  // problem: PostgREST's upsert replaces the whole metadata column, so
+  // the only safe way to avoid one field silently wiping the other is to
+  // always write the complete current value, which the client always has
+  // because [tenantId]/page.tsx loads metadata back into EditableFacilitator
+  // on every page load (see resolveImageUrl's sibling there).
   const rows = parsed.data.map((item, i) => ({
     id: item.id,
     tenant_id: tenantId,
@@ -450,7 +479,7 @@ export async function saveFacilitators(
     subtitle: item.role,
     description: item.bio,
     sort_order: i,
-    metadata: {},
+    metadata: { socialLinks: item.socialLinks, specialties: item.specialties, imagePosition: item.imagePosition },
   }));
   return saveModuleItemsGeneric(supabase, tenantId, "facilitators", rows);
 }
@@ -558,6 +587,120 @@ export async function saveFacilities(
     },
   }));
   return saveModuleItemsGeneric(supabase, tenantId, "facilities", rows);
+}
+
+export type SaveFaqState = SaveModuleItemsState;
+
+/**
+ * metadata.enabled must survive every edit - rebuilt from the full parsed
+ * item every save (same discipline as saveFacilitators' socialLinks/
+ * specialties), never a hardcoded/partial object.
+ */
+export async function saveFaq(_prevState: SaveFaqState, formData: FormData): Promise<SaveFaqState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You need to be logged in to save." };
+
+  const tenantId = String(formData.get("tenantId") ?? "");
+  if (!tenantId) return { error: "Missing space." };
+
+  const parsed = parseItemsWithIds(formData, faqItemSchema);
+  if ("error" in parsed) return { error: parsed.error };
+
+  const rows = parsed.data.map((item, i) => ({
+    id: item.id,
+    tenant_id: tenantId,
+    module_key: "faq",
+    title: item.question,
+    subtitle: null,
+    description: item.answer,
+    sort_order: i,
+    metadata: { enabled: item.enabled },
+  }));
+  return saveModuleItemsGeneric(supabase, tenantId, "faq", rows);
+}
+
+export type SaveCustomPagesState = SaveModuleItemsState;
+
+/** Same metadata.enabled discipline as saveFaq. image_ref is deliberately
+ * excluded from this bulk save (see saveModuleItemsGeneric's own comment
+ * on why Save must never write that column) - photo upload/removal goes
+ * through uploadModuleItemPhoto/removeModuleItemPhoto exactly like every
+ * other module_items photo. */
+export async function saveCustomPages(_prevState: SaveCustomPagesState, formData: FormData): Promise<SaveCustomPagesState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You need to be logged in to save." };
+
+  const tenantId = String(formData.get("tenantId") ?? "");
+  if (!tenantId) return { error: "Missing space." };
+
+  const parsed = parseItemsWithIds(formData, customPageSchema);
+  if ("error" in parsed) return { error: parsed.error };
+
+  // Server-side enforcement of the Custom Pages limit - the "+ Add Page"
+  // disabled state in custom-pages-step.tsx is a UX convenience only,
+  // never the real gate. See lib/entitlements/customPagesLimit.ts for
+  // why this reads the limit through a function instead of a literal 3.
+  const entitlement = await getSpaceEntitlement(supabase, tenantId);
+  const limit = getCustomPagesLimit(entitlement);
+  if (parsed.data.length > limit) {
+    return { error: `You've reached the ${limit}-page limit. Remove a page before adding another.` };
+  }
+
+  const rows = parsed.data.map((item, i) => ({
+    id: item.id,
+    tenant_id: tenantId,
+    module_key: "customPages",
+    title: item.title,
+    subtitle: null,
+    description: item.body,
+    sort_order: i,
+    metadata: { enabled: item.enabled },
+  }));
+  return saveModuleItemsGeneric(supabase, tenantId, "customPages", rows);
+}
+
+export type SaveStayConnectedState = { error: string | null };
+
+export async function saveStayConnected(
+  _prevState: SaveStayConnectedState,
+  formData: FormData
+): Promise<SaveStayConnectedState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You need to be logged in to save." };
+
+  const tenantId = String(formData.get("tenantId") ?? "");
+  if (!tenantId) return { error: "Missing space." };
+
+  let links: unknown;
+  try {
+    links = JSON.parse(String(formData.get("links") ?? "[]"));
+  } catch {
+    return { error: "Could not read the links." };
+  }
+  const parsed = socialLinksSchema.safeParse(links);
+  if (!parsed.success) return { error: "Some links weren't valid." };
+
+  const { error } = await supabase.from("module_settings").upsert(
+    {
+      tenant_id: tenantId,
+      module_key: "stayConnected",
+      data: { links: parsed.data },
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "tenant_id,module_key" }
+  );
+  if (error) return { error: error.message };
+
+  return { error: null };
 }
 
 export type SaveArrivalInfoState = { error: string | null };
@@ -699,7 +842,13 @@ export async function uploadModuleItemPhoto(
     return { error: signError?.message ?? "Uploaded, but preview failed.", imageRef: path, imageUrl: null };
   }
 
-  await supabase.from("module_items").upsert(
+  // Found during the media-storage-lifecycle audit: this upsert's error
+  // was never checked - a real failure here would leave the just-written
+  // Storage object (draft.webp already has the new bytes) with nothing in
+  // the database pointing at it, while still reporting success to the
+  // organizer. uploadBrandImage's equivalent write already checks its
+  // error (see below); this brings module_items in line with it.
+  const { error: dbError } = await supabase.from("module_items").upsert(
     {
       id: itemId,
       tenant_id: tenantId,
@@ -712,6 +861,7 @@ export async function uploadModuleItemPhoto(
     },
     { onConflict: "id" }
   );
+  if (dbError) return { error: dbError.message, imageRef: null, imageUrl: null };
 
   return { error: null, imageRef: path, imageUrl: signed.signedUrl };
 }
@@ -738,6 +888,123 @@ export async function removeModuleItemPhoto(
 
   if (tenantId && itemId) {
     await supabase.from("module_items").update({ image_ref: null }).eq("id", itemId).eq("tenant_id", tenantId);
+  }
+
+  return { error: null };
+}
+
+// ---------------------------------------------------------------------
+// Brand-level media (Today Hero, Space Image, Logo) - same upload/remove
+// shape as uploadModuleItemPhoto/removeModuleItemPhoto above, targeting
+// brand_configs' three single-image columns instead of a module_items
+// row. Kept as its own pair rather than generalizing the module_items
+// functions, since the persistence target (an upsert-by-id row vs. an
+// update-by-tenant column) is genuinely different, not just a different
+// moduleKey string.
+//
+// PRE-MIGRATION 0014: brand_configs.hero_image_ref/space_image_ref/
+// logo_ref do not exist on Production yet - calling this against
+// Production before that migration is applied returns a real database
+// error (column does not exist), not a silent no-op. That is intentional
+// - see the Product Completion pre-migration report.
+// ---------------------------------------------------------------------
+
+export type BrandImageKind = "hero" | "space" | "logo";
+
+const BRAND_IMAGE_COLUMN: Record<BrandImageKind, "hero_image_ref" | "space_image_ref" | "logo_ref"> = {
+  hero: "hero_image_ref",
+  space: "space_image_ref",
+  logo: "logo_ref",
+};
+
+export type UploadBrandImageState = {
+  error: string | null;
+  imageRef: string | null;
+  imageUrl: string | null;
+};
+
+export async function uploadBrandImage(
+  _prevState: UploadBrandImageState,
+  formData: FormData
+): Promise<UploadBrandImageState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You need to be logged in.", imageRef: null, imageUrl: null };
+
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const kind = String(formData.get("kind") ?? "") as BrandImageKind;
+  const previousRef = String(formData.get("previousRef") ?? "") || null;
+  const file = formData.get("file");
+  if (!tenantId || !(kind in BRAND_IMAGE_COLUMN)) {
+    return { error: "Missing space or image type.", imageRef: null, imageUrl: null };
+  }
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "No file selected.", imageRef: null, imageUrl: null };
+  }
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return { error: "Please upload a JPG, PNG or WEBP image.", imageRef: null, imageUrl: null };
+  }
+  if (!isFileSizeAllowed(file.size)) {
+    return { error: "Image must be under 8MB.", imageRef: null, imageUrl: null };
+  }
+
+  let optimized: Buffer;
+  try {
+    optimized = await optimizeUploadedImage(file);
+  } catch {
+    return { error: "That image could not be processed. Try a different file.", imageRef: null, imageUrl: null };
+  }
+
+  const path = tenantMediaPath(tenantId, "brand", kind, OPTIMIZED_IMAGE_EXTENSION);
+
+  if (previousRef && previousRef !== path) {
+    await supabase.storage.from(MEDIA_BUCKET).remove([previousRef]);
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from(MEDIA_BUCKET)
+    .upload(path, optimized, { upsert: true, contentType: OPTIMIZED_IMAGE_MIME });
+  if (uploadError) return { error: uploadError.message, imageRef: null, imageUrl: null };
+
+  const { data: signed, error: signError } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600);
+  if (signError || !signed) {
+    return { error: signError?.message ?? "Uploaded, but preview failed.", imageRef: path, imageUrl: null };
+  }
+
+  const column = BRAND_IMAGE_COLUMN[kind];
+  const { error: dbError } = await supabase
+    .from("brand_configs")
+    .upsert({ tenant_id: tenantId, [column]: path, updated_at: new Date().toISOString() }, { onConflict: "tenant_id" });
+  if (dbError) return { error: dbError.message, imageRef: null, imageUrl: null };
+
+  return { error: null, imageRef: path, imageUrl: signed.signedUrl };
+}
+
+export type RemoveBrandImageState = { error: string | null };
+
+export async function removeBrandImage(
+  _prevState: RemoveBrandImageState,
+  formData: FormData
+): Promise<RemoveBrandImageState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You need to be logged in." };
+
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const kind = String(formData.get("kind") ?? "") as BrandImageKind;
+  const imageRef = String(formData.get("imageRef") ?? "");
+  if (!imageRef || !(kind in BRAND_IMAGE_COLUMN)) return { error: null };
+
+  const { error } = await supabase.storage.from(MEDIA_BUCKET).remove([imageRef]);
+  if (error) return { error: error.message };
+
+  if (tenantId) {
+    const column = BRAND_IMAGE_COLUMN[kind];
+    await supabase.from("brand_configs").update({ [column]: null }).eq("tenant_id", tenantId);
   }
 
   return { error: null };
@@ -853,7 +1120,7 @@ export async function deleteModuleItem(
 
 export type PublishState = { error: string | null; publishedAt: string | null };
 
-const MEDIA_MODULE_KEYS = ["facilitators", "meals", "treatments", "facilities"];
+const MEDIA_MODULE_KEYS = ["facilitators", "meals", "treatments", "facilities", "customPages"];
 
 /**
  * The only way anything reaches published_spaces. Calls the
@@ -862,15 +1129,17 @@ const MEDIA_MODULE_KEYS = ["facilitators", "meals", "treatments", "facilities"];
  * the admin client. A non-owner's call fails inside the same transaction
  * (RLS on the underlying tables/insert), nothing partially applies either way.
  *
- * Before calling it, snapshot every module_items row's current draft photo
- * (across every image-bearing module, not just Facilitators) into its
- * stable published-path counterpart (see publishedMediaPath). This is the
+ * Before calling it, snapshot every current draft photo - both
+ * module_items rows (across every image-bearing module) AND the three
+ * brand-level refs (Today Hero, Space Image, Logo) - into its stable
+ * published-path counterpart (see copyDraftToPublished). This is the
  * media equivalent of what publish_space() already does for text: take a
  * copy of the current draft state, not a live reference to it, so further
  * draft edits/replacements never retroactively change what's already
- * published - only the next Publish/Republish does. Runs through the same
- * RLS-enforcing client; a copy only succeeds because both the source and
- * destination paths start with this tenant's own id.
+ * published - only the next Publish/Republish does. publish_space()
+ * itself (the SQL function) only ever string-transforms a path for the
+ * JSON it writes - it never touches Storage bytes, which is why this
+ * copy must happen here, before the RPC call, not inside it.
  */
 export async function publishSpace(
   _prevState: PublishState,
@@ -909,37 +1178,49 @@ export async function publishSpace(
     .eq("tenant_id", tenantId)
     .in("module_key", MEDIA_MODULE_KEYS);
 
-  // Each row's Storage work is independent of every other row's, so run
+  // brand_configs' three brand-level image refs (Hero/Space/Logo) need the
+  // exact same draft->published treatment as any module_items photo -
+  // this select and the copies below are what actually makes the
+  // migration 0014 design (modules.brand.{hero,space,logo}.imageRef)
+  // real rather than a dangling path. Selecting brand_configs columns
+  // that don't exist yet on Production (pre-0014) would error, not
+  // silently no-op - see the Pending column note at this function's call
+  // sites until 0014 is applied.
+  const { data: brandRow } = await supabase
+    .from("brand_configs")
+    .select("hero_image_ref, space_image_ref, logo_ref")
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  // Each item's Storage work is independent of every other item's, so run
   // them concurrently rather than one at a time - found during end-to-end
   // verification: with facilitators, meals, treatments and facilities all
   // enabled at once, a sequential loop of list/remove/copy round-trips per
   // row made Publish/Republish noticeably slow. This is purely a
-  // performance fix; the per-row logic itself is unchanged.
-  await Promise.all(
-    (mediaRows ?? []).map(async (row) => {
-      const draftPath = row.image_ref as string | null;
-      const publishedPath = draftPath ? publishedMediaPath(draftPath) : null;
-      const folder = draftPath ? mediaItemFolder(draftPath) : `${tenantId}/${row.module_key}/${row.id}`;
-      if (!folder) return;
-
-      // Clean up every stale "published.*" sibling: either a different
-      // file type from an earlier Publish (the organizer replaced a .jpg
-      // with a .png and republished), or - when publishedPath is null
-      // because the photo was removed entirely - every published.* file
-      // for this item.
-      const { data: siblings } = await supabase.storage.from(MEDIA_BUCKET).list(folder);
-      const stalePublished = (siblings ?? [])
-        .filter((f) => f.name.startsWith("published.") && `${folder}/${f.name}` !== publishedPath)
-        .map((f) => `${folder}/${f.name}`);
-      if (stalePublished.length > 0) {
-        await supabase.storage.from(MEDIA_BUCKET).remove(stalePublished);
-      }
-
-      if (draftPath && publishedPath) {
-        await supabase.storage.from(MEDIA_BUCKET).copy(draftPath, publishedPath);
-      }
-    })
-  );
+  // performance fix; the per-item logic itself is unchanged.
+  //
+  // A failed media publish must never produce a "successful" Publish -
+  // Promise.all rejects on the first failure, and that rejection MUST
+  // stop this function before the publish_space() RPC is ever called, or
+  // published_at would update (reporting success to the organizer) while
+  // some guest-visible image silently stayed stale. copyDraftToPublished
+  // throws MediaPublishError for every Storage failure it can hit; none
+  // of them are swallowed here.
+  try {
+    await Promise.all([
+      ...(mediaRows ?? []).map((row) =>
+        copyDraftToPublished(supabase, row.image_ref as string | null, `${tenantId}/${row.module_key}/${row.id}`)
+      ),
+      copyDraftToPublished(supabase, brandRow?.hero_image_ref ?? null, `${tenantId}/brand/hero`),
+      copyDraftToPublished(supabase, brandRow?.space_image_ref ?? null, `${tenantId}/brand/space`),
+      copyDraftToPublished(supabase, brandRow?.logo_ref ?? null, `${tenantId}/brand/logo`),
+    ]);
+  } catch (err) {
+    return {
+      error: err instanceof Error ? `Could not publish your photos - ${err.message}` : "Could not publish your photos.",
+      publishedAt: null,
+    };
+  }
 
   const { data, error } = await supabase.rpc("publish_space", { p_tenant_id: tenantId });
   if (error) return { error: error.message, publishedAt: null };
