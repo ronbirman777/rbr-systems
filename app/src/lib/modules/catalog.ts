@@ -17,8 +17,10 @@ export const OPTIONAL_MODULES = {
   facilities: { label: "Facilities", implemented: true },
   resources: { label: "Resources", implemented: false },
   arrivalInfo: { label: "Arrival Information", implemented: true },
-  generalInfo: { label: "General Information", implemented: false },
-  contact: { label: "Contact", implemented: false },
+  dailyInspiration: { label: "Daily Inspiration", implemented: true },
+  faq: { label: "FAQ", implemented: true },
+  customPages: { label: "Custom Pages", implemented: true },
+  stayConnected: { label: "Stay Connected", implemented: true },
   audio: { label: "Audio", implemented: false },
   announcements: { label: "Announcements", implemented: false },
 } as const;

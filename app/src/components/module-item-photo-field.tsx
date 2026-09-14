@@ -8,6 +8,8 @@ import {
   type RemoveModuleItemPhotoState,
 } from "@/app/configurator/retreat/actions";
 import { enqueueItemOp } from "@/lib/modules/persistItem";
+import { validateImageFile, classifyServerImageError } from "@/lib/media/clientValidation";
+import { ImageUploadErrorDialog } from "@/components/image-upload-error-dialog";
 
 const uploadInitialState: UploadModuleItemPhotoState = { error: null, imageRef: null, imageUrl: null };
 const removeInitialState: RemoveModuleItemPhotoState = { error: null };
@@ -26,6 +28,20 @@ export type ModuleItemPhotoFieldProps = {
   imageRef: string | null;
   imageUrl: string | null | undefined;
   onChange: (patch: { imageRef: string | null; imageUrl: string | null }) => void;
+  /** Tailwind `aspect-[]` value (e.g. "13/10") matching this item's ACTUAL
+   * guest-app render box, so the preview thumbnail is cropped the same way
+   * guests will actually see it - not a generic circle unrelated to any
+   * real destination shape. Defaults to the pre-existing 1:1 circle for
+   * any caller that hasn't been updated yet. */
+  previewAspect?: string;
+  /** CSS object-position for the preview (e.g. "center top") - matches a
+   * non-default anchor already used in the real render (facilitators use
+   * object-top today). Defaults to "center". */
+  previewPosition?: string;
+  /** Short, honest recommendation shown near the control - the real
+   * render box this photo ends up in, so organizers upload something that
+   * won't need much cropping. */
+  ratioHint?: string;
 };
 
 /**
@@ -51,11 +67,14 @@ export function ModuleItemPhotoField({
   imageRef,
   imageUrl,
   onChange,
+  previewAspect = "1/1",
+  previewPosition = "center",
+  ratioHint,
 }: ModuleItemPhotoFieldProps) {
-  const [uploadState, setUploadState] = useState<UploadModuleItemPhotoState>(uploadInitialState);
   const [uploadPending, setUploadPending] = useState(false);
   const [removeState, setRemoveState] = useState<RemoveModuleItemPhotoState>(removeInitialState);
   const [removePending, setRemovePending] = useState(false);
+  const [dialogError, setDialogError] = useState<{ title: string; body: string } | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -63,6 +82,15 @@ export function ModuleItemPhotoField({
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file) return;
+
+    // Validated BEFORE any pending state, FormData, or network request -
+    // an oversized or wrong-type file must never show a spinner or touch
+    // the network at all, only ever the dialog below.
+    const validation = validateImageFile(file);
+    if (!validation.ok) {
+      setDialogError(validation);
+      return;
+    }
 
     const formData = new FormData();
     formData.set("tenantId", tenantId);
@@ -78,9 +106,10 @@ export function ModuleItemPhotoField({
     setUploadPending(true);
     const result = await enqueueItemOp(itemId, () => uploadModuleItemPhoto(uploadInitialState, formData));
     setUploadPending(false);
-    setUploadState(result);
     if (result.imageRef && result.imageUrl) {
       onChange({ imageRef: result.imageRef, imageUrl: result.imageUrl });
+    } else if (result.error) {
+      setDialogError(classifyServerImageError(result.error));
     }
   }
 
@@ -103,9 +132,18 @@ export function ModuleItemPhotoField({
       <div className="flex items-center gap-3">
         {imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl} alt="" className="w-11 h-11 rounded-full object-cover shrink-0" />
+          <img
+            src={imageUrl}
+            alt=""
+            className="w-16 rounded-lg object-cover shrink-0"
+            style={{ aspectRatio: previewAspect.replace("/", " / "), objectPosition: previewPosition }}
+          />
         ) : (
-          <div className="w-11 h-11 rounded-full bg-idw-forest/10 shrink-0" aria-hidden="true" />
+          <div
+            className="w-16 rounded-lg bg-idw-forest/10 shrink-0"
+            style={{ aspectRatio: previewAspect.replace("/", " / ") }}
+            aria-hidden="true"
+          />
         )}
 
         <input
@@ -138,11 +176,20 @@ export function ModuleItemPhotoField({
 
       <p className="text-[11px] text-idw-forest/40 mt-1.5">
         Images up to 8MB. We automatically optimize them for fast loading.
+        {ratioHint ? ` ${ratioHint}` : ""}
       </p>
 
-      {(uploadState.error || removeState.error) && (
-        <p className="text-xs text-red-700 mt-1">{uploadState.error || removeState.error}</p>
-      )}
+      {removeState.error && <p className="text-xs text-red-700 mt-1">{removeState.error}</p>}
+      <ImageUploadErrorDialog
+        open={dialogError !== null}
+        title={dialogError?.title ?? ""}
+        body={dialogError?.body ?? ""}
+        onPrimary={() => {
+          setDialogError(null);
+          fileInputRef.current?.click();
+        }}
+        onCancel={() => setDialogError(null)}
+      />
     </div>
   );
 }

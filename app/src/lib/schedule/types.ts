@@ -46,3 +46,28 @@ export function upcomingItems(
     .sort((a, b) => (a.date === b.date ? a.startTime.localeCompare(b.startTime) : a.date.localeCompare(b.date)))
     .slice(0, limit);
 }
+
+/**
+ * The single session happening right now, if any - shared by TodayScreen
+ * (Happening Now card) and ScheduleScreen (the "Now" timeline highlight)
+ * so both derive the exact same answer from the exact same rule, rather
+ * than each re-implementing this comparison independently.
+ */
+export function findNowItem(
+  schedule: PublicScheduleItem[],
+  todayIso: string,
+  nowTime: string
+): PublicScheduleItem | null {
+  const today = todaysItems(schedule, todayIso);
+  return today.find((item) => item.startTime <= nowTime && (!item.endTime || item.endTime > nowTime)) ?? null;
+}
+
+/** The single next session today, if any - see findNowItem. */
+export function findNextItem(
+  schedule: PublicScheduleItem[],
+  todayIso: string,
+  nowTime: string
+): PublicScheduleItem | null {
+  const today = todaysItems(schedule, todayIso);
+  return today.find((item) => item.startTime > nowTime) ?? null;
+}
