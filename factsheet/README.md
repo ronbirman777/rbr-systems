@@ -15,7 +15,9 @@ and the build verifies that page 2 renders pixel identical across all three.
 | `wonderland-factsheet.html` | **Source, wide pool hero.** Edit this. |
 | `wonderland-factsheet-pool-salas.html` | **Source, pool-and-salas hero** — the closer frame from the 2026/27 flyer. |
 | `wonderland-factsheet-shala.html` | **Source, shala-interior hero.** |
-| `factsheet.css` | The layout, shared by both variants so they cannot drift apart. |
+| `wonderland-nightly-rates.html` | **Source, one-page rate card**, quoted in US dollars. |
+| `factsheet.css` | Typefaces, colour tokens and sheet geometry, shared by every document so they cannot drift apart. |
+| `rates.css` | The rate card's own table styling, on top of `factsheet.css`. |
 | `*-standalone.html` | One self-contained file per variant (CSS, fonts and photos inlined). Use these to email or hand off without the folder. |
 | `*.pdf` | Exported 2-page A4 PDF per variant. |
 | `build.py` | Regenerates the standalone HTML and the PDF for every variant. |
@@ -27,9 +29,9 @@ and the build verifies that page 2 renders pixel identical across all three.
 ## Rebuilding
 
 ```
-python3 build.py                                  # all three variants
+python3 build.py                                  # every document
 python3 build.py --html                           # standalone HTML only (no Chrome)
-python3 build.py wonderland-factsheet-shala.html  # one variant
+python3 build.py wonderland-nightly-rates.html    # just one
 CHROME=/path/to/chrome python3 build.py
 ```
 
@@ -136,3 +138,24 @@ Framing matters as much as pixel count here. Both pool heroes are landscape
 frames at 1.50:1, so the 2.04:1 hero band keeps 74 % of their height. The
 shala-interior hero is a phone frame held portrait, so the same band keeps only
 28 % — the same room shot landscape would lose far less.
+
+## Nightly rate card
+
+`wonderland-nightly-rates.html` is a separate single-page A4 document sharing the
+same visual system. It restates the property's Baht rate card in US dollars:
+
+| Months | Private single | Private double | Shared, 1 bed |
+| --- | --- | --- | --- |
+| January – April | $180 | $240 | $75 |
+| May – October | $120 | $165 | $60 |
+| November – December | $180 | $240 | $75 |
+
+Converted from the Baht original (6,000 / 8,000 / 2,500 and 4,000 / 5,500 /
+2,000) at **1 USD = 33.31 THB**, the rate on 15 September 2026. Every figure
+lands within 0.2 % of a round dollar, so none of them needed rounding away from
+the true conversion.
+
+The sheet prints that rate and its date under the table. **Keep that line in step
+with the numbers**: a dollar card with no stated basis goes quietly stale as the
+Baht moves, and a partner holding an old copy has no way to tell. Re-cut the
+rates when the Baht has moved enough to matter, and update the line with them.

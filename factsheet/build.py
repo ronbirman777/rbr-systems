@@ -4,9 +4,10 @@ Build the distributable outputs for the Wonderland Healing Center factsheet.
 
 Each variant's source HTML references factsheet.css, fonts/ and images/ locally:
 
-  wonderland-factsheet.html             wide pool hero
-  wonderland-factsheet-pool-salas.html  original pool-and-salas hero
-  wonderland-factsheet-shala.html       shala-interior hero
+  wonderland-factsheet.html             2pp factsheet, wide pool hero
+  wonderland-factsheet-pool-salas.html  2pp factsheet, pool-and-salas hero
+  wonderland-factsheet-shala.html       2pp factsheet, shala-interior hero
+  wonderland-nightly-rates.html         1pp rate card, USD
 
 and produces, alongside itself,
 
@@ -32,6 +33,7 @@ VARIANTS = [
     "wonderland-factsheet.html",
     "wonderland-factsheet-pool-salas.html",
     "wonderland-factsheet-shala.html",
+    "wonderland-nightly-rates.html",
 ]
 
 CHROME_CANDIDATES = [

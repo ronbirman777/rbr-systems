@@ -1,0 +1,122 @@
+/* ============================================================
+   WONDERLAND HEALING CENTER — NIGHTLY RATES
+   Single A4 sheet. Loaded after factsheet.css, which supplies the
+   typefaces, the colour tokens, the .sheet geometry and @page.
+   ============================================================ */
+
+/* Shallower hero than the factsheet's, and a lower band of the frame */
+.rates-hero{height:84mm;}
+
+.rates-head{text-align:center;padding-top:10mm;}
+
+/* Masthead a touch smaller here than on the factsheet cover */
+.rates-head .masthead{font-size:25.5pt;}
+
+.rates-kicker{
+  margin-top:5mm;
+  font-weight:500;
+  font-size:8pt;
+  letter-spacing:.26em;
+  text-indent:.26em;
+  text-transform:uppercase;
+  color:var(--gold);
+}
+
+.notes{
+  margin-top:8mm;
+  text-align:center;
+  font-weight:400;
+  font-size:8.5pt;
+  line-height:2.05;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  color:var(--ink);
+}
+.notes b{font-weight:500;}
+
+.notes-rule{
+  width:100%;height:.3mm;
+  background:var(--rule-fine);
+  margin:7mm 0 8mm;
+}
+
+/* --- Rate table ------------------------------------------- */
+.rates{
+  width:100%;
+  border-collapse:collapse;
+  table-layout:fixed;
+}
+.rates th,
+.rates td{
+  border:.3mm solid var(--rule-fine);
+  text-align:center;
+  vertical-align:middle;
+}
+.rates thead th{
+  background:var(--forest);
+  border-color:var(--forest);
+  color:#F4EFE5;
+  font-weight:600;
+  font-size:7.4pt;
+  line-height:1.5;
+  letter-spacing:.13em;
+  text-indent:.13em;
+  text-transform:uppercase;
+  padding:4.6mm 2mm;
+}
+.rates tbody th{
+  font-weight:600;
+  font-size:7.4pt;
+  letter-spacing:.11em;
+  text-indent:.11em;
+  text-transform:uppercase;
+  color:var(--forest);
+  padding:5mm 3mm;
+}
+.rates tbody td{
+  font-family:var(--serif);
+  font-weight:400;
+  font-size:16pt;
+  color:var(--ink);
+  padding:5mm 2mm;
+}
+/* Alternating tint, as on the Baht original */
+.rates tbody tr:nth-child(odd){background:rgba(122,158,126,.09);}
+
+/* --- Conversion basis, tagline, foot ---------------------- */
+.basis{
+  margin-top:6mm;
+  text-align:center;
+  font-weight:400;
+  font-size:6.6pt;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+}
+.tagline{
+  margin-top:9mm;
+  text-align:center;
+  font-weight:500;
+  font-size:7.6pt;
+  letter-spacing:.22em;
+  text-indent:.22em;
+  text-transform:uppercase;
+  color:var(--gold);
+}
+
+.rates-foot{
+  position:absolute;
+  left:var(--margin);right:var(--margin);
+  bottom:13mm;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  padding-top:4.2mm;
+  border-top:.3mm solid var(--rule-fine);
+  font-weight:500;
+  font-size:6.8pt;
+  letter-spacing:.19em;
+  text-transform:uppercase;
+  color:var(--ink-mute);
+}
+.rates-foot .web{color:var(--gold);}
