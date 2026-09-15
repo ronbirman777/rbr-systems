@@ -83,18 +83,9 @@
 /* Alternating tint, as on the Baht original */
 .rates tbody tr:nth-child(odd){background:rgba(122,158,126,.09);}
 
-/* --- Conversion basis, tagline, foot ---------------------- */
-.basis{
-  margin-top:6mm;
-  text-align:center;
-  font-weight:400;
-  font-size:6.6pt;
-  letter-spacing:.14em;
-  text-transform:uppercase;
-  color:var(--ink-mute);
-}
+/* --- Tagline and foot ------------------------------------- */
 .tagline{
-  margin-top:9mm;
+  margin-top:11mm;
   text-align:center;
   font-weight:500;
   font-size:7.6pt;

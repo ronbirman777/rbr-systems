@@ -155,7 +155,7 @@ Converted from the Baht original (6,000 / 8,000 / 2,500 and 4,000 / 5,500 /
 lands within 0.2 % of a round dollar, so none of them needed rounding away from
 the true conversion.
 
-The sheet prints that rate and its date under the table. **Keep that line in step
-with the numbers**: a dollar card with no stated basis goes quietly stale as the
-Baht moves, and a partner holding an old copy has no way to tell. Re-cut the
-rates when the Baht has moved enough to matter, and update the line with them.
+The sheet itself prints no conversion note — the dollar figures stand on their
+own, as the Baht card's did. That means the rate they were cut at lives only
+here, so **when the Baht moves enough to matter, re-cut the figures and update
+the rate recorded above**; nothing on the sheet will show its age.
