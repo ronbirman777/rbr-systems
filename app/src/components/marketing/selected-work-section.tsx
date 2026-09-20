@@ -7,7 +7,8 @@ import { PhoneFrame } from "./phone-frame";
  * InnerDweS existed, not a Time to Flow tenant. Every image here is a real
  * screenshot carried over from the old RBR site's own case study
  * (landing/images/wonderland/, copied verbatim into public/marketing/
- * wonderland/) - nothing here is a recreated or fake screen, and nothing
+ * wonderland/, plus later captures taken directly from the live guest
+ * app with a real browser) - nothing here is a recreated or fake screen, and nothing
  * about the live Wonderland website or guest app is touched by this
  * section. See the section's own copy for how the past-work/current-product
  * distinction is stated to the reader.
@@ -115,7 +116,7 @@ export function SelectedWorkSection() {
               Guest Experience
             </div>
             <div className="font-ui text-sm text-idw-forest/50 mb-8">
-              Today · Schedule · Meals · Retreat Information
+              Today · Schedule · Explore · Meals · Retreat Information
             </div>
 
             {/* Desktop/tablet: fanned three-phone gallery, real screenshots only */}
@@ -167,6 +168,51 @@ export function SelectedWorkSection() {
                 />
               </PhoneFrame>
             </div>
+
+            {/* Second row - the rest of the guest journey the three hero
+              * phones can't show on their own. Same real-screenshot rule as
+              * above: every image is a capture of the live Wonderland guest
+              * app, never a recreation. Smaller and quieter on purpose so the
+              * hero fan stays the focal point. */}
+            <ul className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-5 justify-items-center list-none p-0">
+              {[
+                {
+                  src: "/marketing/wonderland/app-explore-display.webp",
+                  alt: "Wonderland guest app - Explore menu listing Classes, Meals, Treatments, Retreats & Trainings and Readings",
+                  label: "Explore",
+                },
+                {
+                  src: "/marketing/wonderland/app-classes-display.webp",
+                  alt: "Wonderland guest app - Classes information screen",
+                  label: "Classes",
+                },
+                {
+                  src: "/marketing/wonderland/app-readings-display.webp",
+                  alt: "Wonderland guest app - Readings screen",
+                  label: "Readings",
+                },
+                {
+                  src: "/marketing/wonderland/app-my-stay-display.webp",
+                  alt: "Wonderland guest app - My Stay menu with General Info, FAQ and Stay Connected",
+                  label: "My Stay",
+                },
+              ].map((shot) => (
+                <li key={shot.src} className="flex flex-col items-center">
+                  <PhoneFrame width={116}>
+                    <Image
+                      src={shot.src}
+                      alt={shot.alt}
+                      fill
+                      className="object-cover object-top"
+                      sizes="116px"
+                    />
+                  </PhoneFrame>
+                  <span className="font-ui text-xs uppercase tracking-[0.16em] text-idw-forest/45 mt-3">
+                    {shot.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
 
             <a
               href="https://wonderland-app.netlify.app/"
