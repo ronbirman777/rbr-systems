@@ -3,7 +3,8 @@
 import { useActionState, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ClipboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { verifyGuestCode, verifyGuestCodeInitialState, type VerifyGuestCodeState } from "@/lib/guestAccess/verifyAction";
+import { verifyGuestCode } from "@/lib/guestAccess/verifyAction";
+import { verifyGuestCodeInitialState, type VerifyGuestCodeState } from "@/lib/guestAccess/verifyActionState";
 
 export type GuestAccessScreenProps = {
   tenantId: string;

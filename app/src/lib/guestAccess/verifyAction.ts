@@ -5,10 +5,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isSpacePubliclyAvailable } from "@/lib/entitlements/isSpacePubliclyAvailable";
 import { deriveRequestIpHmac } from "./ipHmac";
 import { guestAccessCookieName, signGuestAccessToken, GUEST_ACCESS_COOKIE_MAX_AGE_SECONDS } from "./cookieToken";
+import type { VerifyGuestCodeState } from "./verifyActionState";
 
-export type VerifyGuestCodeState = { error: string | null; success: boolean };
-
-export const verifyGuestCodeInitialState: VerifyGuestCodeState = { error: null, success: false };
+// This file has "use server" at module scope, so every export from it must
+// be an async function (Next.js Server Actions constraint) - see
+// verifyActionState.ts for why the state type/initial-value pair live
+// there instead of here (Task 008C, CRITICAL-1 root-cause fix).
 
 const GENERIC_ERROR = "That code didn't work. Please try again.";
 const THROTTLED_ERROR = "Too many attempts. Please wait a few minutes and try again.";
@@ -55,7 +57,18 @@ export async function verifyGuestCode(
     return { error: GENERIC_ERROR, success: false };
   }
 
-  const ipHmac = await deriveRequestIpHmac();
+  let ipHmac: string | null;
+  try {
+    ipHmac = await deriveRequestIpHmac();
+  } catch {
+    // Fail closed: an unexpected exception deriving the trusted IP (for
+    // example a missing/misconfigured GUEST_ACCESS_IP_HMAC_SECRET) must
+    // degrade to the same generic failure as every other rejection path
+    // below, never an uncaught crash and never a bypass of the throttle,
+    // code verification, or cookie-issuance gates that follow (Task 008C
+    // hardening, added alongside the CRITICAL-1 root-cause fix).
+    return { error: GENERIC_ERROR, success: false };
+  }
   if (ipHmac === null) {
     // Same generic message as an incorrect code - never tell a guest that
     // the failure was about request provenance rather than their code.
