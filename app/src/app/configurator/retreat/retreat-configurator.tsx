@@ -1353,20 +1353,40 @@ export function RetreatConfigurator({
       {/* Mobile Studio Navigation - the desktop sidebar below is
           `hidden lg:flex`, so below that breakpoint this topbar + drawer
           is the only way to switch sections. */}
-      <div className="lg:hidden flex items-center gap-3 px-4 py-3 border-b border-idw-forest/10 bg-white">
+      <div className="lg:hidden flex items-center gap-1 px-2 py-2 border-b border-idw-forest/10 bg-white">
         <button
           type="button"
           onClick={() => setMobileNavOpen(true)}
           aria-label="Open Studio menu"
           aria-expanded={mobileNavOpen}
-          className="w-9 h-9 flex flex-col items-center justify-center gap-1 rounded-lg -ml-1"
+          className="w-11 h-11 shrink-0 flex flex-col items-center justify-center gap-1 rounded-lg active:bg-idw-forest/10"
         >
           <span className="w-5 h-0.5 bg-idw-forest rounded-full" />
           <span className="w-5 h-0.5 bg-idw-forest rounded-full" />
           <span className="w-5 h-0.5 bg-idw-forest rounded-full" />
         </button>
-        <InnerDweSMark size={20} />
-        <span className="ml-auto text-xs font-semibold text-idw-forest/60 truncate max-w-[45%]">
+        <InnerDweSMark size={20} className="shrink-0 mx-1" />
+        {/* Task 011 / UX-1, revised after real-iPhone QA: the earlier
+            plain-text "My Spaces" link was too small and too subtle to
+            read as a back control at arm's length on a real device. This
+            is now a real button - icon + label together (never icon-only,
+            per Ron's explicit requirement), a >=44px touch target
+            (min-h-11 = 44px), a visible :active press state, and still
+            routed through attemptNavigate, the same dirty-change guard as
+            every other cross-section move in the Studio - never a bare
+            Link that could bypass it. */}
+        <button
+          type="button"
+          onClick={() => attemptNavigate(() => router.push("/space"))}
+          aria-label="Back to My Spaces"
+          className="flex items-center gap-1 min-h-11 pl-1 pr-2.5 -ml-1 rounded-lg text-idw-forest active:bg-idw-forest/10 transition-colors shrink-0"
+        >
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
+            <path d="M12.5 15.5L7 10l5.5-5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <span className="text-sm font-semibold whitespace-nowrap">My Spaces</span>
+        </button>
+        <span className="ml-auto text-xs font-semibold text-idw-forest/60 truncate max-w-[28%]">
           {steps.find((s) => s.key === step)?.label ??
             (step === "share" ? "Share Your Space" : step === "featured" ? "Featured on InnerDweS" : "")}
         </span>
@@ -1399,6 +1419,20 @@ export function RetreatConfigurator({
                   ×
                 </button>
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileNavOpen(false);
+                  attemptNavigate(() => router.push("/space"));
+                }}
+                aria-label="Back to My Spaces"
+                className="w-full flex items-center gap-1.5 min-h-11 px-3 mb-4 rounded-lg text-sm font-semibold text-idw-forest/70 active:bg-idw-forest/10 hover:bg-idw-forest/5"
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
+                  <path d="M12.5 15.5L7 10l5.5-5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                My Spaces
+              </button>
               {sidebarGroups.map((group) => (
                 <div key={group.label} className="mb-6">
                   <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-idw-forest/40 mb-2">
@@ -1489,7 +1523,14 @@ export function RetreatConfigurator({
             pins the global actions structurally, regardless of section
             content or nav-list length. */}
         <div className="flex-1 min-h-0 overflow-y-auto px-7 pt-9">
-          <InnerDweSMark size={26} className="mb-10" />
+          <InnerDweSMark size={26} className="mb-4" />
+          <button
+            type="button"
+            onClick={() => attemptNavigate(() => router.push("/space"))}
+            className="mb-8 text-xs font-semibold text-idw-forest/60 hover:text-idw-forest underline decoration-idw-forest/25 underline-offset-2"
+          >
+            ← My Spaces
+          </button>
           {sidebarGroups.map((group) => (
             <div key={group.label} className="mb-6">
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-idw-forest/40 mb-2">

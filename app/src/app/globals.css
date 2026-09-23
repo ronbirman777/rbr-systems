@@ -65,6 +65,22 @@
   --font-editorial: var(--font-fraunces);
 }
 
+html {
+  /* Task 011 mobile QA: no measured horizontal scrollWidth/clientWidth
+     overflow was reproducible on My Spaces (Playwright, Chromium AND
+     WebKit with real touch/mobile emulation, at 320-1440px - see
+     011/evidence/mobile-overflow-investigation.md). This addresses the
+     other real, well-documented cause of "the page feels like it moves
+     left/right" on iOS Safari with zero true overflow: elastic/rubber-
+     band overscroll bounce, which by default applies in every direction
+     the browser THINKS might be scrollable, not just ones that actually
+     are. Restricting only the horizontal axis (vertical bounce is
+     native, expected iOS feel and stays untouched) is a safe, purely
+     additive change - it cannot cause new overflow and does not affect
+     the Guest tab bar's own intentional .no-scrollbar horizontal scroll. */
+  overscroll-behavior-x: none;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -131,6 +147,23 @@ body {
   animation: idw-hero-drift 26s ease-in-out infinite alternate;
 }
 
+/* Task 011 (items D/E) - the shared premium loading transition (LoadingTransition
+   component): a slow, calm breathe on the InnerDweS mark, same plain-CSS-keyframe
+   technique as the Hero's own motion above, not a generic spinner. */
+@keyframes idw-loading-breathe {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+.idw-loading-breathe {
+  animation: idw-loading-breathe 2.2s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .idw-animate-fade-rise {
     animation: none;
@@ -138,6 +171,9 @@ body {
     transform: none;
   }
   .idw-hero-drift {
+    animation: none;
+  }
+  .idw-loading-breathe {
     animation: none;
   }
 }

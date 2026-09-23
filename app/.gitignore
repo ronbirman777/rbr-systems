@@ -38,6 +38,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# supabase local CLI state (branch pointer for `supabase start`, not project config)
+supabase/.branches/
+supabase/.temp/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

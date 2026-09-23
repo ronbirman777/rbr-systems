@@ -61,87 +61,100 @@ export default async function ResumeRetreatConfiguratorPage({
   // will error for every tenant, breaking this entire page, otherwise.
   // Intentional coupling, not an oversight - do not deploy this code
   // ahead of whichever of those migrations hasn't applied yet.
-  const { data: brand } = await supabase
-    .from("brand_configs")
-    .select(
-      "palette, atmosphere, custom_primary, custom_secondary, custom_navigation, custom_text, hero_image_ref, space_image_ref, logo_ref"
-    )
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
-
-  const { data: scheduleRows } = await supabase
-    .from("schedule_items")
-    .select("id, date, start_time, end_time, title, facilitator, location, description, category")
-    .eq("tenant_id", tenantId)
-    .order("date")
-    .order("start_time");
-
-  const { data: facilitatorRows } = await supabase
-    .from("module_items")
-    .select("id, title, subtitle, description, image_ref, metadata")
-    .eq("tenant_id", tenantId)
-    .eq("module_key", "facilitators")
-    .order("sort_order");
-
-  const { data: mealRows } = await supabase
-    .from("module_items")
-    .select("id, title, description, image_ref, metadata")
-    .eq("tenant_id", tenantId)
-    .eq("module_key", "meals")
-    .order("sort_order");
-
-  const { data: treatmentRows } = await supabase
-    .from("module_items")
-    .select("id, title, subtitle, description, image_ref, metadata")
-    .eq("tenant_id", tenantId)
-    .eq("module_key", "treatments")
-    .order("sort_order");
-
-  const { data: facilityRows } = await supabase
-    .from("module_items")
-    .select("id, title, description, image_ref, metadata")
-    .eq("tenant_id", tenantId)
-    .eq("module_key", "facilities")
-    .order("sort_order");
-
-  const { data: faqRows } = await supabase
-    .from("module_items")
-    .select("id, title, description, metadata")
-    .eq("tenant_id", tenantId)
-    .eq("module_key", "faq")
-    .order("sort_order");
-
-  const { data: customPageRows } = await supabase
-    .from("module_items")
-    .select("id, title, description, image_ref, metadata")
-    .eq("tenant_id", tenantId)
-    .eq("module_key", "customPages")
-    .order("sort_order");
-
-  const { data: arrivalRow } = await supabase
-    .from("module_settings")
-    .select("data")
-    .eq("tenant_id", tenantId)
-    .eq("module_key", "arrivalInfo")
-    .maybeSingle();
-
-  const { data: stayConnectedRow } = await supabase
-    .from("module_settings")
-    .select("data")
-    .eq("tenant_id", tenantId)
-    .eq("module_key", "stayConnected")
-    .maybeSingle();
-
-  const { data: moduleConfigRows } = await supabase
-    .from("module_configs")
-    .select("module_key, enabled")
-    .eq("tenant_id", tenantId);
-
-  const { data: published } = await supabase
-    .from("published_spaces")
-    .select("published_at, modules")
-    .eq("tenant_id", tenantId)
-    .maybeSingle();
+  // Task 011 (item C, Space-opening performance): these 12 reads are all
+  // independent of one another - every one of them is filtered by
+  // tenantId alone, none consumes another's result - so there is no
+  // correctness reason for them to run as 12 sequential round trips.
+  // Measured locally (Playwright + local Supabase, zero network latency)
+  // this page's own RSC fetch was the dominant cost in the "tap a Space ->
+  // Studio usable" path; in Production, with real per-request network
+  // latency, serial round trips like this compound linearly while
+  // Promise.all lets them run concurrently, bounded by the single slowest
+  // query instead of their sum. See 011/evidence/performance-investigation.md.
+  const [
+    { data: brand },
+    { data: scheduleRows },
+    { data: facilitatorRows },
+    { data: mealRows },
+    { data: treatmentRows },
+    { data: facilityRows },
+    { data: faqRows },
+    { data: customPageRows },
+    { data: arrivalRow },
+    { data: stayConnectedRow },
+    { data: moduleConfigRows },
+    { data: published },
+  ] = await Promise.all([
+    // PRE-MIGRATION WARNING: custom_navigation/custom_text (0015) and
+    // custom_secondary/hero_image_ref/space_image_ref/logo_ref (0014) must
+    // all exist on the same database this code runs against - this select
+    // will error for every tenant, breaking this entire page, otherwise.
+    // Intentional coupling, not an oversight - do not deploy this code
+    // ahead of whichever of those migrations hasn't applied yet.
+    supabase
+      .from("brand_configs")
+      .select(
+        "palette, atmosphere, custom_primary, custom_secondary, custom_navigation, custom_text, hero_image_ref, space_image_ref, logo_ref"
+      )
+      .eq("tenant_id", tenantId)
+      .maybeSingle(),
+    supabase
+      .from("schedule_items")
+      .select("id, date, start_time, end_time, title, facilitator, location, description, category")
+      .eq("tenant_id", tenantId)
+      .order("date")
+      .order("start_time"),
+    supabase
+      .from("module_items")
+      .select("id, title, subtitle, description, image_ref, metadata")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", "facilitators")
+      .order("sort_order"),
+    supabase
+      .from("module_items")
+      .select("id, title, description, image_ref, metadata")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", "meals")
+      .order("sort_order"),
+    supabase
+      .from("module_items")
+      .select("id, title, subtitle, description, image_ref, metadata")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", "treatments")
+      .order("sort_order"),
+    supabase
+      .from("module_items")
+      .select("id, title, description, image_ref, metadata")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", "facilities")
+      .order("sort_order"),
+    supabase
+      .from("module_items")
+      .select("id, title, description, metadata")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", "faq")
+      .order("sort_order"),
+    supabase
+      .from("module_items")
+      .select("id, title, description, image_ref, metadata")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", "customPages")
+      .order("sort_order"),
+    supabase
+      .from("module_settings")
+      .select("data")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", "arrivalInfo")
+      .maybeSingle(),
+    supabase
+      .from("module_settings")
+      .select("data")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", "stayConnected")
+      .maybeSingle(),
+    supabase.from("module_configs").select("module_key, enabled").eq("tenant_id", tenantId),
+    supabase.from("published_spaces").select("published_at, modules").eq("tenant_id", tenantId).maybeSingle(),
+  ]);
 
   // Share Your Space's Share Card needs the PUBLISHED Hero image, not the
   // draft one - reused verbatim from how the Guest App itself resolves it
@@ -164,81 +177,13 @@ export default async function ResumeRetreatConfiguratorPage({
     category: r.category,
   }));
 
-  const initialFacilitators: EditableFacilitator[] = await Promise.all(
-    (facilitatorRows ?? []).map(async (r) => {
-      const meta = (r.metadata ?? {}) as Record<string, unknown>;
-      const socialLinksParsed = socialLinksSchema.safeParse(meta.socialLinks);
-      const pos = meta.imagePosition as { x?: unknown; y?: unknown } | null | undefined;
-      const imagePosition =
-        pos && typeof pos.x === "number" && typeof pos.y === "number" && pos.x >= 0 && pos.x <= 100 && pos.y >= 0 && pos.y <= 100
-          ? { x: pos.x, y: pos.y }
-          : null;
-      return {
-        id: r.id,
-        name: r.title,
-        role: r.subtitle,
-        bio: r.description,
-        imageRef: r.image_ref,
-        imageUrl: await resolveImageUrl(supabase, r.image_ref),
-        specialties: Array.isArray(meta.specialties) ? (meta.specialties as string[]) : [],
-        socialLinks: socialLinksParsed.success ? socialLinksParsed.data : [],
-        imagePosition,
-      };
-    })
-  );
-
-  const initialMeals: EditableMeal[] = await Promise.all(
-    (mealRows ?? []).map(async (r) => {
-      const meta = (r.metadata ?? {}) as Record<string, unknown>;
-      return {
-        id: r.id,
-        name: r.title,
-        mealType: (meta.mealType as MealType) ?? "other",
-        startTime: (meta.startTime as string) ?? "08:00",
-        endTime: (meta.endTime as string | null) ?? null,
-        description: r.description,
-        imageRef: r.image_ref,
-        imageUrl: await resolveImageUrl(supabase, r.image_ref),
-        dietaryTags: (meta.dietaryTags as string[]) ?? [],
-        location: (meta.location as string | null) ?? null,
-      };
-    })
-  );
-
-  const initialTreatments: EditableTreatment[] = await Promise.all(
-    (treatmentRows ?? []).map(async (r) => {
-      const meta = (r.metadata ?? {}) as Record<string, unknown>;
-      return {
-        id: r.id,
-        name: r.title,
-        shortDescription: r.subtitle,
-        description: r.description,
-        durationMinutes: (meta.durationMinutes as number | null) ?? null,
-        imageRef: r.image_ref,
-        imageUrl: await resolveImageUrl(supabase, r.image_ref),
-        provider: (meta.provider as string | null) ?? null,
-        location: (meta.location as string | null) ?? null,
-        bookingInfo: (meta.bookingInfo as string | null) ?? null,
-      };
-    })
-  );
-
-  const initialFacilities: EditableFacility[] = await Promise.all(
-    (facilityRows ?? []).map(async (r) => {
-      const meta = (r.metadata ?? {}) as Record<string, unknown>;
-      return {
-        id: r.id,
-        name: r.title,
-        description: r.description,
-        imageRef: r.image_ref,
-        imageUrl: await resolveImageUrl(supabase, r.image_ref),
-        openingHours: (meta.openingHours as string | null) ?? null,
-        location: (meta.location as string | null) ?? null,
-        importantInfo: (meta.importantInfo as string | null) ?? null,
-      };
-    })
-  );
-
+  // Task 011 (item C): these five module transforms are independent of
+  // each other (each reads only its own already-fetched rows above) but
+  // each also does its own per-item signed-URL resolution internally, so
+  // they were previously five separate serial Promise.all blocks, one
+  // fully finishing before the next began. Running the five blocks
+  // themselves in parallel (each still internally parallel over its own
+  // rows, unchanged) removes that serialization too.
   const initialFaq: EditableFaqItem[] = (faqRows ?? []).map((r) => {
     const meta = (r.metadata ?? {}) as Record<string, unknown>;
     return {
@@ -249,19 +194,98 @@ export default async function ResumeRetreatConfiguratorPage({
     };
   });
 
-  const initialCustomPages: EditableCustomPage[] = await Promise.all(
-    (customPageRows ?? []).map(async (r) => {
-      const meta = (r.metadata ?? {}) as Record<string, unknown>;
-      return {
-        id: r.id,
-        title: r.title,
-        body: r.description,
-        imageRef: r.image_ref,
-        imageUrl: await resolveImageUrl(supabase, r.image_ref),
-        enabled: typeof meta.enabled === "boolean" ? meta.enabled : true,
-      };
-    })
-  );
+  const [initialFacilitators, initialMeals, initialTreatments, initialFacilities, initialCustomPages]: [
+    EditableFacilitator[],
+    EditableMeal[],
+    EditableTreatment[],
+    EditableFacility[],
+    EditableCustomPage[],
+  ] = await Promise.all([
+    Promise.all(
+      (facilitatorRows ?? []).map(async (r) => {
+        const meta = (r.metadata ?? {}) as Record<string, unknown>;
+        const socialLinksParsed = socialLinksSchema.safeParse(meta.socialLinks);
+        const pos = meta.imagePosition as { x?: unknown; y?: unknown } | null | undefined;
+        const imagePosition =
+          pos && typeof pos.x === "number" && typeof pos.y === "number" && pos.x >= 0 && pos.x <= 100 && pos.y >= 0 && pos.y <= 100
+            ? { x: pos.x, y: pos.y }
+            : null;
+        return {
+          id: r.id,
+          name: r.title,
+          role: r.subtitle,
+          bio: r.description,
+          imageRef: r.image_ref,
+          imageUrl: await resolveImageUrl(supabase, r.image_ref),
+          specialties: Array.isArray(meta.specialties) ? (meta.specialties as string[]) : [],
+          socialLinks: socialLinksParsed.success ? socialLinksParsed.data : [],
+          imagePosition,
+        };
+      })
+    ),
+    Promise.all(
+      (mealRows ?? []).map(async (r) => {
+        const meta = (r.metadata ?? {}) as Record<string, unknown>;
+        return {
+          id: r.id,
+          name: r.title,
+          mealType: (meta.mealType as MealType) ?? "other",
+          startTime: (meta.startTime as string) ?? "08:00",
+          endTime: (meta.endTime as string | null) ?? null,
+          description: r.description,
+          imageRef: r.image_ref,
+          imageUrl: await resolveImageUrl(supabase, r.image_ref),
+          dietaryTags: (meta.dietaryTags as string[]) ?? [],
+          location: (meta.location as string | null) ?? null,
+        };
+      })
+    ),
+    Promise.all(
+      (treatmentRows ?? []).map(async (r) => {
+        const meta = (r.metadata ?? {}) as Record<string, unknown>;
+        return {
+          id: r.id,
+          name: r.title,
+          shortDescription: r.subtitle,
+          description: r.description,
+          durationMinutes: (meta.durationMinutes as number | null) ?? null,
+          imageRef: r.image_ref,
+          imageUrl: await resolveImageUrl(supabase, r.image_ref),
+          provider: (meta.provider as string | null) ?? null,
+          location: (meta.location as string | null) ?? null,
+          bookingInfo: (meta.bookingInfo as string | null) ?? null,
+        };
+      })
+    ),
+    Promise.all(
+      (facilityRows ?? []).map(async (r) => {
+        const meta = (r.metadata ?? {}) as Record<string, unknown>;
+        return {
+          id: r.id,
+          name: r.title,
+          description: r.description,
+          imageRef: r.image_ref,
+          imageUrl: await resolveImageUrl(supabase, r.image_ref),
+          openingHours: (meta.openingHours as string | null) ?? null,
+          location: (meta.location as string | null) ?? null,
+          importantInfo: (meta.importantInfo as string | null) ?? null,
+        };
+      })
+    ),
+    Promise.all(
+      (customPageRows ?? []).map(async (r) => {
+        const meta = (r.metadata ?? {}) as Record<string, unknown>;
+        return {
+          id: r.id,
+          title: r.title,
+          body: r.description,
+          imageRef: r.image_ref,
+          imageUrl: await resolveImageUrl(supabase, r.image_ref),
+          enabled: typeof meta.enabled === "boolean" ? meta.enabled : true,
+        };
+      })
+    ),
+  ]);
 
   const arrivalParsed = arrivalRow?.data ? arrivalInfoSchema.safeParse(arrivalRow.data) : null;
   const initialArrivalInfo: ArrivalInfo = arrivalParsed?.success ? arrivalParsed.data : EMPTY_ARRIVAL_INFO;
@@ -277,13 +301,26 @@ export default async function ResumeRetreatConfiguratorPage({
     .filter((r) => r.enabled)
     .map((r) => r.module_key as OptionalModuleKey);
 
-  const initialIsPubliclyAvailable = published?.published_at ? await isSpacePubliclyAvailable(tenant.id) : false;
-  const initialGuestAccessSettings = await getGuestAccessSettingsForOwner(tenant.id);
-  const initialFeaturedSubmission = await getFeaturedSubmissionForOwner(tenant.id);
-
-  const initialHeroImageUrl = await resolveImageUrl(supabase, brand?.hero_image_ref ?? null);
-  const initialSpaceImageUrl = await resolveImageUrl(supabase, brand?.space_image_ref ?? null);
-  const initialLogoUrl = await resolveImageUrl(supabase, brand?.logo_ref ?? null);
+  // Task 011 (item C): none of these six depend on each other's result -
+  // the three status/settings lookups only need tenant.id (known since
+  // the very first query above), and the three signed-URL resolutions
+  // only need `brand` (already available). Previously six more
+  // sequential awaits; now one parallel phase.
+  const [
+    initialIsPubliclyAvailable,
+    initialGuestAccessSettings,
+    initialFeaturedSubmission,
+    initialHeroImageUrl,
+    initialSpaceImageUrl,
+    initialLogoUrl,
+  ] = await Promise.all([
+    published?.published_at ? isSpacePubliclyAvailable(tenant.id) : Promise.resolve(false),
+    getGuestAccessSettingsForOwner(tenant.id),
+    getFeaturedSubmissionForOwner(tenant.id),
+    resolveImageUrl(supabase, brand?.hero_image_ref ?? null),
+    resolveImageUrl(supabase, brand?.space_image_ref ?? null),
+    resolveImageUrl(supabase, brand?.logo_ref ?? null),
+  ]);
   const brandInitial = mapBrandRowToInitialProps(brand);
 
   return (

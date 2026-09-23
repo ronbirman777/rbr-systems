@@ -9,20 +9,20 @@ import { sha256Hex, timingSafeEqual } from "@/lib/preview-gate/hash";
 import { classifyHostname, PRODUCTION_APEX } from "@/lib/hostname";
 
 /**
- * Public InnerDweS marketing routes - deliberately excluded from the
- * preview-password gate below. Everything else (sign-up, log-in, create,
- * the configurator, the published guest route) keeps exactly the gating
- * behavior it had before the marketing site existed - this list only ever
- * grows to admit more marketing pages, never product/account routes.
+ * Task 011A: while INNERDWES_PREVIEW_PASSWORD is set, Ron wants the
+ * ENTIRE Production site private - including the marketing homepage and
+ * marketing subpages, which this set previously exempted on purpose. That
+ * marketing-visibility exception is intentionally removed here, not just
+ * emptied by accident: per Ron's explicit instruction, only genuine
+ * technical necessities for the gate page/Next.js itself to function stay
+ * exempt from here on, never a "used to be public" carve-out. The one
+ * remaining exemption (PREVIEW_GATE_PATH itself, checked separately right
+ * below - required to avoid a redirect loop) is the sole technical
+ * necessity this route layer has; static assets/_next internals are a
+ * separate, lower-level exemption already handled by `config.matcher`
+ * below and are never affected by this set either way.
  */
-const PUBLIC_MARKETING_PATHS = new Set([
-  "/",
-  "/time-to-heal",
-  "/time-to-elevate",
-  "/robots.txt",
-  "/sitemap.xml",
-  "/icon",
-]);
+const PUBLIC_MARKETING_PATHS = new Set<string>([]);
 
 /**
  * Three steps, in order:
@@ -136,13 +136,14 @@ async function checkPreviewGate(
   if (!isPreviewGateEnabled()) return null;
 
   const { search } = request.nextUrl;
-  if (effectivePathname === PREVIEW_GATE_PATH) return null; // the gate page itself - never gate it
-  if (PUBLIC_MARKETING_PATHS.has(effectivePathname)) return null; // public InnerDweS marketing pages
-  // Next.js appends a content hash to a route-group-colocated opengraph-image
-  // file (e.g. /opengraph-image-abc123) - not a fixed path we can list
-  // exactly, so this one's checked by prefix. Social crawlers fetching it
-  // must never hit the gate, or every shared marketing link loses its preview.
-  if (effectivePathname.startsWith("/opengraph-image")) return null;
+  if (effectivePathname === PREVIEW_GATE_PATH) return null; // the gate page itself - never gate it, or /preview-access would redirect to itself
+  if (PUBLIC_MARKETING_PATHS.has(effectivePathname)) return null; // empty as of Task 011A - see the comment on that constant; kept as a named, obvious extension point rather than removed outright
+  // Task 011A: the previous opengraph-image exemption existed purely so
+  // social crawlers could render a link preview for shared marketing
+  // links - a marketing convenience, not a technical requirement for the
+  // gate or Next.js to function, so it is deliberately gated too now
+  // (shared links simply won't show a preview image while the site is
+  // private, which is expected and fine).
 
   const cookieValue = request.cookies.get(PREVIEW_COOKIE_NAME)?.value;
   if (cookieValue) {

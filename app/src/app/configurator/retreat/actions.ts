@@ -59,12 +59,36 @@ async function optimizeUploadedImage(file: File): Promise<Buffer> {
 export type SaveDraftState = {
   error: string | null;
   tenantId: string | null;
+  /** Set only when tenant creation was rejected specifically for lack of
+   * an available Space slot (Task 011) - distinct from every other error
+   * so the caller can render the honest "Add Space / upgrade required"
+   * state instead of a generic save failure. */
+  slotLimitReached?: boolean;
 };
+
+/** Postgres RAISE ... USING HINT = 'SLOT_LIMIT_REACHED' inside
+ * enforce_space_slot_capacity() (0017_space_management_slots.sql) is the
+ * one signal this Server Action trusts to distinguish "no available
+ * slots" from every other creation failure - matched on the error's own
+ * `hint` field (PostgREST surfaces a RAISE's HINT there), never on
+ * message text, which is not a stable contract. */
+function isSlotLimitError(error: { hint?: string | null } | null | undefined): boolean {
+  return error?.hint === "SLOT_LIMIT_REACHED";
+}
 
 /**
  * Creates the tenant on first save (empty tenantId field) and upserts its
  * brand config on every save. This is real persistence, scoped by RLS to
  * the signed-in user - not a local-storage stand-in.
+ *
+ * Task 011: brand validation now runs BEFORE tenant creation on the
+ * first-save path specifically so a validation failure can never strand
+ * an already-consumed Space slot behind a bare tenant row with no usable
+ * content - the previous ordering created the tenant first and validated
+ * second, so a rejected brand payload still left a real row (and, after
+ * this task, a real consumed slot) behind. Capacity itself is enforced
+ * database-side by enforce_space_slot_capacity() (0017), not here - this
+ * function only surfaces that outcome legibly.
  */
 export async function saveDraft(
   prevState: SaveDraftState,
@@ -79,23 +103,6 @@ export async function saveDraft(
   let tenantId = String(formData.get("tenantId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   const timezone = String(formData.get("timezone") ?? DEFAULT_TIMEZONE);
-
-  if (!tenantId) {
-    const { data: tenant, error: tenantError } = await supabase
-      .from("tenants")
-      .insert({ name: name || "Untitled Retreat", product_type: "retreat", timezone })
-      .select("id")
-      .single();
-    if (tenantError || !tenant) {
-      return { error: tenantError?.message ?? "Could not create your space.", tenantId: null };
-    }
-    tenantId = tenant.id;
-  } else {
-    await supabase
-      .from("tenants")
-      .update({ name: name || "Untitled Retreat", timezone })
-      .eq("id", tenantId);
-  }
 
   const rawCustomPrimary = String(formData.get("customPrimary") ?? "").trim();
   const rawCustomSecondary = String(formData.get("customSecondary") ?? "").trim();
@@ -120,6 +127,30 @@ export async function saveDraft(
   });
   if (!parsed.success) {
     return { error: "Some brand details weren't valid.", tenantId };
+  }
+
+  if (!tenantId) {
+    const { data: tenant, error: tenantError } = await supabase
+      .from("tenants")
+      .insert({ name: name || "Untitled Retreat", product_type: "retreat", timezone })
+      .select("id")
+      .single();
+    if (tenantError || !tenant) {
+      if (isSlotLimitError(tenantError)) {
+        return {
+          error: "You've used all your available Space slots. Add a slot, or replace an existing Space, to continue.",
+          tenantId: null,
+          slotLimitReached: true,
+        };
+      }
+      return { error: tenantError?.message ?? "Could not create your space.", tenantId: null };
+    }
+    tenantId = tenant.id;
+  } else {
+    await supabase
+      .from("tenants")
+      .update({ name: name || "Untitled Retreat", timezone })
+      .eq("id", tenantId);
   }
 
   const { error: brandError } = await supabase.from("brand_configs").upsert({

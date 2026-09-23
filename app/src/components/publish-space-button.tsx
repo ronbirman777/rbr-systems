@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { publishSpace, type PublishState } from "@/app/configurator/retreat/actions";
+import { InnerDweSMark } from "@/components/brand/wordmark";
 
 const initialState: PublishState = { error: null, publishedAt: null };
 
@@ -31,11 +32,17 @@ export function PublishSpaceButton({
   return (
     <form action={formAction} className="inline-flex flex-col items-start gap-1">
       <input type="hidden" name="tenantId" value={tenantId} />
+      {/* Task 011, revised after real-iPhone QA: same >=44px chip target
+          and :active press feedback as My Spaces' other action chips, plus
+          the InnerDweS mark itself (not a generic spinner) as the pending
+          indicator - real pending state from useActionState, never a fixed
+          delay. */}
       <button
         type="submit"
         disabled={pending || !canPublish}
-        className="text-xs font-semibold uppercase tracking-wide text-idw-clay-text disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 min-h-11 px-4 rounded-full border border-idw-clay/30 text-idw-clay-text active:scale-[0.97] active:bg-idw-clay/10 transition-transform disabled:opacity-50 disabled:active:scale-100"
       >
+        {pending && <InnerDweSMark size={14} className="idw-loading-breathe shrink-0" />}
         {pending ? "Publishing…" : state.publishedAt ? "Published ✓" : isLive ? "Republish" : "Publish"}
       </button>
       {!canPublish && (

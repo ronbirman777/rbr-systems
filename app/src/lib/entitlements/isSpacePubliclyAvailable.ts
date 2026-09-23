@@ -28,7 +28,17 @@ import { deriveCommercialAvailability } from "./availability";
  */
 export async function isSpacePubliclyAvailable(tenantId: string): Promise<boolean> {
   try {
-    const entitlement = await getSpaceEntitlement(createAdminClient(), tenantId);
+    const admin = createAdminClient();
+    // Task 011: an archived Space is never publicly available, checked
+    // here as defense in depth alongside the published_spaces RLS policy
+    // change in 0017_space_management_slots.sql (which already makes an
+    // archived tenant's row unreadable to the anon client this function's
+    // callers otherwise use) - two independent enforcement layers, not a
+    // single point of failure.
+    const { data: tenant } = await admin.from("tenants").select("status").eq("id", tenantId).maybeSingle();
+    if (tenant?.status === "archived") return false;
+
+    const entitlement = await getSpaceEntitlement(admin, tenantId);
     return deriveCommercialAvailability(entitlement).isPubliclyAvailable;
   } catch {
     // Fail closed: an unexpected error reading commercial status (network

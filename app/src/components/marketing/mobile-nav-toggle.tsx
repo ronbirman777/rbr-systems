@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { signOut } from "@/app/(auth)/actions";
+import { LogoutButton } from "@/components/logout-button";
 
 /**
  * Hamburger toggle for the primary nav links below the `lg` breakpoint,
@@ -9,8 +12,20 @@ import { useState } from "react";
  * a width where logo + 5 links + CTA didn't actually fit. Below `lg`, this
  * is the only way to reach them - logo (home) and the CTA stay directly
  * visible regardless, so there's always a usable path through the site.
+ *
+ * Task 011 (item 2): below `sm`, nav.tsx hides the Log in / Log out action
+ * from the always-visible topbar (the exact row Task 010 proved could
+ * overflow at 320-375px) to avoid adding a new element to it - this menu is
+ * where that action lives at those widths instead, so it's never truly
+ * unreachable on a phone.
  */
-export function MobileNavToggle({ links }: { links: { href: string; label: string }[] }) {
+export function MobileNavToggle({
+  links,
+  isAuthenticated,
+}: {
+  links: { href: string; label: string }[];
+  isAuthenticated: boolean;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -44,6 +59,21 @@ export function MobileNavToggle({ links }: { links: { href: string; label: strin
               {link.label}
             </a>
           ))}
+          <div className="border-t border-idw-forest/10 mt-1 pt-1 sm:hidden">
+            {isAuthenticated ? (
+              <form action={signOut}>
+                <LogoutButton className="w-full justify-start" />
+              </form>
+            ) : (
+              <Link
+                href="/log-in"
+                onClick={() => setOpen(false)}
+                className="flex items-center min-h-11 px-5 py-2.5 font-ui text-sm text-idw-forest/80 hover:text-idw-forest hover:bg-idw-forest/5 transition-colors"
+              >
+                Log in
+              </Link>
+            )}
+          </div>
         </nav>
       )}
     </div>

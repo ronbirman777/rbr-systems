@@ -3,6 +3,7 @@
 import { useActionState, useState, useTransition } from "react";
 import Link from "next/link";
 import { InnerDweSMark } from "@/components/brand/wordmark";
+import { BackToHomeLink } from "@/components/back-to-home-link";
 import { signUp, resendConfirmationEmail, type SignUpState } from "../actions";
 
 const initialState: SignUpState = { error: null, checkEmail: false, email: null };
@@ -64,6 +65,7 @@ export default function SignUpPage() {
   return (
     <main className="flex-1 flex items-center justify-center bg-idw-parchment px-6 py-16">
       <div className="w-full max-w-sm">
+        <BackToHomeLink />
         <InnerDweSMark size={28} className="mb-6" />
         <h1 className="font-ui text-[28px] tracking-[-0.01em] text-idw-forest">Create your account</h1>
         <p className="text-sm text-idw-forest/60 mt-2">
