@@ -155,6 +155,71 @@ describe("lifecycleActions - Task 011", () => {
       expect(result.success).toBe(true);
     });
   });
+
+  describe("deleteSpace (Task 014, item B)", () => {
+    it("refuses to call the RPC at all unless the typed confirmation matches the Space's current name", async () => {
+      const { deleteSpace } = await loadActions();
+
+      const result = await deleteSpace(
+        { error: null },
+        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "wrong" })
+      );
+
+      expect(result.error).toBeTruthy();
+      expect(mockRpc).not.toHaveBeenCalled();
+      expect(mockRevalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("refuses to call the RPC when no confirmation was typed at all", async () => {
+      const { deleteSpace } = await loadActions();
+
+      const result = await deleteSpace({ error: null }, formData({ tenantId: "t1", expectedName: "Real Name" }));
+
+      expect(result.error).toBeTruthy();
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it("calls delete_space only once the typed name matches exactly, and revalidates My Spaces on success", async () => {
+      mockRpc.mockResolvedValue({ error: null });
+      const { deleteSpace } = await loadActions();
+
+      const result = await deleteSpace(
+        { error: null },
+        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+      );
+
+      expect(mockRpc).toHaveBeenCalledWith("delete_space", { p_tenant_id: "t1" });
+      expect(result.success).toBe(true);
+      expect(mockRevalidatePath).toHaveBeenCalledWith("/space");
+    });
+
+    it("never claims success when the RPC (e.g. non-owner) rejects, even with a correctly typed name", async () => {
+      mockRpc.mockResolvedValue({ error: { message: "not authorized" } });
+      const { deleteSpace } = await loadActions();
+
+      const result = await deleteSpace(
+        { error: null },
+        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+      );
+
+      expect(result.success).toBeUndefined();
+      expect(result.error).toBeTruthy();
+      expect(mockRevalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("requires being logged in before ever calling the RPC", async () => {
+      mockGetUser.mockResolvedValue({ data: { user: null } });
+      const { deleteSpace } = await loadActions();
+
+      const result = await deleteSpace(
+        { error: null },
+        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+      );
+
+      expect(result.error).toBeTruthy();
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe("lifecycleActions.ts - \"use server\" export shape (Task 011, same defect class as Task 008C's CRITICAL-1)", () => {

@@ -147,3 +147,38 @@ export async function replaceSpace(
   revalidatePath("/space");
   return { error: null, success: true };
 }
+
+/**
+ * Task 014: permanent delete, the one lifecycle action that genuinely
+ * removes the tenant row (0018_space_delete.sql) rather than changing
+ * status/content in place. Same strong typed-name confirmation as
+ * replaceSpace, applied here because this is strictly MORE destructive
+ * than Replace (Replace keeps the tenant identity and its slot; Delete
+ * removes both permanently) - it should never require less confirmation
+ * than the less-destructive action already does.
+ */
+export async function deleteSpace(
+  _prevState: LifecycleActionState,
+  formData: FormData
+): Promise<LifecycleActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You need to be logged in." };
+
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const confirmName = String(formData.get("confirmName") ?? "").trim();
+  const expectedName = String(formData.get("expectedName") ?? "").trim();
+  if (!tenantId) return { error: "Missing space." };
+
+  if (!expectedName || confirmName !== expectedName) {
+    return { error: "Type the Space's current name exactly to confirm deleting it." };
+  }
+
+  const { error } = await supabase.rpc("delete_space", { p_tenant_id: tenantId });
+  if (error) return { error: "Couldn't delete this Space. Please try again." };
+
+  revalidatePath("/space");
+  return { error: null, success: true };
+}

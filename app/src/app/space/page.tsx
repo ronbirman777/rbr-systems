@@ -14,6 +14,7 @@ import { SpaceLifecycleControls } from "@/components/space-lifecycle-controls";
 import { SpaceOpenLink } from "@/components/space-open-link";
 import { signOut } from "@/app/(auth)/actions";
 import { LogoutButton } from "@/components/logout-button";
+import { DeleteSpaceControl } from "@/components/delete-space-control";
 
 type PublishedRow = { published_at: string } | { published_at: string }[] | null;
 
@@ -197,9 +198,22 @@ export default async function MySpacePage() {
             return (
               <div
                 key={t.id}
-                className={`rounded-2xl border p-6 ${isArchived ? "border-idw-forest/10 bg-idw-forest/[0.03]" : "border-idw-forest/10 bg-white"}`}
+                className={`relative rounded-2xl border p-6 ${isArchived ? "border-idw-forest/10 bg-idw-forest/[0.03]" : "border-idw-forest/10 bg-white"}`}
               >
-                <div className="flex items-start gap-4">
+                {/* Task 014 (item B): a plain sibling overlay, not nested
+                    inside any other interactive control - the card itself
+                    has never been a clickable/link wrapper (every action
+                    below is its own explicit chip/link), so this can never
+                    intercept or be intercepted by card-open navigation.
+                    Owner-gated the same way SpaceLifecycleControls already
+                    is below, since delete_space() only authorizes the
+                    tenant owner anyway. */}
+                {isOwner && (
+                  <div className="absolute top-4 right-4">
+                    <DeleteSpaceControl tenantId={t.id} name={t.name} />
+                  </div>
+                )}
+                <div className="flex items-start gap-4 pr-11">
                   <SpaceThumbnail
                     imageUrl={spaceImageUrl}
                     alt={`${t.name} cover`}
