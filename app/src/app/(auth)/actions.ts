@@ -5,7 +5,15 @@ import { createClient } from "@/lib/supabase/server";
 import { friendlyAuthError } from "@/lib/supabase/authErrors";
 import { APP_URL } from "@/lib/site-url";
 
-export type AuthActionState = { error: string | null };
+/**
+ * Task 014: `unconfirmedEmail` is set from the RAW Supabase error message
+ * (before it's transformed into the friendly display string below), not
+ * by re-matching the already-localized UI copy on the client - a more
+ * robust way for /log-in to know when "Resend confirmation email" is the
+ * genuinely relevant recovery action, without re-deriving it from
+ * display text that could change independently of this check.
+ */
+export type AuthActionState = { error: string | null; unconfirmedEmail?: boolean };
 
 /**
  * Signup has three real outcomes, not two: an error, a session (email
@@ -63,7 +71,12 @@ export async function signIn(
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return { error: friendlyAuthError(error.message) };
+  if (error) {
+    return {
+      error: friendlyAuthError(error.message),
+      unconfirmedEmail: error.message.toLowerCase().includes("email not confirmed"),
+    };
+  }
 
   redirect("/space");
 }
