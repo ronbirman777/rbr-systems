@@ -120,6 +120,28 @@ describe("proxy() - Task 011A strict site-wide password gate", () => {
       expect(location.searchParams.get("next")).toBe("/configurator/retreat/t1?step=publish");
     });
 
+    it("Task 012: gates /auth/confirm and preserves the full recovery callback query (token_hash + type) through next=", async () => {
+      const res = await proxy(
+        req(`https://${PRODUCTION_APEX}/auth/confirm?token_hash=abc123&type=recovery`, {
+          host: PRODUCTION_APEX,
+        })
+      );
+      expectGatedTo(res, "/auth/confirm?token_hash=abc123&type=recovery");
+    });
+
+    it("Task 012: a valid preview-gate cookie lets a recovery callback proceed straight through, unaltered", async () => {
+      const { sha256Hex } = await import("@/lib/preview-gate/hash");
+      const { PREVIEW_COOKIE_NAME } = await import("@/lib/preview-gate/config");
+      const validCookieValue = await sha256Hex(TEST_PASSWORD);
+      const res = await proxy(
+        req(`https://${PRODUCTION_APEX}/auth/confirm?token_hash=abc123&type=recovery`, {
+          host: PRODUCTION_APEX,
+          cookie: `${PREVIEW_COOKIE_NAME}=${validCookieValue}`,
+        })
+      );
+      expectNotGated(res!);
+    });
+
     it("never gates /preview-access itself - no redirect loop", async () => {
       const res = await proxy(req(`https://${PRODUCTION_APEX}/preview-access`, { host: PRODUCTION_APEX }));
       expectNotGated(res!);

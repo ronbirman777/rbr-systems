@@ -46,6 +46,28 @@ export default async function CreatePage() {
   return (
     <main className="flex-1 bg-idw-parchment px-6 py-20 flex flex-col items-center">
       <div className="w-full max-w-3xl text-center">
+        {/* Task 013: a visitor who reaches this ordinary (slot-available)
+            screen but changes their mind had no way back to My Spaces -
+            only the exceptional no-slots state above has one. Page-local
+            rather than reusing BackToHomeLink (hard-coded to "/" with no
+            destination/label props - see back-to-home-link.tsx) - same
+            chevron + text visual treatment, just pointed at /space. A
+            plain Link, not history-dependent back navigation: works
+            identically whether /create was opened via "+ New Space" or a
+            direct visit. Placed before the heading in both visual and
+            DOM/keyboard order. */}
+        <div className="text-left">
+          <Link
+            href="/space"
+            aria-label="Back to My Spaces"
+            className="inline-flex items-center gap-1 min-h-11 pl-1 pr-2.5 -ml-1 mb-4 rounded-lg text-idw-forest/70 hover:text-idw-forest active:bg-idw-forest/10 transition-colors"
+          >
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
+              <path d="M12.5 15.5L7 10l5.5-5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span className="text-sm font-semibold whitespace-nowrap">Back to My Spaces</span>
+          </Link>
+        </div>
         <InnerDweSMark size={28} className="mx-auto mb-6" />
         <h1 className="font-ui text-3xl text-idw-forest">What would you like to create?</h1>
 

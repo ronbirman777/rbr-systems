@@ -66,9 +66,15 @@ export default function LogInPage() {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold tracking-wide uppercase text-idw-forest/70">
-              Password
-            </label>
+            <div className="flex items-baseline justify-between gap-3">
+              <label className="text-xs font-semibold tracking-wide uppercase text-idw-forest/70">
+                Password
+              </label>
+              {/* Task 012 */}
+              <Link href="/forgot-password" className="text-xs text-idw-forest/60 underline">
+                Forgot password?
+              </Link>
+            </div>
             <input
               name="password"
               type="password"
