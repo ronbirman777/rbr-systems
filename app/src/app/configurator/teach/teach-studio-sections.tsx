@@ -18,7 +18,6 @@ import {
   DAILY_INSPIRATION_MAX_QUOTES,
   MAX_AUDIO_BYTES,
   REGISTRATION_METHODS,
-  TEACH_AUDIO_FOLDER_KEY,
   TEACH_CORNERS,
   TEACH_DIVIDERS,
   TEACH_HERO_LAYOUTS,
@@ -1177,7 +1176,7 @@ function detectDuration(file: File): Promise<number | null> {
   });
 }
 
-function AudioFileField({ api, item, update }: { api: StudioApi; item: EditableTeachItem<"teachAudio">; update: (p: Partial<EditableTeachItem<"teachAudio">>) => void }) {
+function AudioFileField({ api, item, update, index }: { api: StudioApi; item: EditableTeachItem<"teachAudio">; update: (p: Partial<EditableTeachItem<"teachAudio">>) => void; index: number }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1191,17 +1190,28 @@ function AudioFileField({ api, item, update }: { api: StudioApi; item: EditableT
     if (file.size > MAX_AUDIO_BYTES) return setError("Audio must be under 100 MB.");
     setBusy("Uploading…");
     const duration = await detectDuration(file);
-    const path = `${api.tenantId}/${TEACH_AUDIO_FOLDER_KEY}/${item.id}/draft.${ext}`;
+    // Ownership at upload: the server makes sure this item's row exists
+    // before any bytes land, and hands back the only path the file may use.
+    const prep = await api.prepareAudioUpload(item, index, file.type);
+    if (prep.error || !prep.path) {
+      setBusy(null);
+      return setError(prep.error ?? "Upload failed.");
+    }
+    const path = prep.path;
     // Uploaded straight from the browser through the member's own session:
     // the tenant-media bucket RLS (0006) only admits paths under this
-    // tenant's id, and the server re-validates the ref on save.
+    // tenant's id, and attachTeachAudio re-validates the ref server-side.
     const supabase = createClient();
     const { error: upErr } = await supabase.storage.from(MEDIA_BUCKET).upload(path, file, { upsert: true, contentType: file.type });
     if (upErr) {
       setBusy(null);
       return setError(upErr.message);
     }
-    if (ref && ref !== path) await api.removeDraftMedia(ref);
+    const attachErr = await api.attachAudio(item.id, path, duration);
+    if (attachErr) {
+      setBusy(null);
+      return setError(attachErr);
+    }
     const { data: signed } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600);
     api.setMediaUrl(path, signed?.signedUrl ?? null);
     update({ metadata: { ...item.metadata, audioRef: path, durationSeconds: duration } });
@@ -1231,7 +1241,7 @@ function AudioFileField({ api, item, update }: { api: StudioApi; item: EditableT
             disabled={busy !== null}
             onClick={async () => {
               setBusy("Removing…");
-              const err = await api.removeDraftMedia(ref);
+              const err = await api.detachAudio(item.id);
               setBusy(null);
               if (err) setError(err);
               else update({ metadata: { ...item.metadata, audioRef: null, durationSeconds: null } });
@@ -1278,7 +1288,7 @@ export function AudioSection({ api }: Props) {
                 <TextField label="Title" value={item.title} onChange={(v) => update({ title: v })} maxLength={160} />
                 <CategoryField id={`acat-${item.id}`} value={item.metadata.category} onChange={(v) => update({ metadata: { ...item.metadata, category: v } })} options={AUDIO_CATEGORIES} />
               </Grid>
-              <AudioFileField api={api} item={item} update={update} />
+              <AudioFileField api={api} item={item} update={update} index={index} />
               <ItemImage api={api} moduleKey="teachAudio" section="audio" item={item} index={index} update={update} label="Cover image" previewClassName="w-[110px] h-[110px] rounded-xl" />
               <TextArea label="Description" value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={3} maxLength={2000} />
               <TextArea label="Teacher note (optional)" value={str(item.metadata.teacherNote)} onChange={(v) => update({ metadata: { ...item.metadata, teacherNote: nul(v) } })} rows={2} maxLength={800} />

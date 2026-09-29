@@ -20,6 +20,7 @@ import {
 import { copyDraftToPublished } from "@/lib/media/publish";
 import { optimizeImageToWebp } from "@/lib/media/optimizeImage";
 import {
+  AUDIO_ALLOWED_TYPES,
   AUDIO_MIME_BY_EXTENSION,
   TEACH_AUDIO_FOLDER_KEY,
   TEACH_EDITABLE_ITEM_KEYS,
@@ -388,6 +389,123 @@ export async function removeTeachDraftMedia(tenantId: string, ref: string): Prom
   if (!isTenantMediaRef(tenantId, ref)) return { error: "Unknown media." };
   const { error } = await supabase.storage.from(MEDIA_BUCKET).remove([ref]);
   if (error) return { error: error.message };
+  return OK;
+}
+
+// ---------------------------------------------------------------------------
+// Audio files: ownership at upload
+//
+// Audio is uploaded browser -> Storage directly (files up to 100 MB), so the
+// server brackets the upload instead of carrying it:
+//   1. prepareTeachAudioUpload - makes sure the teachAudio row exists BEFORE
+//      any bytes land (inserting it for a not-yet-saved item, like
+//      uploadModuleItemPhoto does for images) and returns the only path the
+//      file may use. Every stored audio object therefore always belongs to a
+//      real, visible item that the teacher can delete - abandoning the
+//      Studio can no longer leave an orphan in Storage.
+//   2. attachTeachAudio / detachTeachAudio - point the row at the new file
+//      (or at nothing) and only THEN remove the item's other draft.* files,
+//      so the saved row never references a deleted object. published.*
+//      copies are never touched here: guests keep the published audio until
+//      the next Publish (copyDraftToPublished's stale-sibling cleanup).
+// ---------------------------------------------------------------------------
+
+const AUDIO_EXTENSIONS = new Set(Object.values(AUDIO_ALLOWED_TYPES));
+const audioDraftFolder = (tenantId: string, itemId: string) => `${tenantId}/${TEACH_AUDIO_FOLDER_KEY}/${itemId}`;
+
+async function loadTeachItemRow(supabase: SupabaseClient, tenantId: string, itemId: string) {
+  const { data } = await supabase.from("module_items").select("id, module_key, metadata").eq("tenant_id", tenantId).eq("id", itemId);
+  return (data?.[0] ?? null) as { id: string; module_key: string; metadata: Record<string, unknown> | null } | null;
+}
+
+/** Removes the item's draft.* audio objects except `keep` (published.* is left alone). */
+async function removeOtherAudioDrafts(supabase: SupabaseClient, tenantId: string, itemId: string, keep: string | null) {
+  const folder = audioDraftFolder(tenantId, itemId);
+  const { data: files } = await supabase.storage.from(MEDIA_BUCKET).list(folder);
+  const stale = (files ?? []).filter((f) => f.name.startsWith("draft.") && `${folder}/${f.name}` !== keep).map((f) => `${folder}/${f.name}`);
+  if (stale.length > 0) await supabase.storage.from(MEDIA_BUCKET).remove(stale);
+}
+
+export type TeachAudioUploadState = { error: string | null; path: string | null };
+
+export async function prepareTeachAudioUpload(
+  tenantId: string,
+  item: unknown,
+  sortOrder: number,
+  mimeType: string
+): Promise<TeachAudioUploadState> {
+  const fail = (error: string): TeachAudioUploadState => ({ error, path: null });
+  const { supabase, user } = await requireUser();
+  if (!user) return fail("You need to be logged in.");
+  if (!(await requireTeachTenant(supabase, tenantId))) return fail("Space not found.");
+  const itemId = (item as { id?: unknown } | null)?.id;
+  if (typeof itemId !== "string" || !z.string().uuid().safeParse(itemId).success) return fail("Missing item.");
+  const ext = AUDIO_ALLOWED_TYPES[mimeType];
+  if (!ext) return fail("Please upload an MP3, M4A, AAC, WAV or OGG audio file.");
+
+  const existing = await loadTeachItemRow(supabase, tenantId, itemId);
+  if (existing && existing.module_key !== "teachAudio") return fail("Missing item.");
+  if (!existing) {
+    const raw = item as Record<string, unknown>;
+    const parsed = teachItemFieldsSchema("teachAudio").safeParse({ ...raw, title: String(raw.title ?? "").trim() || "Untitled audio" });
+    if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Some details weren't valid.");
+    const { error } = await supabase.from("module_items").insert({
+      id: itemId,
+      tenant_id: tenantId,
+      module_key: "teachAudio",
+      title: parsed.data.title ?? "Untitled audio",
+      subtitle: parsed.data.subtitle,
+      description: parsed.data.description,
+      external_link: parsed.data.externalLink,
+      sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,
+      // The file isn't attached until attachTeachAudio confirms the upload.
+      metadata: { ...(parsed.data.metadata as Record<string, unknown>), audioRef: null, durationSeconds: null },
+    });
+    if (error) return fail(error.message);
+  }
+  return { error: null, path: `${audioDraftFolder(tenantId, itemId)}/draft.${ext}` };
+}
+
+export async function attachTeachAudio(tenantId: string, itemId: string, ref: string, durationSeconds: number | null): Promise<TeachActionState> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { error: "You need to be logged in." };
+  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
+  if (!z.string().uuid().safeParse(itemId).success) return { error: "Missing item." };
+  const folder = audioDraftFolder(tenantId, itemId);
+  const name = ref.startsWith(`${folder}/`) ? ref.slice(folder.length + 1) : "";
+  if (!name.startsWith("draft.") || !AUDIO_EXTENSIONS.has(name.slice("draft.".length))) return { error: "An audio file reference wasn't valid." };
+  const row = await loadTeachItemRow(supabase, tenantId, itemId);
+  if (!row || row.module_key !== "teachAudio") return { error: "Missing item." };
+  const { data: files } = await supabase.storage.from(MEDIA_BUCKET).list(folder);
+  if (!(files ?? []).some((f) => f.name === name)) return { error: "The upload didn't finish - please try again." };
+
+  const duration = typeof durationSeconds === "number" && Number.isFinite(durationSeconds) && durationSeconds >= 0 && durationSeconds <= 60 * 60 * 12 ? Math.round(durationSeconds) : null;
+  const { error } = await supabase
+    .from("module_items")
+    .update({ metadata: { ...(row.metadata ?? {}), audioRef: ref, durationSeconds: duration } })
+    .eq("tenant_id", tenantId)
+    .eq("id", itemId);
+  if (error) return { error: error.message };
+  await removeOtherAudioDrafts(supabase, tenantId, itemId, ref);
+  return OK;
+}
+
+export async function detachTeachAudio(tenantId: string, itemId: string): Promise<TeachActionState> {
+  const { supabase, user } = await requireUser();
+  if (!user) return { error: "You need to be logged in." };
+  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
+  if (!z.string().uuid().safeParse(itemId).success) return { error: "Missing item." };
+  const row = await loadTeachItemRow(supabase, tenantId, itemId);
+  if (row && row.module_key !== "teachAudio") return { error: "Missing item." };
+  if (row) {
+    const { error } = await supabase
+      .from("module_items")
+      .update({ metadata: { ...(row.metadata ?? {}), audioRef: null, durationSeconds: null } })
+      .eq("tenant_id", tenantId)
+      .eq("id", itemId);
+    if (error) return { error: error.message };
+  }
+  await removeOtherAudioDrafts(supabase, tenantId, itemId, null);
   return OK;
 }
 

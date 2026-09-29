@@ -27,6 +27,9 @@ import {
   uploadTeachSettingsImage,
   removeTeachDraftMedia,
   deleteTeachItem,
+  prepareTeachAudioUpload,
+  attachTeachAudio,
+  detachTeachAudio,
 } from "./actions";
 import {
   AboutSection,
@@ -146,6 +149,9 @@ export type StudioApi = {
   removeItemImage: <K extends TeachEditableItemKey>(key: K, item: EditableTeachItem<K>) => Promise<string | null>;
   uploadSettingsImage: (settingsKey: "teachAbout" | "teachContact" | "teachExplore", slot: string, file: File) => Promise<{ ref: string | null; error: string | null }>;
   removeDraftMedia: (ref: string) => Promise<string | null>;
+  prepareAudioUpload: (item: EditableTeachItem<"teachAudio">, index: number, mimeType: string) => Promise<{ error: string | null; path: string | null }>;
+  attachAudio: (itemId: string, ref: string, durationSeconds: number | null) => Promise<string | null>;
+  detachAudio: (itemId: string) => Promise<string | null>;
   markDirty: (section: SectionKey) => void;
   isDirty: (section: SectionKey) => boolean;
   save: (section: SectionKey) => Promise<string | null>;
@@ -450,6 +456,15 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
     removeItemImage,
     uploadSettingsImage,
     removeDraftMedia,
+    prepareAudioUpload: (item, index, mimeType) =>
+      prepareTeachAudioUpload(
+        tenantId,
+        { id: item.id, title: item.title, subtitle: item.subtitle, description: item.description, externalLink: item.externalLink, metadata: item.metadata },
+        index,
+        mimeType
+      ),
+    attachAudio: async (itemId, ref, durationSeconds) => (await attachTeachAudio(tenantId, itemId, ref, durationSeconds)).error,
+    detachAudio: async (itemId) => (await detachTeachAudio(tenantId, itemId)).error,
     markDirty,
     isDirty: (s) => dirty.has(s),
     save,
