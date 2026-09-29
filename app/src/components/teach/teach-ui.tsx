@@ -60,10 +60,12 @@ export function SectionHeader({ title, action, onAction }: { title: string; acti
   );
 }
 
-type PillKind = "primary" | "outline" | "soft";
+type PillKind = "primary" | "outline" | "soft" | "light";
 
 function pillStyle(kind: PillKind): CSSProperties {
   if (kind === "primary") return { background: "var(--rbr-primary)", color: "var(--rbr-on-primary)", borderRadius: "var(--tt-radius-pill)" };
+  // On top of a photo (full-bleed hero): opaque surface, body text colour.
+  if (kind === "light") return { background: "var(--tt-surface)", color: "var(--rbr-text)", borderRadius: "var(--tt-radius-pill)" };
   if (kind === "soft") return { background: "var(--rbr-primary-soft)", color: "var(--rbr-primary-foreground)", borderRadius: "var(--tt-radius-pill)" };
   return { border: "1px solid var(--rbr-primary-border)", color: "var(--rbr-primary-foreground)", borderRadius: "var(--tt-radius-pill)" };
 }

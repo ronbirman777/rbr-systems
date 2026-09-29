@@ -36,11 +36,11 @@ export function ReadingsScreen({ data, onBack, onOpen, title }: { data: TeachGue
   const list = cat ? sorted.filter((r) => r.metadata.category === cat) : sorted;
   const [featured, ...rest] = list;
   return (
-    <div className="flex flex-col gap-4 px-4 pb-8">
+    <div className="flex flex-col gap-4 @min-[40rem]:gap-6 px-4 @min-[40rem]:px-6 @4xl:px-10 pb-8">
       <BackButton label="Explore" onClick={onBack} />
-      <header className="px-2 flex flex-col gap-1">
+      <header className="px-2 @min-[40rem]:px-0 flex flex-col gap-1">
         <Eyebrow>Reflections &amp; articles</Eyebrow>
-        <DisplayHeading as="h1" size={32}>
+        <DisplayHeading as="h1" className="[--tt-h1:32px] @min-[40rem]:[--tt-h1:42px] @4xl:[--tt-h1:46px]" style={{ fontSize: "calc(var(--tt-h1) * var(--tt-display-scale, 1))" }}>
           {title}
         </DisplayHeading>
       </header>
@@ -60,28 +60,28 @@ export function ReadingsScreen({ data, onBack, onOpen, title }: { data: TeachGue
         <EmptyState icon="book" title="Nothing to read yet" body="New reflections will appear here." />
       ) : (
         <>
-          <button type="button" onClick={() => onOpen(featured.id)} className="tt-reveal text-left overflow-hidden" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
-            <TeachImage src={media(data, featured.imageRef)} focal={featured.metadata.imagePosition} alt="" fallbackLabel={featured.title} className="w-full h-[200px]" />
-            <span className="flex flex-col gap-1.5 p-4">
+          <button type="button" onClick={() => onOpen(featured.id)} className="tt-reveal text-left overflow-hidden @4xl:grid @4xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
+            <TeachImage src={media(data, featured.imageRef)} focal={featured.metadata.imagePosition} alt="" fallbackLabel={featured.title} className="w-full h-[200px] @min-[40rem]:h-[280px] @4xl:h-full @4xl:min-h-[360px]" />
+            <span className="flex flex-col gap-1.5 p-4 @min-[40rem]:p-6 @4xl:p-10 @4xl:justify-center @4xl:gap-3">
               <Eyebrow tone="primary">
                 {[featured.metadata.category, readMinutes(featured) ? `${readMinutes(featured)} min read` : featured.externalLink ? "External article" : null].filter(Boolean).join(" · ")}
               </Eyebrow>
-              <DisplayHeading as="h2" size={23}>
+              <DisplayHeading as="h2" className="[--tt-h2:23px] @min-[40rem]:[--tt-h2:28px] @4xl:[--tt-h2:34px]" style={{ fontSize: "calc(var(--tt-h2) * var(--tt-display-scale, 1))" }}>
                 {featured.title}
               </DisplayHeading>
               {featured.metadata.excerpt ? (
-                <span className="text-[13.5px] leading-[1.5]" style={{ color: "var(--rbr-text-muted)" }}>
+                <span className="text-[13.5px] @4xl:text-[15px] leading-[1.5]" style={{ color: "var(--rbr-text-muted)" }}>
                   {featured.metadata.excerpt}
                 </span>
               ) : null}
             </span>
           </button>
-          <ul className="flex flex-col gap-2.5">
+          <ul className="flex flex-col gap-2.5 @min-[40rem]:grid @min-[40rem]:grid-cols-2 @min-[40rem]:gap-4 @4xl:grid-cols-3 @4xl:gap-5">
             {rest.map((r) => (
               <li key={r.id}>
-                <button type="button" onClick={() => onOpen(r.id)} className="tt-reveal w-full text-left flex items-center gap-3 p-2.5" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
-                  <TeachImage src={media(data, r.imageRef)} focal={r.metadata.imagePosition} alt="" fallbackLabel={r.title} className="w-[78px] h-[78px] shrink-0" style={{ borderRadius: "var(--tt-radius-image)" }} />
-                  <span className="flex-1 min-w-0 flex flex-col gap-1">
+                <button type="button" onClick={() => onOpen(r.id)} className="tt-reveal w-full h-full text-left flex items-center gap-3 p-2.5 @4xl:flex-col @4xl:items-stretch @4xl:gap-0 @4xl:p-0 @4xl:overflow-hidden" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
+                  <TeachImage src={media(data, r.imageRef)} focal={r.metadata.imagePosition} alt="" fallbackLabel={r.title} className="w-[78px] h-[78px] @4xl:w-full @4xl:h-[180px] @4xl:!rounded-none shrink-0" style={{ borderRadius: "var(--tt-radius-image)" }} />
+                  <span className="flex-1 min-w-0 flex flex-col gap-1 @4xl:p-4 @4xl:gap-1.5">
                     {r.metadata.category ? <Eyebrow tone="primary">{r.metadata.category}</Eyebrow> : null}
                     <DisplayHeading as="h3" size={16.5} className="line-clamp-2">
                       {r.title}
@@ -106,17 +106,17 @@ export function ReadingDetailScreen({ data, item, onBack }: { data: TeachGuestDa
   const mins = readMinutes(item);
   return (
     <article className="flex flex-col pb-8">
-      <div className="relative">
-        <TeachImage src={media(data, item.imageRef)} focal={item.metadata.imagePosition} alt="" fallbackLabel={item.title} className="w-full h-[260px]" />
-        <div className="absolute top-3 left-3">
+      <div className="relative @4xl:mx-10 @4xl:overflow-hidden @4xl:rounded-[var(--tt-radius-card)]">
+        <TeachImage src={media(data, item.imageRef)} focal={item.metadata.imagePosition} alt="" fallbackLabel={item.title} className="w-full h-[260px] @min-[40rem]:h-[360px] @4xl:h-[460px]" />
+        <div className="absolute top-3 left-3 @4xl:top-5 @4xl:left-5">
           <button type="button" onClick={onBack} aria-label="Back to My Readings" className="w-11 h-11 rounded-full flex items-center justify-center shadow" style={{ background: "var(--tt-surface)", color: "var(--rbr-text)" }}>
             <TeachIcon name="chevronLeft" size={20} strokeWidth={2} />
           </button>
         </div>
       </div>
-      <div className="px-6 pt-6 flex flex-col gap-4 max-w-[680px] w-full mx-auto">
+      <div className="px-6 pt-6 @4xl:pt-12 flex flex-col gap-4 max-w-[680px] @4xl:max-w-[720px] w-full mx-auto">
         <Eyebrow tone="primary">{[item.metadata.category, mins ? `${mins} min read` : null].filter(Boolean).join(" · ") || "Reading"}</Eyebrow>
-        <DisplayHeading as="h1" size={30}>
+        <DisplayHeading as="h1" className="[--tt-h1:30px] @min-[40rem]:[--tt-h1:38px] @4xl:[--tt-h1:46px]" style={{ fontSize: "calc(var(--tt-h1) * var(--tt-display-scale, 1))" }}>
           {item.title}
         </DisplayHeading>
         {item.metadata.author || item.metadata.date ? (
@@ -129,7 +129,7 @@ export function ReadingDetailScreen({ data, item, onBack }: { data: TeachGuestDa
             {item.metadata.excerpt}
           </p>
         ) : null}
-        <TeachRichText text={item.description} className="text-[15px] leading-[1.7]" />
+        <TeachRichText text={item.description} className="text-[15px] @4xl:text-[17px] leading-[1.7] @4xl:leading-[1.8]" />
         {external ? (
           <a href={external} target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center gap-3 p-4" style={{ background: "var(--rbr-primary-soft)", borderRadius: "var(--tt-radius-card)", color: "var(--rbr-primary-foreground)" }}>
             <span className="flex-1">
@@ -159,11 +159,11 @@ export function AudioListScreen({ data, onBack, onOpen, title }: { data: TeachGu
   const list = cat ? tracks.filter((t) => t.metadata.category === cat) : tracks;
   const [featured, ...rest] = list;
   return (
-    <div className="flex flex-col gap-4 px-4 pb-8">
+    <div className="flex flex-col gap-4 @min-[40rem]:gap-6 px-4 @min-[40rem]:px-6 @4xl:px-10 pb-8">
       <BackButton label="Explore" onClick={onBack} />
-      <header className="px-2 flex flex-col gap-1">
+      <header className="px-2 @min-[40rem]:px-0 flex flex-col gap-1">
         <Eyebrow>Practices to listen to</Eyebrow>
-        <DisplayHeading as="h1" size={32}>
+        <DisplayHeading as="h1" className="[--tt-h1:32px] @min-[40rem]:[--tt-h1:42px] @4xl:[--tt-h1:46px]" style={{ fontSize: "calc(var(--tt-h1) * var(--tt-display-scale, 1))" }}>
           {title}
         </DisplayHeading>
       </header>
@@ -183,20 +183,20 @@ export function AudioListScreen({ data, onBack, onOpen, title }: { data: TeachGu
         <EmptyState icon="headphones" title="No audio yet" body="Guided practices will appear here." />
       ) : (
         <>
-          <button type="button" onClick={() => onOpen(featured.id)} className="tt-reveal relative overflow-hidden text-left h-[190px]" style={{ borderRadius: "var(--tt-radius-card)" }}>
+          <button type="button" onClick={() => onOpen(featured.id)} className="tt-reveal relative overflow-hidden text-left h-[190px] @min-[40rem]:h-[260px] @4xl:h-[360px]" style={{ borderRadius: "var(--tt-radius-card)" }}>
             <TeachImage src={media(data, featured.imageRef)} focal={featured.metadata.imagePosition} alt="" fallbackLabel={featured.title} className="absolute inset-0 w-full h-full" />
             <span aria-hidden="true" className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 30%, rgb(20 30 25 / calc(var(--tt-overlay) + 0.25)))" }} />
-            <span className="absolute left-4 bottom-4 right-20 flex flex-col gap-1">
+            <span className="absolute left-4 bottom-4 right-20 @4xl:left-8 @4xl:bottom-8 @4xl:right-32 flex flex-col gap-1">
               <Eyebrow tone="light">{[featured.metadata.category, formatDuration(featured.metadata.durationSeconds)].filter(Boolean).join(" · ")}</Eyebrow>
-              <span className="text-white text-[22px] leading-tight" style={{ fontFamily: "var(--tt-font-display)" }}>
+              <span className="text-white text-[22px] @min-[40rem]:text-[28px] @4xl:text-[36px] leading-tight" style={{ fontFamily: "var(--tt-font-display)" }}>
                 {featured.title}
               </span>
             </span>
-            <span className="absolute right-4 bottom-4 w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "var(--tt-surface)", color: "var(--rbr-primary)" }}>
+            <span className="absolute right-4 bottom-4 w-12 h-12 @4xl:right-8 @4xl:bottom-8 @4xl:w-16 @4xl:h-16 rounded-full flex items-center justify-center" style={{ background: "var(--tt-surface)", color: "var(--rbr-primary)" }}>
               <TeachIcon name="play" size={20} />
             </span>
           </button>
-          <ul className="flex flex-col gap-2.5">
+          <ul className="flex flex-col gap-2.5 @min-[40rem]:grid @min-[40rem]:grid-cols-2 @min-[40rem]:gap-4 @4xl:grid-cols-3">
             {rest.map((t) => (
               <li key={t.id}>
                 <button type="button" onClick={() => onOpen(t.id)} className="tt-reveal w-full text-left flex items-center gap-3 p-2.5" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
@@ -259,104 +259,106 @@ export function AudioPlayerScreen({ data, item, onBack }: { data: TeachGuestData
 
   return (
     <div className="flex flex-col pb-10">
-      <div className="px-4">
+      <div className="px-4 @min-[40rem]:px-6 @4xl:px-10 w-full @4xl:max-w-[1000px] @4xl:mx-auto">
         <BackButton label="My Audio" onClick={onBack} />
       </div>
-      <div className="px-7 flex flex-col items-center gap-5 max-w-[520px] w-full mx-auto">
+      <div className="px-7 flex flex-col items-center gap-5 max-w-[520px] w-full mx-auto @4xl:max-w-[1000px] @4xl:grid @4xl:grid-cols-[400px_minmax(0,1fr)] @4xl:gap-16 @4xl:px-10 @4xl:pt-6">
         <TeachImage
           src={media(data, item.imageRef)}
           focal={item.metadata.imagePosition}
           alt=""
           fallbackLabel={item.title}
-          className="w-full max-w-[300px] aspect-square"
+          className="w-full max-w-[300px] @4xl:max-w-none aspect-square"
           style={{ borderRadius: "calc(var(--tt-radius-card) + 4px)", boxShadow: "0 24px 50px -24px rgba(36,59,50,.45)" }}
         />
-        <div className="text-center flex flex-col gap-1.5">
-          {item.metadata.category ? <Eyebrow tone="primary">{item.metadata.category}</Eyebrow> : null}
-          <DisplayHeading as="h1" size={27}>
-            {item.title}
-          </DisplayHeading>
-          <p className="text-[13px]" style={{ color: "var(--rbr-text-muted)" }}>
-            {[data.teacherName, formatDuration(duration || item.metadata.durationSeconds)].filter(Boolean).join(" · ")}
-          </p>
-        </div>
-        {src ? (
-          <>
-            <audio
-              ref={audioRef}
-              src={src}
-              preload="metadata"
-              onPlay={() => setPlaying(true)}
-              onPause={() => setPlaying(false)}
-              onEnded={() => setPlaying(false)}
-              onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
-              onLoadedMetadata={(e) => Number.isFinite(e.currentTarget.duration) && setDuration(e.currentTarget.duration)}
-              onError={() => setStatus("error")}
-            />
-            <div className="w-full flex flex-col gap-1.5">
-              <input
-                type="range"
-                min={0}
-                max={Math.max(1, Math.round(duration))}
-                step={1}
-                value={Math.min(Math.round(time), Math.max(1, Math.round(duration)))}
-                onChange={(e) => {
-                  const a = audioRef.current;
-                  if (a) a.currentTime = Number(e.target.value);
-                }}
-                aria-label="Seek"
-                className="tt-range w-full"
-              />
-              <div className="flex justify-between text-[11.5px] tabular-nums" style={{ color: "var(--rbr-text-muted)" }}>
-                <span>{formatDuration(time) ?? "0:00"}</span>
-                <span>-{formatDuration(Math.max(0, duration - time)) ?? "0:00"}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-9" style={{ color: "var(--rbr-text)" }}>
-              <button type="button" onClick={() => skip(-15)} aria-label="Back 15 seconds" className="w-12 h-12 flex flex-col items-center justify-center">
-                <TeachIcon name="back15" size={26} />
-                <span className="text-[9.5px] font-semibold -mt-0.5" style={{ color: "var(--rbr-text-muted)" }}>
-                  15
-                </span>
-              </button>
-              <button type="button" onClick={toggle} aria-label={playing ? "Pause" : "Play"} className="w-[72px] h-[72px] rounded-full flex items-center justify-center" style={{ background: "var(--rbr-primary)", color: "var(--rbr-on-primary)" }}>
-                <TeachIcon name={playing ? "pause" : "play"} size={28} />
-              </button>
-              <button type="button" onClick={() => skip(15)} aria-label="Forward 15 seconds" className="w-12 h-12 flex flex-col items-center justify-center">
-                <TeachIcon name="forward15" size={26} />
-                <span className="text-[9.5px] font-semibold -mt-0.5" style={{ color: "var(--rbr-text-muted)" }}>
-                  15
-                </span>
-              </button>
-            </div>
-            {status === "loading" ? (
-              <p className="text-[12px]" style={{ color: "var(--rbr-text-muted)" }} role="status">
-                Loading…
-              </p>
-            ) : status === "error" ? (
-              <p className="text-[12.5px]" style={{ color: "#8F3B3B" }} role="alert">
-                Couldn&apos;t load this audio — please try again.
-              </p>
-            ) : null}
-          </>
-        ) : (
-          <EmptyState icon="headphones" title="Audio not available" />
-        )}
-        {item.metadata.teacherNote ? (
-          <div className="w-full p-4 flex flex-col gap-2" style={{ background: "var(--rbr-secondary-soft)", borderRadius: "var(--tt-radius-card)" }}>
-            <p className="flex items-center gap-2 text-[12.5px] font-semibold" style={{ color: "var(--rbr-text)" }}>
-              <TeachIcon name="leaf" size={15} />A note from {data.teacherName.split(" ")[0] || "your teacher"}
-            </p>
-            <p className="text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
-              {item.metadata.teacherNote}
+        <div className="w-full flex flex-col items-center gap-5 @4xl:items-start">
+          <div className="text-center @4xl:text-left flex flex-col gap-1.5">
+            {item.metadata.category ? <Eyebrow tone="primary">{item.metadata.category}</Eyebrow> : null}
+            <DisplayHeading as="h1" className="[--tt-h1:27px] @4xl:[--tt-h1:40px]" style={{ fontSize: "calc(var(--tt-h1) * var(--tt-display-scale, 1))" }}>
+              {item.title}
+            </DisplayHeading>
+            <p className="text-[13px]" style={{ color: "var(--rbr-text-muted)" }}>
+              {[data.teacherName, formatDuration(duration || item.metadata.durationSeconds)].filter(Boolean).join(" · ")}
             </p>
           </div>
-        ) : null}
-        {item.description ? (
-          <p className="w-full text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
-            {item.description}
-          </p>
-        ) : null}
+          {src ? (
+            <>
+              <audio
+                ref={audioRef}
+                src={src}
+                preload="metadata"
+                onPlay={() => setPlaying(true)}
+                onPause={() => setPlaying(false)}
+                onEnded={() => setPlaying(false)}
+                onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
+                onLoadedMetadata={(e) => Number.isFinite(e.currentTarget.duration) && setDuration(e.currentTarget.duration)}
+                onError={() => setStatus("error")}
+              />
+              <div className="w-full flex flex-col gap-1.5">
+                <input
+                  type="range"
+                  min={0}
+                  max={Math.max(1, Math.round(duration))}
+                  step={1}
+                  value={Math.min(Math.round(time), Math.max(1, Math.round(duration)))}
+                  onChange={(e) => {
+                    const a = audioRef.current;
+                    if (a) a.currentTime = Number(e.target.value);
+                  }}
+                  aria-label="Seek"
+                  className="tt-range w-full"
+                />
+                <div className="flex justify-between text-[11.5px] tabular-nums" style={{ color: "var(--rbr-text-muted)" }}>
+                  <span>{formatDuration(time) ?? "0:00"}</span>
+                  <span>-{formatDuration(Math.max(0, duration - time)) ?? "0:00"}</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-9" style={{ color: "var(--rbr-text)" }}>
+                <button type="button" onClick={() => skip(-15)} aria-label="Back 15 seconds" className="w-12 h-12 flex flex-col items-center justify-center">
+                  <TeachIcon name="back15" size={26} />
+                  <span className="text-[9.5px] font-semibold -mt-0.5" style={{ color: "var(--rbr-text-muted)" }}>
+                    15
+                  </span>
+                </button>
+                <button type="button" onClick={toggle} aria-label={playing ? "Pause" : "Play"} className="w-[72px] h-[72px] rounded-full flex items-center justify-center" style={{ background: "var(--rbr-primary)", color: "var(--rbr-on-primary)" }}>
+                  <TeachIcon name={playing ? "pause" : "play"} size={28} />
+                </button>
+                <button type="button" onClick={() => skip(15)} aria-label="Forward 15 seconds" className="w-12 h-12 flex flex-col items-center justify-center">
+                  <TeachIcon name="forward15" size={26} />
+                  <span className="text-[9.5px] font-semibold -mt-0.5" style={{ color: "var(--rbr-text-muted)" }}>
+                    15
+                  </span>
+                </button>
+              </div>
+              {status === "loading" ? (
+                <p className="text-[12px]" style={{ color: "var(--rbr-text-muted)" }} role="status">
+                  Loading…
+                </p>
+              ) : status === "error" ? (
+                <p className="text-[12.5px]" style={{ color: "#8F3B3B" }} role="alert">
+                  Couldn&apos;t load this audio — please try again.
+                </p>
+              ) : null}
+            </>
+          ) : (
+            <EmptyState icon="headphones" title="Audio not available" />
+          )}
+          {item.metadata.teacherNote ? (
+            <div className="w-full p-4 flex flex-col gap-2" style={{ background: "var(--rbr-secondary-soft)", borderRadius: "var(--tt-radius-card)" }}>
+              <p className="flex items-center gap-2 text-[12.5px] font-semibold" style={{ color: "var(--rbr-text)" }}>
+                <TeachIcon name="leaf" size={15} />A note from {data.teacherName.split(" ")[0] || "your teacher"}
+              </p>
+              <p className="text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
+                {item.metadata.teacherNote}
+              </p>
+            </div>
+          ) : null}
+          {item.description ? (
+            <p className="w-full text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
+              {item.description}
+            </p>
+          ) : null}
+        </div>
       </div>
     </div>
   );
