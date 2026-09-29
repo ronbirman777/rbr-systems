@@ -17,6 +17,7 @@ const mockRpc = vi.fn();
 const mockRevalidatePath = vi.fn();
 const mockFromSelect = vi.fn();
 const mockFromCountSelect = vi.fn();
+const mockTenantSelect = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
@@ -25,6 +26,9 @@ vi.mock("@/lib/supabase/server", () => ({
     from: (table: string) => {
       if (table === "user_space_slots") {
         return { select: () => ({ eq: () => ({ maybeSingle: mockFromSelect }) }) };
+      }
+      if (table === "tenants") {
+        return { select: () => ({ eq: () => ({ maybeSingle: mockTenantSelect }) }) };
       }
       if (table === "tenant_members") {
         return { select: () => ({ eq: () => ({ eq: mockFromCountSelect }) }) };
@@ -50,6 +54,7 @@ describe("lifecycleActions - Task 011", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    mockTenantSelect.mockResolvedValue({ data: { product_type: "retreat" } });
   });
 
   describe("getSpaceSlotSummary", () => {
@@ -153,6 +158,27 @@ describe("lifecycleActions - Task 011", () => {
 
       expect(mockRpc).toHaveBeenCalledWith("replace_space", { p_tenant_id: "t1", p_new_name: "New" });
       expect(result.success).toBe(true);
+    });
+
+    it("defaults the new name from the Space's own type (DB product_type), never 'Retreat' for Teach", async () => {
+      mockRpc.mockResolvedValue({ error: null });
+      const { replaceSpace } = await loadActions();
+      const fd = formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" });
+
+      await replaceSpace({ error: null }, fd);
+      expect(mockRpc).toHaveBeenLastCalledWith("replace_space", { p_tenant_id: "t1", p_new_name: "Untitled Retreat" });
+
+      mockTenantSelect.mockResolvedValue({ data: { product_type: "teach" } });
+      await replaceSpace({ error: null }, fd);
+      expect(mockRpc).toHaveBeenLastCalledWith("replace_space", { p_tenant_id: "t1", p_new_name: "My Teaching Space" });
+    });
+
+    it("refuses an unknown product type instead of guessing", async () => {
+      mockTenantSelect.mockResolvedValue({ data: { product_type: "mystery" } });
+      const { replaceSpace } = await loadActions();
+      const result = await replaceSpace({ error: null }, formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" }));
+      expect(result.error).toBeTruthy();
+      expect(mockRpc).not.toHaveBeenCalled();
     });
   });
 
