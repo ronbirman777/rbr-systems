@@ -384,15 +384,6 @@ export function IdentitySection({ api }: Props) {
     }
   }
 
-  const classes = api.items.teachClasses;
-  const otherZoneClasses = classes.filter((c) => (c.metadata.timezone ?? api.timezone) !== api.timezone).length;
-  const applyZoneToClasses = () =>
-    api.setItems(
-      "teachClasses",
-      classes.map((c) => ({ ...c, metadata: { ...c.metadata, timezone: api.timezone } })),
-      "schedule"
-    );
-
   const quotes = di.quotes;
   const setQuotes = (next: string[]) => api.updateSetting("dailyInspiration", { quotes: next }, "identity");
 
@@ -412,7 +403,7 @@ export function IdentitySection({ api }: Props) {
           />
         </Grid>
         <Grid>
-          <SelectField label="Time zone" value={api.timezone} onChange={api.setTimezone} options={timezones.map((t) => ({ value: t, label: t }))} hint="“Today” uses this time zone, and new classes start in it." />
+          <SelectField label="Time zone" value={api.timezone} onChange={api.setTimezone} options={timezones.map((t) => ({ value: t, label: t }))} hint="“Today” uses this time zone, and new classes start in it. Existing classes keep their own time zone." />
           <div>
             <Label htmlFor="tt-slug">Guest address</Label>
             <div className="flex gap-2">
@@ -436,16 +427,6 @@ export function IdentitySection({ api }: Props) {
             </Hint>
           </div>
         </Grid>
-        {otherZoneClasses > 0 ? (
-          <div className="flex flex-wrap items-center gap-3 px-3 py-2.5 rounded-lg bg-[#F4EFE6]" data-testid="apply-zone-to-classes">
-            <p className="text-[12.5px] text-[#4A4843] flex-1 min-w-[200px]">
-              {otherZoneClasses === 1 ? "1 class uses" : `${otherZoneClasses} classes use`} a different time zone. Changing it keeps each class’s local date and time.
-            </p>
-            <StudioButton kind="outline" onClick={applyZoneToClasses}>
-              Use {api.timezone} for all classes
-            </StudioButton>
-          </div>
-        ) : null}
       </Card>
       <Card title="Primary image" description="Your main hero photo. It crops beautifully into the arched window, portrait circle or full-bleed layouts — set the focal point so your face always stays in frame.">
         <ImageField
@@ -887,12 +868,30 @@ function AvailabilityEditor({ item, update }: { item: EditableTeachItem<"teachAv
 
 export function ScheduleSection({ api }: Props) {
   const [mode, setMode] = useState<"classes" | "private">("classes");
+  const classes = api.items.teachClasses;
+  const otherZoneClasses = classes.filter((c) => (c.metadata.timezone ?? api.timezone) !== api.timezone).length;
+  const applyZoneToClasses = () =>
+    api.setItems(
+      "teachClasses",
+      classes.map((c) => ({ ...c, metadata: { ...c.metadata, timezone: api.timezone } })),
+      "schedule"
+    );
   return (
     <>
       <SectionHeader eyebrow="Teaching" title="Schedule" intro="Group classes and private availability. Guests always find Schedule in the bottom navigation, and the two are clearly separated." />
       <Segmented label="Schedule type" value={mode} onChange={setMode} options={[{ value: "classes", label: "Classes" }, { value: "private", label: "Private availability" }]} />
       {mode === "classes" ? (
         <Card title="Classes" description={`Listed by date and time in ${api.timezone}.`}>
+          {otherZoneClasses > 0 ? (
+            <div className="flex flex-wrap items-center gap-3 px-3 py-2.5 rounded-lg bg-[#F4EFE6]" data-testid="apply-zone-to-classes">
+              <p className="text-[12.5px] text-[#4A4843] flex-1 min-w-[200px]">
+                {otherZoneClasses === 1 ? "1 class uses" : `${otherZoneClasses} classes use`} a different time zone from your Space. Changing it keeps each class’s local date and time.
+              </p>
+              <StudioButton kind="outline" onClick={applyZoneToClasses}>
+                Use {api.timezone} for all classes
+              </StudioButton>
+            </div>
+          ) : null}
           <ItemList
             api={api}
             moduleKey="teachClasses"
