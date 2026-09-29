@@ -20,6 +20,7 @@ import type { DisplayCustomPage } from "@/lib/modules/customPage";
 import { EMPTY_STAY_CONNECTED, type StayConnected } from "@/lib/modules/stayConnected";
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
 import { getDailyQuote } from "@/lib/content/dailyQuotes";
+import type { ImagePosition } from "@/lib/modules/imagePosition";
 
 export type GuestAppProps = {
   tenantName: string;
@@ -46,6 +47,11 @@ export type GuestAppProps = {
   faq?: DisplayFaqItem[];
   customPages?: DisplayCustomPage[];
   stayConnected?: StayConnected;
+  /** Explore module hero/cover images (added alongside Task 015) -
+   * moduleKey -> resolved image URL + focal point (TASK 020),
+   * absent/null meaning "no cover set, use the existing fallback" (see
+   * ExploreScreen). */
+  moduleCoverImages?: Record<string, { imageUrl: string | null; imagePosition: ImagePosition }>;
 };
 
 /**
@@ -123,6 +129,7 @@ const GUEST_TABS: TabDef[] = [
         faq={props.faq ?? []}
         customPages={props.customPages ?? []}
         stayConnected={props.stayConnected ?? EMPTY_STAY_CONNECTED}
+        moduleCoverImages={props.moduleCoverImages ?? {}}
       />
     ),
   },

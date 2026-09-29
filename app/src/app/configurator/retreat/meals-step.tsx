@@ -2,6 +2,8 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { ModuleItemPhotoField } from "@/components/module-item-photo-field";
+import { FocalPointPicker } from "@/components/focal-point-picker";
+import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import { MEAL_TYPES, type EditableMeal, type MealType } from "@/lib/modules/meal";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
@@ -23,6 +25,7 @@ export function blankMeal(): EditableMeal {
     imageUrl: null,
     dietaryTags: [],
     location: null,
+    imagePosition: null,
   };
 }
 
@@ -73,7 +76,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
     formData.set(
       "items",
       JSON.stringify(
-        meals.map(({ id, name, mealType, startTime, endTime, description, imageRef, dietaryTags, location }) => ({
+        meals.map(({ id, name, mealType, startTime, endTime, description, imageRef, dietaryTags, location, imagePosition }) => ({
           id,
           name,
           mealType,
@@ -83,6 +86,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
           imageRef,
           dietaryTags,
           location,
+          imagePosition,
         }))
       )
     );
@@ -131,7 +135,12 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
               <div className="w-20 h-20 flex-shrink-0" style={{ background: GUEST_BASE_PALETTE.parchmentDeep }}>
                 {m.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={m.imageUrl} alt={m.name} className="w-full h-full object-cover" />
+                  <img
+                    src={m.imageUrl}
+                    alt={m.name}
+                    className="w-full h-full object-cover"
+                    style={{ objectPosition: objectPositionStyle(m.imagePosition) }}
+                  />
                 ) : null}
               </div>
               <div className="flex-1 py-3 min-w-0 pr-3">
@@ -203,10 +212,20 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
                 sortOrder={editIdx}
                 imageRef={editing.imageRef}
                 imageUrl={editing.imageUrl}
-                onChange={(patch) => update(editing.id, patch)}
+                onChange={(patch) => update(editing.id, { ...patch, imagePosition: null })}
                 previewAspect="39/16"
+                previewPosition={objectPositionStyle(editing.imagePosition)}
                 ratioHint="This photo appears both as a small square thumbnail and a wide banner, depending on position - keep the subject centered."
               />
+              {editing.imageUrl && (
+                <FocalPointPicker
+                  imageUrl={editing.imageUrl}
+                  position={editing.imagePosition}
+                  onChange={(imagePosition) => update(editing.id, { imagePosition })}
+                  aspect="39/16"
+                  label={`${editing.name || "Meal"} photo`}
+                />
+              )}
             </div>
             <div className="col-span-2 space-y-3">
               <div className="grid grid-cols-2 gap-3">

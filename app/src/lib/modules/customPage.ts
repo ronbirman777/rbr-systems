@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { imagePositionSchema } from "./imagePosition";
 
 /**
  * "customPages" module_key - built on module_items, one row per page.
@@ -14,6 +15,8 @@ export const customPageSchema = z.object({
   body: z.string().nullable(),
   imageRef: z.string().nullable(),
   enabled: z.boolean(),
+  /** TASK 020 - shared focal-point contract; see meal.ts/facilitator.ts. */
+  imagePosition: imagePositionSchema,
 });
 
 export type PublicCustomPage = z.infer<typeof customPageSchema>;
@@ -25,5 +28,6 @@ export const publishedCustomPageSchema = z.object({
   title: z.string(),
   body: z.string().nullable(),
   imageRef: z.string().nullable(),
+  imagePosition: imagePositionSchema,
 });
 export type DisplayCustomPage = z.infer<typeof publishedCustomPageSchema> & { imageUrl: string | null };

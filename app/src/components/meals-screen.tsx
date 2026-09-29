@@ -1,6 +1,7 @@
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
 import type { DisplayMeal } from "@/lib/modules/meal";
+import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
 export type MealsScreenProps = {
@@ -64,7 +65,12 @@ export function MealsScreen({ brand, meals }: MealsScreenProps) {
             <div className="relative h-[160px]">
               {meal.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={meal.imageUrl} alt={meal.name} className="w-full h-full object-cover" />
+                <img
+                  src={meal.imageUrl}
+                  alt={meal.name}
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: objectPositionStyle(meal.imagePosition) }}
+                />
               ) : (
                 <div className="w-full h-full" style={{ background: "var(--rbr-sand)" }} />
               )}

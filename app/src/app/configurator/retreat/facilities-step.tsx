@@ -2,6 +2,8 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { ModuleItemPhotoField } from "@/components/module-item-photo-field";
+import { FocalPointPicker } from "@/components/focal-point-picker";
+import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import type { EditableFacility } from "@/lib/modules/facility";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
@@ -21,6 +23,7 @@ export function blankFacility(): EditableFacility {
     openingHours: null,
     location: null,
     importantInfo: null,
+    imagePosition: null,
   };
 }
 
@@ -66,7 +69,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
     formData.set(
       "items",
       JSON.stringify(
-        facilities.map(({ id, name, description, imageRef, openingHours, location, importantInfo }) => ({
+        facilities.map(({ id, name, description, imageRef, openingHours, location, importantInfo, imagePosition }) => ({
           id,
           name,
           description,
@@ -74,6 +77,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
           openingHours,
           location,
           importantInfo,
+          imagePosition,
         }))
       )
     );
@@ -115,7 +119,12 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
               <div className="w-20 h-20 flex-shrink-0" style={{ background: GUEST_BASE_PALETTE.parchmentDeep }}>
                 {f.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={f.imageUrl} alt={f.name} className="w-full h-full object-cover" />
+                  <img
+                    src={f.imageUrl}
+                    alt={f.name}
+                    className="w-full h-full object-cover"
+                    style={{ objectPosition: objectPositionStyle(f.imagePosition) }}
+                  />
                 ) : null}
               </div>
               <div className="flex-1 py-3 min-w-0 pr-3">
@@ -184,10 +193,20 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                 sortOrder={editIdx}
                 imageRef={editing.imageRef}
                 imageUrl={editing.imageUrl}
-                onChange={(patch) => update(editing.id, patch)}
+                onChange={(patch) => update(editing.id, { ...patch, imagePosition: null })}
                 previewAspect="39/16"
+                previewPosition={objectPositionStyle(editing.imagePosition)}
                 ratioHint="This photo displays at slightly different heights depending on position - keep the subject centered and avoid tight crops at the edges."
               />
+              {editing.imageUrl && (
+                <FocalPointPicker
+                  imageUrl={editing.imageUrl}
+                  position={editing.imagePosition}
+                  onChange={(imagePosition) => update(editing.id, { imagePosition })}
+                  aspect="39/16"
+                  label={`${editing.name || "Facility"} photo`}
+                />
+              )}
             </div>
             <div className="col-span-2 space-y-3">
               <div>

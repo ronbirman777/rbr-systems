@@ -1,7 +1,9 @@
 "use server";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { removeAllTenantMedia, TenantMediaCleanupError } from "@/lib/media/tenantCleanup";
 
 /** Same "hint" contract as saveDraft's isSlotLimitError (actions.ts) -
  * enforce_space_slot_capacity()/restore_space() in
@@ -149,6 +151,59 @@ export async function replaceSpace(
 }
 
 /**
+ * Task 017 (Space Storage Cleanup) — the complete, safe Space-deletion
+ * routine: Storage cleanup FIRST, database rows (via the existing
+ * delete_space() RPC, unchanged) only once that has fully succeeded.
+ * Exported so Account Deletion ((auth)/actions.ts deleteAccount) can run
+ * the exact same routine once per owned Space, rather than a second,
+ * divergent implementation of "what does deleting a Space actually
+ * require."
+ *
+ * Ordering is deliberate and is what makes a partial failure safe: if
+ * Storage cleanup fails partway, nothing has been deleted from the
+ * database yet, so the Space (and whatever files remain) is completely
+ * intact and this is simply retryable - re-running it only needs to
+ * remove whatever files are still there, then still reaches
+ * delete_space(). The reverse order would be far worse: if the database
+ * row were deleted first and Storage cleanup then failed, the files
+ * would be orphaned with no owning tenant left to authorize (or even
+ * retry) their cleanup - exactly the TASK 016 audit finding this task
+ * fixes, not a state this routine may ever reintroduce.
+ *
+ * Ownership is re-verified here even though delete_space() itself already
+ * enforces is_tenant_owner() at the database layer - the Storage removal
+ * step has no equivalent check of its own (the "tenant members can
+ * delete their own media" policy, 0006, only requires tenant MEMBERSHIP,
+ * not ownership), so without this a non-owner member could otherwise
+ * invoke this function directly and destroy a Space's media without
+ * being authorized to delete the Space itself.
+ */
+export async function deleteSpaceCompletely(
+  supabase: SupabaseClient,
+  userId: string,
+  tenantId: string
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const { data: memberRows, error: membershipError } = await supabase
+    .from("tenant_members")
+    .select("role")
+    .eq("tenant_id", tenantId)
+    .eq("user_id", userId);
+  if (membershipError) return { ok: false, reason: "could not verify Space ownership" };
+  if (memberRows?.[0]?.role !== "owner") return { ok: false, reason: "not authorized to delete this Space" };
+
+  try {
+    await removeAllTenantMedia(supabase, tenantId);
+  } catch (e) {
+    return { ok: false, reason: e instanceof TenantMediaCleanupError ? e.message : "could not remove Space media" };
+  }
+
+  const { error: dbError } = await supabase.rpc("delete_space", { p_tenant_id: tenantId });
+  if (dbError) return { ok: false, reason: "could not remove Space data" };
+
+  return { ok: true };
+}
+
+/**
  * Task 014: permanent delete, the one lifecycle action that genuinely
  * removes the tenant row (0018_space_delete.sql) rather than changing
  * status/content in place. Same strong typed-name confirmation as
@@ -156,6 +211,11 @@ export async function replaceSpace(
  * than Replace (Replace keeps the tenant identity and its slot; Delete
  * removes both permanently) - it should never require less confirmation
  * than the less-destructive action already does.
+ *
+ * Task 017: now delegates to deleteSpaceCompletely so this UI action also
+ * removes the Space's Storage media, not only its database rows -
+ * unchanged form fields, unchanged confirmation UX, unchanged error
+ * message on failure.
  */
 export async function deleteSpace(
   _prevState: LifecycleActionState,
@@ -176,8 +236,8 @@ export async function deleteSpace(
     return { error: "Type the Space's current name exactly to confirm deleting it." };
   }
 
-  const { error } = await supabase.rpc("delete_space", { p_tenant_id: tenantId });
-  if (error) return { error: "Couldn't delete this Space. Please try again." };
+  const result = await deleteSpaceCompletely(supabase, user.id, tenantId);
+  if (!result.ok) return { error: "Couldn't delete this Space. Please try again." };
 
   revalidatePath("/space");
   return { error: null, success: true };

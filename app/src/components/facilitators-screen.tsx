@@ -6,7 +6,20 @@ import type { BrandConfig } from "@/lib/theme/tokens";
 import type { DisplayFacilitator } from "@/lib/modules/facilitator";
 import { SocialIcon } from "./guest/social-icon";
 import { SOCIAL_PLATFORM_LABEL } from "@/lib/modules/socialLinks";
+import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
+
+/** Facilitators' own established default - the exact numeric equivalent
+ * of the CSS keyword "center top" (50% 0%) this replaces, preserved
+ * deliberately rather than the shared component's true-center default
+ * (headshots read better anchored at the top than dead-center). See
+ * TASK-020 report, Section 5. Note: the pre-existing Studio-only focal
+ * picker this task replaces used an approximate y=15 for its own blank-
+ * marker position, which never actually matched this real, published
+ * "center top" (y=0) render default - unified to the one real value
+ * here rather than carried forward as a second, silently-diverging
+ * default. */
+const FACILITATOR_DEFAULT_POSITION = { x: 50, y: 0 };
 
 export type FacilitatorsScreenProps = {
   brand: BrandConfig;
@@ -71,7 +84,7 @@ export function FacilitatorsScreen({ brand, facilitators }: FacilitatorsScreenPr
                     src={f.imageUrl}
                     alt={f.name}
                     className="w-full h-full object-cover"
-                    style={{ objectPosition: f.imagePosition ? `${f.imagePosition.x}% ${f.imagePosition.y}%` : "center top" }}
+                    style={{ objectPosition: objectPositionStyle(f.imagePosition, FACILITATOR_DEFAULT_POSITION) }}
                   />
                 ) : (
                   <div

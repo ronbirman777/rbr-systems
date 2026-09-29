@@ -14,6 +14,7 @@ import { arrivalInfoSchema } from "@/lib/modules/arrival";
 import { faqItemSchema } from "@/lib/modules/faq";
 import { customPageSchema } from "@/lib/modules/customPage";
 import { socialLinksSchema } from "@/lib/modules/socialLinks";
+import { imagePositionSchema } from "@/lib/modules/imagePosition";
 import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { normalizeSlug, slugFormatError, isReservedSlug } from "@/lib/slug";
@@ -544,6 +545,7 @@ export async function saveMeals(_prevState: SaveMealsState, formData: FormData):
       endTime: item.endTime,
       dietaryTags: item.dietaryTags,
       location: item.location,
+      imagePosition: item.imagePosition,
     },
   }));
   return saveModuleItemsGeneric(supabase, tenantId, "meals", rows);
@@ -580,6 +582,7 @@ export async function saveTreatments(
       provider: item.provider,
       location: item.location,
       bookingInfo: item.bookingInfo,
+      imagePosition: item.imagePosition,
     },
   }));
   return saveModuleItemsGeneric(supabase, tenantId, "treatments", rows);
@@ -615,6 +618,7 @@ export async function saveFacilities(
       openingHours: item.openingHours,
       location: item.location,
       importantInfo: item.importantInfo,
+      imagePosition: item.imagePosition,
     },
   }));
   return saveModuleItemsGeneric(supabase, tenantId, "facilities", rows);
@@ -691,7 +695,7 @@ export async function saveCustomPages(_prevState: SaveCustomPagesState, formData
     subtitle: null,
     description: item.body,
     sort_order: i,
-    metadata: { enabled: item.enabled },
+    metadata: { enabled: item.enabled, imagePosition: item.imagePosition },
   }));
   return saveModuleItemsGeneric(supabase, tenantId, "customPages", rows);
 }
@@ -920,6 +924,179 @@ export async function removeModuleItemPhoto(
   if (tenantId && itemId) {
     await supabase.from("module_items").update({ image_ref: null }).eq("id", itemId).eq("tenant_id", tenantId);
   }
+
+  return { error: null };
+}
+
+// ---------------------------------------------------------------------
+// Explore module hero/cover image (added alongside Task 015) - one image
+// PER MODULE (module_configs, keyed by tenant_id+module_key), distinct
+// from the per-ITEM photos above. Same upload/remove shape and the same
+// Storage bucket/RLS as uploadModuleItemPhoto/removeModuleItemPhoto, but
+// its own pair rather than a generalization: the persistence target
+// (upsert-by-(tenant,module_key) vs. upsert-by-id) is genuinely
+// different, matching this file's own established convention (see the
+// brand-media pair immediately below, kept separate for the same
+// reason). The synthetic "_cover" path segment keeps the same
+// `tenantMediaPath(tenantId, moduleKey, itemId, ext)` shape used
+// everywhere else in this file without colliding with any real
+// module_items id (those are always UUIDs).
+// ---------------------------------------------------------------------
+
+const MODULE_COVER_ITEM_ID = "_cover";
+
+export type UploadModuleCoverPhotoState = {
+  error: string | null;
+  imageRef: string | null;
+  imageUrl: string | null;
+};
+
+export async function uploadModuleCoverPhoto(
+  _prevState: UploadModuleCoverPhotoState,
+  formData: FormData
+): Promise<UploadModuleCoverPhotoState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You need to be logged in.", imageRef: null, imageUrl: null };
+
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const moduleKey = String(formData.get("moduleKey") ?? "");
+  const previousRef = String(formData.get("previousRef") ?? "") || null;
+  const file = formData.get("file");
+  if (!tenantId || !moduleKey) return { error: "Missing space or module.", imageRef: null, imageUrl: null };
+  if (!(file instanceof File) || file.size === 0) {
+    return { error: "No file selected.", imageRef: null, imageUrl: null };
+  }
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return { error: "Please upload a JPG, PNG or WEBP image.", imageRef: null, imageUrl: null };
+  }
+  if (!isFileSizeAllowed(file.size)) {
+    return { error: "Image must be under 8MB.", imageRef: null, imageUrl: null };
+  }
+
+  let optimized: Buffer;
+  try {
+    optimized = await optimizeUploadedImage(file);
+  } catch {
+    return { error: "That image could not be processed. Try a different file.", imageRef: null, imageUrl: null };
+  }
+
+  const path = tenantMediaPath(tenantId, moduleKey, MODULE_COVER_ITEM_ID, OPTIMIZED_IMAGE_EXTENSION);
+
+  if (previousRef && previousRef !== path) {
+    await supabase.storage.from(MEDIA_BUCKET).remove([previousRef]);
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from(MEDIA_BUCKET)
+    .upload(path, optimized, { upsert: true, contentType: OPTIMIZED_IMAGE_MIME });
+  if (uploadError) return { error: uploadError.message, imageRef: null, imageUrl: null };
+
+  const { data: signed, error: signError } = await supabase.storage
+    .from(MEDIA_BUCKET)
+    .createSignedUrl(path, 3600);
+  if (signError || !signed) {
+    return { error: signError?.message ?? "Uploaded, but preview failed.", imageRef: path, imageUrl: null };
+  }
+
+  // Upsert (not update) so a module the organizer hasn't explicitly
+  // saved via "SAVE MODULES" yet still gets a real row the moment a
+  // cover photo is attached - same reasoning as uploadModuleItemPhoto's
+  // own upsert, applied to this table's own (tenant_id, module_key) key.
+  //
+  // TASK 020: image_position is explicitly reset to null on every
+  // upload (first-time or replacement) - "replacement resets to center"
+  // (a brand-new or different photo has no reason to inherit the
+  // previous photo's focus point). Safe to write unconditionally here,
+  // unlike module_items' metadata column: module_configs has no other
+  // fields sharing this row that a blind overwrite could clobber.
+  const { error: dbError } = await supabase.from("module_configs").upsert(
+    { tenant_id: tenantId, module_key: moduleKey, image_ref: path, image_position: null },
+    { onConflict: "tenant_id,module_key" }
+  );
+  if (dbError) return { error: dbError.message, imageRef: null, imageUrl: null };
+
+  return { error: null, imageRef: path, imageUrl: signed.signedUrl };
+}
+
+export type RemoveModuleCoverPhotoState = { error: string | null };
+
+export async function removeModuleCoverPhoto(
+  _prevState: RemoveModuleCoverPhotoState,
+  formData: FormData
+): Promise<RemoveModuleCoverPhotoState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You need to be logged in." };
+
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const moduleKey = String(formData.get("moduleKey") ?? "");
+  const imageRef = String(formData.get("imageRef") ?? "");
+  if (!imageRef) return { error: null };
+
+  const { error } = await supabase.storage.from(MEDIA_BUCKET).remove([imageRef]);
+  if (error) return { error: error.message };
+
+  if (tenantId && moduleKey) {
+    // TASK 020: image_position clears alongside image_ref - stale focal
+    // metadata for an image that no longer exists must never survive to
+    // silently apply to whatever cover is uploaded next.
+    await supabase
+      .from("module_configs")
+      .update({ image_ref: null, image_position: null })
+      .eq("tenant_id", tenantId)
+      .eq("module_key", moduleKey);
+  }
+
+  return { error: null };
+}
+
+export type UpdateModuleCoverPositionState = { error: string | null };
+
+/**
+ * TASK 020 - instant-persist focal-point update for a module cover.
+ * Module covers have no "Save" step of their own the way module_items
+ * lists do (upload/remove already persist immediately - see
+ * uploadModuleCoverPhoto/removeModuleCoverPhoto's own comments); this
+ * matches that same instant-persist contract for the focal point itself,
+ * rather than leaving it stranded in local state with nothing to flush
+ * it. `position` is `null` for "reset to default" - validated as either
+ * null or a real {x,y} pair, never partially trusted, before being
+ * written.
+ */
+export async function updateModuleCoverPosition(
+  _prevState: UpdateModuleCoverPositionState,
+  formData: FormData
+): Promise<UpdateModuleCoverPositionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You need to be logged in." };
+
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const moduleKey = String(formData.get("moduleKey") ?? "");
+  if (!tenantId || !moduleKey) return { error: "Missing space or module." };
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(String(formData.get("position") ?? "null"));
+  } catch {
+    return { error: "Could not read the focus point." };
+  }
+  const parsed = imagePositionSchema.safeParse(raw);
+  if (!parsed.success) return { error: "That focus point wasn't valid." };
+
+  const { error } = await supabase
+    .from("module_configs")
+    .update({ image_position: parsed.data })
+    .eq("tenant_id", tenantId)
+    .eq("module_key", moduleKey);
+  if (error) return { error: error.message };
 
   return { error: null };
 }
@@ -1223,6 +1400,17 @@ export async function publishSpace(
     .eq("tenant_id", tenantId)
     .maybeSingle();
 
+  // Explore module hero/cover images (added alongside Task 015) - the
+  // same draft->published copy every other image ref needs, for
+  // module_configs' new image_ref column. Selected for every module key
+  // (not filtered to the six Explore-card ones publish_space() actually
+  // publishes) for the same "clean up a just-removed photo's orphan"
+  // reasoning as mediaRows above.
+  const { data: moduleCoverRows } = await supabase
+    .from("module_configs")
+    .select("module_key, image_ref")
+    .eq("tenant_id", tenantId);
+
   // Each item's Storage work is independent of every other item's, so run
   // them concurrently rather than one at a time - found during end-to-end
   // verification: with facilitators, meals, treatments and facilities all
@@ -1245,6 +1433,9 @@ export async function publishSpace(
       copyDraftToPublished(supabase, brandRow?.hero_image_ref ?? null, `${tenantId}/brand/hero`),
       copyDraftToPublished(supabase, brandRow?.space_image_ref ?? null, `${tenantId}/brand/space`),
       copyDraftToPublished(supabase, brandRow?.logo_ref ?? null, `${tenantId}/brand/logo`),
+      ...(moduleCoverRows ?? []).map((row) =>
+        copyDraftToPublished(supabase, row.image_ref as string | null, `${tenantId}/${row.module_key}/${MODULE_COVER_ITEM_ID}`)
+      ),
     ]);
   } catch (err) {
     return {

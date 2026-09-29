@@ -11,6 +11,7 @@ import type { ArrivalInfo } from "@/lib/modules/arrival";
 import type { DisplayFaqItem } from "@/lib/modules/faq";
 import type { DisplayCustomPage } from "@/lib/modules/customPage";
 import type { StayConnected } from "@/lib/modules/stayConnected";
+import { objectPositionStyle, type ImagePosition } from "@/lib/modules/imagePosition";
 import { MealsScreen } from "../meals-screen";
 import { TreatmentsScreen } from "../treatments-screen";
 import { FacilitiesScreen } from "../facilities-screen";
@@ -31,6 +32,12 @@ export type ExploreScreenProps = {
   faq: DisplayFaqItem[];
   customPages: DisplayCustomPage[];
   stayConnected: StayConnected;
+  /** Explore module hero/cover images (added alongside Task 015) -
+   * moduleKey -> resolved image URL + its own focal point (TASK 020).
+   * Takes precedence over the existing per-item-derived fallback below
+   * when set for meals/treatments/facilities; the sole image source for
+   * arrivalInfo/faq/stayConnected, which have no per-item concept. */
+  moduleCoverImages?: Record<string, { imageUrl: string | null; imagePosition: ImagePosition }>;
 };
 
 type FixedExplorePage = "meals" | "treatments" | "facilities" | "arrivalInfo" | "faq" | "stayConnected";
@@ -60,6 +67,7 @@ export function ExploreScreen({
   faq,
   customPages,
   stayConnected,
+  moduleCoverImages = {},
 }: ExploreScreenProps) {
   const vars = deriveThemeVars(brand) as CSSProperties;
   const [page, setPage] = useState<ExplorePage | null>(null);
@@ -90,9 +98,42 @@ export function ExploreScreen({
     }
   }
 
-  const mealsImage = meals.find((m) => m.imageUrl)?.imageUrl ?? null;
-  const treatmentsImage = treatments.find((t) => t.imageUrl)?.imageUrl ?? null;
-  const facilitiesImage = facilities.find((f) => f.imageUrl)?.imageUrl ?? null;
+  // Task 015: an organizer-chosen module cover takes precedence over the
+  // pre-existing "borrow the first item's own photo" fallback - both are
+  // real tenant images, never a stock/demo photo, so falling back is
+  // still exactly as honest as before this feature existed.
+  //
+  // TASK 020: the focal point travels WITH whichever image actually ends
+  // up shown - the module cover's own independent focus point when a
+  // cover is set, or that same fallback item's own focus point when
+  // borrowing its photo (the same asset, the same framing, wherever it
+  // appears - see TASK-020 report, Section 5's "usage vs. shared asset"
+  // discussion).
+  const mealsFallback = meals.find((m) => m.imageUrl);
+  const mealsCover = moduleCoverImages.meals;
+  const mealsImage = mealsCover?.imageUrl ?? mealsFallback?.imageUrl ?? null;
+  const mealsImagePosition = mealsCover?.imageUrl ? mealsCover.imagePosition : (mealsFallback?.imagePosition ?? null);
+
+  const treatmentsFallback = treatments.find((t) => t.imageUrl);
+  const treatmentsCover = moduleCoverImages.treatments;
+  const treatmentsImage = treatmentsCover?.imageUrl ?? treatmentsFallback?.imageUrl ?? null;
+  const treatmentsImagePosition = treatmentsCover?.imageUrl
+    ? treatmentsCover.imagePosition
+    : (treatmentsFallback?.imagePosition ?? null);
+
+  const facilitiesFallback = facilities.find((f) => f.imageUrl);
+  const facilitiesCover = moduleCoverImages.facilities;
+  const facilitiesImage = facilitiesCover?.imageUrl ?? facilitiesFallback?.imageUrl ?? null;
+  const facilitiesImagePosition = facilitiesCover?.imageUrl
+    ? facilitiesCover.imagePosition
+    : (facilitiesFallback?.imagePosition ?? null);
+
+  const arrivalImage = moduleCoverImages.arrivalInfo?.imageUrl ?? null;
+  const arrivalImagePosition = moduleCoverImages.arrivalInfo?.imagePosition ?? null;
+  const faqImage = moduleCoverImages.faq?.imageUrl ?? null;
+  const faqImagePosition = moduleCoverImages.faq?.imagePosition ?? null;
+  const stayConnectedImage = moduleCoverImages.stayConnected?.imageUrl ?? null;
+  const stayConnectedImagePosition = moduleCoverImages.stayConnected?.imagePosition ?? null;
 
   // Alternating Primary/Accent rhythm across every visible entry, in
   // render order, regardless of which modules are enabled - a tenant
@@ -121,6 +162,7 @@ export function ExploreScreen({
             tone={nextTone()}
             onClick={() => setPage("meals")}
             imageUrl={mealsImage}
+            imagePosition={mealsImagePosition}
             eyebrow="Daily Nourishment"
             title="Meals"
             heightClass="h-[180px]"
@@ -132,6 +174,7 @@ export function ExploreScreen({
             tone={nextTone()}
             onClick={() => setPage("treatments")}
             imageUrl={treatmentsImage}
+            imagePosition={treatmentsImagePosition}
             eyebrow="Bodywork & Healing"
             title="Treatments"
             heightClass="h-[200px]"
@@ -144,6 +187,7 @@ export function ExploreScreen({
                 tone={nextTone()}
                 onClick={() => setPage("facilities")}
                 imageUrl={facilitiesImage}
+                imagePosition={facilitiesImagePosition}
                 eyebrow="Spaces"
                 title="Facilities"
                 heightClass="h-[140px]"
@@ -157,6 +201,8 @@ export function ExploreScreen({
                 icon={<PinIcon className="w-4 h-4" />}
                 eyebrow="Practical"
                 title="Arrival"
+                imageUrl={arrivalImage}
+                imagePosition={arrivalImagePosition}
               />
             )}
             {hasFaq && (
@@ -166,6 +212,8 @@ export function ExploreScreen({
                 icon={<QuestionIcon className="w-4 h-4" />}
                 eyebrow="Good to Know"
                 title="FAQ"
+                imageUrl={faqImage}
+                imagePosition={faqImagePosition}
               />
             )}
             {hasStayConnected && (
@@ -175,6 +223,8 @@ export function ExploreScreen({
                 icon={<WebsiteIcon className="w-4 h-4" />}
                 eyebrow="Keep in Touch"
                 title="Stay Connected"
+                imageUrl={stayConnectedImage}
+                imagePosition={stayConnectedImagePosition}
               />
             )}
             {hasCustomPages &&
@@ -186,6 +236,8 @@ export function ExploreScreen({
                   icon={<PagesIcon className="w-4 h-4" />}
                   eyebrow="More"
                   title={p.title}
+                  imageUrl={p.imageUrl}
+                  imagePosition={p.imagePosition}
                 />
               ))}
           </div>
@@ -212,6 +264,7 @@ function EntryCard({
   tone,
   onClick,
   imageUrl,
+  imagePosition,
   eyebrow,
   title,
   heightClass,
@@ -221,6 +274,7 @@ function EntryCard({
   tone: Tone;
   onClick: () => void;
   imageUrl: string | null;
+  imagePosition?: ImagePosition;
   eyebrow: string;
   title: string;
   heightClass: string;
@@ -232,7 +286,12 @@ function EntryCard({
     <button type="button" onClick={onClick} className={`w-full rounded-3xl overflow-hidden relative ${heightClass}`}>
       {imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+        <img
+          src={imageUrl}
+          alt=""
+          className="w-full h-full object-cover"
+          style={{ objectPosition: objectPositionStyle(imagePosition ?? null) }}
+        />
       ) : (
         // Brand-tinted (Primary or Accent, alternating - see `tone`), but
         // always blended toward the fixed near-black forest neutral
@@ -272,40 +331,71 @@ function EntryCard({
  * approach: photographed modules get a photo card, everything else gets
  * this same solid treatment - alternating Primary/Accent (see `tone`)
  * rather than every tile being identical. */
+/**
+ * Task 015 addition: SolidTile now accepts an optional `imageUrl` - the
+ * same image-or-gradient-fallback treatment EntryCard already uses
+ * (unifying both into one visual language, per the shared-card-system
+ * requirement) rather than a second, divergent image implementation.
+ * With no image (the default, and every pre-existing caller's exact
+ * prior behavior), this renders byte-for-byte what it always has: the
+ * solid tone color, icon and text - no regression for Arrival/FAQ/Stay
+ * Connected/Custom Pages until an organizer actually sets a cover.
+ */
 function SolidTile({
   tone,
   onClick,
   icon,
   eyebrow,
   title,
+  imageUrl,
+  imagePosition,
 }: {
   tone: Tone;
   onClick: () => void;
   icon: ReactElement<{ style?: CSSProperties }>;
   eyebrow: string;
   title: string;
+  imageUrl?: string | null;
+  imagePosition?: ImagePosition;
 }) {
   const v = TONE_VARS[tone];
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-3xl h-[140px] p-4 text-left flex flex-col justify-between"
-      style={{ background: v.color }}
-    >
-      <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: `color-mix(in srgb, ${v.onColor} 10%, transparent)` }}>
-        {cloneElement(icon, { style: { color: v.onColor, ...icon.props.style } })}
-      </div>
-      <div>
-        <p
-          className="text-[9px] tracking-widest uppercase font-medium"
-          style={{ fontFamily: "var(--rbr-font-ui)", color: v.onColor, opacity: 0.75 }}
+    <button type="button" onClick={onClick} className="rounded-3xl h-[140px] relative overflow-hidden text-left">
+      {imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={imageUrl}
+          alt=""
+          className="w-full h-full object-cover"
+          style={{ objectPosition: objectPositionStyle(imagePosition ?? null) }}
+        />
+      ) : (
+        <div className="w-full h-full" style={{ background: v.color }} />
+      )}
+      {imageUrl && (
+        <div
+          className="absolute inset-0"
+          style={{ background: `linear-gradient(to top, color-mix(in srgb, ${v.dark} 80%, transparent), color-mix(in srgb, ${v.dark} 10%, transparent) 60%, transparent)` }}
+        />
+      )}
+      <div className="absolute inset-0 p-4 flex flex-col justify-between">
+        <div
+          className="w-8 h-8 rounded-full flex items-center justify-center"
+          style={{ background: `color-mix(in srgb, ${v.onColor} 10%, transparent)` }}
         >
-          {eyebrow}
-        </p>
-        <h3 className="text-[18px] leading-tight mt-0.5 truncate" style={{ fontFamily: "var(--rbr-font-display)", color: v.onColor }}>
-          {title}
-        </h3>
+          {cloneElement(icon, { style: { color: v.onColor, ...icon.props.style } })}
+        </div>
+        <div>
+          <p
+            className="text-[9px] tracking-widest uppercase font-medium"
+            style={{ fontFamily: "var(--rbr-font-ui)", color: v.onColor, opacity: 0.75 }}
+          >
+            {eyebrow}
+          </p>
+          <h3 className="text-[18px] leading-tight mt-0.5 truncate" style={{ fontFamily: "var(--rbr-font-display)", color: v.onColor }}>
+            {title}
+          </h3>
+        </div>
       </div>
     </button>
   );

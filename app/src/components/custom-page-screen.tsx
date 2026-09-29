@@ -1,6 +1,7 @@
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
 import type { DisplayCustomPage } from "@/lib/modules/customPage";
+import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
 export type CustomPageScreenProps = {
@@ -19,7 +20,12 @@ export function CustomPageScreen({ brand, page }: CustomPageScreenProps) {
       {page.imageUrl && (
         <div className="relative h-[180px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={page.imageUrl} alt="" className="w-full h-full object-cover" />
+          <img
+            src={page.imageUrl}
+            alt=""
+            className="w-full h-full object-cover"
+            style={{ objectPosition: objectPositionStyle(page.imagePosition) }}
+          />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.15), transparent 60%)" }} />
         </div>
       )}

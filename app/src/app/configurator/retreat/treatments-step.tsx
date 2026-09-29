@@ -2,6 +2,8 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { ModuleItemPhotoField } from "@/components/module-item-photo-field";
+import { FocalPointPicker } from "@/components/focal-point-picker";
+import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import type { EditableTreatment } from "@/lib/modules/treatment";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
@@ -23,6 +25,7 @@ export function blankTreatment(): EditableTreatment {
     provider: null,
     location: null,
     bookingInfo: null,
+    imagePosition: null,
   };
 }
 
@@ -70,7 +73,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
       "items",
       JSON.stringify(
         treatments.map(
-          ({ id, name, shortDescription, description, durationMinutes, imageRef, provider, location, bookingInfo }) => ({
+          ({
             id,
             name,
             shortDescription,
@@ -80,6 +83,18 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
             provider,
             location,
             bookingInfo,
+            imagePosition,
+          }) => ({
+            id,
+            name,
+            shortDescription,
+            description,
+            durationMinutes,
+            imageRef,
+            provider,
+            location,
+            bookingInfo,
+            imagePosition,
           })
         )
       )
@@ -124,7 +139,12 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
               <div className="w-20 h-20 flex-shrink-0" style={{ background: GUEST_BASE_PALETTE.parchmentDeep }}>
                 {t.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={t.imageUrl} alt={t.name} className="w-full h-full object-cover" />
+                  <img
+                    src={t.imageUrl}
+                    alt={t.name}
+                    className="w-full h-full object-cover"
+                    style={{ objectPosition: objectPositionStyle(t.imagePosition) }}
+                  />
                 ) : null}
               </div>
               <div className="flex-1 py-3 min-w-0 pr-3">
@@ -196,10 +216,20 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                 sortOrder={editIdx}
                 imageRef={editing.imageRef}
                 imageUrl={editing.imageUrl}
-                onChange={(patch) => update(editing.id, patch)}
+                onChange={(patch) => update(editing.id, { ...patch, imagePosition: null })}
                 previewAspect="39/20"
+                previewPosition={objectPositionStyle(editing.imagePosition)}
                 ratioHint="Recommended: landscape photo, about 2:1."
               />
+              {editing.imageUrl && (
+                <FocalPointPicker
+                  imageUrl={editing.imageUrl}
+                  position={editing.imagePosition}
+                  onChange={(imagePosition) => update(editing.id, { imagePosition })}
+                  aspect="39/20"
+                  label={`${editing.name || "Treatment"} photo`}
+                />
+              )}
             </div>
             <div className="col-span-2 space-y-3">
               <div>

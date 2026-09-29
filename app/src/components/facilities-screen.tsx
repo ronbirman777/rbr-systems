@@ -2,6 +2,7 @@ import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
 import type { DisplayFacility } from "@/lib/modules/facility";
 import { PinIcon, ClockIcon } from "./guest/icons";
+import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
 export type FacilitiesScreenProps = {
@@ -46,7 +47,12 @@ export function FacilitiesScreen({ brand, facilities }: FacilitiesScreenProps) {
             <div className={`relative ${i === 0 ? "h-[220px]" : "h-[160px]"}`}>
               {f.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={f.imageUrl} alt={f.name} className="w-full h-full object-cover" />
+                <img
+                  src={f.imageUrl}
+                  alt={f.name}
+                  className="w-full h-full object-cover"
+                  style={{ objectPosition: objectPositionStyle(f.imagePosition) }}
+                />
               ) : (
                 <div className="w-full h-full" style={{ background: `linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))` }} />
               )}

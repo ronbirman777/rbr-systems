@@ -1,10 +1,13 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction, type MouseEvent } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import { GuestApp } from "@/components/guest-app";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { ModuleItemPhotoField } from "@/components/module-item-photo-field";
+import { ModuleCoverPhotoField } from "@/components/module-cover-photo-field";
+import { FocalPointPicker } from "@/components/focal-point-picker";
+import { objectPositionStyle, type ImagePosition } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import { persistNewScheduleItemStub, persistScheduleItemRemoval } from "@/lib/modules/persistSchedule";
 import { MealsStep } from "./meals-step";
@@ -34,7 +37,7 @@ import type { ArrivalInfo } from "@/lib/modules/arrival";
 import type { EditableFaqItem } from "@/lib/modules/faq";
 import type { EditableCustomPage } from "@/lib/modules/customPage";
 import type { StayConnected } from "@/lib/modules/stayConnected";
-import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL, type SocialPlatform } from "@/lib/modules/socialLinks";
+import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL, isLikelyValidUrl, type SocialPlatform } from "@/lib/modules/socialLinks";
 import { IMPLEMENTED_OPTIONAL_MODULES, OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
 import { todayInTimezone, currentTimeInTimezone, listTimezones, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
@@ -46,6 +49,7 @@ import {
   publishSpace,
   checkSlugAvailability,
   reserveSlug,
+  updateModuleCoverPosition,
   type SaveDraftState,
   type SaveScheduleState,
   type SaveModulesState,
@@ -83,6 +87,7 @@ export type RetreatConfiguratorProps = {
   initialCustomPages: EditableCustomPage[];
   initialStayConnected: StayConnected;
   initialEnabledModules: OptionalModuleKey[];
+  initialModuleCovers: Record<string, { imageRef: string | null; imageUrl: string | null; imagePosition: ImagePosition }>;
   initialPublishedAt: string | null;
   initialIsPubliclyAvailable: boolean;
   publishedHeroImageUrl: string | null;
@@ -126,71 +131,11 @@ function blankFacilitator(): EditableFacilitator {
   };
 }
 
-/**
- * Deliberately the simplest possible focal-point control - click where the
- * subject should be, no drag, no crop rectangle, no editor. Draft-side
- * only: persists to module_items.metadata (no migration - see
- * facilitator.ts's imagePosition comment), and already reflects instantly
- * in every preview that reads live `facilitators` state (the sidebar Draft
- * Preview and this same card), matching the same instant-preview pattern
- * as the brand color pickers. Does NOT yet reach the published guest app -
- * publish_space() would need a small update to copy this through; see the
- * Final Product Polish report for the proposed (not-yet-applied) change.
- */
-function FacilitatorFocalPointPicker({
-  imageUrl,
-  position,
-  onChange,
-}: {
-  imageUrl: string;
-  position: { x: number; y: number } | null;
-  onChange: (position: { x: number; y: number } | null) => void;
-}) {
-  const x = position?.x ?? 50;
-  const y = position?.y ?? 15; // matches the "center top" default this replaces
-
-  function handleClick(e: MouseEvent<HTMLDivElement>) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const nextX = Math.round(((e.clientX - rect.left) / rect.width) * 100);
-    const nextY = Math.round(((e.clientY - rect.top) / rect.height) * 100);
-    onChange({ x: Math.min(100, Math.max(0, nextX)), y: Math.min(100, Math.max(0, nextY)) });
-  }
-
-  return (
-    <div className="mt-3">
-      <p className="text-[11px] mb-1.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
-        Click the photo to keep the subject in frame when it&apos;s cropped.
-      </p>
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={handleClick}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") e.currentTarget.click();
-        }}
-        className="relative w-full aspect-[13/10] max-w-[200px] rounded-xl overflow-hidden cursor-crosshair border"
-        style={{ borderColor: `${GUEST_BASE_PALETTE.sand}66` }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageUrl} alt="" className="w-full h-full object-cover" style={{ objectPosition: `${x}% ${y}%` }} />
-        <div
-          className="absolute w-3.5 h-3.5 rounded-full border-2 border-white shadow-md -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-          style={{ left: `${x}%`, top: `${y}%`, background: GUEST_BASE_PALETTE.forest }}
-        />
-      </div>
-      {position && (
-        <button
-          type="button"
-          onClick={() => onChange(null)}
-          className="mt-1.5 text-[11px] underline"
-          style={{ color: GUEST_BASE_PALETTE.mist }}
-        >
-          Reset to default
-        </button>
-      )}
-    </div>
-  );
-}
+/** Facilitators' own established default - see facilitators-screen.tsx's
+ * identical constant/comment (the exact numeric equivalent of the CSS
+ * keyword "center top", preserved deliberately rather than the shared
+ * FocalPointPicker's own true-center default). */
+const FACILITATOR_DEFAULT_POSITION = { x: 50, y: 0 };
 
 type StepKey =
   | "identity"
@@ -232,11 +177,28 @@ const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
  */
 function ColorPicker({ label, hint, value, onChange }: { label: string; hint: string; value: string; onChange: (hex: string) => void }) {
   const [draft, setDraft] = useState(value);
-  const isValid = HEX_PATTERN.test(draft);
+  const [showError, setShowError] = useState(false);
+  // Task 015 UX fix: typing "2D4A3E" (no leading #) is a common, obviously
+  // -intended shorthand for the exact same value - normalized here (not a
+  // second, looser validation rule) so it still only ever commits through
+  // the same HEX_PATTERN check as everything else, and the native
+  // `<input type="color">` swatch (which always needs a real #rrggbb
+  // value) stays in sync either way.
+  const normalizedDraft = /^[0-9a-fA-F]{6}$/.test(draft) ? `#${draft}` : draft;
+  const isValid = HEX_PATTERN.test(normalizedDraft);
 
   function commit(hex: string) {
     setDraft(hex);
-    if (HEX_PATTERN.test(hex)) onChange(hex);
+    const candidate = /^[0-9a-fA-F]{6}$/.test(hex) ? `#${hex}` : hex;
+    if (HEX_PATTERN.test(candidate)) {
+      setShowError(false);
+      onChange(candidate);
+    } else {
+      // Task 015 UX fix: previously silent - an invalid hex was simply
+      // never applied, with no feedback at all. Now shown inline once the
+      // field has content, without blocking further typing.
+      setShowError(candidate.trim().length > 0);
+    }
   }
 
   return (
@@ -265,17 +227,42 @@ function ColorPicker({ label, hint, value, onChange }: { label: string; hint: st
         ))}
       </div>
       <div className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 border" style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, background: "white" }}>
-        <span className="w-5 h-5 rounded-md shadow-sm flex-shrink-0" style={{ background: isValid ? draft : "transparent" }} />
+        {/* Task 015 UX fix: a real visual picker (full hue/saturation/
+            brightness, native to the OS/browser) alongside the existing
+            hex text field, not a second custom-built implementation - no
+            `<input type="color">` existed anywhere else in the project to
+            duplicate/diverge from. Bound to the same normalized hex value
+            both ways: opening it starts from the current color, and
+            picking a new one commits through the identical `commit()`
+            path the presets and text field already use. Falls back to
+            the swatch's fixed forest color while `draft` is invalid, so
+            opening the picker from an invalid typed value still starts
+            somewhere sane rather than at an undefined color. */}
+        <input
+          type="color"
+          value={isValid ? normalizedDraft : "#2D4A3E"}
+          onChange={(e) => commit(e.target.value)}
+          aria-label={`${label} - open color picker`}
+          className="w-8 h-8 rounded-md shrink-0 border-0 p-0 cursor-pointer"
+          style={{ background: "none" }}
+        />
         <input
           value={draft}
           onChange={(e) => commit(e.target.value)}
-          className="flex-1 text-[13px] outline-none font-mono"
+          onBlur={() => setShowError(!isValid && draft.trim().length > 0)}
+          aria-invalid={showError}
+          className="flex-1 min-w-0 text-[13px] outline-none font-mono"
           style={{ color: GUEST_BASE_PALETTE.forest }}
         />
-        <span className="text-[10px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+        <span className="text-[10px] shrink-0" style={{ color: GUEST_BASE_PALETTE.mist }}>
           Custom hex
         </span>
       </div>
+      {showError && (
+        <p className="text-[11px] mt-1.5" style={{ color: "#B23B3B" }} role="alert">
+          Enter a hex color like #2D4A3E (or pick one from the swatch).
+        </p>
+      )}
     </div>
   );
 }
@@ -295,6 +282,24 @@ const MODULE_META: Record<OptionalModuleKey, { icon: string; description: string
   audio: { icon: "◇", description: "Not yet available." },
   announcements: { icon: "◇", description: "Not yet available." },
 };
+
+/**
+ * Explore module hero/cover image support (added alongside Task 015):
+ * exactly the module keys that render as their own Explore landing card
+ * (see src/components/guest/explore-screen.tsx) - matches
+ * 0021_module_cover_publish.sql's own list exactly. "customPages" is
+ * excluded on purpose (each page is already its own card with its own
+ * per-item image); "facilitators"/"schedule"/"dailyInspiration" are
+ * excluded because none of them renders as an Explore card at all.
+ */
+const EXPLORE_CARD_MODULE_KEYS = new Set<OptionalModuleKey>([
+  "meals",
+  "treatments",
+  "facilities",
+  "arrivalInfo",
+  "faq",
+  "stayConnected",
+]);
 
 const SCHEDULE_CATEGORIES = ["Yoga", "Meditation", "Breathwork", "Sound", "Meal", "Community", "Other"];
 
@@ -698,7 +703,7 @@ function TeamEditor({
                     src={f.imageUrl}
                     alt={f.name}
                     className="w-full h-full object-cover"
-                    style={{ objectPosition: f.imagePosition ? `${f.imagePosition.x}% ${f.imagePosition.y}%` : "center top" }}
+                    style={{ objectPosition: objectPositionStyle(f.imagePosition, FACILITATOR_DEFAULT_POSITION) }}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
@@ -747,16 +752,19 @@ function TeamEditor({
                     sortOrder={i}
                     imageRef={f.imageRef}
                     imageUrl={f.imageUrl}
-                    onChange={(patch) => updateFacilitator(f.id, patch)}
+                    onChange={(patch) => updateFacilitator(f.id, { ...patch, imagePosition: null })}
                     previewAspect="13/10"
-                    previewPosition={f.imagePosition ? `${f.imagePosition.x}% ${f.imagePosition.y}%` : "center top"}
+                    previewPosition={objectPositionStyle(f.imagePosition, FACILITATOR_DEFAULT_POSITION)}
                     ratioHint="Recommended: portrait or square photo, about 13:10 once cropped - we anchor to the top, so keep faces near the upper frame."
                   />
                   {f.imageUrl && (
-                    <FacilitatorFocalPointPicker
+                    <FocalPointPicker
                       imageUrl={f.imageUrl}
                       position={f.imagePosition}
                       onChange={(imagePosition) => updateFacilitator(f.id, { imagePosition })}
+                      defaultPosition={FACILITATOR_DEFAULT_POSITION}
+                      aspect="13/10"
+                      label={`${f.name || "Facilitator"} photo`}
                     />
                   )}
                 </div>
@@ -834,44 +842,74 @@ function TeamEditor({
             </div>
             <div>
               <StudioLabel>Social links (optional)</StudioLabel>
-              <div className="space-y-2">
-                {editing.socialLinks.map((link, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <select
-                      value={link.platform}
-                      onChange={(e) =>
-                        updateFacilitator(editing.id, {
-                          socialLinks: editing.socialLinks.map((l, li) => (li === i ? { ...l, platform: e.target.value as SocialPlatform } : l)),
-                        })
-                      }
-                      className={`${STUDIO_INPUT_CLASS} w-32 flex-shrink-0`}
-                    >
-                      {SOCIAL_PLATFORMS.map((p) => (
-                        <option key={p} value={p}>
-                          {SOCIAL_PLATFORM_LABEL[p]}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      value={link.url}
-                      onChange={(e) =>
-                        updateFacilitator(editing.id, {
-                          socialLinks: editing.socialLinks.map((l, li) => (li === i ? { ...l, url: e.target.value } : l)),
-                        })
-                      }
-                      placeholder="https://..."
-                      className={`${STUDIO_INPUT_CLASS} flex-1`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => updateFacilitator(editing.id, { socialLinks: editing.socialLinks.filter((_, li) => li !== i) })}
-                      className="text-[11px] px-2 py-1.5 rounded-lg border flex-shrink-0"
-                      style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {editing.socialLinks.map((link, i) => {
+                  // Task 015 UX fix: platform+remove and the URL field were
+                  // previously crammed into one row, which overflowed
+                  // narrower containers and gave Remove an inconsistent
+                  // small text-pill treatment. Two rows now: platform
+                  // selector + a same-size square icon Remove button on
+                  // top, a full-width URL field (with a platform-specific
+                  // placeholder) below - both rows stay inside the card at
+                  // every viewport, and Remove now matches the same
+                  // square-icon-button language as My Spaces' own trash
+                  // control (Task 014's DeleteSpaceControl).
+                  const urlInvalid = link.url.trim().length > 0 && !isLikelyValidUrl(link.url);
+                  return (
+                    <div key={i} className="rounded-xl border p-3" style={{ borderColor: `${GUEST_BASE_PALETTE.sand}80` }}>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={link.platform}
+                          onChange={(e) =>
+                            updateFacilitator(editing.id, {
+                              socialLinks: editing.socialLinks.map((l, li) => (li === i ? { ...l, platform: e.target.value as SocialPlatform } : l)),
+                            })
+                          }
+                          className={`${STUDIO_INPUT_CLASS} flex-1 min-w-0`}
+                        >
+                          {SOCIAL_PLATFORMS.map((p) => (
+                            <option key={p} value={p}>
+                              {SOCIAL_PLATFORM_LABEL[p]}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => updateFacilitator(editing.id, { socialLinks: editing.socialLinks.filter((_, li) => li !== i) })}
+                          aria-label={`Remove ${SOCIAL_PLATFORM_LABEL[link.platform]} link`}
+                          className="inline-flex items-center justify-center w-11 h-11 shrink-0 rounded-xl border transition-colors"
+                          style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                            <path
+                              d="M4 6h12M8 6V4.5A1.5 1.5 0 0 1 9.5 3h1A1.5 1.5 0 0 1 12 4.5V6m2 0-.6 9.4A1.5 1.5 0 0 1 11.9 17H8.1a1.5 1.5 0 0 1-1.5-1.6L6 6h8Z"
+                              stroke="currentColor"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <input
+                        value={link.url}
+                        onChange={(e) =>
+                          updateFacilitator(editing.id, {
+                            socialLinks: editing.socialLinks.map((l, li) => (li === i ? { ...l, url: e.target.value } : l)),
+                          })
+                        }
+                        placeholder={`Paste ${SOCIAL_PLATFORM_LABEL[link.platform]} link`}
+                        aria-invalid={urlInvalid}
+                        className={`${STUDIO_INPUT_CLASS} w-full mt-2`}
+                      />
+                      {urlInvalid && (
+                        <p className="text-[11px] mt-1" style={{ color: "#B23B3B" }} role="alert">
+                          Enter a full link starting with https:// (or leave this blank).
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
                 {editing.socialLinks.length < SOCIAL_PLATFORMS.length && (
                   <button
                     type="button"
@@ -954,6 +992,7 @@ export function RetreatConfigurator({
   initialCustomPages,
   initialStayConnected,
   initialEnabledModules,
+  initialModuleCovers,
   initialPublishedAt,
   initialIsPubliclyAvailable,
   publishedHeroImageUrl,
@@ -1009,6 +1048,34 @@ export function RetreatConfigurator({
   const [enabledModules, setEnabledModules] = useState<Set<OptionalModuleKey>>(
     new Set(initialEnabledModules)
   );
+  // Explore module hero/cover images (added alongside Task 015) - one
+  // {imageRef, imageUrl} pair per module_key, independent client state
+  // exactly like every other image field on this page (spaceImageRef/Url
+  // above) - ModuleCoverPhotoField's onChange updates one key at a time.
+  const [moduleCovers, setModuleCovers] = useState<
+    Record<string, { imageRef: string | null; imageUrl: string | null; imagePosition: ImagePosition }>
+  >(initialModuleCovers);
+  const moduleCoverImagesForPreview: Record<string, { imageUrl: string | null; imagePosition: ImagePosition }> =
+    Object.fromEntries(
+      Object.entries(moduleCovers).map(([key, v]) => [key, { imageUrl: v.imageUrl, imagePosition: v.imagePosition }])
+    );
+
+  /** TASK 020 - instant-persist a module cover's focal point (module
+   * covers have no "Save" step of their own; see
+   * updateModuleCoverPosition's own comment, actions.ts). Fire-and-forget
+   * from the UI's own perspective (local state already updated
+   * optimistically by the caller before this runs) - a failure here is
+   * the same class of already-accepted risk as every other instant-write
+   * control on this page (e.g. a Storage upload failing after local
+   * state optimistically updated), not a new one this task introduces. */
+  function persistModuleCoverPosition(moduleKey: string, position: ImagePosition) {
+    if (!tenantId) return;
+    const formData = new FormData();
+    formData.set("tenantId", tenantId);
+    formData.set("moduleKey", moduleKey);
+    formData.set("position", JSON.stringify(position));
+    void updateModuleCoverPosition({ error: null }, formData);
+  }
   const [schedule, setSchedule] = useState<EditableScheduleItem[]>(initialSchedule);
   const [facilitators, setFacilitators] = useState<EditableFacilitator[]>(initialFacilitators);
   const [meals, setMeals] = useState<EditableMeal[]>(initialMeals);
@@ -1972,10 +2039,16 @@ export function RetreatConfigurator({
               {IMPLEMENTED_OPTIONAL_MODULES.map((key) => {
                 const on = enabledModules.has(key);
                 const meta = MODULE_META[key];
+                // Explore module hero/cover image control (added
+                // alongside Task 015) - only for the module keys that
+                // actually render as an Explore landing card (see
+                // 0021_module_cover_publish.sql's header comment for why
+                // customPages/facilitators/schedule are excluded).
+                const supportsCover = EXPLORE_CARD_MODULE_KEYS.has(key);
                 return (
                   <div
                     key={key}
-                    className="flex items-center gap-4 rounded-2xl p-4 border transition-all"
+                    className="rounded-2xl p-4 border transition-all"
                     style={{
                       background: on ? "white" : GUEST_BASE_PALETTE.parchmentDeep,
                       borderColor: on ? `${GUEST_BASE_PALETTE.sand}99` : `${GUEST_BASE_PALETTE.sand}66`,
@@ -1983,32 +2056,68 @@ export function RetreatConfigurator({
                       opacity: on ? 1 : 0.65,
                     }}
                   >
-                    <div
-                      className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
-                      style={{ background: on ? "rgba(45,74,62,0.1)" : `${GUEST_BASE_PALETTE.sand}66` }}
-                    >
-                      {meta.icon}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-medium" style={{ color: on ? GUEST_BASE_PALETTE.forest : GUEST_BASE_PALETTE.dusk }}>
-                        {OPTIONAL_MODULES[key].label}
-                      </p>
-                      <p className="text-[11px] mt-0.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                        {meta.description}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => toggleModule(key)}
-                      aria-label={`Toggle ${OPTIONAL_MODULES[key].label}`}
-                      className="w-10 h-6 rounded-full transition-all relative flex-shrink-0"
-                      style={{ background: on ? GUEST_BASE_PALETTE.forest : `${GUEST_BASE_PALETTE.sand}cc` }}
-                    >
+                    <div className="flex items-center gap-4">
                       <div
-                        className="w-4 h-4 rounded-full bg-white shadow-sm absolute top-1 transition-all duration-200"
-                        style={{ left: on ? "20px" : "4px" }}
-                      />
-                    </button>
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-lg"
+                        style={{ background: on ? "rgba(45,74,62,0.1)" : `${GUEST_BASE_PALETTE.sand}66` }}
+                      >
+                        {meta.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium" style={{ color: on ? GUEST_BASE_PALETTE.forest : GUEST_BASE_PALETTE.dusk }}>
+                          {OPTIONAL_MODULES[key].label}
+                        </p>
+                        <p className="text-[11px] mt-0.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
+                          {meta.description}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => toggleModule(key)}
+                        aria-label={`Toggle ${OPTIONAL_MODULES[key].label}`}
+                        className="w-10 h-6 rounded-full transition-all relative flex-shrink-0"
+                        style={{ background: on ? GUEST_BASE_PALETTE.forest : `${GUEST_BASE_PALETTE.sand}cc` }}
+                      >
+                        <div
+                          className="w-4 h-4 rounded-full bg-white shadow-sm absolute top-1 transition-all duration-200"
+                          style={{ left: on ? "20px" : "4px" }}
+                        />
+                      </button>
+                    </div>
+                    {supportsCover && tenantId && (
+                      <>
+                        <ModuleCoverPhotoField
+                          tenantId={tenantId}
+                          moduleKey={key}
+                          imageRef={moduleCovers[key]?.imageRef ?? null}
+                          imageUrl={moduleCovers[key]?.imageUrl ?? null}
+                          onChange={(patch) =>
+                            // TASK 020: a new/replaced/removed cover always
+                            // resets its own focus point - the server side
+                            // of upload/remove already nulls image_position
+                            // too (actions.ts), this keeps local state in
+                            // sync with that immediately rather than
+                            // waiting on a refetch.
+                            setModuleCovers((prev) => ({ ...prev, [key]: { ...patch, imagePosition: null } }))
+                          }
+                        />
+                        {moduleCovers[key]?.imageUrl && (
+                          <FocalPointPicker
+                            imageUrl={moduleCovers[key].imageUrl!}
+                            position={moduleCovers[key]?.imagePosition ?? null}
+                            onChange={(position) => {
+                              setModuleCovers((prev) => ({
+                                ...prev,
+                                [key]: { ...prev[key], imagePosition: position },
+                              }));
+                              persistModuleCoverPosition(key, position);
+                            }}
+                            aspect="16/9"
+                            label={`${OPTIONAL_MODULES[key].label} cover image`}
+                          />
+                        )}
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -2332,6 +2441,7 @@ export function RetreatConfigurator({
                     faq={faq.filter((f) => f.enabled)}
                     customPages={customPages.filter((p) => p.enabled).map((p) => ({ ...p, imageUrl: p.imageUrl ?? null }))}
                     stayConnected={{ links: stayConnected }}
+                    moduleCoverImages={moduleCoverImagesForPreview}
                   />
                 </div>
               </div>
@@ -2413,6 +2523,7 @@ export function RetreatConfigurator({
             faq={faq.filter((f) => f.enabled)}
             customPages={customPages.filter((p) => p.enabled).map((p) => ({ ...p, imageUrl: p.imageUrl ?? null }))}
             stayConnected={{ links: stayConnected }}
+            moduleCoverImages={moduleCoverImagesForPreview}
           />
         </div>
         {tenantId && (

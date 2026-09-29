@@ -17,6 +17,8 @@ const mockRpc = vi.fn();
 const mockRevalidatePath = vi.fn();
 const mockFromSelect = vi.fn();
 const mockFromCountSelect = vi.fn();
+const mockStorageList = vi.fn();
+const mockStorageRemove = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
@@ -30,6 +32,12 @@ vi.mock("@/lib/supabase/server", () => ({
         return { select: () => ({ eq: () => ({ eq: mockFromCountSelect }) }) };
       }
       throw new Error(`unexpected table in test: ${table}`);
+    },
+    storage: {
+      from: () => ({
+        list: (...args: unknown[]) => mockStorageList(...args),
+        remove: (...args: unknown[]) => mockStorageRemove(...args),
+      }),
     },
   }),
 }));
@@ -50,6 +58,9 @@ describe("lifecycleActions - Task 011", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    // Task 017 default: an empty media listing, so tests that don't care
+    // about Storage cleanup specifics reach delete_space() unimpeded.
+    mockStorageList.mockResolvedValue({ data: [], error: null });
   });
 
   describe("getSpaceSlotSummary", () => {
@@ -180,6 +191,7 @@ describe("lifecycleActions - Task 011", () => {
     });
 
     it("calls delete_space only once the typed name matches exactly, and revalidates My Spaces on success", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
       mockRpc.mockResolvedValue({ error: null });
       const { deleteSpace } = await loadActions();
 
@@ -194,6 +206,7 @@ describe("lifecycleActions - Task 011", () => {
     });
 
     it("never claims success when the RPC (e.g. non-owner) rejects, even with a correctly typed name", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
       mockRpc.mockResolvedValue({ error: { message: "not authorized" } });
       const { deleteSpace } = await loadActions();
 
@@ -218,6 +231,93 @@ describe("lifecycleActions - Task 011", () => {
 
       expect(result.error).toBeTruthy();
       expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Task 017 (Space Storage Cleanup) — deleteSpace() now delegates to
+     * deleteSpaceCompletely(), which (a) re-verifies ownership before
+     * touching Storage at all (the Storage RLS policy only requires
+     * membership, not ownership - see lifecycleActions.ts's own comment),
+     * (b) removes every discovered media path before ever calling
+     * delete_space(), and (c) never calls delete_space() if Storage
+     * cleanup fails, so the Space is left completely intact and
+     * retryable rather than silently keeping orphaned files.
+     */
+    it("never touches Storage or the RPC for a non-owner member, even with a correctly typed name", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "practitioner" }], error: null });
+      const { deleteSpace } = await loadActions();
+
+      const result = await deleteSpace(
+        { error: null },
+        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+      );
+
+      expect(result.error).toBeTruthy();
+      expect(mockStorageList).not.toHaveBeenCalled();
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it("removes every discovered media object before calling delete_space", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      mockStorageList.mockResolvedValue({
+        data: [
+          { id: "obj-1", name: "draft.webp" },
+          { id: "obj-2", name: "published.webp" },
+        ],
+        error: null,
+      });
+      mockStorageRemove.mockResolvedValue({ error: null });
+      mockRpc.mockResolvedValue({ error: null });
+      const { deleteSpace } = await loadActions();
+
+      const result = await deleteSpace(
+        { error: null },
+        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+      );
+
+      expect(mockStorageRemove).toHaveBeenCalledWith(["t1/draft.webp", "t1/published.webp"]);
+      const removeOrder = mockStorageRemove.mock.invocationCallOrder[0];
+      const rpcOrder = mockRpc.mock.invocationCallOrder[0];
+      expect(removeOrder).toBeLessThan(rpcOrder);
+      expect(result.success).toBe(true);
+    });
+
+    it("never calls delete_space if Storage cleanup fails, leaving the Space retryable rather than orphaning files", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      mockStorageList.mockResolvedValue({ data: null, error: { message: "network error" } });
+      const { deleteSpace } = await loadActions();
+
+      const result = await deleteSpace(
+        { error: null },
+        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+      );
+
+      expect(result.error).toBeTruthy();
+      expect(mockRpc).not.toHaveBeenCalled();
+      expect(mockRevalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("recurses into folder-shaped list entries (id: null) to find real files at any depth", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      mockStorageList.mockImplementation((prefix: string) => {
+        if (prefix === "t1") return Promise.resolve({ data: [{ id: null, name: "facilitators" }], error: null });
+        if (prefix === "t1/facilitators") return Promise.resolve({ data: [{ id: null, name: "item-1" }], error: null });
+        if (prefix === "t1/facilitators/item-1") {
+          return Promise.resolve({ data: [{ id: "obj-1", name: "draft.jpg" }], error: null });
+        }
+        throw new Error(`unexpected prefix in test: ${prefix}`);
+      });
+      mockStorageRemove.mockResolvedValue({ error: null });
+      mockRpc.mockResolvedValue({ error: null });
+      const { deleteSpace } = await loadActions();
+
+      const result = await deleteSpace(
+        { error: null },
+        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+      );
+
+      expect(mockStorageRemove).toHaveBeenCalledWith(["t1/facilitators/item-1/draft.jpg"]);
+      expect(result.success).toBe(true);
     });
   });
 });
