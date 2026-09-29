@@ -132,6 +132,28 @@ describe("Teach Studio server actions", () => {
     expect((await saveTeachItems(TENANT, "customPages", pages)).error).toMatch(/up to 3/);
   });
 
+  it("derives canonical class times on save and never trusts client instants", async () => {
+    mockTenantProductType.mockResolvedValue({ data: { product_type: "teach", timezone: "Asia/Jerusalem" } });
+    const { saveTeachItems } = await actions();
+    const forged = klass({ metadata: { ...klass().metadata, endTime: "08:45", startsAt: "2000-01-01T00:00:00Z", timeModelVersion: 1 } });
+    expect(await saveTeachItems(TENANT, "teachClasses", [forged])).toEqual({ error: null });
+    const meta = mockUpsert.mock.calls[0][0][0].metadata;
+    expect(meta).toMatchObject({ timezone: "Asia/Jerusalem", startsAt: "2025-10-14T04:30:00Z", endsAt: "2025-10-14T05:45:00Z", startOffset: "+03:00", timeModelVersion: 1 });
+  });
+
+  it("rejects a class at a time that doesn't exist (DST gap) and returns overlap warnings", async () => {
+    mockTenantProductType.mockResolvedValue({ data: { product_type: "teach", timezone: "Asia/Jerusalem" } });
+    const { saveTeachItems } = await actions();
+    const gap = klass({ metadata: { ...klass().metadata, startDate: "2025-03-09", startTime: "02:30", timezone: "America/New_York" } });
+    expect((await saveTeachItems(TENANT, "teachClasses", [gap])).error).toMatch(/doesn’t exist/);
+    expect(mockUpsert).not.toHaveBeenCalled();
+    const overlap = klass({ metadata: { ...klass().metadata, startDate: "2025-11-02", startTime: "01:30", endTime: null, timezone: "America/New_York" } });
+    const res = await saveTeachItems(TENANT, "teachClasses", [overlap]);
+    expect(res.error).toBeNull();
+    expect(res.warnings?.[0]).toMatch(/happens twice/);
+    expect(mockUpsert.mock.calls[0][0][0].metadata).toMatchObject({ startsAt: "2025-11-02T05:30:00Z", startAmbiguous: true });
+  });
+
   it("deletes rows that are no longer in the submitted list", async () => {
     mockExisting.mockResolvedValue({ data: [{ id: ITEM }, { id: OTHER }] });
     const { saveTeachItems } = await actions();

@@ -279,8 +279,8 @@ function HomeScreen({
   const s = data.settings;
   const sections = s.teachProfile.homeSections;
   const quote = sections.quote ? getDailyQuoteFrom(data.todayIso, s.dailyInspiration.quotes, s.dailyInspiration.useFallback, s.dailyInspiration.quotes.length ? "" : null) : null;
-  const today = classesOn(data.classes, data.todayIso);
-  const next = today.length === 0 ? nextUpcomingClass(data.classes, data.todayIso) : null;
+  const today = classesOn(data.classes, data.todayIso, data.timezone);
+  const next = today.length === 0 ? nextUpcomingClass(data.classes, data.todayIso, data.timezone) : null;
   const [expanded, setExpanded] = useState<string | null>(null);
 
   const weekWindows = useMemo(() => {
@@ -342,7 +342,7 @@ function HomeScreen({
                   teacherName={data.teacherName}
                   expanded={expanded === c.id}
                   onToggle={() => setExpanded((e) => (e === c.id ? null : c.id))}
-                  past={isClassPast(c.metadata, data.todayIso, data.nowTime)}
+                  past={isClassPast(c.metadata, data.todayIso, data.nowTime, data.nowInstant)}
                   timezoneLabel={c.metadata.timezone && c.metadata.timezone !== data.timezone ? c.metadata.timezone : null}
                 />
               ))
@@ -422,15 +422,15 @@ function HomeScreen({
 
 function ScheduleScreen({ data }: { data: TeachGuestData }) {
   const [mode, setMode] = useState<"classes" | "private">("classes");
-  const days = useMemo(() => buildScheduleDays(data.classes, data.availability, data.todayIso, 14), [data.classes, data.availability, data.todayIso]);
+  const days = useMemo(() => buildScheduleDays(data.classes, data.availability, data.todayIso, 14, data.timezone), [data.classes, data.availability, data.todayIso, data.timezone]);
   const firstWithClass = days.find((d) => d.classCount > 0)?.date ?? data.todayIso;
   const firstWithPrivate = days.find((d) => d.availabilityCount > 0)?.date ?? data.todayIso;
   const [selected, setSelected] = useState<string | null>(null);
   const date = selected ?? (mode === "classes" ? firstWithClass : firstWithPrivate);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const classes = classesOn(data.classes, date);
+  const classes = classesOn(data.classes, date, data.timezone);
   const windows = availabilityOn(data.availability, date);
-  const next = nextUpcomingClass(data.classes, date);
+  const next = nextUpcomingClass(data.classes, date, data.timezone);
   const hasPrivate = data.availability.length > 0;
 
   return (
@@ -528,7 +528,7 @@ function ScheduleScreen({ data }: { data: TeachGuestData }) {
                     return n;
                   })
                 }
-                past={isClassPast(c.metadata, data.todayIso, data.nowTime)}
+                past={isClassPast(c.metadata, data.todayIso, data.nowTime, data.nowInstant)}
                 timezoneLabel={c.metadata.timezone && c.metadata.timezone !== data.timezone ? c.metadata.timezone : null}
               />
             ))

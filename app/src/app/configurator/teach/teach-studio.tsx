@@ -8,6 +8,7 @@ import { InnerDweSMark } from "@/components/brand/wordmark";
 import { TeachGuestApp } from "@/components/teach/teach-guest-app";
 import { todayInTimezone, currentTimeInTimezone } from "@/lib/timezone";
 import type { TeachGuestData } from "@/lib/teach/guestData";
+import { withDerivedClassTimes } from "@/lib/teach/classTime";
 import type {
   EditableTeachItem,
   TeachEditableItemKey,
@@ -184,7 +185,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
   const [dirty, setDirty] = useState<Set<SectionKey>>(new Set());
   const [saving, setSaving] = useState<SectionKey | null>(null);
   const [publishedAt, setPublishedAt] = useState(initial.publishedAt);
-  const [toast, setToast] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const [toast, setToast] = useState<{ kind: "ok" | "error" | "warn"; text: string } | null>(null);
   const [mobileNav, setMobileNav] = useState(false);
   const [mobilePreview, setMobilePreview] = useState(false);
   // Preview "now" is only computed on the client (never during SSR) so
@@ -216,7 +217,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
 
   useEffect(() => {
     if (!toast) return;
-    const t = setTimeout(() => setToast(null), 3500);
+    const t = setTimeout(() => setToast(null), toast.kind === "warn" ? 9000 : 3500);
     return () => clearTimeout(t);
   }, [toast]);
 
@@ -252,9 +253,10 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
       metadata: it.metadata,
     }));
 
-  async function saveSection(s: SectionKey): Promise<string | null> {
-    const run = async (...ops: Promise<{ error: string | null }>[]) => {
+  async function saveSection(s: SectionKey, warnings: string[]): Promise<string | null> {
+    const run = async (...ops: Promise<{ error: string | null; warnings?: string[] }>[]) => {
       const results = await Promise.all(ops);
+      for (const r of results) warnings.push(...(r.warnings ?? []));
       return results.find((r) => r.error)?.error ?? null;
     };
     switch (s) {
@@ -293,12 +295,13 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
 
   const save = async (s: SectionKey): Promise<string | null> => {
     setSaving(s);
-    const err = await saveSection(s);
+    const warnings: string[] = [];
+    const err = await saveSection(s, warnings);
     setSaving(null);
     if (err) setToast({ kind: "error", text: err });
     else {
       clean(s);
-      setToast({ kind: "ok", text: "Saved" });
+      setToast(warnings.length ? { kind: "warn", text: `Saved. ${warnings.join(" ")}` } : { kind: "ok", text: "Saved" });
     }
     return err;
   };
@@ -470,6 +473,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
       timezone,
       todayIso: todayInTimezone(timezone),
       nowTime: currentTimeInTimezone(timezone),
+      nowInstant: new Date().toISOString(),
       brand: {
         name: name || "Teacher",
         logoRef: null,
@@ -483,7 +487,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
       },
       heroImageRef,
       settings,
-      classes: items.teachClasses,
+      classes: items.teachClasses.map((c) => ({ ...c, metadata: withDerivedClassTimes(c.metadata, timezone) })),
       availability: items.teachAvailability.filter((a) => a.metadata.enabled),
       readings: items.teachReadings,
       audio: items.teachAudio,
@@ -637,7 +641,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
       ) : null}
 
       {toast ? (
-        <div role={toast.kind === "error" ? "alert" : "status"} className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full text-[13px] font-semibold shadow-lg ${toast.kind === "ok" ? "bg-[#192B21] text-white" : "bg-[#8F3B3B] text-white"}`}>
+        <div role={toast.kind === "error" ? "alert" : "status"} className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full text-[13px] font-semibold shadow-lg ${toast.kind === "ok" ? "bg-[#192B21] text-white" : toast.kind === "warn" ? "bg-[#FBF1DC] text-[#5E3F0E] max-w-[min(92vw,560px)] rounded-2xl" : "bg-[#8F3B3B] text-white"}`}>
           {toast.text}
         </div>
       ) : null}

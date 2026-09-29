@@ -33,7 +33,9 @@ import {
   teachItemFieldsSchema,
   type TeachEditableItemKey,
   type TeachSettingsKey,
+  type ClassMetadata,
 } from "@/lib/teach/schemas";
+import { computeClassTimes } from "@/lib/teach/classTime";
 import { DEFAULT_TEACH_PRESET } from "@/lib/teach/style";
 import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
 
@@ -51,7 +53,7 @@ import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
  * checkSlugAvailability / reserveSlug (guest address).
  */
 
-export type TeachActionState = { error: string | null };
+export type TeachActionState = { error: string | null; warnings?: string[] };
 const OK: TeachActionState = { error: null };
 
 async function requireUser() {
@@ -64,9 +66,14 @@ async function requireUser() {
 
 /** Confirms the tenant is visible to this user (RLS) and is a Teach Space. */
 async function requireTeachTenant(supabase: SupabaseClient, tenantId: string): Promise<boolean> {
-  if (!z.string().uuid().safeParse(tenantId).success) return false;
-  const { data } = await supabase.from("tenants").select("product_type").eq("id", tenantId).maybeSingle();
-  return data?.product_type === TEACH_PRODUCT_TYPE;
+  return (await loadTeachTenant(supabase, tenantId)) !== null;
+}
+
+/** Same guard, also returning the Space's time zone (legacy class fallback). */
+async function loadTeachTenant(supabase: SupabaseClient, tenantId: string): Promise<{ timezone: string } | null> {
+  if (!z.string().uuid().safeParse(tenantId).success) return null;
+  const { data } = await supabase.from("tenants").select("product_type, timezone").eq("id", tenantId).maybeSingle();
+  return data?.product_type === TEACH_PRODUCT_TYPE ? { timezone: data.timezone ?? DEFAULT_TIMEZONE } : null;
 }
 
 // ---------------------------------------------------------------------------
@@ -231,8 +238,10 @@ export async function saveTeachItems(
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You need to be logged in to save." };
   if (!TEACH_EDITABLE_ITEM_KEYS.includes(moduleKey)) return { error: "Unknown section." };
-  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
+  const tenant = await loadTeachTenant(supabase, tenantId);
+  if (!tenant) return { error: "Space not found." };
   if (!Array.isArray(items)) return { error: "Could not read the list." };
+  const warnings: string[] = [];
 
   if (moduleKey === "customPages") {
     const entitlement = await getSpaceEntitlement(supabase, tenantId);
@@ -252,6 +261,16 @@ export async function saveTeachItems(
       return { error: "An audio file reference wasn't valid - please re-upload it." };
     }
     if (audioRef && !isTenantMediaRef(tenantId, audioRef)) return { error: "An audio file reference wasn't valid." };
+    // Canonical class time (time model v1): recompute the UTC instants from
+    // the local wall time + explicit zone on every save. Client-sent
+    // startsAt/endsAt are never trusted - they are overwritten here.
+    let metadata = parsed.data.metadata as Record<string, unknown>;
+    if (moduleKey === "teachClasses") {
+      const times = computeClassTimes(parsed.data.metadata as ClassMetadata, tenant.timezone);
+      if (!times.ok) return { error: `“${parsed.data.title}”: ${times.issues[0].message}` };
+      metadata = times.metadata as unknown as Record<string, unknown>;
+      for (const w of times.warnings) warnings.push(`“${parsed.data.title}”: ${w.message}`);
+    }
     rows.push({
       id,
       tenant_id: tenantId,
@@ -263,7 +282,7 @@ export async function saveTeachItems(
       description: parsed.data.description,
       external_link: parsed.data.externalLink,
       sort_order: index,
-      metadata: parsed.data.metadata as Record<string, unknown>,
+      metadata,
     });
   }
 
@@ -283,7 +302,7 @@ export async function saveTeachItems(
     const { error } = await supabase.from("module_items").upsert(rows, { onConflict: "id" });
     if (error) return { error: error.message };
   }
-  return OK;
+  return warnings.length ? { error: null, warnings } : OK;
 }
 
 /** Removes one item immediately (row + its image and audio folders). */

@@ -4,6 +4,7 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { listTimezones } from "@/lib/timezone";
+import { computeClassTimes } from "@/lib/teach/classTime";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
 import { MEDIA_BUCKET } from "@/lib/media/path";
 import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL, type SocialPlatform } from "@/lib/modules/socialLinks";
@@ -168,7 +169,7 @@ function ItemList<K extends TeachEditableItemKey>({
       imageRef: null,
       imageUrl: null,
       externalLink: null,
-      metadata: blankTeachMetadata(moduleKey, api.todayIso),
+      metadata: blankTeachMetadata(moduleKey, api.todayIso, api.timezone),
     } as EditableTeachItem<K>;
     api.setItems(moduleKey, [...items, item], section);
     setOpen(item.id);
@@ -384,6 +385,15 @@ export function IdentitySection({ api }: Props) {
     }
   }
 
+  const classes = api.items.teachClasses;
+  const otherZoneClasses = classes.filter((c) => (c.metadata.timezone ?? api.timezone) !== api.timezone).length;
+  const applyZoneToClasses = () =>
+    api.setItems(
+      "teachClasses",
+      classes.map((c) => ({ ...c, metadata: { ...c.metadata, timezone: api.timezone } })),
+      "schedule"
+    );
+
   const quotes = di.quotes;
   const setQuotes = (next: string[]) => api.updateSetting("dailyInspiration", { quotes: next }, "identity");
 
@@ -403,7 +413,7 @@ export function IdentitySection({ api }: Props) {
           />
         </Grid>
         <Grid>
-          <SelectField label="Time zone" value={api.timezone} onChange={api.setTimezone} options={timezones.map((t) => ({ value: t, label: t }))} hint="Class times and “today” always use this time zone." />
+          <SelectField label="Time zone" value={api.timezone} onChange={api.setTimezone} options={timezones.map((t) => ({ value: t, label: t }))} hint="“Today” uses this time zone, and new classes start in it." />
           <div>
             <Label htmlFor="tt-slug">Guest address</Label>
             <div className="flex gap-2">
@@ -427,6 +437,16 @@ export function IdentitySection({ api }: Props) {
             </Hint>
           </div>
         </Grid>
+        {otherZoneClasses > 0 ? (
+          <div className="flex flex-wrap items-center gap-3 px-3 py-2.5 rounded-lg bg-[#F4EFE6]" data-testid="apply-zone-to-classes">
+            <p className="text-[12.5px] text-[#4A4843] flex-1 min-w-[200px]">
+              {otherZoneClasses === 1 ? "1 class uses" : `${otherZoneClasses} classes use`} a different time zone. Changing it keeps each class’s local date and time.
+            </p>
+            <StudioButton kind="outline" onClick={applyZoneToClasses}>
+              Use {api.timezone} for all classes
+            </StudioButton>
+          </div>
+        ) : null}
       </Card>
       <Card title="Primary image" description="Your main hero photo. It crops beautifully into the arched window, portrait circle or full-bleed layouts — set the focal point so your face always stays in frame.">
         <ImageField
@@ -687,7 +707,10 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
   const venue = m.venue;
   const setVenue = (patch: Partial<typeof venue>) => setM({ venue: { ...venue, ...patch } });
   const cta = buildRegistrationCta(api.name, item.title || "Class", m);
-  const timezones = useMemo(() => withTimezone(listTimezones(), m.timezone), [m.timezone]);
+  const timezones = useMemo(() => withTimezone(withTimezone(listTimezones(), api.timezone), m.timezone), [m.timezone, api.timezone]);
+  // Live check of the canonical time model (the server re-checks on save).
+  const times = useMemo(() => computeClassTimes(m, api.timezone), [m, api.timezone]);
+  const timeIssues = times.ok ? times.warnings : times.issues;
   return (
     <>
       <Grid>
@@ -705,11 +728,22 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
         <TextField label="End date (multi-day only)" type="date" value={str(m.endDate)} onChange={(v) => setM({ endDate: v || null })} hint="Leave empty for a single-day class." />
         <SelectField
           label="Time zone"
-          value={m.timezone ?? ""}
-          onChange={(v) => setM({ timezone: v || null })}
-          options={[{ value: "", label: `Space default (${api.timezone})` }, ...timezones.map((t) => ({ value: t, label: t }))]}
+          value={m.timezone ?? api.timezone}
+          onChange={(v) => setM({ timezone: v })}
+          options={timezones.map((t) => ({ value: t, label: t }))}
+          hint={m.timezone && m.timezone !== api.timezone ? `Differs from your Space time zone (${api.timezone}).` : "The time zone this class happens in."}
         />
       </Grid>
+      {timeIssues.map((t) => (
+        <p
+          key={`${t.field}-${t.message}`}
+          role={t.kind === "error" ? "alert" : "status"}
+          data-testid={t.kind === "error" ? "class-time-error" : "class-time-warning"}
+          className={`text-[12.5px] px-3 py-2 rounded-lg ${t.kind === "error" ? "bg-[#F6E3E0] text-[#8F3B3B]" : "bg-[#FBF1DC] text-[#7A5418]"}`}
+        >
+          {t.message}
+        </p>
+      ))}
       <Grid cols={3}>
         <TextField label="Location" value={str(m.location)} onChange={(v) => setM({ location: nul(v) })} placeholder="Olive Tree Studio · Tel Aviv" />
         <TextField label="Price" value={str(m.price)} onChange={(v) => setM({ price: nul(v) })} placeholder="₪65 · 5-class card ₪280" />

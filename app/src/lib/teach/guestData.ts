@@ -11,6 +11,7 @@ import {
   type TeachItem,
   type TeachSettings,
 } from "./schemas";
+import { withDerivedClassTimes } from "./classTime";
 
 /**
  * Everything the Time to Teach Guest App renders. Built from the published
@@ -27,6 +28,8 @@ export type TeachGuestData = {
   timezone: string;
   todayIso: string;
   nowTime: string;
+  /** Current UTC instant (ISO) - compared against class startsAt/endsAt. */
+  nowInstant: string;
   brand: BrandConfig;
   heroImageRef: string | null;
   settings: TeachSettings;
@@ -98,7 +101,13 @@ export function parsePublishedTeachSpace(space: PublishedTeachRow): TeachGuestDa
     brand: brandFromPublishedTheme(space.name, space.theme),
     heroImageRef,
     settings,
-    classes: parseTeachItems("teachClasses", itemsRaw.teachClasses),
+    nowInstant: new Date().toISOString(),
+    // Rows published before time model v1 have no instants yet: derive them
+    // in memory (in the Space's zone) so ordering and "ended" stay correct.
+    classes: parseTeachItems("teachClasses", itemsRaw.teachClasses).map((c) => ({
+      ...c,
+      metadata: withDerivedClassTimes(c.metadata, timezone),
+    })),
     availability: parseTeachItems("teachAvailability", itemsRaw.teachAvailability).filter((a) => a.metadata.enabled),
     readings: parseTeachItems("teachReadings", itemsRaw.teachReadings),
     audio: parseTeachItems("teachAudio", itemsRaw.teachAudio),

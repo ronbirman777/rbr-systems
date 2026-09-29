@@ -82,6 +82,10 @@ export const optText = (max: number) =>
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+/** Temporal Instant string, e.g. "2025-10-14T04:30:00Z". */
+const utcInstant = z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?Z$/);
+/** UTC offset, e.g. "+03:00" / "-04:00" / "+05:30". */
+const utcOffset = z.string().regex(/^[+-]\d{2}:\d{2}$/);
 const mediaRef = z.string().max(400).nullable().default(null);
 
 export const imageSlotSchema = z
@@ -331,7 +335,8 @@ export const classMetadataSchema = z.object({
   startTime: hhmm,
   endDate: isoDate.nullable().catch(null).default(null),
   endTime: hhmm.nullable().catch(null).default(null),
-  /** null = the Space's own time zone. */
+  /** Explicit IANA zone (time model v1 always persists one; null only on
+   * rows saved before the model existed, read as the Space's zone). */
   timezone: optText(64),
   location: optText(200),
   price: optText(120),
@@ -341,6 +346,17 @@ export const classMetadataSchema = z.object({
   registration: registrationSchema,
   venue: venueSchema,
   imagePosition: optionalFocalPointSchema,
+  // --- Canonical time (time model v1, src/lib/teach/classTime.ts) ---
+  // Derived on the server from the local fields above on every save; never
+  // edited directly. Absent (null) on rows saved before the model existed.
+  startsAt: utcInstant.nullable().catch(null).default(null),
+  endsAt: utcInstant.nullable().catch(null).default(null),
+  startOffset: utcOffset.nullable().catch(null).default(null),
+  endOffset: utcOffset.nullable().catch(null).default(null),
+  /** true = the local start time happened twice (DST fall-back); the earlier one was used. */
+  startAmbiguous: z.boolean().catch(false).default(false),
+  endAmbiguous: z.boolean().catch(false).default(false),
+  timeModelVersion: z.number().int().nullable().catch(null).default(null),
 });
 export type ClassMetadata = z.infer<typeof classMetadataSchema>;
 
@@ -511,10 +527,14 @@ export function parseTeachItems<K extends TeachEditableItemKey>(key: K, raw: unk
   return raw.map((r) => parseTeachItem(key, r)).filter((x): x is TeachItem<K> => x !== null);
 }
 
-/** Blank metadata for a newly added item (Studio "Add"). */
-export function blankTeachMetadata<K extends TeachEditableItemKey>(key: K, todayIso: string): TeachItemMetadata[K] {
+/**
+ * Blank metadata for a newly added item (Studio "Add"). New classes get an
+ * explicit time zone (the Space's) so the stored model never relies on an
+ * implicit default.
+ */
+export function blankTeachMetadata<K extends TeachEditableItemKey>(key: K, todayIso: string, timezone: string | null = null): TeachItemMetadata[K] {
   const base: Record<TeachEditableItemKey, unknown> = {
-    teachClasses: { startDate: todayIso, startTime: "09:00", endTime: "10:00" },
+    teachClasses: { startDate: todayIso, startTime: "09:00", endTime: "10:00", timezone },
     teachAvailability: { repeat: "weekly", weekday: 2, from: "10:00", to: "13:00", methods: ["whatsapp"] },
     teachReadings: { date: todayIso },
     teachAudio: {},

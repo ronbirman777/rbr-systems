@@ -181,8 +181,8 @@ describe("schedule", () => {
     expect(weekdayOf("2025-10-14")).toBe(2);
   });
 
-  it("classes on a date, sorted, including multi-day", () => {
-    expect(classesOn(classes, "2025-10-14").map((c) => c.id)).toEqual(["early", "multi", "late"]);
+  it("classes on a date, in real start order, including an ongoing multi-day class", () => {
+    expect(classesOn(classes, "2025-10-14").map((c) => c.id)).toEqual(["multi", "early", "late"]);
     expect(classesOn(classes, "2025-10-17")).toEqual([]);
   });
 
