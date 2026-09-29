@@ -942,9 +942,8 @@ export function AboutSection({ api }: Props) {
   return (
     <>
       <SectionHeader eyebrow="Teaching" title="About Me" intro="Your story, told well. Everything is optional — empty fields never appear to guests." />
-      <Card title="Profile">
+      <Card title="Profile" description="Shown at the top of About Me, under your name.">
         <SettingsImage api={api} settingsKey="teachAbout" slot="profile" value={a.profile} onChange={(v) => set({ profile: v })} label="Profile image · circle crop" previewClassName="w-[120px] h-[120px] rounded-full" />
-        <TextArea label="About me" value={str(a.about)} onChange={(v) => set({ about: nul(v) })} rows={5} maxLength={4000} />
         <Grid>
           <TextField
             label="Teaching since (year)"
@@ -966,7 +965,10 @@ export function AboutSection({ api }: Props) {
             hint="Comma-separated, e.g. Vinyasa, Yin, Pranayama."
           />
         </Grid>
+      </Card>
+      <Card title="Your story" description="Guests see your philosophy first, as a highlighted quote, then your story.">
         <TextArea label="Teaching philosophy" value={str(a.philosophy)} onChange={(v) => set({ philosophy: nul(v) })} rows={2} maxLength={700} />
+        <TextArea label="About me" value={str(a.about)} onChange={(v) => set({ about: nul(v) })} rows={5} maxLength={4000} />
       </Card>
       <Card title="Social & direct links" description="Shown as icons under your name. Uses the shared InnerDweS social links.">
         <Grid>
