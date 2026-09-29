@@ -35,6 +35,7 @@ import {
   type TeachSettingsKey,
 } from "@/lib/teach/schemas";
 import { DEFAULT_TEACH_PRESET } from "@/lib/teach/style";
+import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
 
 /**
  * Time to Teach Studio server actions.
@@ -83,7 +84,7 @@ export async function createTeachSpace(): Promise<void> {
 
   const { data: tenant, error } = await supabase
     .from("tenants")
-    .insert({ name: "My Teaching Space", product_type: TEACH_PRODUCT_TYPE, timezone: DEFAULT_TIMEZONE })
+    .insert({ name: SPACE_TYPES.teach.copy.untitledName, product_type: TEACH_PRODUCT_TYPE, timezone: DEFAULT_TIMEZONE })
     .select("id")
     .single();
   if (error || !tenant) {
@@ -92,7 +93,7 @@ export async function createTeachSpace(): Promise<void> {
 
   await supabase.from("brand_configs").upsert({
     tenant_id: tenant.id,
-    name: "My Teaching Space",
+    name: SPACE_TYPES.teach.copy.untitledName,
     custom_primary: DEFAULT_TEACH_PRESET.primary,
     custom_secondary: DEFAULT_TEACH_PRESET.accent,
     updated_at: new Date().toISOString(),

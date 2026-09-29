@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
-import { TeachPublishedSpaceScreen } from "@/components/teach/teach-published-screen";
-import { PublishedSpaceScreen, type PublishedSpaceRow } from "@/components/guest/published-space-screen";
+import type { PublishedSpaceRow } from "@/components/guest/published-space-screen";
+import { renderPublishedSpace } from "@/lib/spaceTypes/guestRenderers";
+import { getSpaceType } from "@/lib/spaceTypes/registry";
 import { isSpacePubliclyAvailable } from "@/lib/entitlements/isSpacePubliclyAvailable";
 import { getGuestAccessMode } from "@/lib/guestAccess/mode";
 import { hasValidGuestAccessCookie } from "@/lib/guestAccess/checkCookie";
@@ -49,6 +50,10 @@ export default async function GuestSpacePage({
     .maybeSingle<PublishedSpaceRow & { product_type: string }>();
 
   if (!space) notFound();
+  // Unknown product_type (or a type with no guest app) fails visibly here,
+  // before any gate or renderer - see the Space Type Registry.
+  const spaceType = getSpaceType(space.product_type);
+  if (!spaceType?.guest) notFound();
   // Commercial/public availability is authoritative and checked FIRST -
   // a lapsed Space's guest-access code cannot be used to route around
   // it, regardless of what mode it's configured for.
@@ -57,11 +62,13 @@ export default async function GuestSpacePage({
   const mode = await getGuestAccessMode(tenantId);
   if (mode === "code" && !(await hasValidGuestAccessCookie(tenantId))) {
     const identity = extractPublishedGuestIdentity(space);
-    return <GuestAccessScreen tenantId={tenantId} {...identity} />;
+    return <GuestAccessScreen tenantId={tenantId} {...identity} copy={spaceType.copy.guestAccess} />;
   }
 
-  // Time to Teach (additive): a Teach Space renders its own Guest App from
-  // the same published snapshot; every other product_type is unchanged.
-  if (space.product_type === "teach") return <TeachPublishedSpaceScreen space={space} />;
-  return <PublishedSpaceScreen space={space} />;
+  // Space Type Registry: render by the snapshot's own product_type. An
+  // unknown type (or one without a guest app) is a visible 404 - never
+  // another product's app.
+  const rendered = renderPublishedSpace(space.product_type, space);
+  if (!rendered) notFound();
+  return rendered;
 }

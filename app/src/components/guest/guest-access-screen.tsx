@@ -12,6 +12,8 @@ export type GuestAccessScreenProps = {
   heroImageUrl: string | null;
   logoUrl: string | null;
   vars: CSSProperties;
+  /** Product copy from the Space Type Registry (SPACE_TYPES[type].copy.guestAccess). */
+  copy: { title: string; openLabel: string; askHint: string };
 };
 
 const DIGIT_COUNT = 6;
@@ -30,7 +32,7 @@ const DIGIT_COUNT = 6;
  * an attempt count, and this component has no way to display
  * information it was never given.
  */
-export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars }: GuestAccessScreenProps) {
+export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars, copy }: GuestAccessScreenProps) {
   const router = useRouter();
   const boundAction = verifyGuestCode.bind(null, tenantId);
   const [state, formAction, pending] = useActionState<VerifyGuestCodeState, FormData>(boundAction, verifyGuestCodeInitialState);
@@ -115,7 +117,7 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars 
           </div>
           <div className="absolute bottom-0 left-0 right-0 px-6 pb-5">
             <p className="text-white/70 text-[10px] tracking-[0.2em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)" }}>
-              Private Retreat
+              {copy.title}
             </p>
             <h1 className="text-white text-[1.9rem] leading-[1.1] font-normal" style={{ fontFamily: "var(--rbr-font-display)" }}>
               {name}
@@ -172,10 +174,10 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars 
             className="w-full rounded-2xl py-3.5 text-sm font-semibold disabled:opacity-50 transition-opacity"
             style={{ background: "var(--rbr-primary)", color: "var(--rbr-on-primary)", fontFamily: "var(--rbr-font-ui)" }}
           >
-            {pending ? "Checking…" : "Open Retreat"}
+            {pending ? "Checking…" : copy.openLabel}
           </button>
           <p className="text-center text-[11px] mt-4" style={{ color: GUEST_BASE_PALETTE.mist, fontFamily: "var(--rbr-font-ui)" }}>
-            Ask your retreat organizer for the access code.
+            {copy.askHint}
           </p>
         </form>
       </div>

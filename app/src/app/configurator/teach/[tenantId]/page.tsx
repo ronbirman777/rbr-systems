@@ -17,6 +17,7 @@ import {
   type TeachSettings,
 } from "@/lib/teach/schemas";
 import { enabledExploreFrom } from "@/lib/teach/guestData";
+import { studioRouteDecision } from "@/lib/spaceTypes/registry";
 import { DEFAULT_TEACH_PRESET } from "@/lib/teach/style";
 import { TeachStudio, type TeachStudioInitial } from "../teach-studio";
 
@@ -49,7 +50,9 @@ export default async function TeachStudioPage({
     .eq("id", tenantId)
     .maybeSingle();
   if (!tenant) notFound();
-  if (tenant.product_type !== TEACH_PRODUCT_TYPE) redirect(`/configurator/retreat/${tenant.id}`);
+  const route = studioRouteDecision(tenant.product_type, TEACH_PRODUCT_TYPE, tenant.id);
+  if (route.action === "redirect") redirect(route.href);
+  if (route.action === "unsupported") notFound();
   if (tenant.status === "archived") redirect("/space");
 
   const [{ data: brand }, { data: settingsRows }, { data: itemRows }, { data: configRows }, { data: published }, entitlement] =

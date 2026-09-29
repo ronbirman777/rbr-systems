@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getSpaceType } from "@/lib/spaceTypes/registry";
 import { revalidatePath } from "next/cache";
 
 /** Same "hint" contract as saveDraft's isSlotLimitError (actions.ts) -
@@ -138,9 +139,16 @@ export async function replaceSpace(
     return { error: "Type the Space's current name exactly to confirm replacing it." };
   }
 
+  // The untitled name comes from the Space's own type (DB product_type ->
+  // Space Type Registry), so a Teach Space is never renamed "Untitled
+  // Retreat". Unknown types are refused rather than guessed.
+  const { data: tenant } = await supabase.from("tenants").select("product_type").eq("id", tenantId).maybeSingle();
+  const spaceType = getSpaceType(tenant?.product_type);
+  if (!spaceType) return { error: "Couldn't replace this Space. Please try again." };
+
   const { error } = await supabase.rpc("replace_space", {
     p_tenant_id: tenantId,
-    p_new_name: newName || "Untitled Retreat",
+    p_new_name: newName || spaceType.copy.untitledName,
   });
   if (error) return { error: "Couldn't replace this Space. Please try again." };
 

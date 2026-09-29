@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { InnerDweSMark } from "@/components/brand/wordmark";
-import { PRODUCT_FAMILIES, type ProductTypeKey } from "@/lib/brand/productFamilies";
+import { getSpaceType, studioHref } from "@/lib/spaceTypes/registry";
 import { PublishSpaceButton } from "@/components/publish-space-button";
 import { deriveCommercialAvailability } from "@/lib/entitlements/availability";
 import type { SpaceEntitlementRow } from "@/lib/entitlements/types";
@@ -187,12 +187,14 @@ export default async function MySpacePage() {
             const published = publishedAt(t.published_spaces as PublishedRow);
             const hasUnpublishedChanges =
               published && new Date(t.content_updated_at) > new Date(published);
-            const family = PRODUCT_FAMILIES[t.product_type as ProductTypeKey];
             const slug = (t as { slug: string | null }).slug;
             const liveHref = slug ? `/s/${slug}` : `/g/${t.id}`;
-            // Time to Teach: each Space type opens its own Studio.
-            const studioHref = t.product_type === "teach" ? `/configurator/teach/${t.id}` : `/configurator/retreat/${t.id}`;
-            const previewHref = t.product_type === "teach" ? `${studioHref}?section=publish` : `${studioHref}?step=publish`;
+            // Space Type Registry: each type opens its own Studio. null =
+            // unknown type or a type with no Studio -> no Studio links,
+            // shown as unsupported instead of opening the wrong product.
+            const spaceType = getSpaceType(t.product_type);
+            const studioLink = studioHref(t.product_type, t.id);
+            const previewLink = studioHref(t.product_type, t.id, { publish: true });
             const availability = deriveCommercialAvailability(entitlementByTenant.get(t.id) ?? null);
             const spaceImageUrl = spaceImageUrlByTenant.get(t.id) ?? null;
             const isArchived = t.status === "archived";
@@ -225,9 +227,9 @@ export default async function MySpacePage() {
                   <div className="flex-1 min-w-0">
                     <div
                       className="text-xs font-semibold uppercase tracking-[0.12em]"
-                      style={{ color: family?.accent ?? "#192B21" }}
+                      style={{ color: spaceType?.product.accent ?? "#8F3B3B" }}
                     >
-                      {family?.name ?? t.product_type}
+                      {spaceType?.product.name ?? `Unsupported Space type (${t.product_type})`}
                     </div>
                     <div className="font-editorial italic text-xl text-idw-forest mt-1">
                       {t.name}
@@ -284,16 +286,21 @@ export default async function MySpacePage() {
                     elsewhere on this page (not a redesign), with a visible
                     :active press state for touch AND mouse. */}
                 <div className="flex flex-wrap gap-2.5 mt-5 items-center text-xs font-semibold uppercase tracking-wide">
-                  {!isArchived && (
+                  {!isArchived && !studioLink && (
+                    <span className="normal-case font-normal text-idw-forest/60" role="note">
+                      This Space type can’t be opened here.
+                    </span>
+                  )}
+                  {!isArchived && studioLink && previewLink && (
                     <>
                       <SpaceOpenLink
-                        href={studioHref}
+                        href={studioLink}
                         className="inline-flex items-center justify-center min-h-11 px-4 rounded-full border border-idw-forest/20 text-idw-forest active:scale-[0.97] active:bg-idw-forest/10 transition-transform"
                       >
                         Manage Space
                       </SpaceOpenLink>
                       <SpaceOpenLink
-                        href={previewHref}
+                        href={previewLink}
                         className="inline-flex items-center justify-center min-h-11 px-4 rounded-full border border-idw-forest/20 text-idw-forest active:scale-[0.97] active:bg-idw-forest/10 transition-transform"
                       >
                         Preview
@@ -323,6 +330,7 @@ export default async function MySpacePage() {
                       name={t.name}
                       isArchived={isArchived}
                       slotsAvailable={slots.slotsAvailable}
+                      untitledName={spaceType?.copy.untitledName ?? "Untitled Space"}
                     />
                   )}
                 </div>

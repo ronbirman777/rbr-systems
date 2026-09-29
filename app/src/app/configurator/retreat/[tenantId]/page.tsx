@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { studioRouteDecision } from "@/lib/spaceTypes/registry";
 import { createClient } from "@/lib/supabase/server";
 import { RetreatConfigurator } from "../retreat-configurator";
 import type { AtmosphereKey, PaletteKey } from "@/lib/theme/tokens";
@@ -54,9 +55,13 @@ export default async function ResumeRetreatConfiguratorPage({
     .eq("id", tenantId)
     .maybeSingle();
   if (!tenant) notFound();
-  // Time to Teach Spaces have their own Studio and content model - never
-  // open one in the retreat configurator (it would save retreat-shaped data).
-  if (tenant.product_type === "teach") redirect(`/configurator/teach/${tenant.id}`);
+  // Space Type Registry: only retreat tenants render here. Another known
+  // type is redirected to its own Studio; an unknown type, or one with no
+  // Studio, is a 404 - never opened as a retreat (it would save
+  // retreat-shaped data into it).
+  const route = studioRouteDecision(tenant.product_type, "retreat", tenant.id);
+  if (route.action === "redirect") redirect(route.href);
+  if (route.action === "unsupported") notFound();
 
   // PRE-MIGRATION WARNING: custom_navigation/custom_text (0015) and
   // custom_secondary/hero_image_ref/space_image_ref/logo_ref (0014) must

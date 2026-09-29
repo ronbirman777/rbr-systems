@@ -24,11 +24,14 @@ export function SpaceLifecycleControls({
   name,
   isArchived,
   slotsAvailable,
+  untitledName,
 }: {
   tenantId: string;
   name: string;
   isArchived: boolean;
   slotsAvailable: number;
+  /** Product-specific default name (Space Type Registry copy.untitledName). */
+  untitledName: string;
 }) {
   const [archiveState, archiveAction, archivePending] = useActionState(archiveSpace, INITIAL_LIFECYCLE_STATE);
   const [restoreState, restoreAction, restorePending] = useActionState(restoreSpace, INITIAL_LIFECYCLE_STATE);
@@ -61,7 +64,7 @@ export function SpaceLifecycleControls({
             </span>
           )}
         </div>
-        <ReplaceDialog tenantId={tenantId} name={name} open={replaceOpen} onOpenChange={setReplaceOpen} />
+        <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} open={replaceOpen} onOpenChange={setReplaceOpen} />
         <button type="button" onClick={() => setReplaceOpen(true)} className={safeChip}>
           Replace
         </button>
@@ -100,7 +103,7 @@ export function SpaceLifecycleControls({
           {archiveState.error && <span className="text-xs text-red-700 block mt-1">{archiveState.error}</span>}
         </div>
       )}
-      <ReplaceDialog tenantId={tenantId} name={name} open={replaceOpen} onOpenChange={setReplaceOpen} />
+      <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} open={replaceOpen} onOpenChange={setReplaceOpen} />
       {slotsAvailable <= 0 && (
         <button type="button" onClick={() => setReplaceOpen(true)} className={safeChip}>
           Replace
@@ -121,11 +124,13 @@ export function SpaceLifecycleControls({
 function ReplaceDialog({
   tenantId,
   name,
+  untitledName,
   open,
   onOpenChange,
 }: {
   tenantId: string;
   name: string;
+  untitledName: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -193,7 +198,7 @@ function ReplaceDialog({
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               name="newName"
-              placeholder="Untitled Retreat"
+              placeholder={untitledName}
               className="mt-1 w-full rounded-lg border border-idw-forest/20 px-3 py-2 text-sm"
             />
           </div>

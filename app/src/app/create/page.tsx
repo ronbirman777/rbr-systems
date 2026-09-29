@@ -2,9 +2,12 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { InnerDweSMark } from "@/components/brand/wordmark";
-import { PRODUCT_FAMILIES } from "@/lib/brand/productFamilies";
+import { CREATE_ORDER, SPACE_TYPES } from "@/lib/spaceTypes/registry";
 import { getSpaceSlotSummary } from "@/app/configurator/retreat/lifecycleActions";
 import { createTeachSpace } from "@/app/configurator/teach/actions";
+
+/** Server actions for registry create.kind === "action" types. */
+const CREATE_ACTIONS = { createTeachSpace } as const;
 
 export default async function CreatePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
@@ -41,10 +44,6 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
       </main>
     );
   }
-
-  const flow = PRODUCT_FAMILIES.retreat;
-  const teach = PRODUCT_FAMILIES.teach;
-  const heal = PRODUCT_FAMILIES.client_hub;
 
   return (
     <main className="flex-1 bg-idw-parchment px-6 py-20 flex flex-col items-center">
@@ -83,69 +82,58 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
         ) : null}
 
         <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
-          <Link
-            href="/configurator/retreat"
-            className="group relative overflow-hidden rounded-2xl border border-idw-forest/10 bg-white p-8 pt-7 transition-all hover:-translate-y-1 hover:shadow-[0_24px_48px_-24px_rgba(25,43,33,0.25)]"
-            style={{ borderTopColor: flow.accent, borderTopWidth: 3 }}
-          >
-            <div
-              className="text-xs font-semibold uppercase tracking-[0.14em]"
-              style={{ color: flow.accent }}
-            >
-              {flow.name}
-            </div>
-            <h2 className="font-editorial italic text-2xl text-idw-forest mt-3 leading-snug">
-              {flow.tagline}
-            </h2>
-            <span className="inline-block mt-6 text-xs font-semibold uppercase tracking-wide text-idw-forest/50 group-hover:text-idw-forest transition-colors">
-              Begin →
-            </span>
-          </Link>
-
-
-          {/* Time to Teach: a new Space type on the same platform. The Space
-              is created immediately (same slot trigger as every Space), then
-              the Teach Studio opens. */}
-          <form action={createTeachSpace} className="contents">
-            <button
-              type="submit"
-              className="group relative overflow-hidden rounded-2xl border border-idw-forest/10 bg-white p-8 pt-7 text-left transition-all hover:-translate-y-1 hover:shadow-[0_24px_48px_-24px_rgba(25,43,33,0.25)]"
-              style={{ borderTopColor: teach.accent, borderTopWidth: 3 }}
-              data-testid="create-teach"
-            >
-              <div className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: "#7E6440" }}>
-                {teach.name}
+          {/* Space Type Registry: one card per Space type, in CREATE_ORDER.
+              "link" types open their Studio (Time to Flow: unchanged
+              /configurator/retreat); "action" types create the Space
+              server-side first (Time to Teach, same slot trigger as every
+              Space); "none" types show Coming Soon. */}
+          {CREATE_ORDER.map((id) => {
+            const t = SPACE_TYPES[id];
+            const cardClass =
+              "group relative overflow-hidden rounded-2xl border border-idw-forest/10 bg-white p-8 pt-7 text-left transition-all hover:-translate-y-1 hover:shadow-[0_24px_48px_-24px_rgba(25,43,33,0.25)]";
+            const body = (
+              <>
+                <div className="text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: t.create.kind === "action" ? t.product.accentText : t.product.accent }}>
+                  {t.product.name}
+                </div>
+                <h2 className="font-editorial italic text-2xl text-idw-forest mt-3 leading-snug">{t.product.tagline}</h2>
+                {t.product.description ? <p className="text-sm text-idw-forest/60 mt-3 leading-relaxed">{t.product.description}</p> : null}
+              </>
+            );
+            if (t.create.kind === "link") {
+              return (
+                <Link key={id} href={t.create.href} className={cardClass} style={{ borderTopColor: t.product.accent, borderTopWidth: 3 }} data-testid={`create-${id}`}>
+                  {body}
+                  <span className="inline-block mt-6 text-xs font-semibold uppercase tracking-wide text-idw-forest/50 group-hover:text-idw-forest transition-colors">
+                    Begin →
+                  </span>
+                </Link>
+              );
+            }
+            if (t.create.kind === "action") {
+              return (
+                <form key={id} action={CREATE_ACTIONS[t.create.action]} className="contents">
+                  <button type="submit" className={cardClass} style={{ borderTopColor: t.product.accent, borderTopWidth: 3 }} data-testid={`create-${id}`}>
+                    {body}
+                    <span className="inline-block mt-6 text-xs font-semibold uppercase tracking-wide text-idw-forest/50 group-hover:text-idw-forest transition-colors">
+                      Begin →
+                    </span>
+                  </button>
+                </form>
+              );
+            }
+            return (
+              <div key={id} className="relative overflow-hidden rounded-2xl border border-idw-forest/10 bg-white p-8 pt-7" style={{ borderTopColor: t.product.accent, borderTopWidth: 3 }}>
+                {body}
+                <span
+                  className="inline-block mt-6 text-[11px] font-semibold uppercase tracking-wide rounded-full px-3 py-1"
+                  style={{ color: t.product.accent, backgroundColor: `${t.product.accent}1a` }}
+                >
+                  Coming Soon
+                </span>
               </div>
-              <h2 className="font-editorial italic text-2xl text-idw-forest mt-3 leading-snug">{teach.tagline}</h2>
-              <p className="text-sm text-idw-forest/60 mt-3 leading-relaxed">
-                Your classes, private sessions, readings, audio and how to reach you — a beautiful home for your teaching.
-              </p>
-              <span className="inline-block mt-6 text-xs font-semibold uppercase tracking-wide text-idw-forest/50 group-hover:text-idw-forest transition-colors">
-                Begin →
-              </span>
-            </button>
-          </form>
-
-          <div
-            className="relative overflow-hidden rounded-2xl border border-idw-forest/10 bg-white p-8 pt-7"
-            style={{ borderTopColor: heal.accent, borderTopWidth: 3 }}
-          >
-            <div
-              className="text-xs font-semibold uppercase tracking-[0.14em]"
-              style={{ color: heal.accent }}
-            >
-              {heal.name}
-            </div>
-            <h2 className="font-editorial italic text-2xl text-idw-forest mt-3 leading-snug">
-              {heal.tagline}
-            </h2>
-            <span
-              className="inline-block mt-6 text-[11px] font-semibold uppercase tracking-wide rounded-full px-3 py-1"
-              style={{ color: heal.accent, backgroundColor: `${heal.accent}1a` }}
-            >
-              Coming Soon
-            </span>
-          </div>
+            );
+          })}
         </div>
       </div>
     </main>
