@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public";
-import { MEDIA_BUCKET, collectImageRefs } from "@/lib/media/path";
+import { MEDIA_BUCKET, collectMediaRefs } from "@/lib/media/path";
 
 /**
  * The ONLY way an anonymous guest can ever reach a file in the private
@@ -41,7 +41,7 @@ export async function GET(
     return new NextResponse("Not found", { status: 404 });
   }
 
-  const publishedRefs = collectImageRefs(space.modules);
+  const publishedRefs = collectMediaRefs(space.modules);
   if (!publishedRefs.has(objectPath)) {
     return new NextResponse("Not found", { status: 404 });
   }

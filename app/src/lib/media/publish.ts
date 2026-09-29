@@ -61,7 +61,9 @@ export class MediaPublishError extends Error {}
 export async function copyDraftToPublished(
   supabase: SupabaseClient,
   draftPath: string | null,
-  fallbackFolder: string
+  fallbackFolder: string,
+  /** Time to Teach audio passes its own MIME type; images keep the WebP default. */
+  contentType: string = OPTIMIZED_IMAGE_MIME
 ): Promise<void> {
   const publishedPath = draftPath ? publishedMediaPath(draftPath) : null;
   const folder = draftPath ? mediaItemFolder(draftPath) : fallbackFolder;
@@ -91,7 +93,7 @@ export async function copyDraftToPublished(
 
     const { error: uploadError } = await supabase.storage
       .from(MEDIA_BUCKET)
-      .upload(publishedPath, draftBlob, { upsert: true, contentType: OPTIMIZED_IMAGE_MIME });
+      .upload(publishedPath, draftBlob, { upsert: true, contentType });
     if (uploadError) {
       throw new MediaPublishError(`Could not publish the image to "${publishedPath}": ${uploadError.message}`);
     }

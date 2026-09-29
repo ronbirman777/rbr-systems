@@ -130,3 +130,29 @@ export function collectImageRefs(modules: unknown): Set<string> {
   walk(modules);
   return refs;
 }
+
+/**
+ * Time to Teach (shared, additive): like collectImageRefs, but also collects
+ * published audio under the key "audioRef". The guest media route uses this
+ * so a published audio file is served under exactly the same allow-list rule
+ * as images - only paths that literally appear in the tenant's current
+ * published snapshot. Existing snapshots contain no "audioRef" keys, so for
+ * every Time to Flow Space the result is identical to collectImageRefs.
+ */
+export function collectMediaRefs(modules: unknown): Set<string> {
+  const refs = collectImageRefs(modules);
+  function walk(node: unknown) {
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    if (node && typeof node === "object") {
+      for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+        if (key === "audioRef" && typeof value === "string") refs.add(value);
+        else walk(value);
+      }
+    }
+  }
+  walk(modules);
+  return refs;
+}
