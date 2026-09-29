@@ -14,6 +14,7 @@ import { publishedCustomPageSchema, type DisplayCustomPage } from "@/lib/modules
 import { socialLinksSchema } from "@/lib/modules/socialLinks";
 import { EMPTY_STAY_CONNECTED, type StayConnected } from "@/lib/modules/stayConnected";
 import { publishedThemeSchema, brandMediaSchema, DEFAULT_PUBLISHED_THEME } from "@/lib/modules/publishedTheme";
+import { parseImagePosition, type ImagePosition } from "@/lib/modules/imagePosition";
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
 import { todayInTimezone, currentTimeInTimezone, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { publicMediaUrl } from "@/lib/media/path";
@@ -78,6 +79,26 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
     ? { links: stayConnectedParsed.data }
     : EMPTY_STAY_CONNECTED;
 
+  // Explore module hero/cover images (added alongside Task 015) - see
+  // 0021_module_cover_publish.sql's header comment for the exact
+  // published shape ({moduleKey: {imageRef}}, nested under a literal
+  // "imageRef" key for the media-security walker). Absent/malformed
+  // entries resolve to no cover, never a broken image or a thrown error -
+  // the existing per-item-derived fallback in ExploreScreen still
+  // applies for meals/treatments/facilities in that case.
+  const moduleCoversRaw = (modules.moduleCovers ?? {}) as Record<
+    string,
+    { imageRef?: unknown; imagePosition?: unknown } | undefined
+  >;
+  const moduleCoverImages: Record<string, { imageUrl: string | null; imagePosition: ImagePosition }> = {};
+  for (const [key, value] of Object.entries(moduleCoversRaw)) {
+    const ref = typeof value?.imageRef === "string" ? value.imageRef : null;
+    moduleCoverImages[key] = {
+      imageUrl: ref ? publicMediaUrl(ref) : null,
+      imagePosition: parseImagePosition(value?.imagePosition),
+    };
+  }
+
   const brandMediaParsed = brandMediaSchema.safeParse(modules.brand);
   const heroImageRef = brandMediaParsed.success ? (brandMediaParsed.data.hero?.imageRef ?? null) : null;
   const heroImageUrl = heroImageRef ? publicMediaUrl(heroImageRef) : null;
@@ -135,6 +156,7 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
           faq={faq}
           customPages={customPages}
           stayConnected={stayConnected}
+          moduleCoverImages={moduleCoverImages}
         />
       </div>
     </main>

@@ -5,6 +5,7 @@ import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
 import type { DisplayTreatment } from "@/lib/modules/treatment";
 import { ClockIcon } from "./guest/icons";
+import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
 export type TreatmentsScreenProps = {
@@ -54,7 +55,12 @@ export function TreatmentsScreen({ brand, treatments }: TreatmentsScreenProps) {
               <div className="relative h-[200px]">
                 {t.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={t.imageUrl} alt={t.name} className="w-full h-full object-cover" />
+                  <img
+                    src={t.imageUrl}
+                    alt={t.name}
+                    className="w-full h-full object-cover"
+                    style={{ objectPosition: objectPositionStyle(t.imagePosition) }}
+                  />
                 ) : (
                   <div className="w-full h-full" style={{ background: `linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))` }} />
                 )}

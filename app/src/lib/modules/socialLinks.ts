@@ -28,3 +28,14 @@ export const socialLinkSchema = z.object({
 export type SocialLink = z.infer<typeof socialLinkSchema>;
 
 export const socialLinksSchema = z.array(socialLinkSchema);
+
+/**
+ * Task 015 UX fix: a same-shape, non-blocking check for the editor's own
+ * inline hint (typing an obviously-incomplete URL shouldn't feel broken
+ * mid-keystroke) - reuses `socialLinkSchema`'s own `url` rule rather than
+ * a second, possibly-divergent regex, so the hint and the real save-time
+ * validation always agree.
+ */
+export function isLikelyValidUrl(value: string): boolean {
+  return socialLinkSchema.shape.url.safeParse(value).success;
+}

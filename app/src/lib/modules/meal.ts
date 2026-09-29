@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { imagePositionSchema } from "./imagePosition";
 
 /**
  * The explicit schema for the "meals" module_key. Reuses module_items'
@@ -19,6 +20,10 @@ export const mealSchema = z.object({
   imageRef: z.string().nullable(),
   dietaryTags: z.array(z.string()),
   location: z.string().nullable(),
+  /** TASK 020 - shared focal-point contract; see facilitator.ts's own
+   * field comment for the full rationale. This module has no prior
+   * established default, so it renders at true center when null. */
+  imagePosition: imagePositionSchema,
 });
 
 export type PublicMeal = z.infer<typeof mealSchema>;

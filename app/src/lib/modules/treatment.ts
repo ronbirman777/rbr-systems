@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { imagePositionSchema } from "./imagePosition";
 
 /**
  * "treatments" module_key. Informational only in this slice - no booking
@@ -16,6 +17,8 @@ export const treatmentSchema = z.object({
   provider: z.string().nullable(),
   location: z.string().nullable(),
   bookingInfo: z.string().nullable(),
+  /** TASK 020 - shared focal-point contract; see meal.ts/facilitator.ts. */
+  imagePosition: imagePositionSchema,
 });
 
 export type PublicTreatment = z.infer<typeof treatmentSchema>;

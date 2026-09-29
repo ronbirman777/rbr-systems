@@ -1,0 +1,19 @@
+-- Explore Module Hero Image support (added alongside TASK 015).
+--
+-- Source-of-truth/necessity gate: `module_configs` is the one existing
+-- table with exactly one row per (tenant_id, module_key) - already the
+-- canonical "per-module settings" table (it already governs `enabled`),
+-- and a plain upsert of the whole module set already runs on every
+-- Modules-step save (saveModules(), actions.ts), guaranteeing a row
+-- exists for every module key an organizer has ever touched. This is the
+-- correct, minimal, single shared extension point for a MODULE-LEVEL
+-- (not per-item) cover image, covering every module type uniformly with
+-- one column - not a new table, and not a per-module-type special case.
+--
+-- Nullable, no migration-time backfill: every existing module_configs
+-- row simply has no cover image yet, which is the correct default state
+-- (existing per-item "first uploaded item's photo" fallback in
+-- ExploreScreen, and the plain gradient/solid tile fallback for modules
+-- with no such concept, both already handle a null image correctly with
+-- zero code change required here).
+alter table public.module_configs add column image_ref text;

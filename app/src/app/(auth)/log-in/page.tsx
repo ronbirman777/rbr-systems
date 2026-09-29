@@ -109,6 +109,21 @@ function ConfirmErrorNotice() {
   );
 }
 
+/** Task 017 (Part C) — the clear success state deleteAccount()'s
+ * `redirect("/log-in?accountDeleted=1")` lands on. Same
+ * read-one-query-param, render-or-nothing shape as ConfirmErrorNotice
+ * right above - not a new notice pattern. */
+function AccountDeletedNotice() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("accountDeleted") !== "1") return null;
+
+  return (
+    <p className="text-sm text-idw-forest/70 bg-idw-forest/5 rounded-lg px-3 py-2.5 mt-4" role="status">
+      Your account has been permanently deleted.
+    </p>
+  );
+}
+
 export default function LogInPage() {
   const [state, formAction, pending] = useActionState(signIn, initialState);
   const emailRef = useRef<HTMLInputElement>(null);
@@ -134,6 +149,7 @@ export default function LogInPage() {
 
         <Suspense fallback={null}>
           <ConfirmErrorNotice />
+          <AccountDeletedNotice />
         </Suspense>
 
         <form action={formAction} className="mt-8 flex flex-col gap-4">

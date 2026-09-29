@@ -12,6 +12,7 @@ import type { EditableFaqItem } from "@/lib/modules/faq";
 import type { EditableCustomPage } from "@/lib/modules/customPage";
 import { EMPTY_STAY_CONNECTED, type StayConnected } from "@/lib/modules/stayConnected";
 import { socialLinksSchema } from "@/lib/modules/socialLinks";
+import { parseImagePosition, type ImagePosition } from "@/lib/modules/imagePosition";
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { MEDIA_BUCKET, publicMediaUrl } from "@/lib/media/path";
@@ -152,7 +153,7 @@ export default async function ResumeRetreatConfiguratorPage({
       .eq("tenant_id", tenantId)
       .eq("module_key", "stayConnected")
       .maybeSingle(),
-    supabase.from("module_configs").select("module_key, enabled").eq("tenant_id", tenantId),
+    supabase.from("module_configs").select("module_key, enabled, image_ref, image_position").eq("tenant_id", tenantId),
     supabase.from("published_spaces").select("published_at, modules").eq("tenant_id", tenantId).maybeSingle(),
   ]);
 
@@ -205,11 +206,6 @@ export default async function ResumeRetreatConfiguratorPage({
       (facilitatorRows ?? []).map(async (r) => {
         const meta = (r.metadata ?? {}) as Record<string, unknown>;
         const socialLinksParsed = socialLinksSchema.safeParse(meta.socialLinks);
-        const pos = meta.imagePosition as { x?: unknown; y?: unknown } | null | undefined;
-        const imagePosition =
-          pos && typeof pos.x === "number" && typeof pos.y === "number" && pos.x >= 0 && pos.x <= 100 && pos.y >= 0 && pos.y <= 100
-            ? { x: pos.x, y: pos.y }
-            : null;
         return {
           id: r.id,
           name: r.title,
@@ -219,7 +215,7 @@ export default async function ResumeRetreatConfiguratorPage({
           imageUrl: await resolveImageUrl(supabase, r.image_ref),
           specialties: Array.isArray(meta.specialties) ? (meta.specialties as string[]) : [],
           socialLinks: socialLinksParsed.success ? socialLinksParsed.data : [],
-          imagePosition,
+          imagePosition: parseImagePosition(meta.imagePosition),
         };
       })
     ),
@@ -237,6 +233,7 @@ export default async function ResumeRetreatConfiguratorPage({
           imageUrl: await resolveImageUrl(supabase, r.image_ref),
           dietaryTags: (meta.dietaryTags as string[]) ?? [],
           location: (meta.location as string | null) ?? null,
+          imagePosition: parseImagePosition(meta.imagePosition),
         };
       })
     ),
@@ -254,6 +251,7 @@ export default async function ResumeRetreatConfiguratorPage({
           provider: (meta.provider as string | null) ?? null,
           location: (meta.location as string | null) ?? null,
           bookingInfo: (meta.bookingInfo as string | null) ?? null,
+          imagePosition: parseImagePosition(meta.imagePosition),
         };
       })
     ),
@@ -269,6 +267,7 @@ export default async function ResumeRetreatConfiguratorPage({
           openingHours: (meta.openingHours as string | null) ?? null,
           location: (meta.location as string | null) ?? null,
           importantInfo: (meta.importantInfo as string | null) ?? null,
+          imagePosition: parseImagePosition(meta.imagePosition),
         };
       })
     ),
@@ -282,6 +281,7 @@ export default async function ResumeRetreatConfiguratorPage({
           imageRef: r.image_ref,
           imageUrl: await resolveImageUrl(supabase, r.image_ref),
           enabled: typeof meta.enabled === "boolean" ? meta.enabled : true,
+          imagePosition: parseImagePosition(meta.imagePosition),
         };
       })
     ),
@@ -300,6 +300,25 @@ export default async function ResumeRetreatConfiguratorPage({
   const initialEnabledModules = (moduleConfigRows ?? [])
     .filter((r) => r.enabled)
     .map((r) => r.module_key as OptionalModuleKey);
+
+  // Explore module hero/cover images (added alongside Task 015) - same
+  // signed-URL-via-RLS-scoped-session resolution as every other draft
+  // Storage preview on this page, keyed by module_key so the Modules
+  // step can show each module's own cover next to its toggle.
+  const initialModuleCovers: Record<
+    string,
+    { imageRef: string | null; imageUrl: string | null; imagePosition: ImagePosition }
+  > = {};
+  await Promise.all(
+    (moduleConfigRows ?? []).map(async (r) => {
+      const row = r as { image_ref: string | null; image_position: unknown };
+      initialModuleCovers[r.module_key] = {
+        imageRef: row.image_ref,
+        imageUrl: await resolveImageUrl(supabase, row.image_ref),
+        imagePosition: parseImagePosition(row.image_position),
+      };
+    })
+  );
 
   // Task 011 (item C): none of these six depend on each other's result -
   // the three status/settings lookups only need tenant.id (known since
@@ -353,6 +372,7 @@ export default async function ResumeRetreatConfiguratorPage({
         initialCustomPages={initialCustomPages}
         initialStayConnected={initialStayConnected}
         initialEnabledModules={initialEnabledModules}
+        initialModuleCovers={initialModuleCovers}
         initialPublishedAt={published?.published_at ?? null}
         initialIsPubliclyAvailable={initialIsPubliclyAvailable}
         initialGuestAccessSettings={initialGuestAccessSettings}

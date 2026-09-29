@@ -72,6 +72,7 @@ export default async function NewRetreatConfiguratorPage() {
         initialCustomPages={[]}
         initialStayConnected={EMPTY_STAY_CONNECTED}
         initialEnabledModules={[]}
+        initialModuleCovers={{}}
         initialPublishedAt={null}
         initialIsPubliclyAvailable={false}
         publishedHeroImageUrl={null}

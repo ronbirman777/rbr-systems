@@ -22,6 +22,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 const mockGetUser = vi.fn();
 const mockModuleItemsSelect = vi.fn();
 const mockBrandConfigSelect = vi.fn();
+const mockModuleConfigsSelect = vi.fn();
 const mockRpc = vi.fn();
 const mockCopyDraftToPublished = vi.fn();
 const mockGetSpaceEntitlement = vi.fn();
@@ -36,6 +37,12 @@ vi.mock("@/lib/supabase/server", () => ({
       }
       if (table === "brand_configs") {
         return { select: () => ({ eq: () => ({ maybeSingle: mockBrandConfigSelect }) }) };
+      }
+      // Explore module hero/cover images (added alongside Task 015) -
+      // publishSpace() now also selects module_configs for its
+      // module-level cover images, the same shape as module_items above.
+      if (table === "module_configs") {
+        return { select: () => ({ eq: mockModuleConfigsSelect }) };
       }
       throw new Error(`unexpected table in test: ${table}`);
     },
@@ -81,6 +88,7 @@ describe("publishSpace - every path resolves a well-formed PublishState, never t
     mockDeriveCommercialAvailability.mockReturnValue({ canPublish: true });
     mockModuleItemsSelect.mockResolvedValue({ data: [] });
     mockBrandConfigSelect.mockResolvedValue({ data: null });
+    mockModuleConfigsSelect.mockResolvedValue({ data: [] });
     mockCopyDraftToPublished.mockResolvedValue(undefined);
     mockRpc.mockResolvedValue({ data: "2026-09-13T12:00:00.000Z", error: null });
   });

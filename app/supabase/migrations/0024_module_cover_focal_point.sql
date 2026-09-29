@@ -1,0 +1,19 @@
+-- Task 020 — shared focal-point capability, module-cover half.
+--
+-- module_configs already gained a module-level cover image (0020,
+-- image_ref) alongside Task 015. That image is a distinct asset from any
+-- item's own photo (an organizer-uploaded Explore-card cover, not
+-- derived from any module_items row), so it needs its own independent
+-- focal point, not a copy of any item's - see TASK-020 report, Section 5
+-- ("usage vs. shared asset").
+--
+-- Same shared shape as every other surface's focal point
+-- (module_items.metadata.imagePosition: {x, y} in 0-100 percent - see
+-- src/lib/modules/imagePosition.ts) rather than a new x/y column pair or
+-- a different convention, so one normalization/rendering path covers
+-- every surface. Nullable, no backfill: every existing module_configs
+-- row simply has no focus set yet, which correctly renders at this
+-- surface's true-center default (see imagePosition.ts's CENTER_POSITION)
+-- with zero code change required here - identical reasoning to 0020's
+-- own image_ref column.
+alter table public.module_configs add column image_position jsonb;

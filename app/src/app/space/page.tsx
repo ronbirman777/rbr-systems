@@ -15,6 +15,7 @@ import { SpaceOpenLink } from "@/components/space-open-link";
 import { signOut } from "@/app/(auth)/actions";
 import { LogoutButton } from "@/components/logout-button";
 import { DeleteSpaceControl } from "@/components/delete-space-control";
+import { DeleteAccountControl } from "@/components/delete-account-control";
 
 type PublishedRow = { published_at: string } | { published_at: string }[] | null;
 
@@ -326,6 +327,21 @@ export default async function MySpacePage() {
               </div>
             );
           })}
+        </div>
+
+        {/* Task 017 (Part C) — a minimal "Account" section, not a
+            redesign of an account area that doesn't exist yet elsewhere:
+            My Spaces is already this app's de facto signed-in account
+            hub (it already owns sign-out, above). Deliberately placed
+            last and visually separated (a top border, muted heading) so
+            it reads as a distinct "danger zone" below the ordinary
+            Space-management actions, not mixed into them. */}
+        <div className="mt-16 pt-8 border-t border-idw-forest/10">
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-idw-forest/40">Account</h2>
+          <p className="text-xs text-idw-forest/50 mt-2">{user.email}</p>
+          <div className="mt-3">
+            <DeleteAccountControl email={user.email ?? ""} spaceCount={(tenants ?? []).length} />
+          </div>
         </div>
       </div>
     </main>

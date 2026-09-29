@@ -2,6 +2,8 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import { ModuleItemPhotoField } from "@/components/module-item-photo-field";
+import { FocalPointPicker } from "@/components/focal-point-picker";
+import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import type { EditableCustomPage } from "@/lib/modules/customPage";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
@@ -13,7 +15,7 @@ import { DEFAULT_CUSTOM_PAGES_LIMIT } from "@/lib/entitlements/customPagesLimit"
 const initialState: SaveCustomPagesState = { error: null };
 
 export function blankCustomPage(): EditableCustomPage {
-  return { id: crypto.randomUUID(), title: "", body: null, imageRef: null, imageUrl: null, enabled: true };
+  return { id: crypto.randomUUID(), title: "", body: null, imageRef: null, imageUrl: null, enabled: true, imagePosition: null };
 }
 
 export type CustomPagesStepProps = {
@@ -72,7 +74,16 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
     formData.set("tenantId", tenantId);
     formData.set(
       "items",
-      JSON.stringify(customPages.map(({ id, title, body, imageRef, enabled }) => ({ id, title, body, imageRef, enabled })))
+      JSON.stringify(
+        customPages.map(({ id, title, body, imageRef, enabled, imagePosition }) => ({
+          id,
+          title,
+          body,
+          imageRef,
+          enabled,
+          imagePosition,
+        }))
+      )
     );
     const ids = customPages.map((p) => p.id);
     setPending(true);
@@ -185,10 +196,20 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
                 sortOrder={editIdx}
                 imageRef={editing.imageRef}
                 imageUrl={editing.imageUrl}
-                onChange={(patch) => update(editing.id, patch)}
+                onChange={(patch) => update(editing.id, { ...patch, imagePosition: null })}
                 previewAspect="13/6"
+                previewPosition={objectPositionStyle(editing.imagePosition)}
                 ratioHint="Recommended: landscape photo, about 2:1."
               />
+              {editing.imageUrl && (
+                <FocalPointPicker
+                  imageUrl={editing.imageUrl}
+                  position={editing.imagePosition}
+                  onChange={(imagePosition) => update(editing.id, { imagePosition })}
+                  aspect="13/6"
+                  label={`${editing.title || "Page"} photo`}
+                />
+              )}
             </div>
             <div className="col-span-2 space-y-3">
               <div>

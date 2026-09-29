@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { socialLinksSchema } from "./socialLinks";
+import { imagePositionSchema } from "./imagePosition";
 
 /**
  * The explicit schema for the "facilitators" module_key - name, role, bio,
@@ -24,15 +25,18 @@ export const facilitatorSchema = z.object({
    * unrelated tenant's Team screen the moment this code ships. */
   specialties: z.array(z.string().min(1)).default([]),
   socialLinks: socialLinksSchema.default([]),
-  /** Focal point as percentages (0-100) of the photo, used for CSS
-   * `object-position` wherever this photo is shown with `object-fit: cover`
-   * - draft-side only for now (module_items.metadata, no migration
-   * needed). null/absent means "use the existing default" (object-top),
-   * preserving today's look for every facilitator that hasn't set one.
-   * NOT yet carried into the published snapshot - publish_space() would
-   * need a small update to copy this through; see the Final Product
-   * Polish report for the proposed (not-yet-applied) change. */
-  imagePosition: z.object({ x: z.number().min(0).max(100), y: z.number().min(0).max(100) }).nullable().default(null),
+  /** Shared focal-point contract (TASK 020) - percentages (0-100) of the
+   * photo, used for CSS `object-position` wherever this photo is shown
+   * with `object-fit: cover`. Stored in module_items.metadata (no
+   * migration needed). null/absent means "use this surface's own
+   * default" - TeamEditor/facilitators-screen.tsx render that as
+   * "center top" (an established, evidenced bias for headshots,
+   * preserved deliberately - see TASK-020 report, Section 5), not the
+   * shared component's own true-center default. Now carried through
+   * publish_space() (0025_focal_point_publish.sql) into the published
+   * snapshot, so this reaches the real guest app, not just Studio
+   * previews. */
+  imagePosition: imagePositionSchema,
 });
 
 export type PublicFacilitator = z.infer<typeof facilitatorSchema>;

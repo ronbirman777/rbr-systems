@@ -111,6 +111,7 @@ export const DEMO_MEALS: DisplayMeal[] = [
     imageUrl: null,
     dietaryTags: ["Vegan", "GF option"],
     location: "Garden Terrace",
+    imagePosition: null,
   },
   {
     name: "Lemongrass Broth Lunch",
@@ -122,6 +123,7 @@ export const DEMO_MEALS: DisplayMeal[] = [
     imageUrl: null,
     dietaryTags: ["Plant-based"],
     location: "Main Hall",
+    imagePosition: null,
   },
   {
     name: "Open Fire Dinner",
@@ -133,6 +135,7 @@ export const DEMO_MEALS: DisplayMeal[] = [
     imageUrl: null,
     dietaryTags: [],
     location: "Open Fire Terrace",
+    imagePosition: null,
   },
 ];
 
@@ -147,6 +150,7 @@ export const DEMO_TREATMENTS: DisplayTreatment[] = [
     provider: "Maya R.",
     location: "Treatment Room 2",
     bookingInfo: "Tomorrow · 14:00",
+    imagePosition: null,
   },
   {
     name: "Sound Bath",
@@ -158,6 +162,7 @@ export const DEMO_TREATMENTS: DisplayTreatment[] = [
     provider: null,
     location: "Sala",
     bookingInfo: "Wednesday · 17:00",
+    imagePosition: null,
   },
   {
     name: "Private Ceremony",
@@ -169,6 +174,7 @@ export const DEMO_TREATMENTS: DisplayTreatment[] = [
     provider: "Lead facilitator",
     location: null,
     bookingInfo: "Enroll for an additional treatment",
+    imagePosition: null,
   },
 ];
 
