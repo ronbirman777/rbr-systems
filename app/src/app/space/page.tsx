@@ -190,6 +190,9 @@ export default async function MySpacePage() {
             const family = PRODUCT_FAMILIES[t.product_type as ProductTypeKey];
             const slug = (t as { slug: string | null }).slug;
             const liveHref = slug ? `/s/${slug}` : `/g/${t.id}`;
+            // Time to Teach: each Space type opens its own Studio.
+            const studioHref = t.product_type === "teach" ? `/configurator/teach/${t.id}` : `/configurator/retreat/${t.id}`;
+            const previewHref = t.product_type === "teach" ? `${studioHref}?section=publish` : `${studioHref}?step=publish`;
             const availability = deriveCommercialAvailability(entitlementByTenant.get(t.id) ?? null);
             const spaceImageUrl = spaceImageUrlByTenant.get(t.id) ?? null;
             const isArchived = t.status === "archived";
@@ -284,13 +287,13 @@ export default async function MySpacePage() {
                   {!isArchived && (
                     <>
                       <SpaceOpenLink
-                        href={`/configurator/retreat/${t.id}`}
+                        href={studioHref}
                         className="inline-flex items-center justify-center min-h-11 px-4 rounded-full border border-idw-forest/20 text-idw-forest active:scale-[0.97] active:bg-idw-forest/10 transition-transform"
                       >
                         Manage Space
                       </SpaceOpenLink>
                       <SpaceOpenLink
-                        href={`/configurator/retreat/${t.id}?step=publish`}
+                        href={previewHref}
                         className="inline-flex items-center justify-center min-h-11 px-4 rounded-full border border-idw-forest/20 text-idw-forest active:scale-[0.97] active:bg-idw-forest/10 transition-transform"
                       >
                         Preview

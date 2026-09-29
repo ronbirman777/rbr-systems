@@ -121,11 +121,20 @@ export function renderTemplate(template: string, values: TemplateValues): string
     .trim();
 }
 
-/** "2025-10-14" -> "Tue 14 Oct" (calendar date, never shifted by time zone). */
+const SHORT_WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/**
+ * "2025-10-14" -> "Tue 14 Oct". Deliberately NOT toLocaleDateString: ICU
+ * output differs between Node and browsers ("Tue 14 Oct" vs "Tue, 14 Oct"),
+ * which breaks hydration and makes WhatsApp messages differ by device.
+ */
 export function formatShortDate(dateIso: string): string {
-  const d = new Date(`${dateIso}T12:00:00Z`);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateIso);
+  if (!m) return dateIso;
+  const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12));
   if (Number.isNaN(d.getTime())) return dateIso;
-  return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+  return `${SHORT_WEEKDAYS[d.getUTCDay()]} ${d.getUTCDate()} ${SHORT_MONTHS[d.getUTCMonth()]}`;
 }
 
 // ---------------------------------------------------------------------------

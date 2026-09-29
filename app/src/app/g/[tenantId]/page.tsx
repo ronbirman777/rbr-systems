@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
+import { TeachPublishedSpaceScreen } from "@/components/teach/teach-published-screen";
 import { PublishedSpaceScreen, type PublishedSpaceRow } from "@/components/guest/published-space-screen";
 import { isSpacePubliclyAvailable } from "@/lib/entitlements/isSpacePubliclyAvailable";
 import { getGuestAccessMode } from "@/lib/guestAccess/mode";
@@ -43,9 +44,9 @@ export default async function GuestSpacePage({
 
   const { data: space } = await supabase
     .from("published_spaces")
-    .select("name, theme, timezone, enabled_modules, modules")
+    .select("product_type, name, theme, timezone, enabled_modules, modules")
     .eq("tenant_id", tenantId)
-    .maybeSingle<PublishedSpaceRow>();
+    .maybeSingle<PublishedSpaceRow & { product_type: string }>();
 
   if (!space) notFound();
   // Commercial/public availability is authoritative and checked FIRST -
@@ -59,5 +60,8 @@ export default async function GuestSpacePage({
     return <GuestAccessScreen tenantId={tenantId} {...identity} />;
   }
 
+  // Time to Teach (additive): a Teach Space renders its own Guest App from
+  // the same published snapshot; every other product_type is unchanged.
+  if (space.product_type === "teach") return <TeachPublishedSpaceScreen space={space} />;
   return <PublishedSpaceScreen space={space} />;
 }

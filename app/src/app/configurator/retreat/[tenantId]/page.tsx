@@ -50,10 +50,13 @@ export default async function ResumeRetreatConfiguratorPage({
   // belonging to someone else simply won't come back, regardless of the id.
   const { data: tenant } = await supabase
     .from("tenants")
-    .select("id, name, timezone, slug")
+    .select("id, name, timezone, slug, product_type")
     .eq("id", tenantId)
     .maybeSingle();
   if (!tenant) notFound();
+  // Time to Teach Spaces have their own Studio and content model - never
+  // open one in the retreat configurator (it would save retreat-shaped data).
+  if (tenant.product_type === "teach") redirect(`/configurator/teach/${tenant.id}`);
 
   // PRE-MIGRATION WARNING: custom_navigation/custom_text (0015) and
   // custom_secondary/hero_image_ref/space_image_ref/logo_ref (0014) must

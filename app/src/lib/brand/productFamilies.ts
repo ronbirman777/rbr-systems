@@ -18,6 +18,11 @@ export const PRODUCT_FAMILIES = {
     tagline: "For practitioners and their clients.",
     accent: INNERDWES_BRAND.sage,
   },
+  teach: {
+    name: "Time to Teach",
+    tagline: "For independent teachers.",
+    accent: "#9A7B4F",
+  },
   sanctuary: {
     name: "Time to Elevate",
     tagline: "Bespoke digital ecosystems for wellness organizations.",
