@@ -24,6 +24,7 @@ function query(table: string) {
   const match = (r: Row) => filters.every(([k, v]) => r[k] === v) && inFilters.every(([k, vs]) => vs.includes(r[k]));
   const run = () => {
     if (table === "tenants") return { data: [{ product_type: "teach", timezone: "Asia/Jerusalem" }], error: null };
+    if (table !== "module_items") return { data: [], error: null };
     const hit = rows.filter(match);
     if (op.kind === "update") for (const r of hit) Object.assign(r, (op as { patch: Record<string, unknown> }).patch);
     if (op.kind === "delete") rows = rows.filter((r) => !match(r));
@@ -56,8 +57,9 @@ function query(table: string) {
 
 const storage = {
   from: () => ({
+    // Like Storage: direct files plus one entry per immediate sub-folder.
     list: async (folder: string) => ({
-      data: [...objects].filter((p) => p.startsWith(`${folder}/`) && !p.slice(folder.length + 1).includes("/")).map((p) => ({ name: p.slice(folder.length + 1) })),
+      data: [...new Set([...objects].filter((p) => p.startsWith(`${folder}/`)).map((p) => p.slice(folder.length + 1).split("/")[0]))].map((name) => ({ name })),
       error: null,
     }),
     remove: async (paths: string[]) => {
@@ -71,11 +73,20 @@ vi.mock("server-only", () => ({}));
 vi.mock("sharp", () => ({ default: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 vi.mock("@/lib/entitlements/getSpaceEntitlement", () => ({ getSpaceEntitlement: async () => null }));
+vi.mock("@/lib/entitlements/availability", () => ({ deriveCommercialAvailability: () => ({ canPublish: true }) }));
+// Publish copies each live draft to published.<ext> (the real helper also
+// drops stale published siblings; not needed for these scenarios).
+vi.mock("@/lib/media/publish", () => ({
+  copyDraftToPublished: async (_s: unknown, draftPath: string | null) => {
+    if (draftPath) objects.add(draftPath.replace("/draft.", "/published."));
+  },
+}));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
     auth: { getUser: async () => ({ data: { user: { id: "user-1" } } }) },
     storage,
     from: (table: string) => query(table),
+    rpc: async () => ({ data: "2026-09-29T12:00:00Z", error: null }),
   }),
 }));
 
@@ -195,13 +206,33 @@ describe("Teach audio lifecycle - ownership at upload", () => {
     expect([...objects]).toEqual([published]);
   });
 
-  it("deleting a saved audio item removes its row and all of its files (same rule as Time to Flow items)", async () => {
-    await uploadNew();
-    objects.add(`${FOLDER}/published.mp3`);
-    const { saveTeachItems } = await actions();
-    expect((await saveTeachItems(TENANT, "teachAudio", [])).error).toBeNull();
+  it("deleting a saved audio item keeps the published copy until the next Publish, which then sweeps it", async () => {
+    const path = await uploadNew();
+    const a = await actions();
+    await a.saveTeachItems(TENANT, "teachAudio", [audioItem({ metadata: { audioRef: path, durationSeconds: 312, category: "Meditation" } })]);
+    expect((await a.publishTeachSpace(TENANT)).error).toBeNull();
+    const published = `${FOLDER}/published.mp3`;
+    expect(objects.has(published)).toBe(true);
+
+    // Delete in the Studio: row and draft go, guests keep hearing the published track.
+    expect((await a.saveTeachItems(TENANT, "teachAudio", [])).error).toBeNull();
     expect(rows).toHaveLength(0);
+    expect([...objects]).toEqual([published]);
+
+    // Next Publish: the snapshot no longer lists it, so its file is removed.
+    expect((await a.publishTeachSpace(TENANT)).error).toBeNull();
     expect(objects.size).toBe(0);
+  });
+
+  it("publish sweeps only deleted items' audio, never a live item's", async () => {
+    const path = await uploadNew();
+    const orphanFolder = `${TENANT}/teachAudioFile/${OTHER_ITEM}`;
+    objects.add(`${orphanFolder}/published.mp3`);
+    const a = await actions();
+    expect((await a.publishTeachSpace(TENANT)).error).toBeNull();
+    expect(objects.has(path)).toBe(true);
+    expect(objects.has(`${FOLDER}/published.mp3`)).toBe(true);
+    expect([...objects].some((o) => o.startsWith(orphanFolder))).toBe(false);
   });
 
   it("refuses refs outside the item's own draft slot and items of another kind", async () => {

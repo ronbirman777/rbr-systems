@@ -222,7 +222,10 @@ async function removeFolder(supabase: SupabaseClient, folder: string) {
 
 async function removeItemMedia(supabase: SupabaseClient, tenantId: string, moduleKey: string, itemId: string) {
   await removeFolder(supabase, `${tenantId}/${moduleKey}/${itemId}`);
-  if (moduleKey === "teachAudio") await removeFolder(supabase, `${tenantId}/${TEACH_AUDIO_FOLDER_KEY}/${itemId}`);
+  // Audio: only the draft goes now. The published copy stays until the next
+  // Publish (which sweeps it - see sweepDeletedAudio), so deleting an item
+  // in the Studio never breaks a track guests can still see.
+  if (moduleKey === "teachAudio") await removeOtherAudioDrafts(supabase, tenantId, itemId, null);
 }
 
 /**
@@ -579,5 +582,26 @@ export async function publishTeachSpace(tenantId: string): Promise<TeachPublishS
 
   const { data, error } = await supabase.rpc("publish_space", { p_tenant_id: tenantId });
   if (error) return { error: error.message, publishedAt: null };
+  const liveAudio = new Set((itemRows ?? []).filter((r) => r.module_key === "teachAudio").map((r) => r.id as string));
+  await sweepDeletedAudio(supabase, tenantId, liveAudio);
   return { error: null, publishedAt: data as string };
+}
+
+/**
+ * After a successful Publish the new snapshot references only live items,
+ * so the published audio of items deleted since the last Publish (kept
+ * until now on purpose - see removeItemMedia) can be removed. Best-effort:
+ * a failure only leaves the file for the next Publish.
+ */
+async function sweepDeletedAudio(supabase: SupabaseClient, tenantId: string, liveItemIds: Set<string>) {
+  try {
+    const root = `${tenantId}/${TEACH_AUDIO_FOLDER_KEY}`;
+    const { data: folders } = await supabase.storage.from(MEDIA_BUCKET).list(root);
+    for (const f of folders ?? []) {
+      if (!z.string().uuid().safeParse(f.name).success || liveItemIds.has(f.name)) continue;
+      await removeFolder(supabase, `${root}/${f.name}`);
+    }
+  } catch {
+    // Non-fatal by design (see above).
+  }
 }
