@@ -1,15 +1,22 @@
 /**
  * Shared media-path architecture for tenant Storage uploads. One bucket,
- * one deterministic path shape, reused by every module that will ever
- * attach files - only Facilitator photos exist today, but meal photography,
- * treatment/facility images, resource files and brand assets (logo, hero)
- * all plug into this same convention later without a new bucket or a new
- * upload code path: just a different moduleKey/itemId.
+ * one deterministic path shape, reused by every module that attaches
+ * files (module items, module covers, brand images) - a different
+ * moduleKey/itemId, never a new bucket or upload code path.
  *
- * One object per item (itemId) - "replace" is an upsert at the same path,
- * "remove" is a delete at the same path. No orphaned files unless the
- * upload's file type changes the extension, which callers handle by
- * removing the previous path first.
+ * Every upload gets its own unique folder (TASK 023):
+ * `{tenantId}/{moduleKey}/{itemId}/{uploadId}/draft.webp`. Publish copies
+ * it to `.../{uploadId}/published.webp`, and that published object is
+ * never rewritten with different bytes - replacing a photo creates a NEW
+ * uploadId (and so a new published key on the next Publish) rather than
+ * overwriting anything the live snapshot may reference. Studio only ever
+ * touches `draft.*` objects; `published.*` objects are created by Publish
+ * and removed only by the post-publish sweep (publishedCleanup.ts), once
+ * the snapshot no longer references them.
+ *
+ * Legacy single-path media (`.../{itemId}/draft.webp` with no uploadId
+ * folder) still resolves through the same draft->published transform; it
+ * is not migrated here.
  */
 export const MEDIA_BUCKET = "tenant-media";
 
@@ -59,8 +66,38 @@ export const MAX_IMAGE_DIMENSION = 2000;
  * needs the same guarantee applied deliberately, since Storage objects are
  * referenced by path, not copied into the database.
  */
-export function tenantMediaPath(tenantId: string, moduleKey: string, itemId: string, ext: string): string {
-  return `${tenantId}/${moduleKey}/${itemId}/draft.${ext}`;
+export function tenantMediaPath(
+  tenantId: string,
+  moduleKey: string,
+  itemId: string,
+  ext: string,
+  uploadId?: string
+): string {
+  const folder = uploadId ? `${tenantId}/${moduleKey}/${itemId}/${uploadId}` : `${tenantId}/${moduleKey}/${itemId}`;
+  return `${folder}/draft.${ext}`;
+}
+
+/** A fresh, unguessable-by-construction folder segment for one upload. */
+export function newUploadId(): string {
+  return globalThis.crypto.randomUUID();
+}
+
+/**
+ * True only for a draft object that belongs to `tenantId`. Server actions
+ * that delete Storage objects take the path from the client, so this is
+ * the guard that keeps a crafted request from deleting a published object
+ * (which the live snapshot may still reference) or another tenant's file.
+ */
+export function isDraftMediaPathForTenant(tenantId: string, path: string): boolean {
+  if (!tenantId || !path.startsWith(`${tenantId}/`)) return false;
+  const segments = path.split("/");
+  if (segments.some((seg) => seg.length === 0 || seg === "." || seg === "..")) return false;
+  return /\/draft\.[a-zA-Z0-9]+$/.test(path);
+}
+
+/** True for a published-copy object (`.../published.<ext>`). */
+export function isPublishedMediaPath(path: string): boolean {
+  return /\/published\.[a-zA-Z0-9]+$/.test(path);
 }
 
 /**
@@ -78,18 +115,6 @@ export function publishedMediaPath(draftPath: string): string | null {
   const match = draftPath.match(/^(.*)\/draft\.([a-zA-Z0-9]+)$/);
   if (!match) return null;
   return `${match[1]}/published.${match[2]}`;
-}
-
-/**
- * The item's own folder ("{tenantId}/{moduleKey}/{itemId}") - used to list
- * and clean up stale sibling objects (e.g. a "published.png" left behind
- * after the organizer replaces a photo with a different file type and
- * republishes - the new copy lands at "published.jpg", so nothing else
- * would ever remove the old one without this).
- */
-export function mediaItemFolder(draftPath: string): string | null {
-  const match = draftPath.match(/^(.*)\/draft\.[a-zA-Z0-9]+$/);
-  return match ? match[1] : null;
 }
 
 /**
