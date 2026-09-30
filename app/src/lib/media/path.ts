@@ -139,6 +139,12 @@ export const MEDIA_SIGNED_URL_TTL_SECONDS = 60;
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** True only for a well-formed tenant uuid - the sole shape a Storage
+ * tenant folder name can ever have. */
+export function isTenantId(value: string): boolean {
+  return UUID_RE.test(value);
+}
+
 /**
  * Shape check for a requested /api/media path (already split into
  * segments): first segment is a tenant uuid, and no segment is empty,
