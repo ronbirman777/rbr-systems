@@ -17,6 +17,22 @@ export type PublishedGuestIdentity = {
 };
 
 /**
+ * The published brand images the Guest Access code screen itself shows
+ * BEFORE a code is entered (hero + logo). This is the single definition of
+ * "pre-gate identity media": /api/media may serve exactly these refs to a
+ * request that has no access cookie yet, because the code screen already
+ * renders them to every visitor - and nothing else.
+ */
+export function publishedIdentityImageRefs(modules: unknown): { heroImageRef: string | null; logoImageRef: string | null } {
+  const brand = modules && typeof modules === "object" ? (modules as Record<string, unknown>).brand : undefined;
+  const parsed = brandMediaSchema.safeParse(brand);
+  return {
+    heroImageRef: parsed.success ? (parsed.data.hero?.imageRef ?? null) : null,
+    logoImageRef: parsed.success ? (parsed.data.logo?.imageRef ?? null) : null,
+  };
+}
+
+/**
  * Extracted from published-space-screen.tsx's own brand/theme parsing so
  * the Guest Access code screen (shown BEFORE the Guest App itself, for a
  * protected Space) can use the same published-safe identity - never
@@ -27,12 +43,8 @@ export type PublishedGuestIdentity = {
 export function extractPublishedGuestIdentity(space: PublishedSpaceRow): PublishedGuestIdentity {
   const themeParsed = publishedThemeSchema.safeParse(space.theme);
   const theme = themeParsed.success ? themeParsed.data : DEFAULT_PUBLISHED_THEME;
-  const modules = (space.modules ?? {}) as Record<string, unknown>;
-
-  const brandMediaParsed = brandMediaSchema.safeParse(modules.brand);
-  const heroImageRef = brandMediaParsed.success ? (brandMediaParsed.data.hero?.imageRef ?? null) : null;
+  const { heroImageRef, logoImageRef } = publishedIdentityImageRefs(space.modules);
   const heroImageUrl = heroImageRef ? publicMediaUrl(heroImageRef) : null;
-  const logoImageRef = brandMediaParsed.success ? (brandMediaParsed.data.logo?.imageRef ?? null) : null;
   const logoUrl = logoImageRef ? publicMediaUrl(logoImageRef) : null;
 
   const brand = {

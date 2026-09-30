@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tenantMediaPath, publishedMediaPath, mediaItemFolder, isFileSizeAllowed, MAX_IMAGE_BYTES } from "./path";
+import { tenantMediaPath, publishedMediaPath, mediaItemFolder, isFileSizeAllowed, MAX_IMAGE_BYTES, isWellFormedMediaPath, MEDIA_SIGNED_URL_TTL_SECONDS } from "./path";
 
 describe("tenantMediaPath", () => {
   it("builds the draft path for a module_items-backed item", () => {
@@ -53,5 +53,25 @@ describe("isFileSizeAllowed", () => {
 
   it("accepts a file at exactly MAX_IMAGE_BYTES", () => {
     expect(isFileSizeAllowed(MAX_IMAGE_BYTES)).toBe(true);
+  });
+});
+
+describe("isWellFormedMediaPath", () => {
+  const T = "11111111-1111-4111-8111-111111111111";
+  it("accepts a tenant-rooted published path", () => {
+    expect(isWellFormedMediaPath([T, "meals", "a", "published.webp"])).toBe(true);
+  });
+  it("rejects a non-uuid tenant, too-short paths, empty/dot segments, separators and control characters", () => {
+    expect(isWellFormedMediaPath(["nope", "x"])).toBe(false);
+    expect(isWellFormedMediaPath([T])).toBe(false);
+    expect(isWellFormedMediaPath([T, "", "x"])).toBe(false);
+    expect(isWellFormedMediaPath([T, ".", "x"])).toBe(false);
+    expect(isWellFormedMediaPath([T, "..", "x"])).toBe(false);
+    expect(isWellFormedMediaPath([T, "a/b", "x"])).toBe(false);
+    expect(isWellFormedMediaPath([T, "a\\b", "x"])).toBe(false);
+    expect(isWellFormedMediaPath([T, "a" + String.fromCharCode(10) + "b", "x"])).toBe(false);
+  });
+  it("signed URLs are short-lived (residual window for already-issued URLs)", () => {
+    expect(MEDIA_SIGNED_URL_TTL_SECONDS).toBeLessThanOrEqual(60);
   });
 });

@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
 import { PublishedSpaceScreen, type PublishedSpaceRow } from "@/components/guest/published-space-screen";
-import { isSpacePubliclyAvailable } from "@/lib/entitlements/isSpacePubliclyAvailable";
-import { getGuestAccessMode } from "@/lib/guestAccess/mode";
-import { hasValidGuestAccessCookie } from "@/lib/guestAccess/checkCookie";
+import { resolveGuestAccess } from "@/lib/guestAccess/effectiveAccess";
 import { GuestAccessScreen } from "@/components/guest/guest-access-screen";
 import { extractPublishedGuestIdentity } from "@/lib/guestAccess/publishedIdentity";
 
@@ -48,13 +46,11 @@ export default async function GuestSpacePage({
     .maybeSingle<PublishedSpaceRow>();
 
   if (!space) notFound();
-  // Commercial/public availability is authoritative and checked FIRST -
-  // a lapsed Space's guest-access code cannot be used to route around
-  // it, regardless of what mode it's configured for.
-  if (!(await isSpacePubliclyAvailable(tenantId))) notFound();
-
-  const mode = await getGuestAccessMode(tenantId);
-  if (mode === "code" && !(await hasValidGuestAccessCookie(tenantId))) {
+  // Commercial availability, then guest access code - one shared policy
+  // (also enforced by /api/media), see resolveGuestAccess.
+  const access = await resolveGuestAccess(tenantId);
+  if (access === "unavailable") notFound();
+  if (access === "code-required") {
     const identity = extractPublishedGuestIdentity(space);
     return <GuestAccessScreen tenantId={tenantId} {...identity} />;
   }
