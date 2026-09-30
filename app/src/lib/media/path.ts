@@ -104,6 +104,31 @@ export function publicMediaUrl(imageRef: string): string {
 }
 
 /**
+ * How long the signed Storage URL minted by /api/media stays valid. A
+ * browser follows the redirect immediately, so this only has to cover that
+ * hop - it is deliberately short because an already-issued signed URL
+ * cannot be revoked: this is the residual window during which a URL issued
+ * just before a Space lost guest access still works.
+ */
+export const MEDIA_SIGNED_URL_TTL_SECONDS = 60;
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Shape check for a requested /api/media path (already split into
+ * segments): first segment is a tenant uuid, and no segment is empty,
+ * "."/"..", or carries a slash, backslash or control character. Cheap
+ * defense in depth - the real gate is exact membership in the tenant's
+ * published snapshot.
+ */
+export function isWellFormedMediaPath(segments: string[]): boolean {
+  if (segments.length < 2 || !UUID_RE.test(segments[0])) return false;
+  return segments.every(
+    (seg) => seg.length > 0 && seg !== "." && seg !== ".." && !/[\\/\u0000-\u001f\u007f]/.test(seg)
+  );
+}
+
+/**
  * Walks a published_spaces.modules payload and collects every string value
  * found under a key literally named "imageRef", anywhere in the structure.
  * This is what makes the guest media route generic across future modules -

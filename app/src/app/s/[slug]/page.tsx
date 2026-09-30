@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
 import { PublishedSpaceScreen, type PublishedSpaceRow } from "@/components/guest/published-space-screen";
-import { isSpacePubliclyAvailable } from "@/lib/entitlements/isSpacePubliclyAvailable";
-import { getGuestAccessMode } from "@/lib/guestAccess/mode";
-import { hasValidGuestAccessCookie } from "@/lib/guestAccess/checkCookie";
+import { resolveGuestAccess } from "@/lib/guestAccess/effectiveAccess";
 import { GuestAccessScreen } from "@/components/guest/guest-access-screen";
 import { extractPublishedGuestIdentity } from "@/lib/guestAccess/publishedIdentity";
 
@@ -46,10 +44,9 @@ export default async function GuestSpaceBySlugPage({
     .maybeSingle<PublishedSpaceRow & { tenant_id: string }>();
 
   if (!space) notFound();
-  if (!(await isSpacePubliclyAvailable(space.tenant_id))) notFound();
-
-  const mode = await getGuestAccessMode(space.tenant_id);
-  if (mode === "code" && !(await hasValidGuestAccessCookie(space.tenant_id))) {
+  const access = await resolveGuestAccess(space.tenant_id);
+  if (access === "unavailable") notFound();
+  if (access === "code-required") {
     const identity = extractPublishedGuestIdentity(space);
     return <GuestAccessScreen tenantId={space.tenant_id} {...identity} />;
   }
