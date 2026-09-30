@@ -29,9 +29,31 @@ import {
   OPTIMIZED_IMAGE_MIME,
   isFileSizeAllowed,
   tenantMediaPath,
-  mediaItemFolder,
+  newUploadId,
+  isDraftMediaPathForTenant,
+  collectImageRefs,
 } from "@/lib/media/path";
 import { copyDraftToPublished } from "@/lib/media/publish";
+import { cleanupStalePublishedMedia } from "@/lib/media/publishedCleanup";
+
+/**
+ * Best-effort removal of DRAFT objects only (TASK 023). Studio operations
+ * never touch `published.*` objects - the live snapshot may still
+ * reference them until the next successful Publish, whose post-publish
+ * sweep removes them. Every path is checked with isDraftMediaPathForTenant
+ * because several callers take the ref from the client. A failure here
+ * leaves an unreferenced draft object (harmless), never a broken page, so
+ * it is deliberately not surfaced.
+ */
+async function removeDraftObjects(
+  supabase: SupabaseClient,
+  tenantId: string,
+  refs: ReadonlyArray<string | null | undefined>
+): Promise<void> {
+  const targets = [...new Set(refs.filter((r): r is string => !!r && isDraftMediaPathForTenant(tenantId, r)))];
+  if (targets.length === 0) return;
+  await supabase.storage.from(MEDIA_BUCKET).remove(targets);
+}
 
 /**
  * Guests must never be served an original, unoptimized upload - see the
@@ -404,9 +426,9 @@ async function saveModuleItemsGeneric(
   const incomingIds = new Set(rows.map((r) => r.id));
 
   // Rows that exist in the database but aren't in this submission are
-  // genuinely gone, not just edited - their media (if any) needs the same
-  // cleanup an explicit Remove would do (see deleteModuleItem, which this
-  // mirrors), and the row itself needs deleting. Everything else (kept or
+  // genuinely gone, not just edited - their draft media (if any) needs the
+  // same cleanup an explicit Remove would do (see deleteModuleItem, which
+  // this mirrors), and the row itself needs deleting. Everything else (kept or
   // brand-new) is a plain upsert by id below - never a delete+reinsert,
   // so an id that already exists is always updated in place, never
   // replaced by a new one.
@@ -417,17 +439,6 @@ async function saveModuleItemsGeneric(
     .eq("module_key", moduleKey);
   const removedRows = (existingRows ?? []).filter((r) => !incomingIds.has(r.id));
 
-  for (const row of removedRows) {
-    if (!row.image_ref) continue;
-    const folder = mediaItemFolder(row.image_ref);
-    if (folder) {
-      const { data: siblings } = await supabase.storage.from(MEDIA_BUCKET).list(folder);
-      const toRemove = (siblings ?? []).map((f) => `${folder}/${f.name}`);
-      if (toRemove.length > 0) await supabase.storage.from(MEDIA_BUCKET).remove(toRemove);
-    } else {
-      await supabase.storage.from(MEDIA_BUCKET).remove([row.image_ref]);
-    }
-  }
   if (removedRows.length > 0) {
     const { error: deleteError } = await supabase
       .from("module_items")
@@ -439,6 +450,13 @@ async function saveModuleItemsGeneric(
         removedRows.map((r) => r.id)
       );
     if (deleteError) return { error: deleteError.message };
+    // Only after the rows are gone, and only their DRAFT objects - a
+    // published copy stays until the next successful Publish.
+    await removeDraftObjects(
+      supabase,
+      tenantId,
+      removedRows.map((r) => r.image_ref as string | null)
+    );
   }
 
   if (rows.length > 0) {
@@ -855,15 +873,18 @@ export async function uploadModuleItemPhoto(
     return { error: "That image could not be processed. Try a different file.", imageRef: null, imageUrl: null };
   }
 
-  const path = tenantMediaPath(tenantId, moduleKey, itemId, OPTIMIZED_IMAGE_EXTENSION);
+  // Every upload gets its own uploadId folder, so a replacement never
+  // overwrites the object a published snapshot may still reference, and
+  // its published copy (made at Publish) lands on a fresh key too.
+  const path = tenantMediaPath(tenantId, moduleKey, itemId, OPTIMIZED_IMAGE_EXTENSION, newUploadId());
 
-  // A previous upload may have been stored under a different path only if
-  // it predates this optimization pass (back when the extension followed
-  // the source file's own type) - clean it up so it doesn't linger as an
-  // orphan now that every new upload lands at the same .webp path.
-  if (previousRef && previousRef !== path) {
-    await supabase.storage.from(MEDIA_BUCKET).remove([previousRef]);
-  }
+  const { data: existing } = await supabase
+    .from("module_items")
+    .select("image_ref")
+    .eq("id", itemId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  const oldDraftRef = (existing?.image_ref as string | null | undefined) ?? null;
 
   const { error: uploadError } = await supabase.storage
     .from(MEDIA_BUCKET)
@@ -896,7 +917,14 @@ export async function uploadModuleItemPhoto(
     },
     { onConflict: "id" }
   );
-  if (dbError) return { error: dbError.message, imageRef: null, imageUrl: null };
+  if (dbError) {
+    await removeDraftObjects(supabase, tenantId, [path]);
+    return { error: dbError.message, imageRef: null, imageUrl: null };
+  }
+
+  // The row now points at the new draft; the replaced DRAFT object is
+  // orphaned and can go. Its published copy (if any) is left alone.
+  await removeDraftObjects(supabase, tenantId, [oldDraftRef, previousRef].filter((r) => r !== path));
 
   return { error: null, imageRef: path, imageUrl: signed.signedUrl };
 }
@@ -916,14 +944,28 @@ export async function removeModuleItemPhoto(
   const tenantId = String(formData.get("tenantId") ?? "");
   const itemId = String(formData.get("itemId") ?? "");
   const imageRef = String(formData.get("imageRef") ?? "");
-  if (!imageRef) return { error: null };
+  if (!imageRef || !tenantId) return { error: null };
 
-  const { error } = await supabase.storage.from(MEDIA_BUCKET).remove([imageRef]);
-  if (error) return { error: error.message };
-
-  if (tenantId && itemId) {
-    await supabase.from("module_items").update({ image_ref: null }).eq("id", itemId).eq("tenant_id", tenantId);
+  // Draft-only: the published copy stays until the next successful
+  // Publish. The DB reference is cleared first so a failure can never
+  // leave a row pointing at a deleted draft.
+  let dbRef: string | null = null;
+  if (itemId) {
+    const { data: row } = await supabase
+      .from("module_items")
+      .select("image_ref")
+      .eq("id", itemId)
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+    dbRef = (row?.image_ref as string | null | undefined) ?? null;
+    const { error } = await supabase
+      .from("module_items")
+      .update({ image_ref: null })
+      .eq("id", itemId)
+      .eq("tenant_id", tenantId);
+    if (error) return { error: error.message };
   }
+  await removeDraftObjects(supabase, tenantId, [imageRef, dbRef]);
 
   return { error: null };
 }
@@ -983,11 +1025,15 @@ export async function uploadModuleCoverPhoto(
     return { error: "That image could not be processed. Try a different file.", imageRef: null, imageUrl: null };
   }
 
-  const path = tenantMediaPath(tenantId, moduleKey, MODULE_COVER_ITEM_ID, OPTIMIZED_IMAGE_EXTENSION);
+  const path = tenantMediaPath(tenantId, moduleKey, MODULE_COVER_ITEM_ID, OPTIMIZED_IMAGE_EXTENSION, newUploadId());
 
-  if (previousRef && previousRef !== path) {
-    await supabase.storage.from(MEDIA_BUCKET).remove([previousRef]);
-  }
+  const { data: existing } = await supabase
+    .from("module_configs")
+    .select("image_ref")
+    .eq("tenant_id", tenantId)
+    .eq("module_key", moduleKey)
+    .maybeSingle();
+  const oldDraftRef = (existing?.image_ref as string | null | undefined) ?? null;
 
   const { error: uploadError } = await supabase.storage
     .from(MEDIA_BUCKET)
@@ -1016,7 +1062,12 @@ export async function uploadModuleCoverPhoto(
     { tenant_id: tenantId, module_key: moduleKey, image_ref: path, image_position: null },
     { onConflict: "tenant_id,module_key" }
   );
-  if (dbError) return { error: dbError.message, imageRef: null, imageUrl: null };
+  if (dbError) {
+    await removeDraftObjects(supabase, tenantId, [path]);
+    return { error: dbError.message, imageRef: null, imageUrl: null };
+  }
+
+  await removeDraftObjects(supabase, tenantId, [oldDraftRef, previousRef].filter((r) => r !== path));
 
   return { error: null, imageRef: path, imageUrl: signed.signedUrl };
 }
@@ -1036,21 +1087,28 @@ export async function removeModuleCoverPhoto(
   const tenantId = String(formData.get("tenantId") ?? "");
   const moduleKey = String(formData.get("moduleKey") ?? "");
   const imageRef = String(formData.get("imageRef") ?? "");
-  if (!imageRef) return { error: null };
+  if (!imageRef || !tenantId) return { error: null };
 
-  const { error } = await supabase.storage.from(MEDIA_BUCKET).remove([imageRef]);
-  if (error) return { error: error.message };
-
-  if (tenantId && moduleKey) {
+  let dbRef: string | null = null;
+  if (moduleKey) {
+    const { data: row } = await supabase
+      .from("module_configs")
+      .select("image_ref")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", moduleKey)
+      .maybeSingle();
+    dbRef = (row?.image_ref as string | null | undefined) ?? null;
     // TASK 020: image_position clears alongside image_ref - stale focal
     // metadata for an image that no longer exists must never survive to
     // silently apply to whatever cover is uploaded next.
-    await supabase
+    const { error } = await supabase
       .from("module_configs")
       .update({ image_ref: null, image_position: null })
       .eq("tenant_id", tenantId)
       .eq("module_key", moduleKey);
+    if (error) return { error: error.message };
   }
+  await removeDraftObjects(supabase, tenantId, [imageRef, dbRef]);
 
   return { error: null };
 }
@@ -1165,11 +1223,16 @@ export async function uploadBrandImage(
     return { error: "That image could not be processed. Try a different file.", imageRef: null, imageUrl: null };
   }
 
-  const path = tenantMediaPath(tenantId, "brand", kind, OPTIMIZED_IMAGE_EXTENSION);
+  const path = tenantMediaPath(tenantId, "brand", kind, OPTIMIZED_IMAGE_EXTENSION, newUploadId());
 
-  if (previousRef && previousRef !== path) {
-    await supabase.storage.from(MEDIA_BUCKET).remove([previousRef]);
-  }
+  const { data: existing } = await supabase
+    .from("brand_configs")
+    .select(BRAND_IMAGE_COLUMN[kind])
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  const oldDraftRef = ((existing as Record<string, string | null> | null)?.[BRAND_IMAGE_COLUMN[kind]] ?? null) as
+    | string
+    | null;
 
   const { error: uploadError } = await supabase.storage
     .from(MEDIA_BUCKET)
@@ -1185,7 +1248,12 @@ export async function uploadBrandImage(
   const { error: dbError } = await supabase
     .from("brand_configs")
     .upsert({ tenant_id: tenantId, [column]: path, updated_at: new Date().toISOString() }, { onConflict: "tenant_id" });
-  if (dbError) return { error: dbError.message, imageRef: null, imageUrl: null };
+  if (dbError) {
+    await removeDraftObjects(supabase, tenantId, [path]);
+    return { error: dbError.message, imageRef: null, imageUrl: null };
+  }
+
+  await removeDraftObjects(supabase, tenantId, [oldDraftRef, previousRef].filter((r) => r !== path));
 
   return { error: null, imageRef: path, imageUrl: signed.signedUrl };
 }
@@ -1205,15 +1273,14 @@ export async function removeBrandImage(
   const tenantId = String(formData.get("tenantId") ?? "");
   const kind = String(formData.get("kind") ?? "") as BrandImageKind;
   const imageRef = String(formData.get("imageRef") ?? "");
-  if (!imageRef || !(kind in BRAND_IMAGE_COLUMN)) return { error: null };
+  if (!imageRef || !tenantId || !(kind in BRAND_IMAGE_COLUMN)) return { error: null };
 
-  const { error } = await supabase.storage.from(MEDIA_BUCKET).remove([imageRef]);
+  const column = BRAND_IMAGE_COLUMN[kind];
+  const { data: row } = await supabase.from("brand_configs").select(column).eq("tenant_id", tenantId).maybeSingle();
+  const dbRef = ((row as Record<string, string | null> | null)?.[column] ?? null) as string | null;
+  const { error } = await supabase.from("brand_configs").update({ [column]: null }).eq("tenant_id", tenantId);
   if (error) return { error: error.message };
-
-  if (tenantId) {
-    const column = BRAND_IMAGE_COLUMN[kind];
-    await supabase.from("brand_configs").update({ [column]: null }).eq("tenant_id", tenantId);
-  }
+  await removeDraftObjects(supabase, tenantId, [imageRef, dbRef]);
 
   return { error: null };
 }
@@ -1278,8 +1345,8 @@ export type DeleteModuleItemState = { error: string | null };
 
 /**
  * The symmetric counterpart to createModuleItemStub - removing an item
- * before ever saving must clean up the stub row (and any photo attached
- * to it) rather than leaving an orphan the next Save wouldn't know to
+ * before ever saving must clean up the stub row (and its draft photo)
+ * rather than leaving an orphan the next Save wouldn't know to
  * delete: Save only replaces rows for items still present in the
  * submitted list, so a since-removed item's row would otherwise persist
  * forever, unreferenced by anything.
@@ -1305,23 +1372,13 @@ export async function deleteModuleItem(
     .eq("tenant_id", tenantId)
     .maybeSingle();
 
-  if (row?.image_ref) {
-    // The item's own folder is exclusively its own (no other item shares
-    // it) - safe to remove entirely: the current draft object plus any
-    // published copy(ies), including a stale one left by an earlier
-    // extension change.
-    const folder = mediaItemFolder(row.image_ref);
-    if (folder) {
-      const { data: siblings } = await supabase.storage.from(MEDIA_BUCKET).list(folder);
-      const toRemove = (siblings ?? []).map((f) => `${folder}/${f.name}`);
-      if (toRemove.length > 0) await supabase.storage.from(MEDIA_BUCKET).remove(toRemove);
-    } else {
-      await supabase.storage.from(MEDIA_BUCKET).remove([row.image_ref]);
-    }
-  }
-
   const { error } = await supabase.from("module_items").delete().eq("id", itemId).eq("tenant_id", tenantId);
   if (error) return { error: error.message };
+
+  // Draft object only, and only after the row is gone. The published copy
+  // (which the live snapshot may still reference) is removed by the
+  // post-publish sweep once a Publish drops this item.
+  await removeDraftObjects(supabase, tenantId, [row?.image_ref as string | null | undefined]);
 
   return { error: null };
 }
@@ -1337,17 +1394,22 @@ const MEDIA_MODULE_KEYS = ["facilitators", "meals", "treatments", "facilities", 
  * the admin client. A non-owner's call fails inside the same transaction
  * (RLS on the underlying tables/insert), nothing partially applies either way.
  *
- * Before calling it, snapshot every current draft photo - both
- * module_items rows (across every image-bearing module) AND the three
- * brand-level refs (Today Hero, Space Image, Logo) - into its stable
- * published-path counterpart (see copyDraftToPublished). This is the
- * media equivalent of what publish_space() already does for text: take a
- * copy of the current draft state, not a live reference to it, so further
- * draft edits/replacements never retroactively change what's already
- * published - only the next Publish/Republish does. publish_space()
- * itself (the SQL function) only ever string-transforms a path for the
- * JSON it writes - it never touches Storage bytes, which is why this
- * copy must happen here, before the RPC call, not inside it.
+ * Media ordering (TASK 023 - published media is an immutable snapshot):
+ *  1. read the CURRENT snapshot's image refs (previousRefs);
+ *  2. copy every current draft photo to its published key. Each upload has
+ *     its own uploadId folder, so this only ever CREATES objects at new
+ *     keys - nothing the live snapshot references is touched, and a
+ *     failure here (or in step 3) leaves the previous snapshot and all
+ *     its media fully functional;
+ *  3. call publish_space(), the single atomic commit of the new snapshot;
+ *  4. only after it succeeds, read back the committed snapshot and
+ *     best-effort remove published objects it no longer references. A
+ *     cleanup failure is logged and never fails the Publish - orphaned
+ *     media is acceptable, broken published content is not; the next
+ *     successful Publish sweeps any leftovers.
+ * publish_space() itself only string-transforms a path for the JSON it
+ * writes - it never touches Storage bytes, which is why the copy happens
+ * here, before the RPC.
  */
 export async function publishSpace(
   _prevState: PublishState,
@@ -1375,68 +1437,55 @@ export async function publishSpace(
     };
   }
 
-  // All rows across every image-bearing module, not just ones with a
-  // current photo - a row whose photo was just removed (image_ref now
-  // null) still needs its OLD published copy cleaned up, or it becomes a
-  // permanent orphan (unreachable via the guest route the moment the
-  // snapshot stops referencing it, but never actually deleted).
+  // The refs the live snapshot references right now - what the post-publish
+  // sweep may remove once (and only if) the new snapshot no longer needs
+  // them. Unreadable = no precise list; the age-gated orphan sweep still
+  // applies.
+  const { data: previousSnapshot } = await supabase
+    .from("published_spaces")
+    .select("modules")
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  const previousRefs = collectImageRefs(previousSnapshot?.modules ?? null);
+
+  // Every draft photo reference, across every image-bearing module, the
+  // three brand-level refs (Hero/Space/Logo) and module covers - the same
+  // draft->published treatment for all of them (see copyDraftToPublished).
   const { data: mediaRows } = await supabase
     .from("module_items")
-    .select("id, module_key, image_ref")
+    .select("image_ref")
     .eq("tenant_id", tenantId)
     .in("module_key", MEDIA_MODULE_KEYS);
 
-  // brand_configs' three brand-level image refs (Hero/Space/Logo) need the
-  // exact same draft->published treatment as any module_items photo -
-  // this select and the copies below are what actually makes the
-  // migration 0014 design (modules.brand.{hero,space,logo}.imageRef)
-  // real rather than a dangling path. Selecting brand_configs columns
-  // that don't exist yet on Production (pre-0014) would error, not
-  // silently no-op - see the Pending column note at this function's call
-  // sites until 0014 is applied.
   const { data: brandRow } = await supabase
     .from("brand_configs")
     .select("hero_image_ref, space_image_ref, logo_ref")
     .eq("tenant_id", tenantId)
     .maybeSingle();
 
-  // Explore module hero/cover images (added alongside Task 015) - the
-  // same draft->published copy every other image ref needs, for
-  // module_configs' new image_ref column. Selected for every module key
-  // (not filtered to the six Explore-card ones publish_space() actually
-  // publishes) for the same "clean up a just-removed photo's orphan"
-  // reasoning as mediaRows above.
   const { data: moduleCoverRows } = await supabase
     .from("module_configs")
-    .select("module_key, image_ref")
+    .select("image_ref")
     .eq("tenant_id", tenantId);
 
-  // Each item's Storage work is independent of every other item's, so run
-  // them concurrently rather than one at a time - found during end-to-end
-  // verification: with facilitators, meals, treatments and facilities all
-  // enabled at once, a sequential loop of list/remove/copy round-trips per
-  // row made Publish/Republish noticeably slow. This is purely a
-  // performance fix; the per-item logic itself is unchanged.
-  //
-  // A failed media publish must never produce a "successful" Publish -
-  // Promise.all rejects on the first failure, and that rejection MUST
-  // stop this function before the publish_space() RPC is ever called, or
-  // published_at would update (reporting success to the organizer) while
-  // some guest-visible image silently stayed stale. copyDraftToPublished
-  // throws MediaPublishError for every Storage failure it can hit; none
-  // of them are swallowed here.
+  const draftRefs = new Set<string>();
+  for (const ref of [
+    ...(mediaRows ?? []).map((r) => r.image_ref as string | null),
+    brandRow?.hero_image_ref ?? null,
+    brandRow?.space_image_ref ?? null,
+    brandRow?.logo_ref ?? null,
+    ...(moduleCoverRows ?? []).map((r) => r.image_ref as string | null),
+  ]) {
+    // A ref that is not this tenant's own draft object is never copied.
+    if (ref && isDraftMediaPathForTenant(tenantId, ref)) draftRefs.add(ref);
+  }
+
+  // Each copy is independent, so run them concurrently. A failed media
+  // copy must never produce a "successful" Publish - Promise.all rejects on
+  // the first failure and that rejection stops this function BEFORE the
+  // publish_space() RPC. Nothing live has been modified at that point.
   try {
-    await Promise.all([
-      ...(mediaRows ?? []).map((row) =>
-        copyDraftToPublished(supabase, row.image_ref as string | null, `${tenantId}/${row.module_key}/${row.id}`)
-      ),
-      copyDraftToPublished(supabase, brandRow?.hero_image_ref ?? null, `${tenantId}/brand/hero`),
-      copyDraftToPublished(supabase, brandRow?.space_image_ref ?? null, `${tenantId}/brand/space`),
-      copyDraftToPublished(supabase, brandRow?.logo_ref ?? null, `${tenantId}/brand/logo`),
-      ...(moduleCoverRows ?? []).map((row) =>
-        copyDraftToPublished(supabase, row.image_ref as string | null, `${tenantId}/${row.module_key}/${MODULE_COVER_ITEM_ID}`)
-      ),
-    ]);
+    await Promise.all([...draftRefs].map((ref) => copyDraftToPublished(supabase, ref)));
   } catch (err) {
     return {
       error: err instanceof Error ? `Could not publish your photos - ${err.message}` : "Could not publish your photos.",
@@ -1446,6 +1495,23 @@ export async function publishSpace(
 
   const { data, error } = await supabase.rpc("publish_space", { p_tenant_id: tenantId });
   if (error) return { error: error.message, publishedAt: null };
+
+  // The new snapshot is committed. Cleanup is strictly post-commit and
+  // best-effort; it must never turn a successful Publish into an error.
+  try {
+    const { data: committed, error: readError } = await supabase
+      .from("published_spaces")
+      .select("modules")
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+    if (readError || !committed) throw new Error(readError?.message ?? "snapshot not readable");
+    await cleanupStalePublishedMedia(supabase, tenantId, previousRefs, collectImageRefs(committed.modules));
+  } catch (cleanupError) {
+    console.error("publishSpace: stale published media cleanup failed", {
+      tenantId,
+      message: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+    });
+  }
 
   return { error: null, publishedAt: data as string };
 }

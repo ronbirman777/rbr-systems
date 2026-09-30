@@ -25,6 +25,8 @@ const mockBrandConfigSelect = vi.fn();
 const mockModuleConfigsSelect = vi.fn();
 const mockRpc = vi.fn();
 const mockCopyDraftToPublished = vi.fn();
+const mockSnapshotSelect = vi.fn();
+const mockCleanup = vi.fn();
 const mockGetSpaceEntitlement = vi.fn();
 const mockDeriveCommercialAvailability = vi.fn();
 
@@ -44,6 +46,9 @@ vi.mock("@/lib/supabase/server", () => ({
       if (table === "module_configs") {
         return { select: () => ({ eq: mockModuleConfigsSelect }) };
       }
+      if (table === "published_spaces") {
+        return { select: () => ({ eq: () => ({ maybeSingle: mockSnapshotSelect }) }) };
+      }
       throw new Error(`unexpected table in test: ${table}`);
     },
     rpc: mockRpc,
@@ -60,6 +65,10 @@ vi.mock("@/lib/entitlements/availability", () => ({
 
 vi.mock("@/lib/media/publish", () => ({
   copyDraftToPublished: (...args: unknown[]) => mockCopyDraftToPublished(...args),
+}));
+
+vi.mock("@/lib/media/publishedCleanup", () => ({
+  cleanupStalePublishedMedia: (...args: unknown[]) => mockCleanup(...args),
 }));
 
 // sharp is only touched by optimizeUploadedImage (unrelated to publishSpace),
@@ -90,6 +99,8 @@ describe("publishSpace - every path resolves a well-formed PublishState, never t
     mockBrandConfigSelect.mockResolvedValue({ data: null });
     mockModuleConfigsSelect.mockResolvedValue({ data: [] });
     mockCopyDraftToPublished.mockResolvedValue(undefined);
+    mockSnapshotSelect.mockResolvedValue({ data: { modules: {} }, error: null });
+    mockCleanup.mockResolvedValue({ removed: [] });
     mockRpc.mockResolvedValue({ data: "2026-09-13T12:00:00.000Z", error: null });
   });
 
@@ -136,6 +147,7 @@ describe("publishSpace - every path resolves a well-formed PublishState, never t
   });
 
   it("C. media copy rejects: resolves with an error (never an uncaught rejection) and never calls the RPC", async () => {
+    mockModuleItemsSelect.mockResolvedValue({ data: [{ image_ref: "tenant-1/meals/i/u/draft.webp" }] });
     mockCopyDraftToPublished.mockRejectedValue(new Error("Could not read the draft image"));
     const publishSpace = await loadPublishSpace();
     const result = await publishSpace(PREV_STATE, formData("tenant-1"));
@@ -152,6 +164,7 @@ describe("publishSpace - every path resolves a well-formed PublishState, never t
   });
 
   it("E. failure then retry: a failed publish followed by a successful one both resolve correctly (button must stay usable)", async () => {
+    mockModuleItemsSelect.mockResolvedValue({ data: [{ image_ref: "tenant-1/meals/i/u/draft.webp" }] });
     const publishSpace = await loadPublishSpace();
 
     mockCopyDraftToPublished.mockRejectedValueOnce(new Error("network error"));
@@ -162,5 +175,97 @@ describe("publishSpace - every path resolves a well-formed PublishState, never t
     const retried = await publishSpace(failed, formData("tenant-1"));
     expect(retried.error).toBeNull();
     expect(retried.publishedAt).toBe("2026-09-13T12:00:00.000Z");
+  });
+});
+
+const T = "tenant-1";
+const OLD_PUB = `${T}/meals/i1/up-old/published.webp`;
+const NEW_DRAFT = `${T}/meals/i1/up-new/draft.webp`;
+const NEW_PUB = `${T}/meals/i1/up-new/published.webp`;
+
+describe("publishSpace - TASK 023 ordering: copy -> commit -> cleanup", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSnapshotSelect.mockReset();
+    mockCopyDraftToPublished.mockReset();
+    mockGetUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    mockGetSpaceEntitlement.mockResolvedValue(null);
+    mockDeriveCommercialAvailability.mockReturnValue({ canPublish: true });
+    mockModuleItemsSelect.mockResolvedValue({ data: [{ image_ref: NEW_DRAFT }, { image_ref: null }] });
+    mockBrandConfigSelect.mockResolvedValue({ data: null });
+    mockModuleConfigsSelect.mockResolvedValue({ data: [] });
+    mockCopyDraftToPublished.mockResolvedValue(NEW_PUB);
+    mockRpc.mockResolvedValue({ data: "2026-09-13T12:00:00.000Z", error: null });
+    mockCleanup.mockResolvedValue({ removed: [] });
+  });
+
+  function snapshots(previous: unknown, committed: unknown) {
+    mockSnapshotSelect
+      .mockResolvedValueOnce({ data: { modules: previous }, error: null })
+      .mockResolvedValueOnce({ data: { modules: committed }, error: null });
+  }
+
+  it("copies only this tenant's draft refs, each once, and cleans up only AFTER the RPC commits", async () => {
+    snapshots({ meals: [{ imageRef: OLD_PUB }] }, { meals: [{ imageRef: NEW_PUB }] });
+    mockModuleItemsSelect.mockResolvedValue({
+      data: [{ image_ref: NEW_DRAFT }, { image_ref: NEW_DRAFT }, { image_ref: "other-tenant/meals/x/u/draft.webp" }, { image_ref: `${T}/meals/z/u/published.webp` }],
+    });
+    const order: string[] = [];
+    mockCopyDraftToPublished.mockImplementation(async () => (order.push("copy"), NEW_PUB));
+    mockRpc.mockImplementation(async () => (order.push("rpc"), { data: "t", error: null }));
+    mockCleanup.mockImplementation(async () => (order.push("cleanup"), { removed: [OLD_PUB] }));
+
+    const publishSpace = await loadPublishSpace();
+    const result = await publishSpace(PREV_STATE, formData(T));
+    expect(result.error).toBeNull();
+    expect(order).toEqual(["copy", "rpc", "cleanup"]);
+    expect(mockCopyDraftToPublished).toHaveBeenCalledTimes(1);
+    expect(mockCopyDraftToPublished.mock.calls[0][1]).toBe(NEW_DRAFT);
+    const [, tenantArg, previousRefs, currentRefs] = mockCleanup.mock.calls[0];
+    expect(tenantArg).toBe(T);
+    expect([...(previousRefs as Set<string>)]).toEqual([OLD_PUB]);
+    expect([...(currentRefs as Set<string>)]).toEqual([NEW_PUB]);
+  });
+
+  it("copy failure: the RPC and the cleanup never run (the live snapshot and its media are untouched)", async () => {
+    snapshots({ meals: [{ imageRef: OLD_PUB }] }, {});
+    mockCopyDraftToPublished.mockRejectedValue(new Error("boom"));
+    const publishSpace = await loadPublishSpace();
+    const result = await publishSpace(PREV_STATE, formData(T));
+    expect(result.error).toContain("Could not publish your photos");
+    expect(mockRpc).not.toHaveBeenCalled();
+    expect(mockCleanup).not.toHaveBeenCalled();
+  });
+
+  it("RPC failure: no cleanup, so the previous snapshot's media is never removed", async () => {
+    snapshots({ meals: [{ imageRef: OLD_PUB }] }, {});
+    mockRpc.mockResolvedValue({ data: null, error: { message: "db down" } });
+    const publishSpace = await loadPublishSpace();
+    const result = await publishSpace(PREV_STATE, formData(T));
+    expect(result).toEqual({ error: "db down", publishedAt: null });
+    expect(mockCleanup).not.toHaveBeenCalled();
+  });
+
+  it("cleanup failure after a committed publish is logged, never surfaced as a failed Publish", async () => {
+    snapshots({ meals: [{ imageRef: OLD_PUB }] }, { meals: [{ imageRef: NEW_PUB }] });
+    mockCleanup.mockRejectedValue(new Error("storage down"));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const publishSpace = await loadPublishSpace();
+    const result = await publishSpace(PREV_STATE, formData(T));
+    expect(result).toEqual({ error: null, publishedAt: "2026-09-13T12:00:00.000Z" });
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it("committed snapshot unreadable: cleanup is skipped entirely (never guess what is safe to delete)", async () => {
+    mockSnapshotSelect
+      .mockResolvedValueOnce({ data: { modules: { meals: [{ imageRef: OLD_PUB }] } }, error: null })
+      .mockResolvedValueOnce({ data: null, error: { message: "read failed" } });
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const publishSpace = await loadPublishSpace();
+    const result = await publishSpace(PREV_STATE, formData(T));
+    expect(result.error).toBeNull();
+    expect(mockCleanup).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 });

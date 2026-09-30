@@ -105,4 +105,30 @@ describe("GET /api/media - published snapshot AND current guest access", () => {
     mockSign.mockResolvedValue({ data: null, error: { message: "nope" } });
     expect((await call(P.item.split("/"))).status).toBe(404);
   });
+
+  it("TASK 023: versioned (uploadId) published paths are authorized by snapshot membership, like any other", async () => {
+    const A = `${TENANT}/meals/a/up-A/published.webp`;
+    const B = `${TENANT}/meals/a/up-B/published.webp`;
+    snapshot = { modules: { meals: [{ id: "a", imageRef: A }] } };
+    expect((await call(A.split("/"))).status).toBe(307);
+    expect((await call(B.split("/"))).status).toBe(404); // copied but not yet published
+    expect(mockSign).toHaveBeenCalledTimes(1);
+    expect(mockSign).toHaveBeenCalledWith(A, 60);
+  });
+
+  it("TASK 023: after republish the OLD path is denied even though its object may still exist in Storage", async () => {
+    const A = `${TENANT}/meals/a/up-A/published.webp`;
+    const B = `${TENANT}/meals/a/up-B/published.webp`;
+    snapshot = { modules: { meals: [{ id: "a", imageRef: B }] } };
+    expect((await call(A.split("/"))).status).toBe(404);
+    expect((await call(B.split("/"))).status).toBe(307);
+    // Authorization never consults Storage existence - only the snapshot.
+    expect(mockSign).toHaveBeenCalledTimes(1);
+  });
+
+  it("TASK 023: a versioned DRAFT path is never served", async () => {
+    snapshot = { modules };
+    expect((await call(`${TENANT}/meals/a/up-A/draft.webp`.split("/"))).status).toBe(404);
+    expect(mockSign).not.toHaveBeenCalled();
+  });
 });

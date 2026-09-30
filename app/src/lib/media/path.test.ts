@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tenantMediaPath, publishedMediaPath, mediaItemFolder, isFileSizeAllowed, MAX_IMAGE_BYTES, isWellFormedMediaPath, MEDIA_SIGNED_URL_TTL_SECONDS } from "./path";
+import { tenantMediaPath, publishedMediaPath, newUploadId, isDraftMediaPathForTenant, isPublishedMediaPath, isFileSizeAllowed, MAX_IMAGE_BYTES, isWellFormedMediaPath, MEDIA_SIGNED_URL_TTL_SECONDS } from "./path";
 
 describe("tenantMediaPath", () => {
   it("builds the draft path for a module_items-backed item", () => {
@@ -28,13 +28,48 @@ describe("publishedMediaPath", () => {
   });
 });
 
-describe("mediaItemFolder", () => {
-  it("extracts the item folder from a draft path", () => {
-    expect(mediaItemFolder("tenant-1/brand/hero/draft.webp")).toBe("tenant-1/brand/hero");
+describe("versioned upload paths", () => {
+  it("puts each upload in its own uploadId folder, and publishes to the same folder", () => {
+    const draft = tenantMediaPath("tenant-1", "meals", "item-1", "webp", "up-1");
+    expect(draft).toBe("tenant-1/meals/item-1/up-1/draft.webp");
+    expect(publishedMediaPath(draft)).toBe("tenant-1/meals/item-1/up-1/published.webp");
   });
+  it("two uploads for the same slot never share a published key", () => {
+    const a = publishedMediaPath(tenantMediaPath("t", "brand", "hero", "webp", newUploadId()));
+    const b = publishedMediaPath(tenantMediaPath("t", "brand", "hero", "webp", newUploadId()));
+    expect(a).not.toBe(b);
+  });
+  it("legacy single-path drafts still transform", () => {
+    expect(publishedMediaPath("t/meals/item-1/draft.webp")).toBe("t/meals/item-1/published.webp");
+  });
+});
 
-  it("returns null for a malformed path", () => {
-    expect(mediaItemFolder("not-a-path")).toBeNull();
+describe("isWellFormedMediaPath - versioned layout", () => {
+  it("accepts the uploadId-nested path", () => {
+    expect(isWellFormedMediaPath("11111111-1111-4111-8111-111111111111/meals/a/22222222-2222-4222-8222-222222222222/published.webp".split("/"))).toBe(true);
+  });
+});
+
+describe("isDraftMediaPathForTenant", () => {
+  it("accepts this tenant's draft objects, legacy and versioned", () => {
+    expect(isDraftMediaPathForTenant("t1", "t1/meals/i/draft.webp")).toBe(true);
+    expect(isDraftMediaPathForTenant("t1", "t1/meals/i/u/draft.webp")).toBe(true);
+  });
+  it("rejects published objects, other tenants, traversal and malformed paths", () => {
+    expect(isDraftMediaPathForTenant("t1", "t1/meals/i/published.webp")).toBe(false);
+    expect(isDraftMediaPathForTenant("t1", "t1/meals/i/u/published.webp")).toBe(false);
+    expect(isDraftMediaPathForTenant("t1", "t2/meals/i/draft.webp")).toBe(false);
+    expect(isDraftMediaPathForTenant("t1", "t1/../t2/meals/i/draft.webp")).toBe(false);
+    expect(isDraftMediaPathForTenant("t1", "t1//draft.webp")).toBe(false);
+    expect(isDraftMediaPathForTenant("", "/draft.webp")).toBe(false);
+  });
+});
+
+describe("isPublishedMediaPath", () => {
+  it("matches only published copies", () => {
+    expect(isPublishedMediaPath("t/meals/i/u/published.webp")).toBe(true);
+    expect(isPublishedMediaPath("t/meals/i/published.webp")).toBe(true);
+    expect(isPublishedMediaPath("t/meals/i/u/draft.webp")).toBe(false);
   });
 });
 
