@@ -140,6 +140,18 @@ export async function replaceSpace(
     return { error: "Type the Space's current name exactly to confirm replacing it." };
   }
 
+  // TASK 024: Replace keeps the tenant identity (same id, slot, membership,
+  // entitlement) and only resets its database content, so the old
+  // content's Storage files would otherwise live on under this same live
+  // tenant folder forever. Same order as Space deletion: Storage first,
+  // the database reset only once that fully succeeded - a failure here
+  // leaves the Space's rows untouched and Replace simply retryable. If the
+  // reset itself then fails, the Space is still the old one (its media is
+  // already gone) and re-running Replace completes it; that window is the
+  // one documented cost of choosing "never reset first".
+  const media = await removeSpaceMediaAsOwner(supabase, user.id, tenantId);
+  if (!media.ok) return { error: "Couldn't replace this Space. Please try again." };
+
   const { error } = await supabase.rpc("replace_space", {
     p_tenant_id: tenantId,
     p_new_name: newName || "Untitled Retreat",
@@ -151,34 +163,28 @@ export async function replaceSpace(
 }
 
 /**
- * Task 017 (Space Storage Cleanup) — the complete, safe Space-deletion
- * routine: Storage cleanup FIRST, database rows (via the existing
- * delete_space() RPC, unchanged) only once that has fully succeeded.
- * Exported so Account Deletion ((auth)/actions.ts deleteAccount) can run
- * the exact same routine once per owned Space, rather than a second,
- * divergent implementation of "what does deleting a Space actually
- * require."
+ * Task 017 / TASK 024: the shared, ownership-verified Storage-cleanup
+ * step used by BOTH Space deletion (deleteSpaceCompletely) and Replace
+ * (replaceSpace) - one primitive, not two divergent cleanup systems.
  *
- * Ordering is deliberate and is what makes a partial failure safe: if
- * Storage cleanup fails partway, nothing has been deleted from the
- * database yet, so the Space (and whatever files remain) is completely
- * intact and this is simply retryable - re-running it only needs to
- * remove whatever files are still there, then still reaches
- * delete_space(). The reverse order would be far worse: if the database
- * row were deleted first and Storage cleanup then failed, the files
- * would be orphaned with no owning tenant left to authorize (or even
- * retry) their cleanup - exactly the TASK 016 audit finding this task
- * fixes, not a state this routine may ever reintroduce.
+ * Ownership is re-verified here even though delete_space()/replace_space()
+ * already enforce is_tenant_owner() at the database layer - the Storage
+ * removal step has no equivalent check of its own (the "tenant members
+ * can delete their own media" policy, 0006, only requires tenant
+ * MEMBERSHIP, not ownership), so without this a non-owner member could
+ * otherwise destroy a Space's media without being authorized to delete or
+ * replace the Space itself.
  *
- * Ownership is re-verified here even though delete_space() itself already
- * enforces is_tenant_owner() at the database layer - the Storage removal
- * step has no equivalent check of its own (the "tenant members can
- * delete their own media" policy, 0006, only requires tenant MEMBERSHIP,
- * not ownership), so without this a non-owner member could otherwise
- * invoke this function directly and destroy a Space's media without
- * being authorized to delete the Space itself.
+ * Callers MUST run their database step only after this returns ok: if
+ * Storage cleanup fails partway, nothing has been changed in the database
+ * yet, so the Space is intact and the whole action is simply retryable -
+ * re-running only needs to remove whatever files are still there. The
+ * reverse order would be far worse: a database reset/delete followed by a
+ * failed Storage cleanup would leave orphaned files with nothing left to
+ * authorize (or safely retry, without also wiping the new content's
+ * uploads) their removal.
  */
-export async function deleteSpaceCompletely(
+async function removeSpaceMediaAsOwner(
   supabase: SupabaseClient,
   userId: string,
   tenantId: string
@@ -189,13 +195,32 @@ export async function deleteSpaceCompletely(
     .eq("tenant_id", tenantId)
     .eq("user_id", userId);
   if (membershipError) return { ok: false, reason: "could not verify Space ownership" };
-  if (memberRows?.[0]?.role !== "owner") return { ok: false, reason: "not authorized to delete this Space" };
+  if (memberRows?.[0]?.role !== "owner") return { ok: false, reason: "not authorized to change this Space" };
 
   try {
     await removeAllTenantMedia(supabase, tenantId);
   } catch (e) {
     return { ok: false, reason: e instanceof TenantMediaCleanupError ? e.message : "could not remove Space media" };
   }
+  return { ok: true };
+}
+
+/**
+ * Task 017 (Space Storage Cleanup) — the complete, safe Space-deletion
+ * routine: Storage cleanup FIRST (removeSpaceMediaAsOwner), database rows
+ * (via the existing delete_space() RPC, unchanged) only once that has
+ * fully succeeded. Exported so Account Deletion ((auth)/actions.ts
+ * deleteAccount) can run the exact same routine once per owned Space,
+ * rather than a second, divergent implementation of "what does deleting a
+ * Space actually require."
+ */
+export async function deleteSpaceCompletely(
+  supabase: SupabaseClient,
+  userId: string,
+  tenantId: string
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const media = await removeSpaceMediaAsOwner(supabase, userId, tenantId);
+  if (!media.ok) return media;
 
   const { error: dbError } = await supabase.rpc("delete_space", { p_tenant_id: tenantId });
   if (dbError) return { ok: false, reason: "could not remove Space data" };

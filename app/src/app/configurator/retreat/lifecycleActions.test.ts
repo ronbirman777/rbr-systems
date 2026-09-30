@@ -140,9 +140,9 @@ describe("lifecycleActions - Task 011", () => {
       mockRpc.mockResolvedValue({ error: null });
       const { archiveSpace } = await loadActions();
 
-      const result = await archiveSpace({ error: null }, formData({ tenantId: "t1" }));
+      const result = await archiveSpace({ error: null }, formData({ tenantId: "11111111-1111-4111-8111-111111111111" }));
 
-      expect(mockRpc).toHaveBeenCalledWith("archive_space", { p_tenant_id: "t1" });
+      expect(mockRpc).toHaveBeenCalledWith("archive_space", { p_tenant_id: "11111111-1111-4111-8111-111111111111" });
       expect(result.success).toBe(true);
       expect(mockRevalidatePath).toHaveBeenCalledWith("/space");
     });
@@ -151,7 +151,7 @@ describe("lifecycleActions - Task 011", () => {
       mockRpc.mockResolvedValue({ error: { message: "not authorized" } });
       const { archiveSpace } = await loadActions();
 
-      const result = await archiveSpace({ error: null }, formData({ tenantId: "t1" }));
+      const result = await archiveSpace({ error: null }, formData({ tenantId: "11111111-1111-4111-8111-111111111111" }));
 
       expect(result.success).toBeUndefined();
       expect(result.error).toBeTruthy();
@@ -164,36 +164,163 @@ describe("lifecycleActions - Task 011", () => {
       mockRpc.mockResolvedValue({ error: { hint: "SLOT_LIMIT_REACHED" } });
       const { restoreSpace } = await loadActions();
 
-      const result = await restoreSpace({ error: null }, formData({ tenantId: "t1" }));
+      const result = await restoreSpace({ error: null }, formData({ tenantId: "11111111-1111-4111-8111-111111111111" }));
 
       expect(result.slotLimitReached).toBe(true);
     });
   });
 
   describe("replaceSpace", () => {
+    const confirmed = { tenantId: "11111111-1111-4111-8111-111111111111", expectedName: "Real Name", confirmName: "Real Name", newName: "New" };
+
     it("refuses to call the RPC at all unless the typed confirmation matches the Space's current name", async () => {
       const { replaceSpace } = await loadActions();
 
       const result = await replaceSpace(
         { error: null },
-        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "wrong" })
+        formData({ tenantId: "11111111-1111-4111-8111-111111111111", expectedName: "Real Name", confirmName: "wrong" })
       );
 
       expect(result.error).toBeTruthy();
       expect(mockRpc).not.toHaveBeenCalled();
+      expect(mockStorageList).not.toHaveBeenCalled();
+      expect(mockStorageRemove).not.toHaveBeenCalled();
     });
 
     it("calls replace_space only once the typed name matches exactly", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
       mockRpc.mockResolvedValue({ error: null });
       const { replaceSpace } = await loadActions();
 
-      const result = await replaceSpace(
-        { error: null },
-        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name", newName: "New" })
-      );
+      const result = await replaceSpace({ error: null }, formData(confirmed));
 
-      expect(mockRpc).toHaveBeenCalledWith("replace_space", { p_tenant_id: "t1", p_new_name: "New" });
+      expect(mockRpc).toHaveBeenCalledWith("replace_space", { p_tenant_id: "11111111-1111-4111-8111-111111111111", p_new_name: "New" });
       expect(result.success).toBe(true);
+    });
+
+    /**
+     * TASK 024: Replace keeps the tenant id, so before this fix the old
+     * content's Storage objects were never removed. It now runs the same
+     * Storage-first routine as Space deletion.
+     */
+    it("removes every discovered media object (at any depth) before calling replace_space", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      mockStorageList.mockImplementation((prefix: string) => {
+        if (prefix === "11111111-1111-4111-8111-111111111111") return Promise.resolve({ data: [{ id: null, name: "meals" }, { id: "o0", name: "stray.png" }], error: null });
+        if (prefix === "11111111-1111-4111-8111-111111111111/meals") return Promise.resolve({ data: [{ id: null, name: "item" }], error: null });
+        if (prefix === "11111111-1111-4111-8111-111111111111/meals/item") return Promise.resolve({ data: [{ id: null, name: "upload" }, { id: "o1", name: "draft.png" }], error: null });
+        if (prefix === "11111111-1111-4111-8111-111111111111/meals/item/upload") return Promise.resolve({ data: [{ id: "o2", name: "draft.webp" }, { id: "o3", name: "published.webp" }], error: null });
+        throw new Error(`unexpected prefix in test: ${prefix}`);
+      });
+      mockStorageRemove.mockResolvedValue({ error: null });
+      mockRpc.mockResolvedValue({ error: null });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData(confirmed));
+
+      const removed = mockStorageRemove.mock.calls.flatMap((c) => c[0] as string[]).sort();
+      expect(removed).toEqual([
+        "11111111-1111-4111-8111-111111111111/meals/item/draft.png",
+        "11111111-1111-4111-8111-111111111111/meals/item/upload/draft.webp",
+        "11111111-1111-4111-8111-111111111111/meals/item/upload/published.webp",
+        "11111111-1111-4111-8111-111111111111/stray.png",
+      ]);
+      expect(mockStorageRemove.mock.invocationCallOrder[0]).toBeLessThan(mockRpc.mock.invocationCallOrder[0]);
+      expect(result.success).toBe(true);
+    });
+
+    it("never touches Storage or the RPC for a non-owner member", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "practitioner" }], error: null });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData(confirmed));
+
+      expect(result.error).toBeTruthy();
+      expect(mockStorageList).not.toHaveBeenCalled();
+      expect(mockStorageRemove).not.toHaveBeenCalled();
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it("never touches Storage or the RPC when membership cannot be verified", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: null, error: { message: "boom" } });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData(confirmed));
+
+      expect(result.error).toBeTruthy();
+      expect(mockStorageList).not.toHaveBeenCalled();
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it("does not reset the Space when listing fails, leaving it intact and retryable", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      mockStorageList.mockResolvedValue({ data: null, error: { message: "network error" } });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData(confirmed));
+
+      expect(result.error).toBeTruthy();
+      expect(result.success).toBeUndefined();
+      expect(mockRpc).not.toHaveBeenCalled();
+      expect(mockRevalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("does not reset the Space when only PART of the removal succeeds (second chunk fails)", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      mockStorageList.mockResolvedValue({
+        data: Array.from({ length: 150 }, (_, i) => ({ id: `id-${i}`, name: `f-${i}.png` })),
+        error: null,
+      });
+      mockStorageRemove.mockResolvedValueOnce({ error: null }).mockResolvedValueOnce({ error: { message: "partial" } });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData(confirmed));
+
+      expect(mockStorageRemove).toHaveBeenCalledTimes(2);
+      expect(result.error).toBeTruthy();
+      expect(mockRpc).not.toHaveBeenCalled();
+      expect(mockRevalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("a retry after a partial failure only removes what is left and then completes the reset", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      mockStorageList.mockResolvedValueOnce({ data: [{ id: "a", name: "x.png" }], error: null });
+      mockStorageRemove.mockResolvedValueOnce({ error: { message: "transient" } });
+      const { replaceSpace } = await loadActions();
+      const first = await replaceSpace({ error: null }, formData(confirmed));
+      expect(first.error).toBeTruthy();
+      expect(mockRpc).not.toHaveBeenCalled();
+
+      mockStorageList.mockResolvedValueOnce({ data: [], error: null });
+      mockRpc.mockResolvedValue({ error: null });
+      const second = await replaceSpace({ error: null }, formData(confirmed));
+      expect(second.success).toBe(true);
+      expect(mockRpc).toHaveBeenCalledTimes(1);
+    });
+
+    it("never claims success when the reset fails AFTER Storage was cleaned (retryable, documented window)", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      mockStorageList.mockResolvedValue({ data: [{ id: "a", name: "x.png" }], error: null });
+      mockStorageRemove.mockResolvedValue({ error: null });
+      mockRpc.mockResolvedValue({ error: { message: "db down" } });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData(confirmed));
+
+      expect(result.error).toBeTruthy();
+      expect(result.success).toBeUndefined();
+      expect(mockRevalidatePath).not.toHaveBeenCalled();
+    });
+
+    it("refuses a malformed tenant id without any Storage call", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData({ ...confirmed, tenantId: "../other" }));
+
+      expect(result.error).toBeTruthy();
+      expect(mockStorageList).not.toHaveBeenCalled();
+      expect(mockRpc).not.toHaveBeenCalled();
     });
   });
 
@@ -203,7 +330,7 @@ describe("lifecycleActions - Task 011", () => {
 
       const result = await deleteSpace(
         { error: null },
-        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "wrong" })
+        formData({ tenantId: "11111111-1111-4111-8111-111111111111", expectedName: "Real Name", confirmName: "wrong" })
       );
 
       expect(result.error).toBeTruthy();
@@ -214,7 +341,7 @@ describe("lifecycleActions - Task 011", () => {
     it("refuses to call the RPC when no confirmation was typed at all", async () => {
       const { deleteSpace } = await loadActions();
 
-      const result = await deleteSpace({ error: null }, formData({ tenantId: "t1", expectedName: "Real Name" }));
+      const result = await deleteSpace({ error: null }, formData({ tenantId: "11111111-1111-4111-8111-111111111111", expectedName: "Real Name" }));
 
       expect(result.error).toBeTruthy();
       expect(mockRpc).not.toHaveBeenCalled();
@@ -227,10 +354,10 @@ describe("lifecycleActions - Task 011", () => {
 
       const result = await deleteSpace(
         { error: null },
-        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+        formData({ tenantId: "11111111-1111-4111-8111-111111111111", expectedName: "Real Name", confirmName: "Real Name" })
       );
 
-      expect(mockRpc).toHaveBeenCalledWith("delete_space", { p_tenant_id: "t1" });
+      expect(mockRpc).toHaveBeenCalledWith("delete_space", { p_tenant_id: "11111111-1111-4111-8111-111111111111" });
       expect(result.success).toBe(true);
       expect(mockRevalidatePath).toHaveBeenCalledWith("/space");
     });
@@ -242,7 +369,7 @@ describe("lifecycleActions - Task 011", () => {
 
       const result = await deleteSpace(
         { error: null },
-        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+        formData({ tenantId: "11111111-1111-4111-8111-111111111111", expectedName: "Real Name", confirmName: "Real Name" })
       );
 
       expect(result.success).toBeUndefined();
@@ -256,7 +383,7 @@ describe("lifecycleActions - Task 011", () => {
 
       const result = await deleteSpace(
         { error: null },
-        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+        formData({ tenantId: "11111111-1111-4111-8111-111111111111", expectedName: "Real Name", confirmName: "Real Name" })
       );
 
       expect(result.error).toBeTruthy();
@@ -279,7 +406,7 @@ describe("lifecycleActions - Task 011", () => {
 
       const result = await deleteSpace(
         { error: null },
-        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+        formData({ tenantId: "11111111-1111-4111-8111-111111111111", expectedName: "Real Name", confirmName: "Real Name" })
       );
 
       expect(result.error).toBeTruthy();
@@ -302,10 +429,10 @@ describe("lifecycleActions - Task 011", () => {
 
       const result = await deleteSpace(
         { error: null },
-        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+        formData({ tenantId: "11111111-1111-4111-8111-111111111111", expectedName: "Real Name", confirmName: "Real Name" })
       );
 
-      expect(mockStorageRemove).toHaveBeenCalledWith(["t1/draft.webp", "t1/published.webp"]);
+      expect(mockStorageRemove).toHaveBeenCalledWith(["11111111-1111-4111-8111-111111111111/draft.webp", "11111111-1111-4111-8111-111111111111/published.webp"]);
       const removeOrder = mockStorageRemove.mock.invocationCallOrder[0];
       const rpcOrder = mockRpc.mock.invocationCallOrder[0];
       expect(removeOrder).toBeLessThan(rpcOrder);
@@ -319,7 +446,7 @@ describe("lifecycleActions - Task 011", () => {
 
       const result = await deleteSpace(
         { error: null },
-        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+        formData({ tenantId: "11111111-1111-4111-8111-111111111111", expectedName: "Real Name", confirmName: "Real Name" })
       );
 
       expect(result.error).toBeTruthy();
@@ -330,9 +457,9 @@ describe("lifecycleActions - Task 011", () => {
     it("recurses into folder-shaped list entries (id: null) to find real files at any depth", async () => {
       mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
       mockStorageList.mockImplementation((prefix: string) => {
-        if (prefix === "t1") return Promise.resolve({ data: [{ id: null, name: "facilitators" }], error: null });
-        if (prefix === "t1/facilitators") return Promise.resolve({ data: [{ id: null, name: "item-1" }], error: null });
-        if (prefix === "t1/facilitators/item-1") {
+        if (prefix === "11111111-1111-4111-8111-111111111111") return Promise.resolve({ data: [{ id: null, name: "facilitators" }], error: null });
+        if (prefix === "11111111-1111-4111-8111-111111111111/facilitators") return Promise.resolve({ data: [{ id: null, name: "item-1" }], error: null });
+        if (prefix === "11111111-1111-4111-8111-111111111111/facilitators/item-1") {
           return Promise.resolve({ data: [{ id: "obj-1", name: "draft.jpg" }], error: null });
         }
         throw new Error(`unexpected prefix in test: ${prefix}`);
@@ -343,10 +470,10 @@ describe("lifecycleActions - Task 011", () => {
 
       const result = await deleteSpace(
         { error: null },
-        formData({ tenantId: "t1", expectedName: "Real Name", confirmName: "Real Name" })
+        formData({ tenantId: "11111111-1111-4111-8111-111111111111", expectedName: "Real Name", confirmName: "Real Name" })
       );
 
-      expect(mockStorageRemove).toHaveBeenCalledWith(["t1/facilitators/item-1/draft.jpg"]);
+      expect(mockStorageRemove).toHaveBeenCalledWith(["11111111-1111-4111-8111-111111111111/facilitators/item-1/draft.jpg"]);
       expect(result.success).toBe(true);
     });
   });

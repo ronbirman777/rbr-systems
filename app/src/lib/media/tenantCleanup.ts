@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { MEDIA_BUCKET } from "./path";
+import { MEDIA_BUCKET, isTenantId } from "./path";
 
 /**
  * Thrown by any Storage operation this module performs - the caller
@@ -65,12 +65,20 @@ async function listAllTenantMediaPaths(supabase: SupabaseClient, prefix: string)
  * orphaned in the (public via signed-URL-only delivery, never publicly
  * listable) tenant-media bucket.
  *
- * Deliberately the FIRST step of deleteSpaceCompletely
- * (lifecycleActions.ts), before delete_space()'s database DELETE runs -
- * see that function's own comment for why that ordering is what makes a
- * partial failure safe rather than catastrophic.
+ * Deliberately the FIRST step of deleteSpaceCompletely and of
+ * replaceSpace (lifecycleActions.ts), before their database step runs -
+ * see removeSpaceMediaAsOwner's own comment for why that ordering is what
+ * makes a partial failure safe rather than catastrophic. It removes every
+ * object under the tenant folder regardless of whether the database still
+ * references it (drafts, published copies, superseded uploads, orphans).
  */
 export async function removeAllTenantMedia(supabase: SupabaseClient, tenantId: string): Promise<void> {
+  // Fail closed on anything that is not exactly one tenant folder name: an
+  // empty, traversal-shaped or multi-segment value must never become a
+  // listing prefix (an empty prefix would enumerate the whole bucket).
+  if (!isTenantId(tenantId)) {
+    throw new TenantMediaCleanupError("Refusing to remove media for a malformed tenant id");
+  }
   const paths = await listAllTenantMediaPaths(supabase, tenantId);
   if (paths.length === 0) return;
 
@@ -79,9 +87,14 @@ export async function removeAllTenantMedia(supabase: SupabaseClient, tenantId: s
   // Space that has accumulated a very large media library over time.
   for (let i = 0; i < paths.length; i += 100) {
     const chunk = paths.slice(i, i + 100);
-    const { error } = await supabase.storage.from(MEDIA_BUCKET).remove(chunk);
+    const { data, error } = await supabase.storage.from(MEDIA_BUCKET).remove(chunk);
     if (error) {
       throw new TenantMediaCleanupError(`Could not remove Space media: ${error.message}`);
+    }
+    // Storage reports RLS-denied or vanished objects as "not removed" with
+    // no error; a short result must never be mistaken for a full cleanup.
+    if (data && data.length < chunk.length) {
+      throw new TenantMediaCleanupError("Could not remove all Space media");
     }
   }
 }
