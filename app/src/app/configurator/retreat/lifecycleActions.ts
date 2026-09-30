@@ -24,10 +24,10 @@ export type LifecycleActionState = {
  * derived here, never read from a persisted column - there isn't one.
  * A missing/unreadable allowance row fails closed (0 allowed, 0
  * available) rather than being treated as unlimited; the row should
- * always exist post-0017 (backfilled for existing users, bootstrapped on
- * first creation attempt for new ones), so "missing" here is itself
- * already an anomaly worth surfacing conservatively, not silently
- * granting access. */
+ * always exist: 0017 backfilled existing users and 0026 provisions it at
+ * account creation (plus a one-time legacy repair), so "missing" here is
+ * itself an anomaly worth surfacing conservatively, not silently
+ * granting access. A zero-capacity row is NOT missing and stays 0. */
 export type SpaceSlotSummary = {
   slotsAllowed: number;
   slotsUsed: number;

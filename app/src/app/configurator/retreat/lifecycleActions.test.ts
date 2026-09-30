@@ -94,6 +94,36 @@ describe("lifecycleActions - Task 011", () => {
       expect(summary.slotsAvailable).toBe(0);
     });
 
+    it("Task 021: a freshly provisioned account (default row of 1, no Spaces) can enter Create New Space", async () => {
+      mockFromSelect.mockResolvedValue({ data: { slots_allowed: 1 } });
+      mockFromCountSelect.mockResolvedValue({ count: 0 });
+
+      const { getSpaceSlotSummary } = await loadActions();
+      const summary = await getSpaceSlotSummary();
+
+      expect(summary).toEqual({ slotsAllowed: 1, slotsUsed: 0, slotsAvailable: 1 });
+    });
+
+    it("Task 021: an existing zero-capacity row is honoured as 0 (it is not 'missing' and is never upgraded)", async () => {
+      mockFromSelect.mockResolvedValue({ data: { slots_allowed: 0 } });
+      mockFromCountSelect.mockResolvedValue({ count: 0 });
+
+      const { getSpaceSlotSummary } = await loadActions();
+      const summary = await getSpaceSlotSummary();
+
+      expect(summary).toEqual({ slotsAllowed: 0, slotsUsed: 0, slotsAvailable: 0 });
+    });
+
+    it("Task 021: a full-capacity account stays blocked (used == allowed -> 0 available)", async () => {
+      mockFromSelect.mockResolvedValue({ data: { slots_allowed: 1 } });
+      mockFromCountSelect.mockResolvedValue({ count: 1 });
+
+      const { getSpaceSlotSummary } = await loadActions();
+      const summary = await getSpaceSlotSummary();
+
+      expect(summary).toEqual({ slotsAllowed: 1, slotsUsed: 1, slotsAvailable: 0 });
+    });
+
     it("never reports a negative slotsAvailable when used exceeds allowed", async () => {
       mockFromSelect.mockResolvedValue({ data: { slots_allowed: 1 } });
       mockFromCountSelect.mockResolvedValue({ count: 5 });
