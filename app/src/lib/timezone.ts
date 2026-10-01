@@ -35,12 +35,45 @@ export function currentTimeInTimezone(timezone: string): string {
   return `${h}:${m}`;
 }
 
-/** The full canonical IANA timezone list, for a real dropdown - no hand-maintained list to go stale. */
+export const DEFAULT_TIMEZONE = "UTC";
+
+/**
+ * Zero-offset zones that are not geographic: they only ever mean "UTC".
+ * Region zones that merely share offset 0 (Africa/Abidjan, Atlantic/Reykjavik,
+ * Europe/London, ...) are deliberately NOT here - they stay what the user chose.
+ */
+const UTC_FAMILY = new Set([
+  "UTC", "Etc/UTC", "UCT", "Etc/UCT", "Universal", "Etc/Universal", "Zulu", "Etc/Zulu",
+  "GMT", "Etc/GMT", "Etc/GMT0", "GMT0", "Etc/GMT+0", "Etc/GMT-0", "GMT+0", "GMT-0",
+  "Greenwich", "Etc/Greenwich",
+]);
+
+/** The canonical IANA zone list from Intl. NOTE: it never contains UTC or any UTC-family value. */
 export function listTimezones(): string[] {
   if (typeof Intl.supportedValuesOf === "function") {
     return Intl.supportedValuesOf("timeZone");
   }
-  return ["UTC"];
+  return [DEFAULT_TIMEZONE];
 }
 
-export const DEFAULT_TIMEZONE = "UTC";
+/**
+ * The dropdown value that represents a stored timezone. The stored value is
+ * never rewritten here - only which <option> is shown as selected. UTC-family
+ * values select "UTC"; every other value (including Africa/Abidjan) is itself.
+ */
+export function timezoneSelectValue(stored: string | null | undefined): string {
+  if (!stored) return DEFAULT_TIMEZONE;
+  return UTC_FAMILY.has(stored) ? DEFAULT_TIMEZONE : stored;
+}
+
+/**
+ * Dropdown options: "UTC" first (Intl omits it), then the canonical zones.
+ * A stored value that is neither (a legacy alias such as Asia/Calcutta) is
+ * appended so the control shows it instead of silently falling back to the
+ * first option.
+ */
+export function timezoneOptions(stored?: string | null): string[] {
+  const options = [DEFAULT_TIMEZONE, ...listTimezones().filter((tz) => tz !== DEFAULT_TIMEZONE)];
+  const selected = timezoneSelectValue(stored);
+  return options.includes(selected) ? options : [...options, selected];
+}
