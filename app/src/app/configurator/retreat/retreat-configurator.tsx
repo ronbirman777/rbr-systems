@@ -39,7 +39,7 @@ import type { EditableCustomPage } from "@/lib/modules/customPage";
 import type { StayConnected } from "@/lib/modules/stayConnected";
 import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL, isLikelyValidUrl, type SocialPlatform } from "@/lib/modules/socialLinks";
 import { IMPLEMENTED_OPTIONAL_MODULES, OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
-import { todayInTimezone, currentTimeInTimezone, listTimezones, DEFAULT_TIMEZONE } from "@/lib/timezone";
+import { todayInTimezone, currentTimeInTimezone, timezoneOptions, timezoneSelectValue, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
 import {
   saveDraft,
@@ -1725,14 +1725,14 @@ export function RetreatConfigurator({
                   Schedule times and &quot;today&quot; are based on this, not the guest&apos;s device.
                 </p>
                 <select
-                  value={timezone}
+                  value={timezoneSelectValue(timezone)}
                   onChange={(e) => {
                     setTimezone(e.target.value);
                     dirty.markDirty("identityAndBrand");
                   }}
                   className={STUDIO_INPUT_CLASS}
                 >
-                  {listTimezones().map((tz) => (
+                  {timezoneOptions(timezone).map((tz) => (
                     <option key={tz} value={tz}>
                       {tz}
                     </option>
