@@ -1,5 +1,4 @@
-import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { loadStudioTenant } from "@/lib/configurator/studioTenant";
 import { RetreatConfigurator } from "../retreat-configurator";
 import type { AtmosphereKey, PaletteKey } from "@/lib/theme/tokens";
 import type { EditableScheduleItem } from "@/lib/schedule/types";
@@ -41,20 +40,7 @@ export default async function ResumeRetreatConfiguratorPage({
 }) {
   const { tenantId } = await params;
   const { step } = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/log-in");
-
-  // RLS scopes this to tenants the signed-in user is a member of - a draft
-  // belonging to someone else simply won't come back, regardless of the id.
-  const { data: tenant } = await supabase
-    .from("tenants")
-    .select("id, name, timezone, slug")
-    .eq("id", tenantId)
-    .maybeSingle();
-  if (!tenant) notFound();
+  const { supabase, tenant } = await loadStudioTenant(tenantId);
 
   // PRE-MIGRATION WARNING: custom_navigation/custom_text (0015) and
   // custom_secondary/hero_image_ref/space_image_ref/logo_ref (0014) must
