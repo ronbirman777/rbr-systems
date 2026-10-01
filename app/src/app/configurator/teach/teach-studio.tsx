@@ -8,7 +8,7 @@ import { InnerDweSMark } from "@/components/brand/wordmark";
 import { TeachGuestApp } from "@/components/teach/teach-guest-app";
 import { todayInTimezone, currentTimeInTimezone } from "@/lib/timezone";
 import type { TeachGuestData } from "@/lib/teach/guestData";
-import { withDerivedClassTimes } from "@/lib/teach/classTime";
+import { expandClassesForWindow, guestWindow } from "@/lib/teach/recurrence";
 import type {
   EditableTeachItem,
   TeachEditableItemKey,
@@ -502,7 +502,8 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
       },
       heroImageRef,
       settings,
-      classes: items.teachClasses.map((c) => ({ ...c, metadata: withDerivedClassTimes(c.metadata, timezone) })),
+      // Same expansion as the published Guest App (series -> occurrences).
+      classes: expandClassesForWindow(items.teachClasses, ...guestWindow(todayInTimezone(timezone)), timezone),
       availability: items.teachAvailability.filter((a) => a.metadata.enabled),
       readings: items.teachReadings,
       audio: items.teachAudio,

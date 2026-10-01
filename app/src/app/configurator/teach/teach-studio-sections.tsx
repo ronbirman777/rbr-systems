@@ -5,6 +5,8 @@ import { useMemo, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { listTimezones } from "@/lib/timezone";
 import { computeClassTimes } from "@/lib/teach/classTime";
+import { recurrenceSummary, repeatPresetOf, weekdayOfDate, type RepeatPreset } from "@/lib/teach/recurrenceText";
+import { dstShiftedDates, upcomingOccurrenceDates } from "@/lib/teach/recurrence";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
 import { MEDIA_BUCKET } from "@/lib/media/path";
 import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL, type SocialPlatform } from "@/lib/modules/socialLinks";
@@ -33,6 +35,12 @@ import {
   type RegistrationMethod,
   type TeachEditableItemKey,
   type TeachExploreModule,
+  type ClassMetadata,
+  type OccurrenceException,
+  type Recurrence,
+  type RecurrenceFreq,
+  RECURRENCE_MAX_COUNT,
+  RECURRENCE_MAX_INTERVAL,
 } from "@/lib/teach/schemas";
 import {
   CORNERS_LABEL,
@@ -679,6 +687,208 @@ function TemplateEditor({ value, onChange, fallback, previewValues }: { value: s
   );
 }
 
+// ---------------------------------------------------------------------------
+// Recurring classes: the Repeat block of the Class editor. Edits one series
+// (the class row); the guest app expands it into dated occurrences. The
+// Studio never shows raw RRULE text.
+// ---------------------------------------------------------------------------
+
+const REPEAT_OPTIONS: { value: RepeatPreset; label: string }[] = [
+  { value: "none", label: "Does not repeat" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+  { value: "custom", label: "Custom" },
+];
+const UNIT_OPTIONS: { value: RecurrenceFreq; label: string }[] = [
+  { value: "daily", label: "day(s)" },
+  { value: "weekly", label: "week(s)" },
+  { value: "monthly", label: "month(s)" },
+];
+const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMetadata; setM: (patch: Partial<ClassMetadata>) => void }) {
+  const rule = meta.recurrence;
+  // Kept locally so "Custom" stays selected while its interval is still 1.
+  const [preset, setPreset] = useState<RepeatPreset>(repeatPresetOf(rule));
+  const tz = meta.timezone ?? api.timezone;
+  const startWeekday = weekdayOfDate(meta.startDate);
+
+  const setRule = (patch: Partial<Recurrence>) => {
+    const base: Recurrence = rule ?? { freq: "weekly", interval: 1, byWeekday: [startWeekday], end: { type: "never" } };
+    setM({ recurrence: { ...base, ...patch } });
+  };
+  const choosePreset = (p: RepeatPreset) => {
+    setPreset(p);
+    if (p === "none") return setM({ recurrence: null });
+    const end = rule?.end ?? { type: "never" as const };
+    if (p === "custom") {
+      const freq = rule?.freq ?? "weekly";
+      return setM({ recurrence: { freq, interval: Math.max(2, rule?.interval ?? 1), byWeekday: freq === "weekly" ? (rule?.byWeekday.length ? rule.byWeekday : [startWeekday]) : [], end } });
+    }
+    setM({ recurrence: { freq: p, interval: 1, byWeekday: p === "weekly" ? (rule?.byWeekday.length ? rule.byWeekday : [startWeekday]) : [], end } });
+  };
+  const toggleDay = (d: number) => {
+    if (!rule) return;
+    const days = rule.byWeekday.length ? rule.byWeekday : [startWeekday];
+    const next = days.includes(d) ? days.filter((x) => x !== d) : [...days, d].sort((a, b) => a - b);
+    if (next.length > 0) setRule({ byWeekday: next });
+  };
+  const setException = (date: string, patch: Partial<OccurrenceException> | null) => {
+    const next = { ...meta.exceptions };
+    if (patch === null) delete next[date];
+    else {
+      const blank: OccurrenceException = { cancelled: false, startDate: null, startTime: null, endTime: null, location: null };
+      next[date] = { ...blank, ...(next[date] ?? {}), ...patch };
+    }
+    setM({ exceptions: next });
+  };
+
+  const today = api.todayIso;
+  const fromDate = meta.startDate > today ? meta.startDate : today;
+  const upcoming = useMemo(() => (rule ? upcomingOccurrenceDates(meta, fromDate, 8) : []), [rule, meta, fromDate]);
+  const shifted = useMemo(() => (rule ? dstShiftedDates(meta, fromDate, addDaysIso(fromDate, 366), tz) : []), [rule, meta, fromDate, tz]);
+  const cancelledCount = Object.values(meta.exceptions).filter((e) => e.cancelled).length;
+
+  return (
+    <div className="flex flex-col gap-4 p-4 rounded-xl border border-[#E2DACD] bg-white" data-testid="recurrence-editor">
+      <h3 className="text-[16px] text-[#192B21]" style={{ fontFamily: "var(--font-fraunces), serif" }}>
+        Repeat
+      </h3>
+      <Grid>
+        <SelectField label="Repeat" value={preset} onChange={choosePreset} options={REPEAT_OPTIONS} />
+        {rule && preset === "custom" ? (
+          <div className="grid grid-cols-[96px_1fr] gap-2 items-end">
+            <TextField
+              label="Repeat every"
+              inputMode="numeric"
+              value={String(rule.interval)}
+              onChange={(v) => {
+                const n = parseInt(v.replace(/\D/g, ""), 10);
+                setRule({ interval: Number.isFinite(n) ? Math.min(RECURRENCE_MAX_INTERVAL, Math.max(1, n)) : 1 });
+              }}
+            />
+            <SelectField
+              label="Unit"
+              value={rule.freq}
+              onChange={(f) => setRule({ freq: f, byWeekday: f === "weekly" ? (rule.byWeekday.length ? rule.byWeekday : [startWeekday]) : [] })}
+              options={UNIT_OPTIONS}
+            />
+          </div>
+        ) : null}
+      </Grid>
+
+      {rule?.freq === "weekly" ? (
+        <div className="flex flex-col gap-1.5">
+          <Label>Repeat on</Label>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Repeat on">
+            {WEEKDAY_SHORT.map((label, d) => {
+              const on = (rule.byWeekday.length ? rule.byWeekday : [startWeekday]).includes(d);
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => toggleDay(d)}
+                  className={`min-w-11 min-h-10 px-2.5 rounded-full text-[12.5px] font-semibold ${on ? "bg-[#192B21] text-white" : "border border-[#E2DACD] text-[#192B21]"}`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
+      {rule ? (
+        <div className="flex flex-col gap-2">
+          <Label>Ends</Label>
+          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Ends">
+            {(
+              [
+                ["never", "Never"],
+                ["until", "On date"],
+                ["count", "After"],
+              ] as const
+            ).map(([k, label]) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={rule.end.type === k}
+                onClick={() => setRule({ end: k === "never" ? { type: "never" } : k === "until" ? { type: "until", until: rule.end.type === "until" ? rule.end.until : addDaysIso(meta.startDate, 90) } : { type: "count", count: rule.end.type === "count" ? rule.end.count : 10 } })}
+                className={`px-3 min-h-9 rounded-full text-[12px] font-semibold ${rule.end.type === k ? "bg-[#192B21] text-white" : "border border-[#E2DACD] text-[#192B21]"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          {rule.end.type === "until" ? (
+            <div className="max-w-[240px]">
+              <TextField label="Last date" type="date" value={rule.end.until} onChange={(v) => v && setRule({ end: { type: "until", until: v } })} />
+            </div>
+          ) : null}
+          {rule.end.type === "count" ? (
+            <div className="max-w-[240px]">
+              <TextField
+                label="Number of classes"
+                inputMode="numeric"
+                value={String(rule.end.count)}
+                onChange={(v) => {
+                  const n = parseInt(v.replace(/\D/g, ""), 10);
+                  setRule({ end: { type: "count", count: Number.isFinite(n) ? Math.min(RECURRENCE_MAX_COUNT, Math.max(1, n)) : 1 } });
+                }}
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {rule ? (
+        <>
+          <p className="text-[13px] font-semibold px-3 py-2 rounded-lg bg-[#EAF1EA] text-[#3F6A4C]" data-testid="recurrence-summary">
+            {recurrenceSummary(rule, meta.startDate)}
+          </p>
+          <Hint>Every class in this series uses the same time, place, price and registration details. The first class is on or after the start date above.</Hint>
+          {shifted.map((d) => (
+            <p key={d} className="text-[12.5px] px-3 py-2 rounded-lg bg-[#FBF1DC] text-[#7A5418]" role="status" data-testid="recurrence-dst-note">
+              On {formatShortDate(d)} the clocks go forward in {tz}, so {meta.startTime} doesn’t exist that day — this class will start an hour later.
+            </p>
+          ))}
+          <div className="flex flex-col gap-1.5" data-testid="recurrence-upcoming">
+            <Label>Upcoming dates</Label>
+            <ul className="flex flex-col divide-y divide-[#EFE8DC] rounded-lg border border-[#E2DACD]">
+              {upcoming.map((d) => {
+                const cancelled = Boolean(meta.exceptions[d]?.cancelled);
+                return (
+                  <li key={d} className="flex items-center justify-between gap-3 px-3 min-h-11">
+                    <span className="text-[13px] flex items-center gap-2">
+                      <span className={cancelled ? "line-through text-[#8C8A84]" : "text-[#192B21]"}>
+                        {formatShortDate(d)} · {meta.startTime}
+                      </span>
+                      {cancelled ? <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8F3B3B]">Cancelled</span> : null}
+                    </span>
+                    <button type="button" onClick={() => setException(d, cancelled ? null : { cancelled: true })} className="text-[12px] font-semibold min-h-9 px-2 text-[#8F3B3B]" aria-label={`${cancelled ? "Restore" : "Cancel"} the class on ${formatShortDate(d)}`}>
+                      {cancelled ? "Restore" : "Cancel this date"}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            {cancelledCount > 0 ? <Hint>{cancelledCount === 1 ? "1 date is cancelled" : `${cancelledCount} dates are cancelled`}. Guests won’t see cancelled dates.</Hint> : null}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}
+
+function addDaysIso(dateIso: string, days: number): string {
+  const d = new Date(`${dateIso}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 function ClassEditor({ api, item, update, index }: { api: StudioApi; item: EditableTeachItem<"teachClasses">; update: (p: Partial<EditableTeachItem<"teachClasses">>) => void; index: number }) {
   const m = item.metadata;
   const setM = (patch: Partial<typeof m>) => update({ metadata: { ...m, ...patch } });
@@ -724,6 +934,7 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
           {t.message}
         </p>
       ))}
+      <RecurrenceEditor api={api} meta={m} setM={setM} />
       <Grid cols={3}>
         <TextField label="Location" value={str(m.location)} onChange={(v) => setM({ location: nul(v) })} placeholder="Olive Tree Studio · Tel Aviv" />
         <TextField label="Price" value={str(m.price)} onChange={(v) => setM({ price: nul(v) })} placeholder="₪65 · 5-class card ₪280" />
@@ -901,7 +1112,9 @@ export function ScheduleSection({ api }: Props) {
             order={(items) => sortClasses(items)}
             summary={(c) => ({
               title: c.title,
-              sub: `${formatShortDate(c.metadata.startDate)} · ${c.metadata.startTime}${c.metadata.endTime ? `–${c.metadata.endTime}` : ""}${c.subtitle ? ` · ${c.subtitle}` : ""}`,
+              sub: c.metadata.recurrence
+                ? `${recurrenceSummary(c.metadata.recurrence, c.metadata.startDate, { withEnd: false })} · ${c.metadata.startTime}${c.metadata.endTime ? `–${c.metadata.endTime}` : ""}${c.subtitle ? ` · ${c.subtitle}` : ""}`
+                : `${formatShortDate(c.metadata.startDate)} · ${c.metadata.startTime}${c.metadata.endTime ? `–${c.metadata.endTime}` : ""}${c.subtitle ? ` · ${c.subtitle}` : ""}`,
               thumb: api.mediaUrl(c.imageRef),
             })}
             editor={(item, update, index) => <ClassEditor api={api} item={item} update={update} index={index} />}

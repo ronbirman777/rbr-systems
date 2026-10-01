@@ -154,6 +154,41 @@ describe("Teach Studio server actions", () => {
     expect(mockUpsert.mock.calls[0][0][0].metadata).toMatchObject({ startsAt: "2025-11-02T05:30:00Z", startAmbiguous: true });
   });
 
+  it("stores a recurring class as ONE series row (rule + exceptions), never its occurrences", async () => {
+    mockTenantProductType.mockResolvedValue({ data: { product_type: "teach", timezone: "Asia/Jerusalem" } });
+    const { saveTeachItems } = await actions();
+    const series = klass({
+      metadata: {
+        ...klass().metadata,
+        startDate: "2026-10-04",
+        startTime: "08:00",
+        endTime: "09:15",
+        recurrence: { freq: "weekly", byWeekday: [0, 3], end: { type: "never" } },
+        exceptions: { "2026-10-11": { cancelled: true } },
+        occurrence: { seriesId: "forged", originalDate: "2026-10-04" },
+      },
+    });
+    expect(await saveTeachItems(TENANT, "teachClasses", [series])).toEqual({ error: null });
+    const rows = mockUpsert.mock.calls[0][0];
+    expect(rows).toHaveLength(1);
+    expect(rows[0].metadata).toMatchObject({
+      recurrence: { freq: "weekly", interval: 1, byWeekday: [0, 3], end: { type: "never" } },
+      exceptions: { "2026-10-11": { cancelled: true } },
+      occurrence: null,
+      startsAt: "2026-10-04T05:00:00Z",
+    });
+  });
+
+  it("rejects a repeat that ends before it starts, and a moved occurrence inside a DST gap", async () => {
+    mockTenantProductType.mockResolvedValue({ data: { product_type: "teach", timezone: "America/New_York" } });
+    const { saveTeachItems } = await actions();
+    const bad = klass({ metadata: { ...klass().metadata, timezone: "America/New_York", recurrence: { freq: "daily", end: { type: "until", until: "2025-01-01" } } } });
+    expect((await saveTeachItems(TENANT, "teachClasses", [bad])).error).toMatch(/before the first class/);
+    const gap = klass({ metadata: { ...klass().metadata, timezone: "America/New_York", recurrence: { freq: "weekly" }, exceptions: { "2027-03-14": { startTime: "02:30" } } } });
+    expect((await saveTeachItems(TENANT, "teachClasses", [gap])).error).toMatch(/doesn’t exist/);
+    expect(mockUpsert).not.toHaveBeenCalled();
+  });
+
   it("deletes rows that are no longer in the submitted list", async () => {
     mockExisting.mockResolvedValue({ data: [{ id: ITEM }, { id: OTHER }] });
     const { saveTeachItems } = await actions();

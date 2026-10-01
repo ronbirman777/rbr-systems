@@ -35,8 +35,10 @@ import {
   type TeachEditableItemKey,
   type TeachSettingsKey,
   type ClassMetadata,
+  RECURRENCE_MAX_EXCEPTIONS,
 } from "@/lib/teach/schemas";
 import { computeClassTimes } from "@/lib/teach/classTime";
+import { validateRecurrence } from "@/lib/teach/recurrence";
 import { DEFAULT_TEACH_PRESET } from "@/lib/teach/style";
 import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
 
@@ -272,7 +274,15 @@ export async function saveTeachItems(
     if (moduleKey === "teachClasses") {
       const times = computeClassTimes(parsed.data.metadata as ClassMetadata, tenant.timezone);
       if (!times.ok) return { error: `“${parsed.data.title}”: ${times.issues[0].message}` };
-      metadata = times.metadata as unknown as Record<string, unknown>;
+      // Recurring series: the rule and its exceptions are validated here;
+      // occurrences are never stored (they are expanded when read).
+      const rawExceptions = (raw as { metadata?: { exceptions?: unknown } })?.metadata?.exceptions;
+      if (rawExceptions && typeof rawExceptions === "object" && Object.keys(rawExceptions).length > RECURRENCE_MAX_EXCEPTIONS) {
+        return { error: `“${parsed.data.title}”: too many changed or cancelled dates on one class.` };
+      }
+      const recurrenceIssue = validateRecurrence(times.metadata, tenant.timezone);
+      if (recurrenceIssue) return { error: `“${parsed.data.title}”: ${recurrenceIssue.message}` };
+      metadata = { ...(times.metadata as unknown as Record<string, unknown>), occurrence: null };
       for (const w of times.warnings) warnings.push(`“${parsed.data.title}”: ${w.message}`);
     }
     rows.push({

@@ -11,7 +11,7 @@ import {
   type TeachItem,
   type TeachSettings,
 } from "./schemas";
-import { withDerivedClassTimes } from "./classTime";
+import { expandClassesForWindow, guestWindow } from "./recurrence";
 
 /**
  * Everything the Time to Teach Guest App renders. Built from the published
@@ -102,12 +102,12 @@ export function parsePublishedTeachSpace(space: PublishedTeachRow): TeachGuestDa
     heroImageRef,
     settings,
     nowInstant: new Date().toISOString(),
-    // Rows published before time model v1 have no instants yet: derive them
-    // in memory (in the Space's zone) so ordering and "ended" stay correct.
-    classes: parseTeachItems("teachClasses", itemsRaw.teachClasses).map((c) => ({
-      ...c,
-      metadata: withDerivedClassTimes(c.metadata, timezone),
-    })),
+    // One-off classes as stored (rows published before time model v1 get
+    // their instants derived in memory, in the Space's zone); recurring
+    // series are expanded here, server-side, into dated occurrences for a
+    // bounded window around today - the Guest App never sees a rule and
+    // never ships Temporal.
+    classes: expandClassesForWindow(parseTeachItems("teachClasses", itemsRaw.teachClasses), ...guestWindow(todayInTimezone(timezone)), timezone),
     availability: parseTeachItems("teachAvailability", itemsRaw.teachAvailability).filter((a) => a.metadata.enabled),
     readings: parseTeachItems("teachReadings", itemsRaw.teachReadings),
     audio: parseTeachItems("teachAudio", itemsRaw.teachAudio),

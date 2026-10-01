@@ -330,6 +330,69 @@ export const registrationSchema = z
   .default({ method: null, value: null, buttonLabel: null, whatsappTemplate: null });
 export type Registration = z.infer<typeof registrationSchema>;
 
+// ---------------------------------------------------------------------------
+// Recurring classes (src/lib/teach/recurrence.ts)
+//
+// A recurring class is ONE series row: the class's own fields are the
+// series definition (its startDate/startTime is the series start, DTSTART),
+// plus a structured recurrence rule and per-occurrence exceptions.
+// Occurrences are never stored - they are expanded on demand for a date
+// window. The rule is an RFC 5545 RRULE-compatible subset (FREQ, INTERVAL,
+// BYDAY, UNTIL, COUNT; WKST=MO) kept as JSON so the Studio never edits raw
+// RRULE strings; see toRRule() for the exact mapping.
+// ---------------------------------------------------------------------------
+
+export const RECURRENCE_FREQS = ["daily", "weekly", "monthly"] as const;
+export type RecurrenceFreq = (typeof RECURRENCE_FREQS)[number];
+export const RECURRENCE_MAX_INTERVAL = 99;
+export const RECURRENCE_MAX_COUNT = 730;
+export const RECURRENCE_MAX_EXCEPTIONS = 400;
+
+export const recurrenceEndSchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("never") }),
+  /** Inclusive local date (in the class's zone). */
+  z.object({ type: z.literal("until"), until: isoDate }),
+  z.object({ type: z.literal("count"), count: z.number().int().min(1).max(RECURRENCE_MAX_COUNT) }),
+]);
+export type RecurrenceEnd = z.infer<typeof recurrenceEndSchema>;
+
+export const recurrenceSchema = z.object({
+  freq: z.enum(RECURRENCE_FREQS),
+  interval: z.number().int().min(1).max(RECURRENCE_MAX_INTERVAL).catch(1).default(1),
+  /** Weekly only. 0 = Sunday ... 6 = Saturday. Empty = the start date's weekday. */
+  byWeekday: z
+    .array(z.number().int().min(0).max(6))
+    .max(7)
+    .catch([])
+    .default([])
+    .transform((d) => [...new Set(d)].sort((a, b) => a - b)),
+  end: recurrenceEndSchema.catch({ type: "never" }).default({ type: "never" }),
+});
+export type Recurrence = z.infer<typeof recurrenceSchema>;
+
+/**
+ * One occurrence's exception, keyed by that occurrence's ORIGINAL local
+ * start date (iCalendar RECURRENCE-ID semantics), so it survives the
+ * occurrence being moved. Unset fields inherit from the series.
+ */
+export const occurrenceExceptionSchema = z.object({
+  cancelled: z.boolean().catch(false).default(false),
+  startDate: isoDate.nullable().catch(null).default(null),
+  startTime: hhmm.nullable().catch(null).default(null),
+  endTime: hhmm.nullable().catch(null).default(null),
+  location: optText(200),
+});
+export type OccurrenceException = z.infer<typeof occurrenceExceptionSchema>;
+
+/** Present only on generated occurrences (never stored; reset on save). */
+export const occurrenceInfoSchema = z.object({
+  seriesId: z.string().max(80),
+  originalDate: isoDate,
+  /** The series' local time fell in a DST gap on this date; shifted forward (RFC 5545). */
+  dstShifted: z.boolean().default(false),
+});
+export type OccurrenceInfo = z.infer<typeof occurrenceInfoSchema>;
+
 export const classMetadataSchema = z.object({
   startDate: isoDate,
   startTime: hhmm,
@@ -357,6 +420,15 @@ export const classMetadataSchema = z.object({
   startAmbiguous: z.boolean().catch(false).default(false),
   endAmbiguous: z.boolean().catch(false).default(false),
   timeModelVersion: z.number().int().nullable().catch(null).default(null),
+  // --- Recurrence (null = one-off class, exactly as before) ---
+  recurrence: recurrenceSchema.nullable().catch(null).default(null),
+  exceptions: z
+    .record(isoDate, occurrenceExceptionSchema)
+    .catch({})
+    .default({})
+    // Never fail a stored row on read; saves reject more than the cap.
+    .transform((e) => (Object.keys(e).length <= RECURRENCE_MAX_EXCEPTIONS ? e : Object.fromEntries(Object.entries(e).slice(0, RECURRENCE_MAX_EXCEPTIONS)))),
+  occurrence: occurrenceInfoSchema.nullable().catch(null).default(null),
 });
 export type ClassMetadata = z.infer<typeof classMetadataSchema>;
 
