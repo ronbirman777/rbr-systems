@@ -36,6 +36,7 @@ import {
   type TeachSettingsKey,
   type ClassMetadata,
   RECURRENCE_MAX_EXCEPTIONS,
+  isInvalidStored,
 } from "@/lib/teach/schemas";
 import { computeClassTimes } from "@/lib/teach/classTime";
 import { validateRecurrence } from "@/lib/teach/recurrence";
@@ -282,7 +283,16 @@ export async function saveTeachItems(
       }
       const recurrenceIssue = validateRecurrence(times.metadata, tenant.timezone);
       if (recurrenceIssue) return { error: `“${parsed.data.title}”: ${recurrenceIssue.message}` };
-      metadata = { ...(times.metadata as unknown as Record<string, unknown>), occurrence: null };
+      // Malformed stored recurrence data is never normalized here (e.g. into
+      // a one-off on an unrelated save): it is written back exactly as it
+      // was until the teacher repairs it in the Studio.
+      const keepRaw = (v: unknown) => (isInvalidStored(v) ? v.raw : v);
+      const recurrenceOut = keepRaw(times.metadata.recurrence);
+      const exceptionsOut = keepRaw(times.metadata.exceptions);
+      if ((JSON.stringify([recurrenceOut, exceptionsOut]) ?? "").length > 40_000) {
+        return { error: `“${parsed.data.title}”: its repeat settings are damaged and too large to keep - please repair them.` };
+      }
+      metadata = { ...(times.metadata as unknown as Record<string, unknown>), recurrence: recurrenceOut, exceptions: exceptionsOut, occurrence: null };
       for (const w of times.warnings) warnings.push(`“${parsed.data.title}”: ${w.message}`);
     }
     rows.push({

@@ -356,17 +356,19 @@ export const recurrenceEndSchema = z.discriminatedUnion("type", [
 ]);
 export type RecurrenceEnd = z.infer<typeof recurrenceEndSchema>;
 
+// Strict on purpose: a value that is present but wrong makes the WHOLE rule
+// invalid (see storedOrInvalid) instead of being quietly "fixed". Only
+// missing fields take defaults.
 export const recurrenceSchema = z.object({
   freq: z.enum(RECURRENCE_FREQS),
-  interval: z.number().int().min(1).max(RECURRENCE_MAX_INTERVAL).catch(1).default(1),
+  interval: z.number().int().min(1).max(RECURRENCE_MAX_INTERVAL).default(1),
   /** Weekly only. 0 = Sunday ... 6 = Saturday. Empty = the start date's weekday. */
   byWeekday: z
     .array(z.number().int().min(0).max(6))
     .max(7)
-    .catch([])
     .default([])
     .transform((d) => [...new Set(d)].sort((a, b) => a - b)),
-  end: recurrenceEndSchema.catch({ type: "never" }).default({ type: "never" }),
+  end: recurrenceEndSchema.default({ type: "never" }),
 });
 export type Recurrence = z.infer<typeof recurrenceSchema>;
 
@@ -376,10 +378,10 @@ export type Recurrence = z.infer<typeof recurrenceSchema>;
  * occurrence being moved. Unset fields inherit from the series.
  */
 export const occurrenceExceptionSchema = z.object({
-  cancelled: z.boolean().catch(false).default(false),
-  startDate: isoDate.nullable().catch(null).default(null),
-  startTime: hhmm.nullable().catch(null).default(null),
-  endTime: hhmm.nullable().catch(null).default(null),
+  cancelled: z.boolean().default(false),
+  startDate: isoDate.nullable().default(null),
+  startTime: hhmm.nullable().default(null),
+  endTime: hhmm.nullable().default(null),
   location: optText(200),
 });
 export type OccurrenceException = z.infer<typeof occurrenceExceptionSchema>;
@@ -388,10 +390,33 @@ export type OccurrenceException = z.infer<typeof occurrenceExceptionSchema>;
 export const occurrenceInfoSchema = z.object({
   seriesId: z.string().max(80),
   originalDate: isoDate,
-  /** The series' local time fell in a DST gap on this date; shifted forward (RFC 5545). */
-  dstShifted: z.boolean().default(false),
 });
 export type OccurrenceInfo = z.infer<typeof occurrenceInfoSchema>;
+
+/**
+ * Stored recurrence data that is present but malformed. It is never
+ * reinterpreted (e.g. as a one-off class): the Guest App does not show the
+ * series, the Studio flags it for repair, and saves write `raw` back
+ * unchanged until the teacher repairs it explicitly.
+ */
+export type InvalidStored = { status: "invalid"; raw: unknown };
+export function isInvalidStored(v: unknown): v is InvalidStored {
+  return Boolean(v) && typeof v === "object" && (v as { status?: unknown }).status === "invalid" && "raw" in (v as object);
+}
+/** Absent/null -> `empty`; valid -> parsed; anything else -> InvalidStored (raw kept verbatim). */
+function storedOrInvalid<S extends z.ZodTypeAny, E>(schema: S, empty: E) {
+  return z.unknown().optional().transform((v): z.output<S> | E | InvalidStored => {
+    if (v === undefined || v === null) return empty;
+    // A marker coming back from the Studio unchanged: re-check its raw value (no nesting).
+    const raw = isInvalidStored(v) ? v.raw : v;
+    if (raw === undefined || raw === null) return empty;
+    const r = schema.safeParse(raw);
+    return r.success ? r.data : { status: "invalid", raw };
+  });
+}
+export const exceptionsSchema = z
+  .record(isoDate, occurrenceExceptionSchema)
+  .refine((e) => Object.keys(e).length <= RECURRENCE_MAX_EXCEPTIONS, "Too many changed dates.");
 
 export const classMetadataSchema = z.object({
   startDate: isoDate,
@@ -421,13 +446,10 @@ export const classMetadataSchema = z.object({
   endAmbiguous: z.boolean().catch(false).default(false),
   timeModelVersion: z.number().int().nullable().catch(null).default(null),
   // --- Recurrence (null = one-off class, exactly as before) ---
-  recurrence: recurrenceSchema.nullable().catch(null).default(null),
-  exceptions: z
-    .record(isoDate, occurrenceExceptionSchema)
-    .catch({})
-    .default({})
-    // Never fail a stored row on read; saves reject more than the cap.
-    .transform((e) => (Object.keys(e).length <= RECURRENCE_MAX_EXCEPTIONS ? e : Object.fromEntries(Object.entries(e).slice(0, RECURRENCE_MAX_EXCEPTIONS)))),
+  // Absent (every class saved before recurrence existed) -> null, exactly as
+  // before. Present but malformed -> InvalidStored, never a silent one-off.
+  recurrence: storedOrInvalid(recurrenceSchema, null),
+  exceptions: storedOrInvalid(exceptionsSchema, {} as Record<string, OccurrenceException>),
   occurrence: occurrenceInfoSchema.nullable().catch(null).default(null),
 });
 export type ClassMetadata = z.infer<typeof classMetadataSchema>;

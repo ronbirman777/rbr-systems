@@ -4,7 +4,7 @@ import { useId } from "react";
 import type { TeachContact, TeachItem } from "@/lib/teach/schemas";
 import { buildRegistrationCta, venueLinks, safeHttpUrl, availabilityCtas, formatShortDate } from "@/lib/teach/links";
 import { durationMinutes, describeAvailability } from "@/lib/teach/schedule";
-import { recurrenceSummary } from "@/lib/teach/recurrenceText";
+import { recurrenceSummary, validRule } from "@/lib/teach/recurrenceText";
 import { TeachIcon, type TeachIconName } from "./teach-icons";
 import { TeachImage } from "./teach-image";
 import { DisplayHeading, Eyebrow, PillLink } from "./teach-ui";
@@ -134,15 +134,10 @@ export function TeachClassCard({
         {expanded ? (
           <div className="tt-expand px-4 pb-4 flex flex-col gap-4">
             <div className="h-px" style={{ background: "var(--tt-line)" }} />
-            {m.occurrence && m.recurrence ? (
+            {m.occurrence && validRule(m) ? (
               <p className="flex items-center gap-2 text-[12.5px] font-medium" style={{ color: "var(--rbr-primary)" }} data-testid="class-repeats">
                 <TeachIcon name="calendar" size={15} />
-                Repeats {recurrenceSummary(m.recurrence, m.occurrence.originalDate, { withEnd: false }).replace(/^Every/, "every")}
-              </p>
-            ) : null}
-            {m.occurrence?.dstShifted ? (
-              <p className="text-[12px]" style={{ color: "var(--rbr-text-muted)" }}>
-                The clocks change on this day, so the usual time moves by an hour — the times shown are correct local time.
+                Repeats {recurrenceSummary(validRule(m)!, m.occurrence.originalDate, { withEnd: false }).replace(/^Every/, "every")}
               </p>
             ) : null}
             {item.description ? (

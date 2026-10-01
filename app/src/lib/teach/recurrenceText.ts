@@ -1,4 +1,4 @@
-import type { Recurrence } from "./schemas";
+import { isInvalidStored, type ClassMetadata, type OccurrenceException, type Recurrence } from "./schemas";
 
 /**
  * Human-readable recurrence text. Deliberately free of Temporal (and any
@@ -51,4 +51,28 @@ export type RepeatPreset = "none" | "daily" | "weekly" | "monthly" | "custom";
 export function repeatPresetOf(rule: Recurrence | null): RepeatPreset {
   if (!rule) return "none";
   return rule.interval === 1 ? rule.freq : "custom";
+}
+
+// ---------------------------------------------------------------------------
+// Safe accessors: stored recurrence data may be malformed (InvalidStored).
+// ---------------------------------------------------------------------------
+
+/** The class's repeat rule, or null when it has none OR it is malformed. */
+export function validRule(meta: Pick<ClassMetadata, "recurrence">): Recurrence | null {
+  return meta.recurrence && !isInvalidStored(meta.recurrence) ? meta.recurrence : null;
+}
+
+/** The class's per-date changes ({} when none or malformed). */
+export function validExceptions(meta: Pick<ClassMetadata, "exceptions">): Record<string, OccurrenceException> {
+  return isInvalidStored(meta.exceptions) ? {} : meta.exceptions;
+}
+
+/**
+ * Which stored recurrence parts are malformed and need repair in the Studio.
+ * null = nothing to repair (including every ordinary one-off class).
+ */
+export function recurrenceProblem(meta: Pick<ClassMetadata, "recurrence" | "exceptions">): { recurrence: boolean; exceptions: boolean } | null {
+  const recurrence = isInvalidStored(meta.recurrence);
+  const exceptions = isInvalidStored(meta.exceptions);
+  return recurrence || exceptions ? { recurrence, exceptions } : null;
 }

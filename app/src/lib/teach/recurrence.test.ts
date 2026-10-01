@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { classMetadataSchema, parseTeachItem, type TeachItem } from "./schemas";
-import { expandClassOccurrences, expandClassesForWindow, toRRule, upcomingOccurrenceDates, dstShiftedDates, validateRecurrence } from "./recurrence";
-import { recurrenceSummary, repeatPresetOf } from "./recurrenceText";
+import { expandClassOccurrences, expandClassesForWindow, toRRule, upcomingOccurrenceDates, dstConflicts, validateRecurrence } from "./recurrence";
+import { recurrenceProblem, recurrenceSummary, repeatPresetOf, validRule } from "./recurrenceText";
+import { isInvalidStored } from "./schemas";
 import { buildScheduleDays, classesOn, nextUpcomingClass, sortClasses } from "./schedule";
 import { parsePublishedTeachSpace } from "./guestData";
 import { todayInTimezone } from "@/lib/timezone";
@@ -96,16 +97,36 @@ describe("local wall time is preserved across DST (never fixed UTC steps)", () =
     ]);
   });
 
-  it("DST spring-forward: a time in the gap shifts forward by the gap, flagged; the next week is back to normal", () => {
+  it("DST spring-forward: a nonexistent local time is NEVER generated or moved; it is reported instead", () => {
     const c = mk("gap", { startDate: "2027-03-07", startTime: "02:30", endTime: "03:30", timezone: "America/New_York", recurrence: { freq: "weekly", byWeekday: [0] } });
+    const before = JSON.stringify(c.metadata);
     const occ = expandClassOccurrences(c, "2027-03-07", "2027-03-21", "UTC");
-    expect(at(occ)).toEqual([
-      "2027-03-07 02:30 2027-03-07T07:30:00Z -05:00",
-      "2027-03-14 03:30 2027-03-14T07:30:00Z -04:00",
-      "2027-03-21 02:30 2027-03-21T06:30:00Z -04:00",
-    ]);
-    expect(occ.map((o) => o.metadata.occurrence?.dstShifted)).toEqual([false, true, false]);
-    expect(dstShiftedDates(c.metadata, "2027-03-01", "2027-04-01", "America/New_York")).toEqual(["2027-03-14"]);
+    expect(at(occ)).toEqual(["2027-03-07 02:30 2027-03-07T07:30:00Z -05:00", "2027-03-21 02:30 2027-03-21T06:30:00Z -04:00"]);
+    // Nothing at all on the gap day - in particular no 03:30 class.
+    expect(occ.some((o) => o.metadata.startDate === "2027-03-14" || o.metadata.occurrence?.originalDate === "2027-03-14")).toBe(false);
+    expect(occ.some((o) => o.metadata.startTime === "03:30")).toBe(false);
+    expect(dstConflicts(c.metadata, "2027-03-01", "2027-04-01", "America/New_York")).toEqual([{ originalDate: "2027-03-14", date: "2027-03-14", time: "02:30", field: "start" }]);
+    expect(JSON.stringify(c.metadata)).toBe(before); // the series itself is untouched
+  });
+
+  it("an END time inside the gap also blocks that occurrence (never shortened or shifted)", () => {
+    const c = mk("gapEnd", { startDate: "2027-03-07", startTime: "01:30", endTime: "02:30", timezone: "America/New_York", recurrence: { freq: "weekly", byWeekday: [0] } });
+    expect(dates(expandClassOccurrences(c, "2027-03-07", "2027-03-21", "UTC"))).toEqual(["2027-03-07", "2027-03-21"]);
+    expect(dstConflicts(c.metadata, "2027-03-01", "2027-04-01", "America/New_York")).toEqual([{ originalDate: "2027-03-14", date: "2027-03-14", time: "02:30", field: "end" }]);
+  });
+
+  it("the teacher resolves a gap date with an exception: cancel it, or move just that date", () => {
+    const base = { startDate: "2027-03-07", startTime: "02:30", endTime: "03:30", timezone: "America/New_York", recurrence: { freq: "weekly", byWeekday: [0] } };
+    const cancelled = mk("g1", { ...base, exceptions: { "2027-03-14": { cancelled: true } } });
+    expect(dstConflicts(cancelled.metadata, "2027-03-01", "2027-04-01", "America/New_York")).toEqual([]);
+    expect(dates(expandClassOccurrences(cancelled, "2027-03-07", "2027-03-21", "UTC"))).toEqual(["2027-03-07", "2027-03-21"]);
+    const moved = mk("g2", { ...base, exceptions: { "2027-03-14": { startTime: "03:30", endTime: "04:30" } } });
+    expect(dstConflicts(moved.metadata, "2027-03-01", "2027-04-01", "America/New_York")).toEqual([]);
+    expect(at(expandClassOccurrences(moved, "2027-03-14", "2027-03-14", "UTC"))).toEqual(["2027-03-14 03:30 2027-03-14T07:30:00Z -04:00"]);
+    expect(validateRecurrence(moved.metadata, "UTC")).toBeNull();
+    // Unresolved gaps are a warning, not a save error; a teacher-entered time in the gap IS an error.
+    expect(validateRecurrence(mk("g3", base).metadata, "UTC")).toBeNull();
+    expect(validateRecurrence(mk("g4", { ...base, exceptions: { "2027-03-14": { startTime: "02:45", endTime: "04:00" } } }).metadata, "UTC")?.message).toMatch(/doesn’t exist/);
   });
 
   it("DST fall-back: an ambiguous time uses the earlier instant and is flagged", () => {
@@ -190,21 +211,68 @@ describe("stored data and backward compatibility", () => {
     expect(row?.metadata.recurrence).toBeNull();
     expect(row?.metadata.exceptions).toEqual({});
     expect(row?.metadata.occurrence).toBeNull();
+    expect(recurrenceProblem(row!.metadata)).toBeNull();
+    expect(expandClassOccurrences(row!, "2025-10-01", "2025-10-31", "UTC")).toEqual([row]);
   });
-  it("garbage recurrence degrades to a one-off class instead of dropping the row", () => {
-    const row = parseTeachItem("teachClasses", { id: "c", title: "Flow", metadata: { startDate: "2025-10-14", startTime: "07:30", recurrence: { freq: "hourly" }, exceptions: "x" } });
-    expect(row).not.toBeNull();
-    expect(row?.metadata.recurrence).toBeNull();
-    expect(row?.metadata.exceptions).toEqual({});
+  it("malformed recurrence is preserved verbatim and flagged - never reinterpreted as a one-off", () => {
+    const raw = { freq: "hourly", interval: 3 };
+    const row = parseTeachItem("teachClasses", { id: "c", title: "Flow", metadata: { startDate: "2025-10-14", startTime: "07:30", recurrence: raw } });
+    expect(row).not.toBeNull(); // the row is kept (Guest App and Studio stay safe)
+    expect(isInvalidStored(row!.metadata.recurrence)).toBe(true);
+    expect((row!.metadata.recurrence as { raw: unknown }).raw).toEqual(raw);
+    expect(validRule(row!.metadata)).toBeNull();
+    expect(recurrenceProblem(row!.metadata)).toEqual({ recurrence: true, exceptions: false });
+    // Not shown as a one-off at its start date (or anywhere).
+    expect(expandClassOccurrences(row!, "2025-01-01", "2030-12-31", "UTC")).toEqual([]);
   });
-  it("weekdays are de-duplicated and sorted; bad interval falls back to 1", () => {
-    const m = classMetadataSchema.parse({ startDate: "2026-10-01", startTime: "08:00", recurrence: { freq: "weekly", byWeekday: [3, 0, 3], interval: 0 } });
+
+  it("partly wrong values make the rule invalid instead of being quietly 'fixed'", () => {
+    for (const bad of [{ freq: "weekly", interval: 0 }, { freq: "weekly", byWeekday: [9] }, { freq: "daily", end: { type: "count", count: -1 } }, "weekly", 42]) {
+      const m = classMetadataSchema.parse({ startDate: "2026-10-01", startTime: "08:00", recurrence: bad });
+      expect(isInvalidStored(m.recurrence), JSON.stringify(bad)).toBe(true);
+    }
+  });
+
+  it("malformed exceptions are preserved and hide the series (a cancelled date must not reappear)", () => {
+    const rawEx = { "2026-10-11": { cancelled: "yes" } };
+    const c = mk("e", { startDate: "2026-10-04", startTime: "08:00", timezone: "UTC", recurrence: { freq: "weekly", byWeekday: [0] }, exceptions: rawEx });
+    expect(isInvalidStored(c.metadata.exceptions)).toBe(true);
+    expect((c.metadata.exceptions as unknown as { raw: unknown }).raw).toEqual(rawEx);
+    expect(recurrenceProblem(c.metadata)).toEqual({ recurrence: false, exceptions: true });
+    expect(expandClassOccurrences(c, "2026-10-01", "2026-10-31", "UTC")).toEqual([]);
+  });
+
+  it("a marker sent back by the Studio is re-read from its raw value (no nesting, repairs take effect)", () => {
+    const once = classMetadataSchema.parse({ startDate: "2026-10-01", startTime: "08:00", recurrence: { freq: "x" } });
+    const twice = classMetadataSchema.parse({ startDate: "2026-10-01", startTime: "08:00", recurrence: once.recurrence });
+    expect(twice.recurrence).toEqual({ status: "invalid", raw: { freq: "x" } });
+  });
+
+  it("legitimate weekdays are only de-duplicated and ordered", () => {
+    const m = classMetadataSchema.parse({ startDate: "2026-10-01", startTime: "08:00", recurrence: { freq: "weekly", byWeekday: [3, 0, 3] } });
     expect(m.recurrence).toEqual({ freq: "weekly", interval: 1, byWeekday: [0, 3], end: { type: "never" } });
+  });
+
+  it("the Guest App stays safe: a damaged series is skipped, other classes still render", () => {
+    const tz = "Asia/Jerusalem";
+    const today = todayInTimezone(tz);
+    const space = {
+      name: "Maya",
+      timezone: tz,
+      theme: {},
+      enabled_modules: [],
+      modules: { teach: { settings: {}, items: { teachClasses: [
+        { id: "bad", title: "Broken", metadata: { startDate: today, startTime: "06:00", timezone: tz, recurrence: { freq: "sometimes" } } },
+        { id: "ok", title: "One-off", metadata: { startDate: today, startTime: "07:00", timezone: tz } },
+      ] } } },
+    };
+    const data = parsePublishedTeachSpace(space as never);
+    expect(data.classes.map((c) => c.id)).toEqual(["ok"]);
   });
 });
 
 describe("human text and RRULE export", () => {
-  const r = (x: Record<string, unknown>) => classMetadataSchema.parse({ startDate: "2026-10-05", startTime: "08:00", recurrence: x }).recurrence!;
+  const r = (x: Record<string, unknown>) => validRule(classMetadataSchema.parse({ startDate: "2026-10-05", startTime: "08:00", recurrence: x }))!;
   it("summaries", () => {
     expect(recurrenceSummary(r({ freq: "weekly", byWeekday: [0, 3] }), "2026-10-05")).toBe("Every week on Sun, Wed · No end date");
     expect(recurrenceSummary(r({ freq: "weekly", interval: 2, byWeekday: [1], end: { type: "until", until: "2027-12-31" } }), "2026-10-05")).toBe("Every 2 weeks on Mon · Until 31 Dec 2027");

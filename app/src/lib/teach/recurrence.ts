@@ -1,6 +1,6 @@
 import { Temporal } from "temporal-polyfill";
 import type { ClassMetadata, Recurrence, TeachItem } from "./schemas";
-import { effectiveWeekdays } from "./recurrenceText";
+import { effectiveWeekdays, validExceptions, validRule } from "./recurrenceText";
 import { isValidTimeZone, resolveLocalTime, withDerivedClassTimes } from "./classTime";
 
 /**
@@ -20,9 +20,17 @@ import { isValidTimeZone, resolveLocalTime, withDerivedClassTimes } from "./clas
  *
  * Wall time is preserved across DST: every occurrence is resolved from its
  * own LOCAL date + time in the class's zone with Temporal - never by adding
- * fixed UTC durations. A local time that falls in a DST gap is shifted
- * forward by the gap (RFC 5545 / Temporal "compatible"); one that happens
- * twice uses the earlier instant, matching single classes.
+ * fixed UTC durations. Same canonical-time rules as single classes
+ * (classTime.ts):
+ *  - a local time that does NOT exist on a date (DST gap) is invalid: that
+ *    occurrence is NOT generated - never silently moved to another time.
+ *    dstConflicts() reports it so the Studio can ask the teacher to move or
+ *    cancel that one date (an exception); the series itself is unchanged.
+ *  - a local time that happens twice (DST overlap) uses the earlier instant,
+ *    flagged as ambiguous.
+ *
+ * Malformed stored rules/exceptions (InvalidStored) are never reinterpreted:
+ * such a series yields no occurrences and the Studio flags it for repair.
  *
  * Server + Studio only (it imports Temporal); the Guest App receives
  * already-expanded occurrences from parsePublishedTeachSpace.
@@ -111,21 +119,40 @@ export function* ruleDates(rule: Recurrence, startIso: string, fromIso: string):
   }
 }
 
-/** Resolve one occurrence's local wall time; DST gaps shift forward, overlaps use the earlier instant. */
-export function resolveOccurrenceTime(dateIso: string, time: string, timeZone: string) {
-  const pdt = Temporal.PlainDateTime.from(`${dateIso}T${time}`);
-  const zdt = pdt.toZonedDateTime(timeZone, { disambiguation: "compatible" });
-  const later = pdt.toZonedDateTime(timeZone, { disambiguation: "later" });
-  const wall = zdt.toPlainDateTime();
+export type DstConflict = {
+  /** The occurrence's original date (the exception key used to fix it). */
+  originalDate: string;
+  /** The local date/time that does not exist. */
+  date: string;
+  time: string;
+  field: "start" | "end";
+};
+
+type Effective = { startDate: string; startTime: string; endDate: string; endTime: string | null; location: string | null };
+
+/** One occurrence's local date/times after its exception (if any) is applied. */
+function effectiveOccurrence(meta: ClassMetadata, originalDate: string, span: number): Effective {
+  const ex = validExceptions(meta)[originalDate];
+  const startDate = ex?.startDate ?? originalDate;
   return {
-    instant: zdt.toInstant().toString(),
-    offset: zdt.offset,
-    /** Effective local date/time (differs from the request only in a DST gap). */
-    date: wall.toPlainDate().toString(),
-    time: wall.toPlainTime().toString({ smallestUnit: "minute" }),
-    shifted: !wall.equals(pdt),
-    ambiguous: zdt.epochNanoseconds !== later.epochNanoseconds && wall.equals(pdt),
+    startDate,
+    startTime: ex?.startTime ?? meta.startTime,
+    endDate: iso(PD(startDate).add({ days: span })),
+    endTime: ex?.endTime ?? meta.endTime,
+    location: ex?.location ?? meta.location,
   };
+}
+
+/** Local start/end that fall in a DST gap for this occurrence (empty = valid). */
+function gapsOf(originalDate: string, e: Effective, tz: string): DstConflict[] {
+  const out: DstConflict[] = [];
+  const s = resolveLocalTime(e.startDate, e.startTime, tz);
+  if (!s.ok && s.reason === "nonexistent") out.push({ originalDate, date: e.startDate, time: e.startTime, field: "start" });
+  if (e.endTime) {
+    const en = resolveLocalTime(e.endDate, e.endTime, tz);
+    if (!en.ok && en.reason === "nonexistent") out.push({ originalDate, date: e.endDate, time: e.endTime, field: "end" });
+  }
+  return out;
 }
 
 function spanDays(meta: ClassMetadata): number {
@@ -140,46 +167,49 @@ function spanDays(meta: ClassMetadata): number {
  */
 export function expandClassOccurrences(item: TeachClass, fromDate: string, toDate: string, fallbackTimeZone: string): TeachClass[] {
   const meta = item.metadata;
-  if (!meta.recurrence) return [item];
+  if (meta.recurrence === null) return [item]; // one-off class: unchanged
+  const rule = validRule(meta);
+  // Malformed stored rule or exceptions: show nothing rather than guess
+  // (a one-off at the start date, or cancelled dates reappearing).
+  if (!rule || validExceptions(meta) !== meta.exceptions) return [];
   const tz = meta.timezone && isValidTimeZone(meta.timezone) ? meta.timezone : fallbackTimeZone;
   const span = spanDays(meta);
   const baseFrom = iso(PD(fromDate).subtract({ days: span + MOVE_MARGIN_DAYS }));
   const baseTo = PD(toDate).add({ days: MOVE_MARGIN_DAYS });
+  const exceptions = validExceptions(meta);
   const out: TeachClass[] = [];
 
-  for (const originalDate of ruleDates(meta.recurrence, meta.startDate, baseFrom)) {
+  for (const originalDate of ruleDates(rule, meta.startDate, baseFrom)) {
     if (Temporal.PlainDate.compare(PD(originalDate), baseTo) > 0) break;
-    const ex = meta.exceptions[originalDate];
-    if (ex?.cancelled) continue;
-    const startDate = ex?.startDate ?? originalDate;
-    const startTime = ex?.startTime ?? meta.startTime;
-    const endTime = ex?.endTime ?? meta.endTime;
-    const start = resolveOccurrenceTime(startDate, startTime, tz);
-    const endDate = iso(PD(start.date).add({ days: span }));
-    const end = endTime ? resolveOccurrenceTime(endDate, endTime, tz) : null;
-    const lastDate = end ? end.date : start.date;
-    if (lastDate < fromDate || start.date > toDate) continue;
-    const endsAt = end && Date.parse(end.instant) > Date.parse(start.instant) ? end : null;
+    if (exceptions[originalDate]?.cancelled) continue;
+    const e = effectiveOccurrence(meta, originalDate, span);
+    const start = resolveLocalTime(e.startDate, e.startTime, tz);
+    const end = e.endTime ? resolveLocalTime(e.endDate, e.endTime, tz) : null;
+    // A nonexistent local time is invalid: never generate a shifted class.
+    if (!start.ok || (end && !end.ok)) continue;
+    const lastDate = end ? e.endDate : e.startDate;
+    if (lastDate < fromDate || e.startDate > toDate) continue;
+    const endOk = end && end.ok && Date.parse(end.instant) > Date.parse(start.instant) ? end : null;
 
     out.push({
       ...item,
       id: `${item.id}__${originalDate}`,
       metadata: {
         ...meta,
-        startDate: start.date,
-        startTime: start.time,
-        endDate: span > 0 ? (endsAt?.date ?? endDate) : null,
-        endTime: endsAt ? endsAt.time : null,
-        location: ex?.location ?? meta.location,
+        startDate: e.startDate,
+        startTime: e.startTime,
+        endDate: span > 0 && endOk ? e.endDate : null,
+        endTime: endOk ? e.endTime : null,
+        location: e.location,
         timezone: tz,
         startsAt: start.instant,
-        endsAt: endsAt?.instant ?? null,
+        endsAt: endOk ? endOk.instant : null,
         startOffset: start.offset,
-        endOffset: endsAt?.offset ?? null,
+        endOffset: endOk ? endOk.offset : null,
         startAmbiguous: start.ambiguous,
-        endAmbiguous: endsAt?.ambiguous ?? false,
+        endAmbiguous: endOk ? endOk.ambiguous : false,
         exceptions: {},
-        occurrence: { seriesId: item.id, originalDate, dstShifted: start.shifted || Boolean(end?.shifted) },
+        occurrence: { seriesId: item.id, originalDate },
       },
     });
   }
@@ -206,9 +236,10 @@ export function guestWindow(todayIso: string): [string, string] {
 
 /** The next `limit` occurrence dates from `fromDate` (Studio preview list), including cancelled ones. */
 export function upcomingOccurrenceDates(meta: ClassMetadata, fromDate: string, limit: number): string[] {
-  if (!meta.recurrence) return [];
+  const rule = validRule(meta);
+  if (!rule) return [];
   const out: string[] = [];
-  for (const d of ruleDates(meta.recurrence, meta.startDate, fromDate)) {
+  for (const d of ruleDates(rule, meta.startDate, fromDate)) {
     if (d < fromDate) continue;
     out.push(d);
     if (out.length >= limit) break;
@@ -216,14 +247,21 @@ export function upcomingOccurrenceDates(meta: ClassMetadata, fromDate: string, l
   return out;
 }
 
-/** Local dates where the series' wall time falls in a DST gap (shown as Studio notes). */
-export function dstShiftedDates(meta: ClassMetadata, fromDate: string, toDate: string, timeZone: string): string[] {
-  if (!meta.recurrence) return [];
-  const out: string[] = [];
-  for (const d of ruleDates(meta.recurrence, meta.startDate, fromDate)) {
+/**
+ * Occurrences in [fromDate, toDate] whose local start or end time does not
+ * exist (DST gap) and that the teacher has not yet resolved by moving or
+ * cancelling that date. These occurrences are not shown to guests.
+ */
+export function dstConflicts(meta: ClassMetadata, fromDate: string, toDate: string, timeZone: string): DstConflict[] {
+  const rule = validRule(meta);
+  if (!rule) return [];
+  const span = spanDays(meta);
+  const exceptions = validExceptions(meta);
+  const out: DstConflict[] = [];
+  for (const d of ruleDates(rule, meta.startDate, fromDate)) {
     if (d > toDate) break;
-    if (d < fromDate || meta.exceptions[d]?.cancelled) continue;
-    if (resolveOccurrenceTime(d, meta.exceptions[d]?.startTime ?? meta.startTime, timeZone).shifted) out.push(d);
+    if (d < fromDate || exceptions[d]?.cancelled) continue;
+    out.push(...gapsOf(d, effectiveOccurrence(meta, d, span), timeZone));
   }
   return out;
 }
@@ -232,16 +270,16 @@ export type RecurrenceIssue = { message: string };
 
 /** Save-time validation of a series (the series start itself is checked by computeClassTimes). */
 export function validateRecurrence(meta: ClassMetadata, fallbackTimeZone: string): RecurrenceIssue | null {
-  const rule = meta.recurrence;
-  if (!rule) return null;
+  const rule = validRule(meta);
+  if (!rule) return null; // none, or malformed (preserved and flagged, not rejected)
   if (rule.end.type === "until" && rule.end.until < meta.startDate) return { message: "The repeat end date is before the first class." };
   const tz = meta.timezone ?? fallbackTimeZone;
-  for (const [date, ex] of Object.entries(meta.exceptions)) {
-    if (ex.cancelled) continue;
-    const d = ex.startDate ?? date;
-    const t = ex.startTime ?? meta.startTime;
-    const r = resolveLocalTime(d, t, tz);
-    if (!r.ok && r.reason === "nonexistent") return { message: `The changed class on ${date} starts at ${t}, which doesn’t exist on ${d} in ${tz} (the clocks move forward).` };
+  const span = spanDays(meta);
+  for (const [date, ex] of Object.entries(validExceptions(meta))) {
+    if (ex.cancelled || (!ex.startDate && !ex.startTime && !ex.endTime)) continue;
+    // A teacher-entered change must itself be a real local time.
+    const [gap] = gapsOf(date, effectiveOccurrence(meta, date, span), tz);
+    if (gap) return { message: `The changed class on ${date} ${gap.field === "start" ? "starts" : "ends"} at ${gap.time}, which doesn’t exist on ${gap.date} in ${tz} (the clocks move forward).` };
   }
   return null;
 }

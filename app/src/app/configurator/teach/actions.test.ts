@@ -189,6 +189,36 @@ describe("Teach Studio server actions", () => {
     expect(mockUpsert).not.toHaveBeenCalled();
   });
 
+  it("an unrelated save never normalizes damaged recurrence data: it is written back verbatim", async () => {
+    mockTenantProductType.mockResolvedValue({ data: { product_type: "teach", timezone: "Asia/Jerusalem" } });
+    const { saveTeachItems } = await actions();
+    const rawRule = { freq: "hourly", interval: 0 };
+    const rawExceptions = { "2026-10-11": { cancelled: "yes" } };
+    // What the Studio sends back after loading the damaged row and editing only the title:
+    const loaded = klass({
+      title: "Renamed",
+      metadata: { ...klass().metadata, recurrence: { status: "invalid", raw: rawRule }, exceptions: { status: "invalid", raw: rawExceptions } },
+    });
+    expect((await saveTeachItems(TENANT, "teachClasses", [loaded])).error).toBeNull();
+    const saved = mockUpsert.mock.calls[0][0][0];
+    expect(saved.title).toBe("Renamed");
+    expect(saved.metadata.recurrence).toEqual(rawRule);
+    expect(saved.metadata.exceptions).toEqual(rawExceptions);
+    // ...and the same raw data sent directly (as stored) is also kept, not turned into a one-off.
+    mockUpsert.mockClear();
+    const direct = klass({ metadata: { ...klass().metadata, recurrence: rawRule } });
+    expect((await saveTeachItems(TENANT, "teachClasses", [direct])).error).toBeNull();
+    expect(mockUpsert.mock.calls[0][0][0].metadata.recurrence).toEqual(rawRule);
+  });
+
+  it("a class with no recurrence field still saves as a plain one-off", async () => {
+    mockTenantProductType.mockResolvedValue({ data: { product_type: "teach", timezone: "Asia/Jerusalem" } });
+    const { saveTeachItems } = await actions();
+    expect((await saveTeachItems(TENANT, "teachClasses", [klass()])).error).toBeNull();
+    const m = mockUpsert.mock.calls[0][0][0].metadata;
+    expect([m.recurrence, m.exceptions, m.occurrence]).toEqual([null, {}, null]);
+  });
+
   it("deletes rows that are no longer in the submitted list", async () => {
     mockExisting.mockResolvedValue({ data: [{ id: ITEM }, { id: OTHER }] });
     const { saveTeachItems } = await actions();

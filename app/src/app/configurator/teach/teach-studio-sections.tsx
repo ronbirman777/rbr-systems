@@ -4,9 +4,9 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { listTimezones } from "@/lib/timezone";
-import { computeClassTimes } from "@/lib/teach/classTime";
-import { recurrenceSummary, repeatPresetOf, weekdayOfDate, type RepeatPreset } from "@/lib/teach/recurrenceText";
-import { dstShiftedDates, upcomingOccurrenceDates } from "@/lib/teach/recurrence";
+import { computeClassTimes, resolveLocalTime } from "@/lib/teach/classTime";
+import { recurrenceProblem, recurrenceSummary, repeatPresetOf, validExceptions, validRule, weekdayOfDate, type RepeatPreset } from "@/lib/teach/recurrenceText";
+import { dstConflicts, upcomingOccurrenceDates, type DstConflict } from "@/lib/teach/recurrence";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
 import { MEDIA_BUCKET } from "@/lib/media/path";
 import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL, type SocialPlatform } from "@/lib/modules/socialLinks";
@@ -708,9 +708,12 @@ const UNIT_OPTIONS: { value: RecurrenceFreq; label: string }[] = [
 const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMetadata; setM: (patch: Partial<ClassMetadata>) => void }) {
-  const rule = meta.recurrence;
+  const rule = validRule(meta);
+  const problem = recurrenceProblem(meta);
+  const exceptions = validExceptions(meta);
   // Kept locally so "Custom" stays selected while its interval is still 1.
   const [preset, setPreset] = useState<RepeatPreset>(repeatPresetOf(rule));
+  const [moving, setMoving] = useState<string | null>(null);
   const tz = meta.timezone ?? api.timezone;
   const startWeekday = weekdayOfDate(meta.startDate);
 
@@ -734,8 +737,10 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
     const next = days.includes(d) ? days.filter((x) => x !== d) : [...days, d].sort((a, b) => a - b);
     if (next.length > 0) setRule({ byWeekday: next });
   };
+  // Per-date changes are only editable while the stored changes are valid.
   const setException = (date: string, patch: Partial<OccurrenceException> | null) => {
-    const next = { ...meta.exceptions };
+    if (problem?.exceptions) return;
+    const next = { ...exceptions };
     if (patch === null) delete next[date];
     else {
       const blank: OccurrenceException = { cancelled: false, startDate: null, startTime: null, endTime: null, location: null };
@@ -746,37 +751,70 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
 
   const today = api.todayIso;
   const fromDate = meta.startDate > today ? meta.startDate : today;
-  const upcoming = useMemo(() => (rule ? upcomingOccurrenceDates(meta, fromDate, 8) : []), [rule, meta, fromDate]);
-  const shifted = useMemo(() => (rule ? dstShiftedDates(meta, fromDate, addDaysIso(fromDate, 366), tz) : []), [rule, meta, fromDate, tz]);
-  const cancelledCount = Object.values(meta.exceptions).filter((e) => e.cancelled).length;
+  // Both helpers return [] for a missing or malformed rule.
+  const upcoming = useMemo(() => upcomingOccurrenceDates(meta, fromDate, 8), [meta, fromDate]);
+  const conflicts = useMemo(() => dstConflicts(meta, fromDate, addDaysIso(fromDate, 366), tz), [meta, fromDate, tz]);
+  const conflictDates = new Set(conflicts.map((c) => c.originalDate));
+  const cancelledCount = Object.values(exceptions).filter((e) => e.cancelled).length;
 
   return (
     <div className="flex flex-col gap-4 p-4 rounded-xl border border-[#E2DACD] bg-white" data-testid="recurrence-editor">
       <h3 className="text-[16px] text-[#192B21]" style={{ fontFamily: "var(--font-fraunces), serif" }}>
         Repeat
       </h3>
-      <Grid>
-        <SelectField label="Repeat" value={preset} onChange={choosePreset} options={REPEAT_OPTIONS} />
-        {rule && preset === "custom" ? (
-          <div className="grid grid-cols-[96px_1fr] gap-2 items-end">
-            <TextField
-              label="Repeat every"
-              inputMode="numeric"
-              value={String(rule.interval)}
-              onChange={(v) => {
-                const n = parseInt(v.replace(/\D/g, ""), 10);
-                setRule({ interval: Number.isFinite(n) ? Math.min(RECURRENCE_MAX_INTERVAL, Math.max(1, n)) : 1 });
-              }}
-            />
-            <SelectField
-              label="Unit"
-              value={rule.freq}
-              onChange={(f) => setRule({ freq: f, byWeekday: f === "weekly" ? (rule.byWeekday.length ? rule.byWeekday : [startWeekday]) : [] })}
-              options={UNIT_OPTIONS}
-            />
+
+      {problem?.recurrence ? (
+        <div className="flex flex-col gap-3 p-3 rounded-lg bg-[#F6E3E0] text-[#7A2E2E]" role="alert" data-testid="recurrence-repair">
+          <p className="text-[13px] font-semibold">This class’s repeat settings are damaged and need repair.</p>
+          <p className="text-[12.5px]">
+            Until you repair them, this class is not shown to guests. Nothing has been changed — the saved settings are kept exactly as they are until you choose:
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <StudioButton kind="outline" onClick={() => { setPreset("weekly"); setM({ recurrence: { freq: "weekly", interval: 1, byWeekday: [startWeekday], end: { type: "never" } } }); }}>
+              Set up the repeat again
+            </StudioButton>
+            <StudioButton kind="outline" onClick={() => { setPreset("none"); setM({ recurrence: null }); }}>
+              Make it a one-off class
+            </StudioButton>
           </div>
-        ) : null}
-      </Grid>
+        </div>
+      ) : null}
+      {problem?.exceptions ? (
+        <div className="flex flex-col gap-3 p-3 rounded-lg bg-[#F6E3E0] text-[#7A2E2E]" role="alert" data-testid="recurrence-exceptions-repair">
+          <p className="text-[13px] font-semibold">This class’s changed and cancelled dates are damaged.</p>
+          <p className="text-[12.5px]">To avoid showing a date you cancelled, this repeating class is not shown to guests until you clear them. Re-cancel any dates afterwards.</p>
+          <div>
+            <StudioButton kind="outline" onClick={() => setM({ exceptions: {} })}>
+              Clear the damaged date changes
+            </StudioButton>
+          </div>
+        </div>
+      ) : null}
+
+      {!problem?.recurrence ? (
+        <Grid>
+          <SelectField label="Repeat" value={preset} onChange={choosePreset} options={REPEAT_OPTIONS} />
+          {rule && preset === "custom" ? (
+            <div className="grid grid-cols-[96px_1fr] gap-2 items-end">
+              <TextField
+                label="Repeat every"
+                inputMode="numeric"
+                value={String(rule.interval)}
+                onChange={(v) => {
+                  const n = parseInt(v.replace(/\D/g, ""), 10);
+                  setRule({ interval: Number.isFinite(n) ? Math.min(RECURRENCE_MAX_INTERVAL, Math.max(1, n)) : 1 });
+                }}
+              />
+              <SelectField
+                label="Unit"
+                value={rule.freq}
+                onChange={(f) => setRule({ freq: f, byWeekday: f === "weekly" ? (rule.byWeekday.length ? rule.byWeekday : [startWeekday]) : [] })}
+                options={UNIT_OPTIONS}
+              />
+            </div>
+          ) : null}
+        </Grid>
+      ) : null}
 
       {rule?.freq === "weekly" ? (
         <div className="flex flex-col gap-1.5">
@@ -850,27 +888,53 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
             {recurrenceSummary(rule, meta.startDate)}
           </p>
           <Hint>Every class in this series uses the same time, place, price and registration details. The first class is on or after the start date above.</Hint>
-          {shifted.map((d) => (
-            <p key={d} className="text-[12.5px] px-3 py-2 rounded-lg bg-[#FBF1DC] text-[#7A5418]" role="status" data-testid="recurrence-dst-note">
-              On {formatShortDate(d)} the clocks go forward in {tz}, so {meta.startTime} doesn’t exist that day — this class will start an hour later.
-            </p>
+
+          {conflicts.map((c) => (
+            <DstConflictRow
+              key={`${c.originalDate}-${c.field}`}
+              conflict={c}
+              timeZone={tz}
+              meta={meta}
+              moving={moving === c.originalDate}
+              onMove={() => setMoving(moving === c.originalDate ? null : c.originalDate)}
+              onCancel={() => setException(c.originalDate, { cancelled: true })}
+              onApply={(startTime, endTime) => {
+                setException(c.originalDate, { startTime, endTime });
+                setMoving(null);
+              }}
+              editable={!problem?.exceptions}
+            />
           ))}
+
           <div className="flex flex-col gap-1.5" data-testid="recurrence-upcoming">
             <Label>Upcoming dates</Label>
             <ul className="flex flex-col divide-y divide-[#EFE8DC] rounded-lg border border-[#E2DACD]">
               {upcoming.map((d) => {
-                const cancelled = Boolean(meta.exceptions[d]?.cancelled);
+                const ex = exceptions[d];
+                const cancelled = Boolean(ex?.cancelled);
+                const changed = !cancelled && Boolean(ex && (ex.startDate || ex.startTime || ex.endTime || ex.location));
+                const blocked = conflictDates.has(d);
+                const shownDate = ex?.startDate ?? d;
+                const shownTime = ex?.startTime ?? meta.startTime;
                 return (
                   <li key={d} className="flex items-center justify-between gap-3 px-3 min-h-11">
                     <span className="text-[13px] flex flex-wrap items-center gap-x-2 min-w-0">
                       <span className={`whitespace-nowrap ${cancelled ? "line-through text-[#8C8A84]" : "text-[#192B21]"}`}>
-                        {formatShortDate(d)} · {meta.startTime}
+                        {formatShortDate(shownDate)} · {shownTime}
                       </span>
                       {cancelled ? <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8F3B3B]">Cancelled</span> : null}
+                      {changed ? <span className="text-[11px] font-semibold uppercase tracking-wider text-[#3F6A4C]">Changed</span> : null}
+                      {blocked ? <span className="text-[11px] font-semibold uppercase tracking-wider text-[#7A5418]">Needs attention</span> : null}
                     </span>
-                    <button type="button" onClick={() => setException(d, cancelled ? null : { cancelled: true })} className="shrink-0 text-[12px] font-semibold min-h-9 px-2 text-[#8F3B3B]" aria-label={`${cancelled ? "Restore" : "Cancel"} the class on ${formatShortDate(d)}`}>
-                      {cancelled ? "Restore" : "Cancel"}
-                    </button>
+                    {problem?.exceptions ? null : cancelled || changed ? (
+                      <button type="button" onClick={() => setException(d, null)} className="shrink-0 text-[12px] font-semibold min-h-9 px-2 text-[#8F3B3B]" aria-label={`Restore the class on ${formatShortDate(d)}`}>
+                        Restore
+                      </button>
+                    ) : (
+                      <button type="button" onClick={() => setException(d, { cancelled: true })} className="shrink-0 text-[12px] font-semibold min-h-9 px-2 text-[#8F3B3B]" aria-label={`Cancel the class on ${formatShortDate(d)}`}>
+                        Cancel
+                      </button>
+                    )}
                   </li>
                 );
               })}
@@ -881,6 +945,92 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
       ) : null}
     </div>
   );
+}
+
+/** One occurrence whose local time doesn't exist (DST gap): never auto-moved; the teacher moves or cancels it. */
+function DstConflictRow({
+  conflict,
+  timeZone,
+  meta,
+  moving,
+  onMove,
+  onCancel,
+  onApply,
+  editable,
+}: {
+  conflict: DstConflict;
+  timeZone: string;
+  meta: ClassMetadata;
+  moving: boolean;
+  onMove: () => void;
+  onCancel: () => void;
+  onApply: (startTime: string, endTime: string | null) => void;
+  editable: boolean;
+}) {
+  const ex = validExceptions(meta)[conflict.originalDate];
+  const [start, setStart] = useState(ex?.startTime ?? meta.startTime);
+  const [end, setEnd] = useState(ex?.endTime ?? meta.endTime ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const apply = () => {
+    const date = ex?.startDate ?? conflict.originalDate;
+    const s = resolveLocalTime(date, start, timeZone);
+    const e = end ? resolveLocalTime(date, end, timeZone) : null;
+    if (!s.ok || (e && !e.ok)) return setError(`That time doesn’t exist on ${formatShortDate(date)} in ${timeZone} either — please pick another.`);
+    if (e && e.ok && s.ok && e.instant <= s.instant) return setError("The class must end after it starts.");
+    setError(null);
+    onApply(start, end || null);
+  };
+  return (
+    <div className="flex flex-col gap-2 px-3 py-2.5 rounded-lg bg-[#FBF1DC] text-[#5E3F0E]" role="status" data-testid="recurrence-dst-conflict">
+      <p className="text-[12.5px]">
+        <strong>
+          {formatShortDate(conflict.date)} {conflict.date.slice(0, 4)} · {conflict.time}
+        </strong>{" "}
+        doesn’t exist in {timeZone} — the clocks go forward that night{conflict.field === "end" ? " (this is the class’s end time)" : ""}. This date isn’t shown to guests until you move or cancel it.
+      </p>
+      {editable ? (
+        <div className="flex flex-wrap gap-2">
+          <StudioButton kind="outline" onClick={onMove}>
+            {moving ? "Close" : "Move this date…"}
+          </StudioButton>
+          <StudioButton kind="outline" onClick={onCancel}>
+            Cancel this date
+          </StudioButton>
+        </div>
+      ) : null}
+      {moving ? (
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="w-[150px]">
+            <TextField label="New start time" type="time" value={start} onChange={(v) => v && setStart(v)} />
+          </div>
+          <div className="w-[150px]">
+            <TextField label="New end time" type="time" value={end} onChange={setEnd} />
+          </div>
+          <StudioButton kind="primary" onClick={apply}>
+            Apply to this date only
+          </StudioButton>
+          {error ? (
+            <p className="w-full text-[12px] text-[#8F3B3B]" role="alert">
+              {error}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Studio class-list line; flags damaged repeat data and unresolved DST-gap dates. */
+function classListSummary(m: ClassMetadata, subtitle: string | null, todayIso: string, tz: string): string {
+  const time = `${m.startTime}${m.endTime ? `–${m.endTime}` : ""}${subtitle ? ` · ${subtitle}` : ""}`;
+  const problem = recurrenceProblem(m);
+  if (problem) return `⚠ Repeat settings need repair · ${time}`;
+  const rule = validRule(m);
+  if (!rule) return `${formatShortDate(m.startDate)} · ${time}`;
+  const from = m.startDate > todayIso ? m.startDate : todayIso;
+  const n = new Set(dstConflicts(m, from, addDaysIso(from, 366), tz).map((c) => c.originalDate)).size;
+  const attention = n ? ` · ⚠ ${n === 1 ? "1 date needs" : `${n} dates need`} attention` : "";
+  return `${recurrenceSummary(rule, m.startDate, { withEnd: false })} · ${time}${attention}`;
 }
 
 function addDaysIso(dateIso: string, days: number): string {
@@ -1112,9 +1262,7 @@ export function ScheduleSection({ api }: Props) {
             order={(items) => sortClasses(items)}
             summary={(c) => ({
               title: c.title,
-              sub: c.metadata.recurrence
-                ? `${recurrenceSummary(c.metadata.recurrence, c.metadata.startDate, { withEnd: false })} · ${c.metadata.startTime}${c.metadata.endTime ? `–${c.metadata.endTime}` : ""}${c.subtitle ? ` · ${c.subtitle}` : ""}`
-                : `${formatShortDate(c.metadata.startDate)} · ${c.metadata.startTime}${c.metadata.endTime ? `–${c.metadata.endTime}` : ""}${c.subtitle ? ` · ${c.subtitle}` : ""}`,
+              sub: classListSummary(c.metadata, c.subtitle, api.todayIso, c.metadata.timezone ?? api.timezone),
               thumb: api.mediaUrl(c.imageRef),
             })}
             editor={(item, update, index) => <ClassEditor api={api} item={item} update={update} index={index} />}
