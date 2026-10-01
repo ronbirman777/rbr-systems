@@ -862,14 +862,14 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
                 const cancelled = Boolean(meta.exceptions[d]?.cancelled);
                 return (
                   <li key={d} className="flex items-center justify-between gap-3 px-3 min-h-11">
-                    <span className="text-[13px] flex items-center gap-2">
-                      <span className={cancelled ? "line-through text-[#8C8A84]" : "text-[#192B21]"}>
+                    <span className="text-[13px] flex flex-wrap items-center gap-x-2 min-w-0">
+                      <span className={`whitespace-nowrap ${cancelled ? "line-through text-[#8C8A84]" : "text-[#192B21]"}`}>
                         {formatShortDate(d)} · {meta.startTime}
                       </span>
                       {cancelled ? <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8F3B3B]">Cancelled</span> : null}
                     </span>
-                    <button type="button" onClick={() => setException(d, cancelled ? null : { cancelled: true })} className="text-[12px] font-semibold min-h-9 px-2 text-[#8F3B3B]" aria-label={`${cancelled ? "Restore" : "Cancel"} the class on ${formatShortDate(d)}`}>
-                      {cancelled ? "Restore" : "Cancel this date"}
+                    <button type="button" onClick={() => setException(d, cancelled ? null : { cancelled: true })} className="shrink-0 text-[12px] font-semibold min-h-9 px-2 text-[#8F3B3B]" aria-label={`${cancelled ? "Restore" : "Cancel"} the class on ${formatShortDate(d)}`}>
+                      {cancelled ? "Restore" : "Cancel"}
                     </button>
                   </li>
                 );
