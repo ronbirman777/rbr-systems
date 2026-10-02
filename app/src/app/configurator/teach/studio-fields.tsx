@@ -366,7 +366,7 @@ export function ImageField({
           <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFile} aria-label={`${label} file`} />
         </div>
       </div>
-      {imageUrl ? <FocalPointPicker imageUrl={imageUrl} value={focal} onChange={onFocal} label={`${label} focal point`} /> : null}
+      {imageUrl ? <FocalPointPicker imageUrl={imageUrl} position={focal} onChange={onFocal} label={label} /> : null}
       <ImageUploadErrorDialog
         open={errorDialog !== null}
         title={errorDialog?.title ?? ""}

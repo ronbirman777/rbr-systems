@@ -44,31 +44,59 @@ beforeEach(() => {
 describe("loadStudioTenant", () => {
   it("returns the tenant for an accessible retreat Space", async () => {
     state.tenant = { id: ID, name: "x", timezone: "UTC", slug: null, product_type: "retreat" };
-    const r = await loadStudioTenant(ID);
+    const r = await loadStudioTenant(ID, "retreat");
     expect(r.tenant.id).toBe(ID);
   });
 
   it.each(["not-a-uuid", "123", "", "00000000-0000-0000-0000-00000000000"])(
     "malformed id %j is a 404 without touching the database",
     async (id) => {
-      await expect(loadStudioTenant(id)).rejects.toThrow("NEXT_NOT_FOUND");
+      await expect(loadStudioTenant(id, "retreat")).rejects.toThrow("NEXT_NOT_FOUND");
       expect(state.queries).toBe(0);
     }
   );
 
   it("is a 404 when the tenant does not exist or RLS hides it", async () => {
     state.tenant = null;
-    await expect(loadStudioTenant(ID)).rejects.toThrow("NEXT_NOT_FOUND");
+    await expect(loadStudioTenant(ID, "retreat")).rejects.toThrow("NEXT_NOT_FOUND");
   });
 
   it("is a 404 for an unsupported product type", async () => {
     state.tenant = { id: ID, name: "x", timezone: "UTC", slug: null, product_type: "client_hub" };
-    await expect(loadStudioTenant(ID)).rejects.toThrow("NEXT_NOT_FOUND");
+    await expect(loadStudioTenant(ID, "retreat")).rejects.toThrow("NEXT_NOT_FOUND");
+  });
+
+  it("returns the tenant for an accessible Teach Space on the Teach Studio", async () => {
+    state.tenant = { id: ID, name: "x", timezone: "UTC", slug: null, product_type: "teach", status: "draft" };
+    const r = await loadStudioTenant(ID, "teach");
+    expect(r.tenant.id).toBe(ID);
+    expect(r.tenant.status).toBe("draft");
+  });
+
+  it("sends a wrong-product tenant to its own Studio instead of rendering it", async () => {
+    state.tenant = { id: ID, name: "x", timezone: "UTC", slug: null, product_type: "teach" };
+    await expect(loadStudioTenant(ID, "retreat")).rejects.toThrow(`NEXT_REDIRECT:/configurator/teach/${ID}`);
+    state.tenant = { id: ID, name: "x", timezone: "UTC", slug: null, product_type: "retreat" };
+    await expect(loadStudioTenant(ID, "teach")).rejects.toThrow(`NEXT_REDIRECT:/configurator/retreat/${ID}`);
+  });
+
+  it("is a 404 for an unsupported or unknown product type on either Studio", async () => {
+    for (const product_type of ["client_hub", "mystery", ""]) {
+      state.tenant = { id: ID, name: "x", timezone: "UTC", slug: null, product_type };
+      await expect(loadStudioTenant(ID, "retreat")).rejects.toThrow("NEXT_NOT_FOUND");
+      await expect(loadStudioTenant(ID, "teach")).rejects.toThrow("NEXT_NOT_FOUND");
+    }
+  });
+
+  it("never reveals a wrong-product tenant to a signed-out visitor", async () => {
+    state.user = null;
+    state.tenant = { id: ID, name: "x", timezone: "UTC", slug: null, product_type: "teach" };
+    await expect(loadStudioTenant(ID, "retreat")).rejects.toThrow("NEXT_REDIRECT:/log-in");
   });
 
   it("redirects a signed-out visitor to log-in even if a tenant row came back", async () => {
     state.user = null;
     state.tenant = { id: ID, name: "x", timezone: "UTC", slug: null, product_type: "retreat" };
-    await expect(loadStudioTenant(ID)).rejects.toThrow("NEXT_REDIRECT:/log-in");
+    await expect(loadStudioTenant(ID, "retreat")).rejects.toThrow("NEXT_REDIRECT:/log-in");
   });
 });

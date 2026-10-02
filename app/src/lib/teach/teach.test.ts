@@ -38,7 +38,8 @@ import {
 } from "./schemas";
 import { TEACH_PRESETS, teachStyleVars } from "./style";
 import { contrastRatio, hexToRgb } from "@/lib/theme/contrast";
-import { clampFocalPoint, focalPointToObjectPosition, nudgeFocalPoint } from "@/lib/media/focalPoint";
+import { focalPointToObjectPosition, optionalFocalPointSchema } from "@/lib/media/focalPoint";
+import { clampImagePosition, objectPositionStyle, parseImagePosition } from "@/lib/modules/imagePosition";
 import { getDailyQuote, getDailyQuoteFrom } from "@/lib/content/dailyQuotes";
 import { collectImageRefs, collectMediaRefs } from "@/lib/media/path";
 import { parsePublishedTeachSpace } from "./guestData";
@@ -266,13 +267,22 @@ describe("shared media route refs", () => {
 });
 
 describe("focal point", () => {
-  it("clamps, nudges and renders", () => {
-    expect(clampFocalPoint(-5, 130)).toEqual({ x: 0, y: 100 });
-    expect(nudgeFocalPoint(null, "ArrowRight")).toEqual({ x: 55, y: 50 });
-    expect(nudgeFocalPoint({ x: 0, y: 0 }, "ArrowUp")).toEqual({ x: 0, y: 0 });
-    expect(nudgeFocalPoint(null, "Enter")).toBeNull();
+  it("uses the shared imagePosition contract for clamping and rendering", () => {
+    expect(clampImagePosition(-5, 130)).toEqual({ x: 0, y: 100 });
     expect(focalPointToObjectPosition(null)).toBe("50% 50%");
+    expect(focalPointToObjectPosition(undefined)).toBe("50% 50%");
     expect(focalPointToObjectPosition({ x: 62, y: 30 })).toBe("62% 30%");
+    expect(focalPointToObjectPosition({ x: 62, y: 30 })).toBe(objectPositionStyle({ x: 62, y: 30 }));
+  });
+
+  it("Teach's tolerant schema keeps the stored { x, y } | null shape and agrees with the shared parser", () => {
+    for (const v of [{ x: 0, y: 100 }, { x: 62.5, y: 30 }, null, undefined]) {
+      expect(optionalFocalPointSchema.parse(v)).toEqual(parseImagePosition(v));
+    }
+    for (const bad of [{ x: 500 }, { x: -1, y: 5 }, "x", 7, { x: "1", y: 2 }]) {
+      expect(optionalFocalPointSchema.parse(bad)).toBeNull();
+    }
+    expect(optionalFocalPointSchema.parse({ x: 12, y: 80 })).toEqual({ x: 12, y: 80 });
   });
 
   it("malformed stored focal points degrade to center", () => {

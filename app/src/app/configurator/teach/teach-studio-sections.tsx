@@ -3,7 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { listTimezones } from "@/lib/timezone";
+import { timezoneOptions, timezoneSelectValue } from "@/lib/timezone";
 import { computeClassTimes, resolveLocalTime } from "@/lib/teach/classTime";
 import { recurrenceProblem, recurrenceSummary, repeatPresetOf, validExceptions, validRule, weekdayOfDate, type RepeatPreset } from "@/lib/teach/recurrenceText";
 import { dstConflicts, upcomingOccurrenceDates, type DstConflict } from "@/lib/teach/recurrence";
@@ -115,11 +115,6 @@ function SaveBar({ api, section }: { api: StudioApi; section: SectionKey }) {
 
 const newId = () => crypto.randomUUID();
 
-/** Intl's list omits "UTC" (the platform default) - make sure the current value is always selectable. */
-function withTimezone(list: string[], current: string | null): string[] {
-  const out = list.includes("UTC") ? list : ["UTC", ...list];
-  return current && !out.includes(current) ? [current, ...out] : out;
-}
 const str = (v: string | null | undefined) => v ?? "";
 const nul = (v: string) => (v.trim() ? v : null);
 
@@ -350,7 +345,7 @@ function Grid({ children, cols = 2 }: { children: ReactNode; cols?: 2 | 3 }) {
 export function IdentitySection({ api }: Props) {
   const profile = api.settings.teachProfile;
   const di = api.settings.dailyInspiration;
-  const timezones = useMemo(() => withTimezone(listTimezones(), api.timezone), [api.timezone]);
+  const timezones = useMemo(() => timezoneOptions(api.timezone), [api.timezone]);
   const [slugInput, setSlugInput] = useState(api.slug ?? "");
   const [slugStatus, setSlugStatus] = useState<string | null>(null);
   const [slugBusy, setSlugBusy] = useState(false);
@@ -411,7 +406,7 @@ export function IdentitySection({ api }: Props) {
           />
         </Grid>
         <Grid>
-          <SelectField label="Time zone" value={api.timezone} onChange={api.setTimezone} options={timezones.map((t) => ({ value: t, label: t }))} hint="“Today” uses this time zone, and new classes start in it. Existing classes keep their own time zone." />
+          <SelectField label="Time zone" value={timezoneSelectValue(api.timezone)} onChange={api.setTimezone} options={timezones.map((t) => ({ value: t, label: t }))} hint="“Today” uses this time zone, and new classes start in it. Existing classes keep their own time zone." />
           <div>
             <Label htmlFor="tt-slug">Guest address</Label>
             <div className="flex gap-2">
@@ -1047,7 +1042,11 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
   const venue = m.venue;
   const setVenue = (patch: Partial<typeof venue>) => setM({ venue: { ...venue, ...patch } });
   const cta = buildRegistrationCta(api.name, item.title || "Class", m);
-  const timezones = useMemo(() => withTimezone(withTimezone(listTimezones(), api.timezone), m.timezone), [m.timezone, api.timezone]);
+  const timezones = useMemo(() => {
+    const options = timezoneOptions(api.timezone);
+    const own = timezoneSelectValue(m.timezone);
+    return m.timezone && !options.includes(own) ? [...options, own] : options;
+  }, [m.timezone, api.timezone]);
   // Live check of the canonical time model (the server re-checks on save).
   const times = useMemo(() => computeClassTimes(m, api.timezone), [m, api.timezone]);
   const timeIssues = times.ok ? times.warnings : times.issues;
@@ -1068,10 +1067,10 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
         <TextField label="End date (multi-day only)" type="date" value={str(m.endDate)} onChange={(v) => setM({ endDate: v || null })} hint="Leave empty for a single-day class." />
         <SelectField
           label="Time zone"
-          value={m.timezone ?? api.timezone}
+          value={timezoneSelectValue(m.timezone ?? api.timezone)}
           onChange={(v) => setM({ timezone: v })}
           options={timezones.map((t) => ({ value: t, label: t }))}
-          hint={m.timezone && m.timezone !== api.timezone ? `Differs from your Space time zone (${api.timezone}).` : "The time zone this class happens in."}
+          hint={m.timezone && timezoneSelectValue(m.timezone) !== timezoneSelectValue(api.timezone) ? `Differs from your Space time zone (${api.timezone}).` : "The time zone this class happens in."}
         />
       </Grid>
       {timeIssues.map((t) => (

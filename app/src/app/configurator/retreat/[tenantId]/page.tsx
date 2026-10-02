@@ -40,7 +40,7 @@ export default async function ResumeRetreatConfiguratorPage({
 }) {
   const { tenantId } = await params;
   const { step } = await searchParams;
-  const { supabase, tenant } = await loadStudioTenant(tenantId);
+  const { supabase, tenant } = await loadStudioTenant(tenantId, "retreat");
 
   // PRE-MIGRATION WARNING: custom_navigation/custom_text (0015) and
   // custom_secondary/hero_image_ref/space_image_ref/logo_ref (0014) must

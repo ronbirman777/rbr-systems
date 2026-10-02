@@ -1,5 +1,5 @@
-import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { loadStudioTenant } from "@/lib/configurator/studioTenant";
 import { MEDIA_BUCKET } from "@/lib/media/path";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { deriveCommercialAvailability } from "@/lib/entitlements/availability";
@@ -17,7 +17,6 @@ import {
   type TeachSettings,
 } from "@/lib/teach/schemas";
 import { enabledExploreFrom } from "@/lib/teach/guestData";
-import { studioRouteDecision } from "@/lib/spaceTypes/registry";
 import { DEFAULT_TEACH_PRESET } from "@/lib/teach/style";
 import { TeachStudio, type TeachStudioInitial } from "../teach-studio";
 
@@ -38,21 +37,7 @@ export default async function TeachStudioPage({
 }) {
   const { tenantId } = await params;
   const { section } = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/log-in");
-
-  const { data: tenant } = await supabase
-    .from("tenants")
-    .select("id, name, timezone, slug, product_type, status")
-    .eq("id", tenantId)
-    .maybeSingle();
-  if (!tenant) notFound();
-  const route = studioRouteDecision(tenant.product_type, TEACH_PRODUCT_TYPE, tenant.id);
-  if (route.action === "redirect") redirect(route.href);
-  if (route.action === "unsupported") notFound();
+  const { supabase, tenant } = await loadStudioTenant(tenantId, TEACH_PRODUCT_TYPE);
   if (tenant.status === "archived") redirect("/space");
 
   const [{ data: brand }, { data: settingsRows }, { data: itemRows }, { data: configRows }, { data: published }, entitlement] =
