@@ -4,8 +4,11 @@ import { createClient } from "@/lib/supabase/server";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { PRODUCT_FAMILIES } from "@/lib/brand/productFamilies";
 import { getSpaceSlotSummary } from "@/app/configurator/retreat/lifecycleActions";
+import { createTeachSpace } from "@/app/configurator/teach/actions";
+import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
 
-export default async function CreatePage() {
+export default async function CreatePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+  const { error } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -42,10 +45,11 @@ export default async function CreatePage() {
 
   const flow = PRODUCT_FAMILIES.retreat;
   const heal = PRODUCT_FAMILIES.client_hub;
+  const teach = SPACE_TYPES.teach;
 
   return (
     <main className="flex-1 bg-idw-parchment px-6 py-20 flex flex-col items-center">
-      <div className="w-full max-w-3xl text-center">
+      <div className="w-full max-w-5xl text-center">
         {/* Task 013: a visitor who reaches this ordinary (slot-available)
             screen but changes their mind had no way back to My Spaces -
             only the exceptional no-slots state above has one. Page-local
@@ -71,7 +75,15 @@ export default async function CreatePage() {
         <InnerDweSMark size={28} className="mx-auto mb-6" />
         <h1 className="font-ui text-3xl text-idw-forest">What would you like to create?</h1>
 
-        <div className="mt-12 grid sm:grid-cols-2 gap-6 text-left">
+        {error ? (
+          <p role="alert" className="mt-6 text-sm text-idw-clay-text">
+            {error === "slots"
+              ? "You've used all your available Space slots. Replace an existing Space from My Spaces, or add a slot."
+              : "We couldn't create that Space. Please try again."}
+          </p>
+        ) : null}
+
+        <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-6 text-left">
           <Link
             href="/configurator/retreat"
             className="group relative overflow-hidden rounded-2xl border border-idw-forest/10 bg-white p-8 pt-7 transition-all hover:-translate-y-1 hover:shadow-[0_24px_48px_-24px_rgba(25,43,33,0.25)]"
@@ -90,6 +102,35 @@ export default async function CreatePage() {
               Begin →
             </span>
           </Link>
+
+          {/* Time to Teach: created server-side first (createTeachSpace uses
+              the same RLS-scoped tenants insert as Time to Flow, so the same
+              owner-membership and slot-capacity triggers apply), then opens
+              its own Studio. */}
+          <form action={createTeachSpace} className="contents">
+            <button
+              type="submit"
+              data-testid="create-teach"
+              className="group relative overflow-hidden rounded-2xl border border-idw-forest/10 bg-white p-8 pt-7 text-left transition-all hover:-translate-y-1 hover:shadow-[0_24px_48px_-24px_rgba(25,43,33,0.25)]"
+              style={{ borderTopColor: teach.product.accent, borderTopWidth: 3 }}
+            >
+              <div
+                className="text-xs font-semibold uppercase tracking-[0.14em]"
+                style={{ color: teach.product.accentText }}
+              >
+                {teach.product.name}
+              </div>
+              <h2 className="font-editorial italic text-2xl text-idw-forest mt-3 leading-snug">
+                {teach.product.tagline}
+              </h2>
+              {teach.product.description ? (
+                <p className="text-sm text-idw-forest/60 mt-3 leading-relaxed">{teach.product.description}</p>
+              ) : null}
+              <span className="inline-block mt-6 text-xs font-semibold uppercase tracking-wide text-idw-forest/50 group-hover:text-idw-forest transition-colors">
+                Begin →
+              </span>
+            </button>
+          </form>
 
           <div
             className="relative overflow-hidden rounded-2xl border border-idw-forest/10 bg-white p-8 pt-7"

@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { publishSpace, type PublishState } from "@/app/configurator/retreat/actions";
+import type { PublishState } from "@/app/configurator/retreat/actions";
+import { publishSpaceByType } from "@/app/space/publishActions";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 
 const initialState: PublishState = { error: null, publishedAt: null };
@@ -27,7 +28,7 @@ export function PublishSpaceButton({
   isLive: boolean;
   canPublish?: boolean;
 }) {
-  const [state, formAction, pending] = useActionState(publishSpace, initialState);
+  const [state, formAction, pending] = useActionState(publishSpaceByType, initialState);
 
   return (
     <form action={formAction} className="inline-flex flex-col items-start gap-1">

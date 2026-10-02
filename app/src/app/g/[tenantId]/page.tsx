@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
-import { PublishedSpaceScreen, type PublishedSpaceRow } from "@/components/guest/published-space-screen";
+import type { PublishedSpaceRow } from "@/components/guest/published-space-screen";
+import { renderPublishedSpace } from "@/lib/spaceTypes/guestRenderers";
+import { guestAccessCopy } from "@/lib/spaceTypes/guestAccessCopy";
 import { resolveGuestAccess } from "@/lib/guestAccess/effectiveAccess";
 import { GuestAccessScreen } from "@/components/guest/guest-access-screen";
 import { extractPublishedGuestIdentity } from "@/lib/guestAccess/publishedIdentity";
@@ -41,9 +43,9 @@ export default async function GuestSpacePage({
 
   const { data: space } = await supabase
     .from("published_spaces")
-    .select("name, theme, timezone, enabled_modules, modules")
+    .select("product_type, name, theme, timezone, enabled_modules, modules")
     .eq("tenant_id", tenantId)
-    .maybeSingle<PublishedSpaceRow>();
+    .maybeSingle<PublishedSpaceRow & { product_type: string }>();
 
   if (!space) notFound();
   // Commercial availability, then guest access code - one shared policy
@@ -52,8 +54,16 @@ export default async function GuestSpacePage({
   if (access === "unavailable") notFound();
   if (access === "code-required") {
     const identity = extractPublishedGuestIdentity(space);
-    return <GuestAccessScreen tenantId={tenantId} {...identity} />;
+    return <GuestAccessScreen tenantId={tenantId} {...identity} copy={guestAccessCopy(space.product_type)} />;
   }
 
-  return <PublishedSpaceScreen space={space} />;
+
+  // Space Type Registry: render by the snapshot's own product_type - only
+  // AFTER availability and the access code have allowed this request to see
+  // the Space, so an unsupported type is indistinguishable from "not
+  // available" until then. An unknown type (or one with no guest app) is a
+  // plain 404, never another product's app.
+  const rendered = renderPublishedSpace(space.product_type, space);
+  if (!rendered) notFound();
+  return rendered;
 }

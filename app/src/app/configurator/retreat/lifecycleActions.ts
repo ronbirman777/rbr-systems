@@ -2,6 +2,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { getSpaceType } from "@/lib/spaceTypes/registry";
 import { revalidatePath } from "next/cache";
 import { removeAllTenantMedia, TenantMediaCleanupError } from "@/lib/media/tenantCleanup";
 
@@ -140,6 +141,17 @@ export async function replaceSpace(
     return { error: "Type the Space's current name exactly to confirm replacing it." };
   }
 
+  // The replacement name comes from the Space's own type (DB product_type ->
+  // Space Type Registry), so a Teach Space is never renamed "Untitled
+  // Retreat". An unreadable tenant or an unknown type is refused BEFORE any
+  // Storage or database change - Replace never guesses what it is wiping.
+  // Storage cleanup below is product-agnostic (removeAllTenantMedia removes
+  // every object under the tenant folder: images, audio, drafts, published
+  // copies), so no product-specific media assumption is made here.
+  const { data: tenant } = await supabase.from("tenants").select("product_type").eq("id", tenantId).maybeSingle();
+  const spaceType = getSpaceType(tenant?.product_type);
+  if (!spaceType) return { error: "Couldn't replace this Space. Please try again." };
+
   // TASK 024: Replace keeps the tenant identity (same id, slot, membership,
   // entitlement) and only resets its database content, so the old
   // content's Storage files would otherwise live on under this same live
@@ -154,7 +166,7 @@ export async function replaceSpace(
 
   const { error } = await supabase.rpc("replace_space", {
     p_tenant_id: tenantId,
-    p_new_name: newName || "Untitled Retreat",
+    p_new_name: newName || spaceType.copy.untitledName,
   });
   if (error) return { error: "Couldn't replace this Space. Please try again." };
 
