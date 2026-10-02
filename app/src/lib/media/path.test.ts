@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { tenantMediaPath, publishedMediaPath, newUploadId, isDraftMediaPathForTenant, isPublishedMediaPath, isFileSizeAllowed, MAX_IMAGE_BYTES, isWellFormedMediaPath, MEDIA_SIGNED_URL_TTL_SECONDS } from "./path";
+import { versionedMediaPath, parseVersionedMediaPath, collectImageRefs, collectMediaRefs, tenantMediaPath, publishedMediaPath, newUploadId, isDraftMediaPathForTenant, isPublishedMediaPath, isFileSizeAllowed, MAX_IMAGE_BYTES, isWellFormedMediaPath, MEDIA_SIGNED_URL_TTL_SECONDS } from "./path";
 
 describe("tenantMediaPath", () => {
   it("builds the draft path for a module_items-backed item", () => {
@@ -108,5 +108,80 @@ describe("isWellFormedMediaPath", () => {
   });
   it("signed URLs are short-lived (residual window for already-issued URLs)", () => {
     expect(MEDIA_SIGNED_URL_TTL_SECONDS).toBeLessThanOrEqual(60);
+  });
+});
+
+describe("versionedMediaPath / parseVersionedMediaPath", () => {
+  const TID = "11111111-2222-4333-8444-555555555555";
+  const U = "aaaaaaaa-1111-4111-8111-111111111111";
+  const parts = { tenantId: TID, moduleKey: "teachAudioFile", itemId: "item-1", uploadId: U, ext: "mp3" };
+
+  it("builds draft and published paths in one uploadId folder, matching tenantMediaPath", () => {
+    expect(versionedMediaPath("draft", parts)).toBe(`${TID}/teachAudioFile/item-1/${U}/draft.mp3`);
+    expect(versionedMediaPath("published", parts)).toBe(publishedMediaPath(versionedMediaPath("draft", parts)));
+    expect(versionedMediaPath("draft", parts)).toBe(tenantMediaPath(TID, "teachAudioFile", "item-1", "mp3", U));
+  });
+
+  it("validates every segment", () => {
+    for (const bad of [
+      { tenantId: "not-a-uuid" },
+      { tenantId: "" },
+      { moduleKey: "a/b" },
+      { moduleKey: ".." },
+      { itemId: "../x" },
+      { itemId: "" },
+      { uploadId: "u/1" },
+      { ext: "MP3" },
+      { ext: "mp3/x" },
+      { ext: "" },
+    ]) {
+      expect(() => versionedMediaPath("draft", { ...parts, ...bad })).toThrow();
+    }
+  });
+
+  it("parse is the strict inverse and rejects legacy, traversal and wrong shapes", () => {
+    expect(parseVersionedMediaPath(versionedMediaPath("draft", parts))).toEqual({ ...parts, kind: "draft" });
+    expect(parseVersionedMediaPath(versionedMediaPath("published", parts))).toEqual({ ...parts, kind: "published" });
+    for (const bad of [
+      `${TID}/teachAudioFile/item-1/draft.mp3`,
+      `${TID}/teachAudioFile/item-1/${U}/other.mp3`,
+      `${TID}/teachAudioFile/item-1/../${U}/draft.mp3`,
+      `${TID}/teachAudioFile/item-1/${U}/draft.mp3/extra`,
+      `tenant-1/teachAudioFile/item-1/${U}/draft.mp3`,
+      "",
+    ]) {
+      expect(parseVersionedMediaPath(bad), bad).toBeNull();
+    }
+  });
+});
+
+describe("collectMediaRefs vs collectImageRefs", () => {
+  const modules = {
+    brand: { hero: { imageRef: "t/brand/hero/u/published.webp" } },
+    teachAudio: [{ id: "a", imageRef: "t/teachAudio/a/u/published.webp", audioRef: "t/teachAudioFile/a/u/published.mp3" }],
+    nested: { deep: [{ audioRef: "t/x/y/u/published.ogg", note: { imageRef: "t/x/z/u/published.webp" } }] },
+  };
+
+  it("collectMediaRefs returns image and audio refs anywhere in the payload", () => {
+    expect([...collectMediaRefs(modules)].sort()).toEqual([
+      "t/brand/hero/u/published.webp",
+      "t/teachAudio/a/u/published.webp",
+      "t/teachAudioFile/a/u/published.mp3",
+      "t/x/y/u/published.ogg",
+      "t/x/z/u/published.webp",
+    ]);
+  });
+
+  it("collectImageRefs stays image-only (no audioRef)", () => {
+    expect([...collectImageRefs(modules)].sort()).toEqual([
+      "t/brand/hero/u/published.webp",
+      "t/teachAudio/a/u/published.webp",
+      "t/x/z/u/published.webp",
+    ]);
+  });
+
+  it("ignores non-string values and empty payloads", () => {
+    expect(collectMediaRefs(null).size).toBe(0);
+    expect(collectMediaRefs({ audioRef: 5, imageRef: null }).size).toBe(0);
   });
 });

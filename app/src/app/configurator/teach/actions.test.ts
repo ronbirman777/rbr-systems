@@ -31,7 +31,7 @@ vi.mock("@/lib/supabase/server", () => ({
       }
       if (table === "module_items") {
         return {
-          select: () => ({ eq: () => ({ eq: mockExisting }) }),
+          select: () => ({ eq: () => ({ eq: mockExisting, in: async () => ({ data: [] }) }) }),
           upsert: mockUpsert,
           delete: () => ({ eq: () => ({ in: mockDelete }) }),
         };
@@ -112,7 +112,10 @@ describe("Teach Studio server actions", () => {
     expect((await saveTeachItems(TENANT, "teachAudio", [foreign])).error).toMatch(/audio/i);
     const otherItem = { id: ITEM, title: "Nidra", metadata: { audioRef: `${TENANT}/teachAudioFile/${OTHER}/draft.mp3` } };
     expect((await saveTeachItems(TENANT, "teachAudio", [otherItem])).error).toMatch(/audio/i);
-    const ok = { id: ITEM, title: "Nidra", metadata: { audioRef: `${TENANT}/teachAudioFile/${ITEM}/draft.mp3` } };
+    // The stable (unversioned) draft path is no longer a valid new reference.
+    const legacy = { id: ITEM, title: "Nidra", metadata: { audioRef: `${TENANT}/teachAudioFile/${ITEM}/draft.mp3` } };
+    expect((await saveTeachItems(TENANT, "teachAudio", [legacy])).error).toMatch(/audio/i);
+    const ok = { id: ITEM, title: "Nidra", metadata: { audioRef: `${TENANT}/teachAudioFile/${ITEM}/aaaaaaaa-1111-4111-8111-111111111111/draft.mp3` } };
     expect((await saveTeachItems(TENANT, "teachAudio", [ok])).error).toBeNull();
   });
 

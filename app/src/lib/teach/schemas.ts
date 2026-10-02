@@ -482,25 +482,7 @@ export const readingMetadataSchema = z.object({
 });
 export type ReadingMetadata = z.infer<typeof readingMetadataSchema>;
 
-export const AUDIO_ALLOWED_TYPES: Record<string, string> = {
-  "audio/mpeg": "mp3",
-  "audio/mp3": "mp3",
-  "audio/mp4": "m4a",
-  "audio/x-m4a": "m4a",
-  "audio/aac": "aac",
-  "audio/wav": "wav",
-  "audio/x-wav": "wav",
-  "audio/wave": "wav",
-  "audio/ogg": "ogg",
-};
-export const AUDIO_MIME_BY_EXTENSION: Record<string, string> = {
-  mp3: "audio/mpeg",
-  m4a: "audio/mp4",
-  aac: "audio/aac",
-  wav: "audio/wav",
-  ogg: "audio/ogg",
-};
-export const MAX_AUDIO_BYTES = 100 * 1024 * 1024;
+export { AUDIO_ALLOWED_TYPES, AUDIO_MIME_BY_EXTENSION, MAX_AUDIO_BYTES } from "@/lib/media/audio";
 
 export const audioMetadataSchema = z.object({
   audioRef: z.string().max(400).nullable().catch(null).default(null),
@@ -655,11 +637,16 @@ export function collectTeachMediaRefs(value: unknown): string[] {
   return refs;
 }
 
-/** A stored media ref must live under this tenant's own storage prefix. */
+/**
+ * A stored DRAFT media ref must live under this tenant's own storage prefix.
+ * Accepts the versioned shape `{tenant}/{module}/{item}/{uploadId}/draft.<ext>`
+ * (TASK 023; the only shape new uploads produce) and the legacy unversioned
+ * `{tenant}/{module}/{item}/draft.<ext>`. Never a published object.
+ */
 export function isTenantMediaRef(tenantId: string, ref: string): boolean {
   return (
     ref.startsWith(`${tenantId}/`) &&
     !ref.includes("..") &&
-    /^[0-9a-f-]{36}\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/draft\.[a-z0-9]+$/.test(ref)
+    /^[0-9a-f-]{36}\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+(\/[0-9a-f-]{36})?\/draft\.[a-z0-9]+$/.test(ref)
   );
 }

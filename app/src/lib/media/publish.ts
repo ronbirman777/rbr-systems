@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { MEDIA_BUCKET, OPTIMIZED_IMAGE_MIME, publishedMediaPath } from "./path";
+import { AUDIO_MIME_BY_EXTENSION } from "./audio";
+import { MEDIA_BUCKET, OPTIMIZED_IMAGE_MIME, parseVersionedMediaPath, publishedMediaPath } from "./path";
 
 /**
  * Thrown whenever a Storage operation this module performs fails - the
@@ -63,5 +64,94 @@ export async function copyDraftToPublished(supabase: SupabaseClient, draftPath: 
   if (uploadError) {
     throw new MediaPublishError(`Could not publish the image to "${publishedPath}": ${uploadError.message}`);
   }
+  return publishedPath;
+}
+
+type StorageErrorLike = { message?: string; status?: number | string; statusCode?: number | string } | null | undefined;
+
+function isAlreadyExists(error: StorageErrorLike): boolean {
+  if (!error) return false;
+  return (
+    String(error.statusCode ?? error.status ?? "") === "409" ||
+    /already exists|duplicate|resource already/i.test(error.message ?? "")
+  );
+}
+
+async function sameBytes(supabase: SupabaseClient, a: string, b: string): Promise<boolean> {
+  const bucket = supabase.storage.from(MEDIA_BUCKET);
+  const [first, second] = await Promise.all([
+    bucket.download(a, {}, { cache: "no-store" }),
+    bucket.download(b, {}, { cache: "no-store" }),
+  ]);
+  if (first.error || !first.data || second.error || !second.data) {
+    throw new MediaPublishError(`Could not compare "${a}" with "${b}".`);
+  }
+  if (first.data.size !== second.data.size) return false;
+  const [x, y] = await Promise.all([first.data.arrayBuffer(), second.data.arrayBuffer()]);
+  return Buffer.from(x).equals(Buffer.from(y));
+}
+
+/**
+ * Whether two existing objects hold the same bytes. Size and ETag from
+ * Storage metadata settle the common cases without downloading anything;
+ * only a same-size/ETag-unknown pair falls back to a byte comparison.
+ */
+async function objectsIdentical(supabase: SupabaseClient, a: string, b: string): Promise<boolean> {
+  const bucket = supabase.storage.from(MEDIA_BUCKET);
+  const [infoA, infoB] = await Promise.all([bucket.info(a), bucket.info(b)]);
+  const metaA = infoA.data;
+  const metaB = infoB.data;
+  if (!infoA.error && !infoB.error && metaA && metaB) {
+    if (typeof metaA.size === "number" && typeof metaB.size === "number" && metaA.size !== metaB.size) return false;
+    if (metaA.etag && metaB.etag && metaA.etag === metaB.etag) return true;
+  }
+  return sameBytes(supabase, a, b);
+}
+
+/**
+ * Create-only copy for an immutable versioned object: `source` -> `dest`,
+ * never overwriting. If `dest` already exists it is a retry (identical
+ * bytes -> success, nothing written) or a collision (different bytes ->
+ * MediaPublishError, nothing written). Uses Storage's server-side `copy`,
+ * so the file is never buffered in this process in the normal path, and
+ * the source's content type and metadata are carried over unchanged.
+ */
+async function copyImmutableObject(supabase: SupabaseClient, source: string, dest: string): Promise<void> {
+  const { error } = await supabase.storage.from(MEDIA_BUCKET).copy(source, dest);
+  if (!error) return;
+  if (!isAlreadyExists(error)) {
+    throw new MediaPublishError(`Could not publish "${source}" to "${dest}": ${error.message}`);
+  }
+  if (!(await objectsIdentical(supabase, source, dest))) {
+    throw new MediaPublishError(
+      `A different file already exists at "${dest}"; refusing to overwrite published media.`
+    );
+  }
+}
+
+/**
+ * Audio counterpart of copyDraftToPublished. The source is an explicit
+ * versioned draft ref (`{tenant}/{module}/{item}/{uploadId}/draft.<ext>`);
+ * the destination is derived from the same uploadId folder, so a draft and
+ * its published copy always share one uploadId. Published audio is
+ * immutable: an existing destination is accepted only when it is
+ * byte-identical (idempotent retry), otherwise this fails. Unlike images
+ * there is no legacy/unversioned fallback - a malformed or unversioned
+ * ref throws rather than silently copying nothing.
+ *
+ * Returns the published path (null when there is no draft audio).
+ */
+export async function copyDraftAudioToPublished(
+  supabase: SupabaseClient,
+  draftPath: string | null
+): Promise<string | null> {
+  if (!draftPath) return null;
+  const parts = parseVersionedMediaPath(draftPath);
+  if (!parts || parts.kind !== "draft" || !AUDIO_MIME_BY_EXTENSION[parts.ext]) {
+    throw new MediaPublishError(`"${draftPath}" is not a versioned draft audio ref.`);
+  }
+  const publishedPath = publishedMediaPath(draftPath);
+  if (!publishedPath) throw new MediaPublishError(`"${draftPath}" is not a draft ref.`);
+  await copyImmutableObject(supabase, draftPath, publishedPath);
   return publishedPath;
 }

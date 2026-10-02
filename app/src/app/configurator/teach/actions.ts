@@ -14,14 +14,23 @@ import {
   OPTIMIZED_IMAGE_EXTENSION,
   OPTIMIZED_IMAGE_MIME,
   isFileSizeAllowed,
+  isDraftMediaPathForTenant,
+  newUploadId,
   tenantMediaPath,
-  mediaItemFolder,
+  versionedMediaPath,
 } from "@/lib/media/path";
-import { copyDraftToPublished } from "@/lib/media/publish";
-import { optimizeImageToWebp } from "@/lib/media/optimizeImage";
+import { copyDraftAudioToPublished, copyDraftToPublished } from "@/lib/media/publish";
+import { removeDraftObjects } from "@/lib/media/draftCleanup";
 import {
   AUDIO_ALLOWED_TYPES,
-  AUDIO_MIME_BY_EXTENSION,
+  MAX_AUDIO_BYTES,
+  isAudioSizeAllowed,
+  normalizeMimeType,
+  parseAudioDraftRef,
+} from "@/lib/media/audio";
+import { getPublishAvailability } from "@/lib/spaceTypes/publishAvailability";
+import { optimizeImageToWebp } from "@/lib/media/optimizeImage";
+import {
   TEACH_AUDIO_FOLDER_KEY,
   TEACH_EDITABLE_ITEM_KEYS,
   TEACH_EXPLORE_MODULES,
@@ -217,18 +226,22 @@ export async function saveTeachSettings(tenantId: string, key: TeachSettingsKey,
 // Items (module_items)
 // ---------------------------------------------------------------------------
 
-async function removeFolder(supabase: SupabaseClient, folder: string) {
-  const { data: siblings } = await supabase.storage.from(MEDIA_BUCKET).list(folder);
-  const toRemove = (siblings ?? []).map((f) => `${folder}/${f.name}`);
-  if (toRemove.length > 0) await supabase.storage.from(MEDIA_BUCKET).remove(toRemove);
-}
-
-async function removeItemMedia(supabase: SupabaseClient, tenantId: string, moduleKey: string, itemId: string) {
-  await removeFolder(supabase, `${tenantId}/${moduleKey}/${itemId}`);
-  // Audio: only the draft goes now. The published copy stays until the next
-  // Publish (which sweeps it - see sweepDeletedAudio), so deleting an item
-  // in the Studio never breaks a track guests can still see.
-  if (moduleKey === "teachAudio") await removeOtherAudioDrafts(supabase, tenantId, itemId, null);
+/**
+ * The draft objects an item's row currently references (its image and its
+ * audio file) - exactly what deleting the item should clean up. Published
+ * copies are never listed: they stay until the post-publish sweep, so
+ * deleting an item in the Studio never breaks media guests can still see.
+ */
+async function itemDraftRefs(supabase: SupabaseClient, tenantId: string, itemIds: string[]): Promise<string[]> {
+  if (itemIds.length === 0) return [];
+  const { data } = await supabase.from("module_items").select("id, image_ref, metadata").eq("tenant_id", tenantId).in("id", itemIds);
+  const refs: string[] = [];
+  for (const row of data ?? []) {
+    if (typeof row.image_ref === "string") refs.push(row.image_ref);
+    const audioRef = (row.metadata as { audioRef?: unknown } | null)?.audioRef;
+    if (typeof audioRef === "string") refs.push(audioRef);
+  }
+  return refs;
 }
 
 /**
@@ -264,10 +277,12 @@ export async function saveTeachItems(
     const parsed = schema.safeParse(raw);
     if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Some details weren't valid." };
     const audioRef = (parsed.data.metadata as { audioRef?: string | null }).audioRef;
-    if (audioRef && !audioRef.startsWith(`${tenantId}/${TEACH_AUDIO_FOLDER_KEY}/${id}/draft.`)) {
-      return { error: "An audio file reference wasn't valid - please re-upload it." };
+    if (audioRef) {
+      const parts = parseAudioDraftRef(audioRef);
+      if (!parts || parts.tenantId !== tenantId || parts.moduleKey !== TEACH_AUDIO_FOLDER_KEY || parts.itemId !== id) {
+        return { error: "An audio file reference wasn't valid - please re-upload it." };
+      }
     }
-    if (audioRef && !isTenantMediaRef(tenantId, audioRef)) return { error: "An audio file reference wasn't valid." };
     // Canonical class time (time model v1): recompute the UTC instants from
     // the local wall time + explicit zone on every save. Client-sent
     // startsAt/endsAt are never trusted - they are overwritten here.
@@ -317,10 +332,11 @@ export async function saveTeachItems(
     .eq("tenant_id", tenantId)
     .eq("module_key", moduleKey);
   const removed = (existing ?? []).filter((r) => !incoming.has(r.id)).map((r) => r.id);
-  for (const id of removed) await removeItemMedia(supabase, tenantId, moduleKey, id);
   if (removed.length > 0) {
+    const staleRefs = await itemDraftRefs(supabase, tenantId, removed);
     const { error } = await supabase.from("module_items").delete().eq("tenant_id", tenantId).in("id", removed);
     if (error) return { error: error.message };
+    await removeDraftObjects(supabase, tenantId, staleRefs);
   }
   if (rows.length > 0) {
     const { error } = await supabase.from("module_items").upsert(rows, { onConflict: "id" });
@@ -329,16 +345,17 @@ export async function saveTeachItems(
   return warnings.length ? { error: null, warnings } : OK;
 }
 
-/** Removes one item immediately (row + its image and audio folders). */
+/** Removes one item immediately: its row, then its own draft image/audio objects. */
 export async function deleteTeachItem(tenantId: string, moduleKey: TeachEditableItemKey, itemId: string): Promise<TeachActionState> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You need to be logged in." };
   if (!TEACH_EDITABLE_ITEM_KEYS.includes(moduleKey)) return { error: "Unknown section." };
   if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
   if (!z.string().uuid().safeParse(itemId).success) return { error: "Missing item." };
-  await removeItemMedia(supabase, tenantId, moduleKey, itemId);
+  const staleRefs = await itemDraftRefs(supabase, tenantId, [itemId]);
   const { error } = await supabase.from("module_items").delete().eq("id", itemId).eq("tenant_id", tenantId);
   if (error) return { error: error.message };
+  await removeDraftObjects(supabase, tenantId, staleRefs);
   return OK;
 }
 
@@ -395,59 +412,62 @@ export async function uploadTeachSettingsImage(formData: FormData): Promise<Teac
   } catch {
     return fail("That image could not be processed. Try a different file.");
   }
-  const path = tenantMediaPath(tenantId, key, slot, OPTIMIZED_IMAGE_EXTENSION);
+  // A new uploadId per upload: an existing object is never overwritten.
+  const path = tenantMediaPath(tenantId, key, slot, OPTIMIZED_IMAGE_EXTENSION, newUploadId());
   const { error: uploadError } = await supabase.storage
     .from(MEDIA_BUCKET)
-    .upload(path, optimized, { upsert: true, contentType: OPTIMIZED_IMAGE_MIME });
+    .upload(path, optimized, { upsert: false, contentType: OPTIMIZED_IMAGE_MIME });
   if (uploadError) return fail(uploadError.message);
   const { data: signed } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600);
   return { error: null, imageRef: path, imageUrl: signed?.signedUrl ?? null };
 }
 
-/** Deletes one of this tenant's own draft media objects (settings image or audio file). */
+/**
+ * Deletes one of this tenant's own draft settings images. Audio files are
+ * excluded on purpose: they go through detachTeachAudio, which clears the
+ * row's reference in the same step so it never points at a removed object.
+ */
 export async function removeTeachDraftMedia(tenantId: string, ref: string): Promise<TeachActionState> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You need to be logged in." };
   if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
-  if (!isTenantMediaRef(tenantId, ref)) return { error: "Unknown media." };
+  if (!isTenantMediaRef(tenantId, ref) || ref.split("/")[1] === TEACH_AUDIO_FOLDER_KEY) return { error: "Unknown media." };
   const { error } = await supabase.storage.from(MEDIA_BUCKET).remove([ref]);
   if (error) return { error: error.message };
   return OK;
 }
 
-// ---------------------------------------------------------------------------
-// Audio files: ownership at upload
-//
-// Audio is uploaded browser -> Storage directly (files up to 100 MB), so the
-// server brackets the upload instead of carrying it:
-//   1. prepareTeachAudioUpload - makes sure the teachAudio row exists BEFORE
-//      any bytes land (inserting it for a not-yet-saved item, like
-//      uploadModuleItemPhoto does for images) and returns the only path the
-//      file may use. Every stored audio object therefore always belongs to a
-//      real, visible item that the teacher can delete - abandoning the
-//      Studio can no longer leave an orphan in Storage.
-//   2. attachTeachAudio / detachTeachAudio - point the row at the new file
-//      (or at nothing) and only THEN remove the item's other draft.* files,
-//      so the saved row never references a deleted object. published.*
-//      copies are never touched here: guests keep the published audio until
-//      the next Publish (copyDraftToPublished's stale-sibling cleanup).
-// ---------------------------------------------------------------------------
 
-const AUDIO_EXTENSIONS = new Set(Object.values(AUDIO_ALLOWED_TYPES));
-const audioDraftFolder = (tenantId: string, itemId: string) => `${tenantId}/${TEACH_AUDIO_FOLDER_KEY}/${itemId}`;
+// ---------------------------------------------------------------------------
+// Audio files: versioned, immutable draft objects
+//
+// Audio is uploaded browser -> Storage directly (files up to 100 MB; server
+// actions are capped at 10 MB), so the server brackets the upload instead of
+// carrying it:
+//   1. prepareTeachAudioUpload - validates the type and size, makes sure the
+//      teachAudio row exists BEFORE any bytes land, and returns a brand-new
+//      versioned path `{tenant}/teachAudioFile/{item}/{uploadId}/draft.<ext>`.
+//      Every upload gets its own uploadId, so nothing is ever overwritten
+//      (the client uploads with upsert:false).
+//   2. attachTeachAudio - verifies the object that actually landed (size and
+//      content type from Storage metadata - the real server-side limit),
+//      points the row at it, and only THEN removes the one draft it replaced.
+//      A failed upload or DB update leaves the previous reference and its
+//      file untouched.
+//   3. detachTeachAudio - clears the reference, then removes that one draft.
+// published.* copies are never touched here: they are created by publish
+// (copyDraftAudioToPublished) and removed only after a successful republish.
+// ---------------------------------------------------------------------------
 
 async function loadTeachItemRow(supabase: SupabaseClient, tenantId: string, itemId: string) {
   const { data } = await supabase.from("module_items").select("id, module_key, metadata").eq("tenant_id", tenantId).eq("id", itemId);
   return (data?.[0] ?? null) as { id: string; module_key: string; metadata: Record<string, unknown> | null } | null;
 }
 
-/** Removes the item's draft.* audio objects except `keep` (published.* is left alone). */
-async function removeOtherAudioDrafts(supabase: SupabaseClient, tenantId: string, itemId: string, keep: string | null) {
-  const folder = audioDraftFolder(tenantId, itemId);
-  const { data: files } = await supabase.storage.from(MEDIA_BUCKET).list(folder);
-  const stale = (files ?? []).filter((f) => f.name.startsWith("draft.") && `${folder}/${f.name}` !== keep).map((f) => `${folder}/${f.name}`);
-  if (stale.length > 0) await supabase.storage.from(MEDIA_BUCKET).remove(stale);
-}
+const currentAudioRef = (row: { metadata: Record<string, unknown> | null } | null): string | null => {
+  const ref = row?.metadata?.audioRef;
+  return typeof ref === "string" ? ref : null;
+};
 
 export type TeachAudioUploadState = { error: string | null; path: string | null };
 
@@ -455,7 +475,8 @@ export async function prepareTeachAudioUpload(
   tenantId: string,
   item: unknown,
   sortOrder: number,
-  mimeType: string
+  mimeType: string,
+  sizeBytes: number
 ): Promise<TeachAudioUploadState> {
   const fail = (error: string): TeachAudioUploadState => ({ error, path: null });
   const { supabase, user } = await requireUser();
@@ -463,8 +484,9 @@ export async function prepareTeachAudioUpload(
   if (!(await requireTeachTenant(supabase, tenantId))) return fail("Space not found.");
   const itemId = (item as { id?: unknown } | null)?.id;
   if (typeof itemId !== "string" || !z.string().uuid().safeParse(itemId).success) return fail("Missing item.");
-  const ext = AUDIO_ALLOWED_TYPES[mimeType];
+  const ext = typeof mimeType === "string" ? AUDIO_ALLOWED_TYPES[normalizeMimeType(mimeType)] : undefined;
   if (!ext) return fail("Please upload an MP3, M4A, AAC, WAV or OGG audio file.");
+  if (!isAudioSizeAllowed(sizeBytes)) return fail(`Audio files must be under ${MAX_AUDIO_BYTES / (1024 * 1024)}MB.`);
 
   const existing = await loadTeachItemRow(supabase, tenantId, itemId);
   if (existing && existing.module_key !== "teachAudio") return fail("Missing item.");
@@ -486,7 +508,10 @@ export async function prepareTeachAudioUpload(
     });
     if (error) return fail(error.message);
   }
-  return { error: null, path: `${audioDraftFolder(tenantId, itemId)}/draft.${ext}` };
+  return {
+    error: null,
+    path: versionedMediaPath("draft", { tenantId, moduleKey: TEACH_AUDIO_FOLDER_KEY, itemId, uploadId: newUploadId(), ext }),
+  };
 }
 
 export async function attachTeachAudio(tenantId: string, itemId: string, ref: string, durationSeconds: number | null): Promise<TeachActionState> {
@@ -494,22 +519,51 @@ export async function attachTeachAudio(tenantId: string, itemId: string, ref: st
   if (!user) return { error: "You need to be logged in." };
   if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
   if (!z.string().uuid().safeParse(itemId).success) return { error: "Missing item." };
-  const folder = audioDraftFolder(tenantId, itemId);
-  const name = ref.startsWith(`${folder}/`) ? ref.slice(folder.length + 1) : "";
-  if (!name.startsWith("draft.") || !AUDIO_EXTENSIONS.has(name.slice("draft.".length))) return { error: "An audio file reference wasn't valid." };
+  const parts = typeof ref === "string" ? parseAudioDraftRef(ref) : null;
+  if (!parts || parts.tenantId !== tenantId || parts.moduleKey !== TEACH_AUDIO_FOLDER_KEY || parts.itemId !== itemId) {
+    return { error: "An audio file reference wasn't valid." };
+  }
   const row = await loadTeachItemRow(supabase, tenantId, itemId);
   if (!row || row.module_key !== "teachAudio") return { error: "Missing item." };
-  const { data: files } = await supabase.storage.from(MEDIA_BUCKET).list(folder);
-  if (!(files ?? []).some((f) => f.name === name)) return { error: "The upload didn't finish - please try again." };
-
+  const previousRef = currentAudioRef(row);
   const duration = typeof durationSeconds === "number" && Number.isFinite(durationSeconds) && durationSeconds >= 0 && durationSeconds <= 60 * 60 * 12 ? Math.round(durationSeconds) : null;
+
+  // The upload is browser -> Storage, so the real size/type limits are
+  // enforced here against what Storage actually stored. Anything that
+  // doesn't pass (or can't be verified) is rejected, and a rejected NEW
+  // upload is removed - it is unreferenced, so nothing else points at it.
+  const bucket = supabase.storage.from(MEDIA_BUCKET);
+  const reject = async (message: string): Promise<TeachActionState> => {
+    if (ref !== previousRef) await removeDraftObjects(supabase, tenantId, [ref]);
+    return { error: message };
+  };
+  const { data: info, error: infoError } = await bucket.info(ref);
+  if (infoError || !info) return { error: "The upload didn't finish - please try again." };
+  if (!isAudioSizeAllowed(Number(info.size))) return reject(`Audio files must be under ${MAX_AUDIO_BYTES / (1024 * 1024)}MB.`);
+  if (AUDIO_ALLOWED_TYPES[normalizeMimeType(String(info.contentType ?? ""))] !== parts.ext) {
+    return reject("Please upload an MP3, M4A, AAC, WAV or OGG audio file.");
+  }
+
+  if (ref !== previousRef) {
+    // A published object already living in this upload's folder is never a
+    // fresh upload; refuse to adopt the folder rather than risk replacing
+    // what the live snapshot may reference.
+    const published = versionedMediaPath("published", { ...parts });
+    const { data: publishedExists } = await bucket.exists(published);
+    if (publishedExists) return { error: "An audio file reference wasn't valid - please re-upload it." };
+  }
+
   const { error } = await supabase
     .from("module_items")
     .update({ metadata: { ...(row.metadata ?? {}), audioRef: ref, durationSeconds: duration } })
     .eq("tenant_id", tenantId)
     .eq("id", itemId);
-  if (error) return { error: error.message };
-  await removeOtherAudioDrafts(supabase, tenantId, itemId, ref);
+  if (error) {
+    if (ref !== previousRef) await removeDraftObjects(supabase, tenantId, [ref]);
+    return { error: error.message };
+  }
+  // Committed: the replaced draft (only that one) is now unreferenced.
+  if (previousRef && previousRef !== ref) await removeDraftObjects(supabase, tenantId, [previousRef]);
   return OK;
 }
 
@@ -519,16 +573,16 @@ export async function detachTeachAudio(tenantId: string, itemId: string): Promis
   if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
   if (!z.string().uuid().safeParse(itemId).success) return { error: "Missing item." };
   const row = await loadTeachItemRow(supabase, tenantId, itemId);
-  if (row && row.module_key !== "teachAudio") return { error: "Missing item." };
-  if (row) {
-    const { error } = await supabase
-      .from("module_items")
-      .update({ metadata: { ...(row.metadata ?? {}), audioRef: null, durationSeconds: null } })
-      .eq("tenant_id", tenantId)
-      .eq("id", itemId);
-    if (error) return { error: error.message };
-  }
-  await removeOtherAudioDrafts(supabase, tenantId, itemId, null);
+  if (!row) return OK;
+  if (row.module_key !== "teachAudio") return { error: "Missing item." };
+  const previousRef = currentAudioRef(row);
+  const { error } = await supabase
+    .from("module_items")
+    .update({ metadata: { ...(row.metadata ?? {}), audioRef: null, durationSeconds: null } })
+    .eq("tenant_id", tenantId)
+    .eq("id", itemId);
+  if (error) return { error: error.message };
+  await removeDraftObjects(supabase, tenantId, [previousRef]);
   return OK;
 }
 
@@ -539,17 +593,25 @@ export async function detachTeachAudio(tenantId: string, itemId: string): Promis
 export type TeachPublishState = { error: string | null; publishedAt: string | null };
 
 /**
+ * Time to Teach publishing is NOT available yet (it is wired in a later
+ * phase, together with the publish_space() Teach payload): this fails
+ * closed before touching media or the RPC. The body below is the media
+ * snapshot + RPC flow ported to the versioned-path helpers so that wiring
+ * only has to lift the gate.
+ *
  * Snapshot every current draft media object (item images, audio, primary
  * image, settings images) into its published path, THEN call the shared
- * publish_space() RPC - which enforces commercial access and, for Teach
- * tenants only, adds modules.teach (migration 0019). Same ordering and
- * failure rule as Time to Flow's publishSpace: any media failure stops
- * before the RPC, so a "successful" publish can never point at stale media.
+ * publish_space() RPC. Same ordering and failure rule as Time to Flow's
+ * publishSpace: any media failure stops before the RPC, so a "successful"
+ * publish can never point at stale media.
  */
 export async function publishTeachSpace(tenantId: string): Promise<TeachPublishState> {
   const { supabase, user } = await requireUser();
   if (!user) return { error: "You need to be logged in.", publishedAt: null };
   if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found.", publishedAt: null };
+
+  const publishGate = getPublishAvailability(TEACH_PRODUCT_TYPE);
+  if (!publishGate.available) return { error: publishGate.message, publishedAt: null };
 
   const availability = deriveCommercialAvailability(await getSpaceEntitlement(supabase, tenantId));
   if (!availability.canPublish) {
@@ -574,21 +636,17 @@ export async function publishTeachSpace(tenantId: string): Promise<TeachPublishS
     return typeof ref === "string" && isTenantMediaRef(tenantId, ref) ? ref : null;
   };
 
-  const jobs: Promise<void>[] = [copyDraftToPublished(supabase, brandRow?.hero_image_ref ?? null, `${tenantId}/brand/hero`)];
+  const jobs: Promise<unknown>[] = [copyDraftToPublished(supabase, brandRow?.hero_image_ref ?? null)];
   for (const row of itemRows ?? []) {
-    const imageRef = typeof row.image_ref === "string" && mediaItemFolder(row.image_ref) ? row.image_ref : null;
-    jobs.push(copyDraftToPublished(supabase, imageRef, `${tenantId}/${row.module_key}/${row.id}`));
+    const imageRef = typeof row.image_ref === "string" && isDraftMediaPathForTenant(tenantId, row.image_ref) ? row.image_ref : null;
+    jobs.push(copyDraftToPublished(supabase, imageRef));
     if (row.module_key === "teachAudio") {
       const audioRef = (row.metadata as { audioRef?: unknown } | null)?.audioRef;
-      const ref = typeof audioRef === "string" && isTenantMediaRef(tenantId, audioRef) ? audioRef : null;
-      const ext = ref?.split(".").pop() ?? "";
-      jobs.push(
-        copyDraftToPublished(supabase, ref, `${tenantId}/${TEACH_AUDIO_FOLDER_KEY}/${row.id}`, AUDIO_MIME_BY_EXTENSION[ext] ?? "audio/mpeg")
-      );
+      jobs.push(copyDraftAudioToPublished(supabase, typeof audioRef === "string" ? audioRef : null));
     }
   }
   for (const [key, slots] of Object.entries(SETTINGS_IMAGE_SLOTS)) {
-    for (const slot of slots) jobs.push(copyDraftToPublished(supabase, slotRef(key, slot), `${tenantId}/${key}/${slot}`));
+    for (const slot of slots) jobs.push(copyDraftToPublished(supabase, slotRef(key, slot)));
   }
 
   try {
@@ -602,26 +660,5 @@ export async function publishTeachSpace(tenantId: string): Promise<TeachPublishS
 
   const { data, error } = await supabase.rpc("publish_space", { p_tenant_id: tenantId });
   if (error) return { error: error.message, publishedAt: null };
-  const liveAudio = new Set((itemRows ?? []).filter((r) => r.module_key === "teachAudio").map((r) => r.id as string));
-  await sweepDeletedAudio(supabase, tenantId, liveAudio);
   return { error: null, publishedAt: data as string };
-}
-
-/**
- * After a successful Publish the new snapshot references only live items,
- * so the published audio of items deleted since the last Publish (kept
- * until now on purpose - see removeItemMedia) can be removed. Best-effort:
- * a failure only leaves the file for the next Publish.
- */
-async function sweepDeletedAudio(supabase: SupabaseClient, tenantId: string, liveItemIds: Set<string>) {
-  try {
-    const root = `${tenantId}/${TEACH_AUDIO_FOLDER_KEY}`;
-    const { data: folders } = await supabase.storage.from(MEDIA_BUCKET).list(root);
-    for (const f of folders ?? []) {
-      if (!z.string().uuid().safeParse(f.name).success || liveItemIds.has(f.name)) continue;
-      await removeFolder(supabase, `${root}/${f.name}`);
-    }
-  } catch {
-    // Non-fatal by design (see above).
-  }
 }

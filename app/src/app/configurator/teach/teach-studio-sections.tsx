@@ -9,6 +9,7 @@ import { recurrenceProblem, recurrenceSummary, repeatPresetOf, validExceptions, 
 import { dstConflicts, upcomingOccurrenceDates, type DstConflict } from "@/lib/teach/recurrence";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
 import { MEDIA_BUCKET } from "@/lib/media/path";
+import { uploadAudioDraftObject } from "@/lib/teach/audioUpload";
 import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL, type SocialPlatform } from "@/lib/modules/socialLinks";
 import { checkSlugAvailability, reserveSlug } from "@/app/configurator/retreat/actions";
 import { publishTeachSpace } from "./actions";
@@ -1552,8 +1553,8 @@ function AudioFileField({ api, item, update, index }: { api: StudioApi; item: Ed
     setBusy("Uploading…");
     const duration = await detectDuration(file);
     // Ownership at upload: the server makes sure this item's row exists
-    // before any bytes land, and hands back the only path the file may use.
-    const prep = await api.prepareAudioUpload(item, index, file.type);
+    // before any bytes land, and hands back a brand-new versioned path.
+    const prep = await api.prepareAudioUpload(item, index, file.type, file.size);
     if (prep.error || !prep.path) {
       setBusy(null);
       return setError(prep.error ?? "Upload failed.");
@@ -1561,12 +1562,12 @@ function AudioFileField({ api, item, update, index }: { api: StudioApi; item: Ed
     const path = prep.path;
     // Uploaded straight from the browser through the member's own session:
     // the tenant-media bucket RLS (0006) only admits paths under this
-    // tenant's id, and attachTeachAudio re-validates the ref server-side.
+    // tenant's id, and attachTeachAudio re-validates the ref and the stored object server-side.
     const supabase = createClient();
-    const { error: upErr } = await supabase.storage.from(MEDIA_BUCKET).upload(path, file, { upsert: true, contentType: file.type });
+    const { error: upErr } = await uploadAudioDraftObject(supabase, path, file);
     if (upErr) {
       setBusy(null);
-      return setError(upErr.message);
+      return setError(upErr);
     }
     const attachErr = await api.attachAudio(item.id, path, duration);
     if (attachErr) {

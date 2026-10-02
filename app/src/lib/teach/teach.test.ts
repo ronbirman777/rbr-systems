@@ -249,6 +249,13 @@ describe("schemas", () => {
     expect(isTenantMediaRef(TENANT, `99999999-2222-3333-4444-555555555555/x/y/draft.webp`)).toBe(false);
     expect(isTenantMediaRef(TENANT, `${TENANT}/../x/draft.webp`)).toBe(false);
     expect(isTenantMediaRef(TENANT, `${TENANT}/x/y/published.webp`)).toBe(false);
+    // Versioned (uploadId) shape - what every new upload produces.
+    const U = "aaaaaaaa-1111-4111-8111-111111111111";
+    expect(isTenantMediaRef(TENANT, `${TENANT}/teachAudioFile/${TENANT}/${U}/draft.mp3`)).toBe(true);
+    expect(isTenantMediaRef(TENANT, `${TENANT}/teachAbout/profile/${U}/draft.webp`)).toBe(true);
+    expect(isTenantMediaRef(TENANT, `${TENANT}/teachAbout/profile/${U}/published.webp`)).toBe(false);
+    expect(isTenantMediaRef(TENANT, `${TENANT}/teachAbout/profile/${U}/../draft.webp`)).toBe(false);
+    expect(isTenantMediaRef(TENANT, `99999999-2222-3333-4444-555555555555/x/y/${U}/draft.webp`)).toBe(false);
   });
 
   it("collects image and audio refs anywhere", () => {
