@@ -31,7 +31,7 @@ import {
   tenantMediaPath,
   newUploadId,
   isDraftMediaPathForTenant,
-  collectImageRefs,
+  collectMediaRefs,
 } from "@/lib/media/path";
 import { copyDraftToPublished } from "@/lib/media/publish";
 import { cleanupStalePublishedMedia } from "@/lib/media/publishedCleanup";
@@ -1446,7 +1446,7 @@ export async function publishSpace(
     .select("modules")
     .eq("tenant_id", tenantId)
     .maybeSingle();
-  const previousRefs = collectImageRefs(previousSnapshot?.modules ?? null);
+  const previousRefs = collectMediaRefs(previousSnapshot?.modules ?? null);
 
   // Every draft photo reference, across every image-bearing module, the
   // three brand-level refs (Hero/Space/Logo) and module covers - the same
@@ -1505,7 +1505,7 @@ export async function publishSpace(
       .eq("tenant_id", tenantId)
       .maybeSingle();
     if (readError || !committed) throw new Error(readError?.message ?? "snapshot not readable");
-    await cleanupStalePublishedMedia(supabase, tenantId, previousRefs, collectImageRefs(committed.modules));
+    await cleanupStalePublishedMedia(supabase, tenantId, previousRefs, collectMediaRefs(committed.modules));
   } catch (cleanupError) {
     console.error("publishSpace: stale published media cleanup failed", {
       tenantId,

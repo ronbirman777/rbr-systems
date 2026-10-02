@@ -237,9 +237,10 @@ const MEDIA_REF_KEYS: ReadonlySet<string> = new Set(["imageRef", "audioRef"]);
  * found under a key literally named "imageRef", anywhere in the structure.
  * This is what makes the guest media route generic across future modules -
  * a new module's published items just need an `imageRef` field and they're
- * automatically covered, no route changes required. Image-only on purpose:
- * its callers (the guest media route, the stale-media sweep) gate image
- * objects; use collectMediaRefs for every media kind.
+ * automatically covered, no route changes required. Image-only on purpose
+ * and kept for image-only semantics: anything that AUTHORIZES or PROTECTS
+ * published objects (the guest media route, the stale-media sweep) must use
+ * collectMediaRefs, or an audio object would look unreferenced.
  */
 export function collectImageRefs(modules: unknown): Set<string> {
   return collectRefsByKey(modules, IMAGE_REF_KEYS);

@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public";
-import { MEDIA_BUCKET, MEDIA_SIGNED_URL_TTL_SECONDS, collectImageRefs, isWellFormedMediaPath } from "@/lib/media/path";
+import { createClient } from "@/lib/supabase/server";
+import {
+  MEDIA_BUCKET,
+  MEDIA_SIGNED_URL_TTL_SECONDS,
+  collectMediaRefs,
+  isWellFormedMediaPath,
+  parseVersionedMediaPath,
+} from "@/lib/media/path";
+import { AUDIO_EXTENSIONS, parseAudioDraftRef } from "@/lib/media/audio";
+import { isReferencedDraftAudio } from "@/lib/media/draftAuthorization";
 import { resolveGuestAccess } from "@/lib/guestAccess/effectiveAccess";
 import { publishedIdentityImageRefs } from "@/lib/guestAccess/publishedIdentity";
 
@@ -30,6 +39,16 @@ import { publishedIdentityImageRefs } from "@/lib/guestAccess/publishedIdentity"
  * code-protected. Responses are never cacheable: they depend on the
  * caller's cookie and on live commercial/access state.
  *
+ * Audio follows the same rules. A published audio object is served only
+ * when the snapshot references that exact `published.<ext>` path (a
+ * `draft.*` audio path is never served to a guest, even if a snapshot were
+ * to name it). The one other caller is a signed-in member of the tenant
+ * previewing a versioned DRAFT audio object: it is served only while that
+ * member's own (RLS-scoped) draft data references that exact path - a
+ * replaced version, an unattached upload, a published sibling or another
+ * tenant's path is the same bare 404. Draft IMAGES are not served here
+ * (the Studio signs those through its own session, as before).
+ *
  * Only NEW requests obey current access. A signed URL already handed out
  * stays valid until it expires, which is why the TTL is deliberately short
  * (MEDIA_SIGNED_URL_TTL_SECONDS). The admin (service-role) client only
@@ -52,6 +71,8 @@ export async function GET(
   const objectPath = path.join("/");
   const tenantId = path[0];
 
+  if (parseAudioDraftRef(objectPath)) return serveDraftAudio(objectPath, tenantId);
+
   const publicClient = createPublicClient();
   const { data: space } = await publicClient
     .from("published_spaces")
@@ -61,8 +82,10 @@ export async function GET(
 
   if (!space) return notFound();
 
-  const publishedRefs = collectImageRefs(space.modules);
+  const publishedRefs = collectMediaRefs(space.modules);
   if (!publishedRefs.has(objectPath)) return notFound();
+  const versioned = parseVersionedMediaPath(objectPath);
+  if (versioned && AUDIO_EXTENSIONS.has(versioned.ext) && versioned.kind !== "published") return notFound();
 
   let access;
   try {
@@ -77,6 +100,10 @@ export async function GET(
     if (objectPath !== heroImageRef && objectPath !== logoImageRef) return notFound();
   }
 
+  return signAndRedirect(objectPath);
+}
+
+async function signAndRedirect(objectPath: string) {
   const admin = createAdminClient();
   const { data: signed, error } = await admin.storage
     .from(MEDIA_BUCKET)
@@ -85,4 +112,19 @@ export async function GET(
   if (error || !signed) return notFound();
 
   return NextResponse.redirect(signed.signedUrl, { headers: NO_STORE });
+}
+
+async function serveDraftAudio(objectPath: string, tenantId: string) {
+  let allowed = false;
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    allowed = !!user && (await isReferencedDraftAudio(supabase, tenantId, objectPath));
+  } catch {
+    allowed = false;
+  }
+  if (!allowed) return notFound();
+  return signAndRedirect(objectPath);
 }
