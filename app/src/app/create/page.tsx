@@ -5,6 +5,7 @@ import { InnerDweSMark } from "@/components/brand/wordmark";
 import { PRODUCT_FAMILIES } from "@/lib/brand/productFamilies";
 import { getSpaceSlotSummary } from "@/app/configurator/retreat/lifecycleActions";
 import { createTeachSpace } from "@/app/configurator/teach/actions";
+import { CreateTeachSubmit } from "./create-teach-submit";
 import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
 
 export default async function CreatePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
@@ -108,9 +109,9 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
               owner-membership and slot-capacity triggers apply), then opens
               its own Studio. */}
           <form action={createTeachSpace} className="contents">
-            <button
-              type="submit"
-              data-testid="create-teach"
+            <CreateTeachSubmit
+              idleLabel="Begin →"
+              pendingLabel="Creating your Space…"
               className="group relative overflow-hidden rounded-2xl border border-idw-forest/10 bg-white p-8 pt-7 text-left transition-all hover:-translate-y-1 hover:shadow-[0_24px_48px_-24px_rgba(25,43,33,0.25)]"
               style={{ borderTopColor: teach.product.accent, borderTopWidth: 3 }}
             >
@@ -126,10 +127,7 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
               {teach.product.description ? (
                 <p className="text-sm text-idw-forest/60 mt-3 leading-relaxed">{teach.product.description}</p>
               ) : null}
-              <span className="inline-block mt-6 text-xs font-semibold uppercase tracking-wide text-idw-forest/50 group-hover:text-idw-forest transition-colors">
-                Begin →
-              </span>
-            </button>
+            </CreateTeachSubmit>
           </form>
 
           <div

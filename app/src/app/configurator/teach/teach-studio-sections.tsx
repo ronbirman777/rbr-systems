@@ -65,6 +65,7 @@ import {
   formatShortDate,
   renderTemplate,
 } from "@/lib/teach/links";
+import { EXPLORE_MODULE_EMPTY_HINT, exploreModuleStatus } from "@/lib/teach/moduleVisibility";
 import { WEEKDAY_LABELS, describeAvailability, formatDuration, sortClasses } from "@/lib/teach/schedule";
 import type { StudioApi, SectionKey } from "./teach-studio";
 import { audioAttached, audioDetached, imageRemoved, imageUploaded, moveItemById, patchExploreCard, patchItemById, patchSlot, type Patch } from "./studioStateUpdates";
@@ -1298,6 +1299,9 @@ export function AboutSection({ api }: Props) {
   return (
     <>
       <SectionHeader eyebrow="Teaching" title="About Me" intro="Your story, told well. Everything is optional — empty fields never appear to guests." />
+      <Card title="About Me tab" description="The About Me tab in your app's navigation.">
+        <Toggle checked={a.showTab} onChange={(v) => set({ showTab: v })} label={a.showTab ? "Shown in navigation" : "Hidden from navigation"} description="On by default. Turn it off if you'd rather not have an About Me page; your details are kept." />
+      </Card>
       <Card title="Profile" description="Shown at the top of About Me, under your name.">
         <SettingsImage api={api} settingsKey="teachAbout" slot="profile" value={a.profile} onChange={(v) => api.updateSetting("teachAbout", (latest) => patchSlot(latest, "profile", v), "about")} label="Profile image · circle crop" previewClassName="w-[120px] h-[120px] rounded-full" />
         <Grid>
@@ -1399,9 +1403,16 @@ export function ModulesSection({ api }: Props) {
     // Computed from the latest teachExplore slice so a late upload only changes this card's image fields.
     api.updateSetting("teachExplore", (latest) => ({ cards: patchExploreCard(latest.cards, k, patch) }), "modules");
   };
+  const statusInput = {
+    enabledExplore: api.enabledExplore,
+    readings: api.items.teachReadings,
+    audio: api.items.teachAudio,
+    customPages: api.items.customPages.filter((p) => p.metadata.enabled),
+    settings: api.settings,
+  };
   return (
     <>
-      <SectionHeader eyebrow="Explore library" title="Modules" intro="A curated library for teachers. Turn modules on, and give each Explore card a title and an optional cover image." />
+      <SectionHeader eyebrow="Explore library" title="Modules" intro="A curated library for teachers. Turn modules on, and give each Explore card a title and an optional cover image. Changes show in the preview straight away; guests see them after you publish." />
       {(Object.keys(MODULE_INFO) as TeachExploreModule[]).map((k) => {
         const on = api.enabledExplore.includes(k);
         const info = MODULE_INFO[k];
@@ -1409,6 +1420,7 @@ export function ModulesSection({ api }: Props) {
         return (
           <Card key={k} title={info.label} description={info.desc}>
             <Toggle checked={on} onChange={(v) => api.setEnabledExplore(v ? [...api.enabledExplore, k] : api.enabledExplore.filter((x) => x !== k))} label={on ? "Shown in Explore" : "Hidden"} />
+            {exploreModuleStatus(statusInput, k) === "empty" ? <Hint>{EXPLORE_MODULE_EMPTY_HINT[k]}</Hint> : null}
             {on && k !== "customPages" ? (
               <>
                 <Grid>

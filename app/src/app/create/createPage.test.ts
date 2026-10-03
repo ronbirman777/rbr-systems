@@ -26,6 +26,7 @@ vi.mock("@/app/configurator/teach/actions", () => ({ createTeachSpace: async fun
 
 import Link from "next/link";
 import { createTeachSpace } from "@/app/configurator/teach/actions";
+import { CreateTeachSubmit } from "./create-teach-submit";
 import CreatePage from "./page";
 
 const render = (error?: string) => CreatePage({ searchParams: Promise.resolve({ error }) });
@@ -47,9 +48,11 @@ describe("Create page (TASK 027.5 Phase 2B)", () => {
     const tree = await render();
     const forms = findByType(tree, "form").filter((f) => f.props.action === createTeachSpace);
     expect(forms).toHaveLength(1);
-    const button = collectElements(forms[0]).find((e) => e.type === "button");
-    expect(button?.props["data-testid"]).toBe("create-teach");
-    expect(button?.props.type).toBe("submit");
+    // The submit control is the pending-aware client button: it owns type=submit,
+    // data-testid=create-teach and the disabled-while-pending behaviour.
+    const submit = collectElements(forms[0]).find((e) => e.type === CreateTeachSubmit);
+    expect(submit).toBeTruthy();
+    expect(submit?.props.pendingLabel).toMatch(/creating/i);
     expect(textOf(forms[0])).toContain("Time to Teach");
   });
 
