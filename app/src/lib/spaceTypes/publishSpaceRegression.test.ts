@@ -115,6 +115,7 @@ describe("Space Type Registry matches the database", () => {
 
 const norm = (sql: string) => sql.replace(/\s+/g, " ").trim();
 const TEACH_BLOCK = /if v_tenant\.product_type = 'teach' then[\s\S]*?end if;/i;
+const TEACH_CUSTOM_PAGES_GATE = /if 'customPages' = any\(v_enabled_modules\) and v_tenant\.product_type is distinct from 'teach' then/i;
 
 describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Phase 4A)", () => {
   const latest = latestFunctionDefinition(migrations, "publish_space")!;
@@ -127,7 +128,13 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
 
   it("the Retreat branch is byte-for-byte 0025's body once the Teach block is removed (moduleCovers, imagePosition, snapshot shape untouched)", () => {
     expect(TEACH_BLOCK.test(latest.body)).toBe(true);
-    expect(norm(latest.body.replace(TEACH_BLOCK, ""))).toBe(norm(base));
+    expect(norm(latest.body.replace(TEACH_BLOCK, "").replace(TEACH_CUSTOM_PAGES_GATE, "if 'customPages' = any(v_enabled_modules) then"))).toBe(norm(base));
+  });
+
+  it("the only edit inside the Retreat branch is the customPages gate, which skips ONLY Teach (retreat and client_hub still emit it)", () => {
+    expect(TEACH_CUSTOM_PAGES_GATE.test(latest.body)).toBe(true);
+    expect(norm(latest.body).match(/is distinct from 'teach'/g)).toHaveLength(1);
+    expect(norm(latest.body)).not.toMatch(/product_type (=|<>|!=) 'retreat'/);
   });
 
   it("the Retreat branch still emits moduleCovers and imagePosition", () => {

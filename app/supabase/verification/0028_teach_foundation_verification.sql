@@ -142,6 +142,8 @@ begin
   insert into _r (name, ok) values ('teach republish succeeds and now includes only the enabled custom page',
     p2 >= p1 and jsonb_array_length(mods->'teach'->'items'->'customPages') = 1
     and mods->'teach'->'items'->'customPages'->0->>'title' = 'Page on');
+  insert into _r (name, ok) values ('custom pages appear ONLY under modules.teach (no duplicate Retreat-shaped top-level customPages for a Teach Space)',
+    not (mods ? 'customPages'));
 
   -- Explore module switched off: its content stops being published
   update public.module_configs set enabled = false where tenant_id = t and module_key = 'teachReadings';

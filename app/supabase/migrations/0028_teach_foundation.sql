@@ -283,7 +283,11 @@ begin
     v_modules := v_modules || jsonb_build_object('faq', v_payload);
   end if;
 
-  if 'customPages' = any(v_enabled_modules) then
+  -- Teach publishes its custom pages under modules.teach.items.customPages
+  -- (build_teach_payload); the Retreat-shaped top-level block is skipped for
+  -- Teach so the same page is not emitted twice. Every other product type
+  -- (retreat, client_hub) is unchanged.
+  if 'customPages' = any(v_enabled_modules) and v_tenant.product_type is distinct from 'teach' then
     select coalesce(jsonb_agg(jsonb_build_object(
       'title', title,
       'body', description,

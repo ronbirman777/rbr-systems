@@ -40,6 +40,10 @@ describe("Guest parser consumes the real build_teach_payload output", () => {
     expect(JSON.stringify(fixture)).not.toMatch(/\/draft\./);
   });
 
+  it("custom pages are carried once, under modules.teach (no Retreat-shaped duplicate)", () => {
+    expect(Object.keys((fixture as { modules: Record<string, unknown> }).modules).sort()).toEqual(["brand", "moduleCovers", "teach"]);
+  });
+
   it("settings, Explore modules and daily inspiration come through", () => {
     expect(data.settings.teachAbout.about).toBe("About me");
     expect(data.settings.teachStyle.preset).toBe("earth");
