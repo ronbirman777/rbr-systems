@@ -1929,7 +1929,7 @@ export function RetreatConfigurator({
             </div>
 
             <ColorPicker
-              key={presetNonce}
+              key={`primary-${presetNonce}`}
               label="Primary Color"
               hint="Used for key actions, navigation highlights and immersive moments."
               value={effectivePrimary}
@@ -1939,7 +1939,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
-              key={presetNonce}
+              key={`accent-${presetNonce}`}
               label="Accent Color"
               hint="Used for live indicators, tags and warm highlights."
               value={effectiveSecondary}
@@ -1949,7 +1949,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
-              key={presetNonce}
+              key={`navigation-${presetNonce}`}
               label="Navigation / Tabs Color"
               hint="Used for the bottom navigation's active tab, and other tab-like selections (e.g. Schedule's day picker)."
               value={effectiveNavigation}
