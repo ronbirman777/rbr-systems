@@ -27,7 +27,16 @@ import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
 import { BrandImageField } from "./brand-image-field";
 import { PALETTES, GUEST_BASE_PALETTE, BRAND_COLOR_PRESETS, type AtmosphereKey, type PaletteKey } from "@/lib/theme/tokens";
 import { safeTextColor, meetsAA } from "@/lib/theme/contrast";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub } from "./studio-ui";
+import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, StudioIntro, StudioEyebrowContext } from "./studio-ui";
+import { StudioTopBar } from "@/components/studio/studio-top-bar";
+import { saveStatusLabel, PREVIEW_DRAFT_LABEL, PREVIEW_DRAFT_CAPTION, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
+import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
+import { getBrandPresets, matchBrandPreset } from "@/lib/brand/presets";
+import { EmptyState } from "@/components/studio/empty-state";
+import { StatusPill } from "@/components/studio/status-pill";
+import { ReadinessChecklist, type ReadinessItem } from "@/components/studio/readiness-checklist";
+import { PublicLinkCard } from "@/components/studio/public-link-card";
+import { publicSpaceUrl, guestAppPath } from "@/lib/studio/publicLink";
 import type { EditableScheduleItem } from "@/lib/schedule/types";
 import type { EditableFacilitator } from "@/lib/modules/facilitator";
 import type { EditableMeal } from "@/lib/modules/meal";
@@ -385,12 +394,8 @@ function ScheduleEditor({
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-[20px] mb-1" style={{ fontFamily: "var(--font-dm-serif-display), serif", color: GUEST_BASE_PALETTE.forest }}>
-        Build your schedule
-      </h1>
-      <p className="text-[13px] leading-relaxed mb-6" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-        Add and arrange sessions for each day of your retreat. Your guests see this on the Schedule screen.
-      </p>
+      <StudioHeading>Build your schedule</StudioHeading>
+      <StudioIntro>Add and arrange sessions for each day of your retreat. Your guests see this on the Schedule screen.</StudioIntro>
 
       {dates.length > 0 && (
         <div className="flex gap-2 overflow-x-auto pb-1 mb-6">
@@ -483,10 +488,11 @@ function ScheduleEditor({
             </div>
           );
         })}
-        {currentDate === null && (
-          <p className="text-[13px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-            No sessions yet - add your first one below.
-          </p>
+        {dayItems.length === 0 && (
+          <EmptyState
+            title={currentDate === null ? "No sessions yet" : "Nothing scheduled this day"}
+            body="Add the sessions, meals and activities guests will see on the Schedule screen. Use + Add Session below to start."
+          />
         )}
       </div>
 
@@ -677,12 +683,17 @@ function TeamEditor({
 
   return (
     <div className="max-w-2xl">
-      <h1 className="text-[20px] mb-1" style={{ fontFamily: "var(--font-dm-serif-display), serif", color: GUEST_BASE_PALETTE.forest }}>
-        Add your facilitators
-      </h1>
-      <p className="text-[13px] leading-relaxed mb-8" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-        Your team appears on the Team screen. Photos are especially important here - upload the best you have.
-      </p>
+      <StudioHeading>Add your facilitators</StudioHeading>
+      <StudioIntro>Your team appears on the Team screen. Photos are especially important here - upload the best you have.</StudioIntro>
+
+      {facilitators.length === 0 && (
+        <div className="mb-4">
+          <EmptyState
+            title="No facilitators yet"
+            body="Add the teachers and hosts guiding your retreat - a photo and a short bio make the Team screen feel personal. Use the Add Facilitator tile below to start."
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-3 gap-4 mb-4">
         {facilitators.map((f, i) => {
@@ -1026,6 +1037,8 @@ export function RetreatConfigurator({
   const [customSecondary, setCustomSecondary] = useState<string | null>(initialCustomSecondary);
   const [customNavigation, setCustomNavigation] = useState<string | null>(initialCustomNavigation);
   const [customText, setCustomText] = useState<string | null>(initialCustomText);
+  // Bumped when a Brand preset is applied so the colour pickers re-sync their hex drafts.
+  const [presetNonce, setPresetNonce] = useState(0);
   const effectivePrimary = customPrimary ?? PALETTES[palette].primary;
   const effectiveSecondary = customSecondary ?? PALETTES[palette].secondary;
   const effectiveNavigation = customNavigation ?? effectivePrimary;
@@ -1415,8 +1428,30 @@ export function RetreatConfigurator({
     attemptNavigate(() => setStep(next));
   }
 
+  const publishReadiness: ReadinessItem[] = [
+    { ok: name.trim().length > 0, label: "Retreat name", hint: "Add your retreat name in Identity." },
+    { ok: !!currentSlug, label: "Guest App address", hint: "Choose an address in Identity." },
+    { ok: !!heroImageUrl, label: "Cover image", hint: "Add a hero image in Brand so your Guest App has a welcoming first impression." },
+    { ok: schedule.length > 0, label: "Schedule", hint: "Add at least one schedule item so guests know what is happening." },
+    { ok: facilitators.length > 0, label: "Facilitators", hint: "Add the people guiding your retreat." },
+  ];
+
+  const stepEyebrow =
+    step === "publish" || step === "share" || step === "featured"
+      ? "Publishing"
+      : sidebarGroups.find((g) => g.items.some((i) => i.key === step))?.label;
+
   return (
     <>
+      <StudioTopBar
+        name={name}
+        fallbackName="My Retreat"
+        productBadge="Time to Flow"
+        saveStatus={saveStatusLabel({ saving: publishPending, dirty: dirty.isDirtyAnywhere })}
+        onBack={() => attemptNavigate(() => router.push("/space"))}
+        onPublish={() => attemptNavigate(() => setStep("publish"))}
+        publishLabel={currentPublishedAt ? "Republish" : "Publish"}
+      />
       {/* Mobile Studio Navigation - the desktop sidebar below is
           `hidden lg:flex`, so below that breakpoint this topbar + drawer
           is the only way to switch sections. */}
@@ -1565,7 +1600,7 @@ export function RetreatConfigurator({
       )}
 
       <div
-        className={`grid gap-0 flex-1 min-h-0 ${
+        className={`grid gap-0 flex-1 min-h-0 lg:items-start ${
           step === "publish" || step === "share" || step === "featured"
             ? "lg:grid-cols-[280px_1fr]"
             : "lg:grid-cols-[280px_1fr_360px]"
@@ -1578,7 +1613,7 @@ export function RetreatConfigurator({
           working, clear affordance) rather than replaced with Figma's
           completion-dot concept, which would need new per-step
           "is this complete" logic this batch doesn't add. */}
-      <aside className="border-r border-idw-forest/10 bg-white hidden lg:flex lg:flex-col overflow-hidden">
+      <aside className="border-r border-[#E2DACD] bg-[#EFE9DE] hidden lg:flex lg:flex-col overflow-hidden lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]" data-testid="studio-sidebar">
         {/* Scrollable nav region, independent from the pinned footer below.
             Previously the nav list and the global actions shared one
             `overflow-y-auto` container with a `flex-1` spacer between
@@ -1589,18 +1624,10 @@ export function RetreatConfigurator({
             dedicated scroll region + a `shrink-0` footer outside it
             pins the global actions structurally, regardless of section
             content or nav-list length. */}
-        <div className="flex-1 min-h-0 overflow-y-auto px-7 pt-9">
-          <InnerDweSMark size={26} className="mb-4" />
-          <button
-            type="button"
-            onClick={() => attemptNavigate(() => router.push("/space"))}
-            className="mb-8 text-xs font-semibold text-idw-forest/60 hover:text-idw-forest underline decoration-idw-forest/25 underline-offset-2"
-          >
-            ← My Spaces
-          </button>
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-5">
           {sidebarGroups.map((group) => (
             <div key={group.label} className="mb-6">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-idw-forest/40 mb-2">
+              <div className="px-3 pt-3 pb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#8C8A84]">
                 {group.label}
               </div>
               <ol className="flex flex-col gap-1">
@@ -1611,13 +1638,14 @@ export function RetreatConfigurator({
                       <button
                         type="button"
                         onClick={() => attemptNavigate(() => setStep(s.key))}
-                        className={`w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-3 ${
-                          step === s.key ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70 hover:bg-idw-forest/5"
+                        aria-current={step === s.key ? "step" : undefined}
+                        className={`w-full text-left px-3 py-2.5 rounded-lg text-[13.5px] flex items-center gap-3 transition-colors ${
+                          step === s.key ? "bg-white shadow-sm font-semibold text-[#192B21]" : "text-[#4A4A44] hover:bg-white/60"
                         }`}
                       >
                         <span
                           className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 ${
-                            step === s.key ? "bg-idw-parchment text-idw-forest" : "bg-idw-forest/10"
+                            step === s.key ? "bg-[#192B21] text-white" : "bg-[#192B21]/10 text-[#4A4A44]"
                           }`}
                         >
                           {i + 1}
@@ -1637,9 +1665,9 @@ export function RetreatConfigurator({
             the scroll region above, so it stays visible at the bottom of
             the sidebar for all 12 Studio sections, not just the ones
             whose content happens to be tall enough. */}
-        <div className="px-7 pb-9 pt-3 shrink-0">
+        <div className="px-4 pb-5 pt-3 shrink-0 border-t border-[#E2DACD]">
           {tenantId && currentSlug && (
-            <div className="mb-4 text-xs text-idw-forest/50">{currentSlug}.innerdwes.com</div>
+            <div className="mb-3 px-3 text-xs text-[#8C8A84] truncate">/s/{currentSlug}</div>
           )}
 
           <button
@@ -1692,18 +1720,15 @@ export function RetreatConfigurator({
       </aside>
 
       {/* CENTER: configuration */}
-      <section className="px-6 py-12 sm:px-12 overflow-y-auto">
+      <section className="px-6 py-10 sm:px-12 min-w-0">
+      <StudioEyebrowContext.Provider value={stepEyebrow}>
         {step === "identity" && (
           <form action={draftAction} className="max-w-xl">
             <input type="hidden" name="tenantId" value={tenantId ?? ""} />
             <input type="hidden" name="name" value={name} />
             <input type="hidden" name="timezone" value={timezone} />
-            <h1 className="text-[20px] mb-1" style={{ fontFamily: "var(--font-dm-serif-display), serif", color: GUEST_BASE_PALETTE.forest }}>
-              Tell us about your retreat
-            </h1>
-            <p className="text-[13px] leading-relaxed mb-7" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-              This information appears throughout your guest experience and helps guests feel oriented and welcomed.
-            </p>
+            <StudioHeading>Tell us about your retreat</StudioHeading>
+      <StudioIntro>This information appears throughout your guest experience and helps guests feel oriented and welcomed.</StudioIntro>
 
             <StudioSectionSub first>Retreat Details</StudioSectionSub>
             <div className="space-y-4">
@@ -1885,15 +1910,26 @@ export function RetreatConfigurator({
             <input type="hidden" name="customSecondary" value={customSecondary ?? ""} />
             <input type="hidden" name="customNavigation" value={customNavigation ?? ""} />
             <input type="hidden" name="customText" value={customText ?? ""} />
-            <h1 className="text-[20px] mb-1" style={{ fontFamily: "var(--font-dm-serif-display), serif", color: GUEST_BASE_PALETTE.forest }}>
-              Brand your experience
-            </h1>
-            <p className="text-[13px] leading-relaxed mb-7" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-              Choose colors that reflect your retreat&apos;s energy. InnerDweS ensures they work beautifully across
-              your entire guest application.
-            </p>
+            <StudioHeading>Brand your experience</StudioHeading>
+      <StudioIntro>Choose colors that reflect your retreat&apos;s energy. InnerDweS ensures they work beautifully across
+              your entire guest application.</StudioIntro>
+
+            <div className="mb-8">
+              <BrandPresetChips
+                presets={getBrandPresets("retreat")}
+                activeKey={matchBrandPreset("retreat", { primary: effectivePrimary, accent: effectiveSecondary })?.key ?? null}
+                onApply={(preset) => {
+                  setCustomPrimary(preset.primary);
+                  setCustomSecondary(preset.accent);
+                  setCustomNavigation(preset.primary);
+                  setPresetNonce((n) => n + 1);
+                  dirty.markDirty("identityAndBrand");
+                }}
+              />
+            </div>
 
             <ColorPicker
+              key={presetNonce}
               label="Primary Color"
               hint="Used for key actions, navigation highlights and immersive moments."
               value={effectivePrimary}
@@ -1903,6 +1939,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
+              key={presetNonce}
               label="Accent Color"
               hint="Used for live indicators, tags and warm highlights."
               value={effectiveSecondary}
@@ -1912,6 +1949,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
+              key={presetNonce}
               label="Navigation / Tabs Color"
               hint="Used for the bottom navigation's active tab, and other tab-like selections (e.g. Schedule's day picker)."
               value={effectiveNavigation}
@@ -2027,13 +2065,9 @@ export function RetreatConfigurator({
             {IMPLEMENTED_OPTIONAL_MODULES.map((key) => (
               <input key={key} type="hidden" name={`module_${key}`} value={enabledModules.has(key) ? "on" : "off"} />
             ))}
-            <h1 className="text-[20px] mb-1" style={{ fontFamily: "var(--font-dm-serif-display), serif", color: GUEST_BASE_PALETTE.forest }}>
-              Choose what your guests can access
-            </h1>
-            <p className="text-[13px] leading-relaxed mb-8" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-              Enable the experiences that are part of your retreat. Disabled modules won&apos;t appear in the guest
-              app. You can change this any time.
-            </p>
+            <StudioHeading>Choose what your guests can access</StudioHeading>
+      <StudioIntro>Enable the experiences that are part of your retreat. Disabled modules won&apos;t appear in the guest
+              app. You can change this any time.</StudioIntro>
 
             <div className="space-y-2.5">
               {IMPLEMENTED_OPTIONAL_MODULES.map((key) => {
@@ -2273,13 +2307,11 @@ export function RetreatConfigurator({
 
         {step === "publish" && tenantId && (
           <div className="max-w-4xl">
-            <h1 className="text-[28px] font-normal text-idw-forest" style={{ fontFamily: "var(--font-dm-serif-display), serif" }}>
-              Preview &amp; Publish
-            </h1>
-            <p className="text-sm text-idw-forest/60 mt-1 leading-relaxed max-w-md">
+            <StudioHeading>Preview &amp; Publish</StudioHeading>
+            <StudioIntro>
               Review your changes and publish when you&apos;re ready. Your live guest app only updates when you
               choose to publish.
-            </p>
+            </StudioIntro>
 
             {showFirstPublishMoment && (
               <div className="mt-6 rounded-2xl border border-idw-sage/40 bg-idw-sage/10 p-5 flex items-center justify-between gap-4 flex-wrap">
@@ -2320,37 +2352,48 @@ export function RetreatConfigurator({
               <form action={publishFormAction}>
                 <input type="hidden" name="tenantId" value={tenantId} />
 
-                <div
-                  className={`rounded-2xl p-5 border ${
-                    currentPublishedAt ? "bg-idw-sage/10 border-idw-sage/30" : "bg-idw-clay/8 border-idw-clay/25"
-                  }`}
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className={`w-2 h-2 rounded-full ${currentPublishedAt ? "bg-idw-sage" : "bg-idw-clay"}`} />
-                    <span
-                      className={`text-xs font-semibold ${currentPublishedAt ? "text-idw-forest" : "text-idw-clay-text"}`}
-                    >
-                      {currentPublishedAt ? "Live" : "Not published yet"}
-                    </span>
+                <div className="rounded-2xl border border-[#E2DACD] bg-white p-5" data-testid="publish-status-card">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <StatusPill state={studioPublishState(currentPublishedAt)} />
+                    {formatPublishedAtUtc(currentPublishedAt) && (
+                      <span className="text-[12px] text-[#8C8A84]">
+                        Last published {formatPublishedAtUtc(currentPublishedAt)}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-idw-forest/70 text-xs leading-relaxed">
+                  <p className="mt-3 text-[12.5px] leading-relaxed text-[#6F6C66]">
                     {currentPublishedAt
-                      ? `Last published ${new Date(currentPublishedAt).toLocaleString()}. Guests won't see further edits until you republish.`
+                      ? "Guests won't see further edits until you republish."
                       : "Nothing is visible to guests until you publish."}
                   </p>
                 </div>
 
-                <div className="mt-4 rounded-2xl border border-idw-forest/12 p-4">
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-idw-forest/40">Public address</div>
-                  <div className="text-sm text-idw-forest mt-1">
-                    {currentSlug ? (
-                      `${currentSlug}.innerdwes.com`
-                    ) : (
-                      <button type="button" onClick={() => setStep("identity")} className="underline">
-                        Choose one in Identity →
+                <div className="mt-4 rounded-2xl border border-[#E2DACD] bg-white p-5">
+                  <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84] mb-3">
+                    Ready to publish?
+                  </p>
+                  <ReadinessChecklist items={publishReadiness} />
+                </div>
+
+                <div className="mt-4">
+                  {currentSlug ? (
+                    <PublicLinkCard
+                      url={publicSpaceUrl(tenantId, currentSlug)}
+                      openHref={guestAppPath(tenantId, currentSlug)}
+                      published={!!currentPublishedAt}
+                    />
+                  ) : (
+                    <div className="rounded-2xl border border-[#E2DACD] bg-white p-5">
+                      <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84]">Guest App link</p>
+                      <button
+                        type="button"
+                        onClick={() => setStep("identity")}
+                        className="mt-1 text-sm text-[#192B21] underline"
+                      >
+                        Choose an address in Identity →
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 {publishState.error && (
@@ -2363,7 +2406,7 @@ export function RetreatConfigurator({
                   <button
                     type="submit"
                     disabled={publishPending}
-                    className="w-full rounded-2xl bg-idw-forest text-idw-parchment text-sm font-semibold py-3.5 disabled:opacity-60 shadow-sm flex items-center justify-center gap-2"
+                    className="w-full min-h-12 rounded-full bg-[#192B21] text-white text-[13.5px] font-semibold disabled:opacity-60 shadow-sm flex items-center justify-center gap-2"
                   >
                     {publishPending && (
                       <span
@@ -2382,25 +2425,24 @@ export function RetreatConfigurator({
                         // for however long that took.
                         "Publishing…"
                       : currentPublishedAt
-                        ? "Publish Changes"
+                        ? "Republish"
                         : "Publish"}
                   </button>
                   <button
                     type="button"
                     onClick={() => goToStep(-1)}
-                    className="w-full rounded-2xl border border-idw-forest/20 text-idw-forest text-sm font-medium py-3"
+                    className="w-full min-h-12 rounded-full border border-[#192B21]/20 text-[#192B21] text-[13.5px] font-medium"
                   >
                     Back
                   </button>
                   {currentPublishedAt && (
-                    <a
-                      href={currentSlug ? `/s/${currentSlug}` : `/g/${tenantId}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full text-center rounded-2xl border border-idw-forest/20 text-idw-forest text-sm font-medium py-3"
+                    <button
+                      type="button"
+                      onClick={() => attemptNavigate(() => setStep("share"))}
+                      className="w-full min-h-12 rounded-full border border-[#192B21]/20 text-[#192B21] text-[13.5px] font-medium"
                     >
-                      View Live App ↗
-                    </a>
+                      Share &amp; QR code →
+                    </button>
                   )}
                 </div>
               </form>
@@ -2409,7 +2451,9 @@ export function RetreatConfigurator({
                   hidden on this step (see the grid below) so this is the
                   only preview visible, matching the approved Publish
                   screen's own embedded, larger phone. */}
-              <div className="flex justify-center lg:justify-start">
+              <div className="flex flex-col items-center lg:items-start gap-2">
+                <p className="text-[10.5px] tracking-[0.12em] uppercase font-semibold text-[#8C8A84]">{PREVIEW_DRAFT_LABEL}</p>
+                <p className="text-[11px] text-[#8C8A84] mb-1">{PREVIEW_DRAFT_CAPTION}</p>
                 <div
                   className="w-[220px] h-[440px] rounded-[24px] overflow-hidden shadow-2xl"
                   style={{ border: `3px solid ${GUEST_BASE_PALETTE.forest}`, background: GUEST_BASE_PALETTE.parchment }}
@@ -2472,6 +2516,7 @@ export function RetreatConfigurator({
             initialSubmission={initialFeaturedSubmission}
           />
         )}
+      </StudioEyebrowContext.Provider>
       </section>
 
       {/* RIGHT: live preview - Visual Fidelity Phase 1: frame proportions,
@@ -2487,11 +2532,11 @@ export function RetreatConfigurator({
           the "Resume this draft later" link it also carries isn't
           reachable there either, so nothing mobile-only is lost. */}
       {step !== "publish" && step !== "share" && step !== "featured" && (
-      <aside className="hidden lg:flex bg-idw-forest px-8 py-12 flex-col items-center">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-idw-parchment/50">
-          Draft Preview
+      <aside className="hidden lg:flex bg-[#E9E3D8] border-l border-[#E2DACD] px-8 py-8 flex-col items-center overflow-y-auto lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]" data-testid="studio-preview-pane">
+        <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#8C8A84]">
+          {PREVIEW_DRAFT_LABEL}
         </div>
-        <div className="text-[11px] text-idw-parchment/35 mt-1">What your guests will see once published</div>
+        <div className="text-[11px] text-[#8C8A84] mt-1 text-center">{PREVIEW_DRAFT_CAPTION}</div>
         <div
           className="mt-7 w-[260px] h-[520px] rounded-[24px] lg:w-[220px] lg:h-[440px] lg:rounded-[20px] overflow-hidden shadow-2xl"
           style={{ border: `3px solid ${GUEST_BASE_PALETTE.forest}`, background: GUEST_BASE_PALETTE.parchment }}
@@ -2530,7 +2575,7 @@ export function RetreatConfigurator({
           <button
             type="button"
             onClick={() => router.push(`/configurator/retreat/${tenantId}`)}
-            className="mt-6 text-xs text-idw-parchment/60 underline"
+            className="mt-6 text-xs text-[#4A4A44] underline"
           >
             Resume this draft later at this link
           </button>

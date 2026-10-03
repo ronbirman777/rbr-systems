@@ -8,6 +8,7 @@ import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/mo
 import type { EditableCustomPage } from "@/lib/modules/customPage";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { EmptyState } from "@/components/studio/empty-state";
 import { saveCustomPages, type SaveCustomPagesState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 import { DEFAULT_CUSTOM_PAGES_LIMIT } from "@/lib/entitlements/customPagesLimit";
@@ -155,6 +156,15 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
           );
         })}
       </div>
+
+      {customPages.length === 0 && (
+        <div className="mb-4">
+          <EmptyState
+            title="No custom pages yet"
+            body="Create a page for anything guests need that has no home yet - What to Bring, Community Guidelines, About the Retreat. Use + Add Page below to start."
+          />
+        </div>
+      )}
 
       {atLimit ? (
         <div

@@ -69,6 +69,7 @@ import { EXPLORE_MODULE_EMPTY_HINT, exploreModuleStatus } from "@/lib/teach/modu
 import { WEEKDAY_LABELS, describeAvailability, formatDuration, sortClasses } from "@/lib/teach/schedule";
 import type { StudioApi, SectionKey } from "./teach-studio";
 import { audioAttached, audioDetached, imageRemoved, imageUploaded, moveItemById, patchExploreCard, patchItemById, patchSlot, type Patch } from "./studioStateUpdates";
+import { SectionHeader } from "@/components/studio/section-header";
 import {
   Card,
   ColorField,
@@ -82,25 +83,13 @@ import {
   TextField,
   Toggle,
   INPUT,
-} from "./studio-fields";
+} from "@/components/studio/studio-fields";
 
 type Props = { api: StudioApi };
 
 // ---------------------------------------------------------------------------
 // Shared section chrome
 // ---------------------------------------------------------------------------
-
-function SectionHeader({ eyebrow, title, intro }: { eyebrow: string; title: string; intro: string }) {
-  return (
-    <header className="flex flex-col gap-1.5">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9A7B4F]">{eyebrow}</p>
-      <h1 className="text-[30px] leading-tight text-[#192B21]" style={{ fontFamily: "var(--font-fraunces), serif" }}>
-        {title}
-      </h1>
-      <p className="text-[13.5px] text-[#6F6C66] leading-relaxed max-w-[62ch]">{intro}</p>
-    </header>
-  );
-}
 
 function SaveBar({ api, section }: { api: StudioApi; section: SectionKey }) {
   const dirty = api.isDirty(section);

@@ -8,7 +8,7 @@ import { validateImageFile, classifyServerImageError } from "@/lib/media/clientV
 import { focalPointToObjectPosition, type FocalPoint } from "@/lib/media/focalPoint";
 import { meetsAA } from "@/lib/theme/contrast";
 
-/** Form primitives for the Time to Teach Studio (platform chrome, not guest theme). */
+/** Shared Studio form primitives (platform chrome, not guest theme) - used by the Time to Teach and Time to Flow Studios. */
 
 export const INPUT =
   "w-full bg-white border border-[#D4C5A9]/70 rounded-xl px-3.5 py-2.5 text-[14px] text-[#232926] outline-none focus:ring-2 focus:ring-[#9A7B4F]/25 focus:border-[#9A7B4F]/60 placeholder:text-[#9B8E84]/70 transition-all";

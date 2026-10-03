@@ -8,6 +8,7 @@ import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/mo
 import { MEAL_TYPES, type EditableMeal, type MealType } from "@/lib/modules/meal";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { EmptyState } from "@/components/studio/empty-state";
 import { saveMeals, type SaveMealsState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
@@ -181,6 +182,12 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
           );
         })}
       </div>
+
+      {meals.length === 0 && (
+        <div className="mb-4">
+          <EmptyState title="No meals yet" body="Add the meals guests will be served - breakfast, lunch, dinner - with times and dietary notes. Use + Add Meal below to start." />
+        </div>
+      )}
 
       <button
         type="button"

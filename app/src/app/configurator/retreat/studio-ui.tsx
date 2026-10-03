@@ -1,4 +1,7 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { createContext, useContext, type ReactNode } from "react";
+import { SECTION_EYEBROW_CLASS, SECTION_INTRO_CLASS, SECTION_TITLE_CLASS, SECTION_TITLE_STYLE } from "@/components/studio/section-header";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 
 /**
@@ -35,21 +38,27 @@ export function StudioSectionSub({ children, first }: { children: ReactNode; fir
   );
 }
 
-export function StudioHeading({ children }: { children: ReactNode }) {
+/**
+ * The current Studio section's eyebrow (e.g. "My space", "Content",
+ * "Publishing"). The configurator provides it once per step so every
+ * StudioHeading renders the same eyebrow/title/intro hierarchy as the
+ * Time to Teach Studio without each step file passing it.
+ */
+export const StudioEyebrowContext = createContext<string | undefined>(undefined);
+
+export function StudioHeading({ children, eyebrow }: { children: ReactNode; eyebrow?: string }) {
+  const ctx = useContext(StudioEyebrowContext);
+  const label = eyebrow ?? ctx;
   return (
-    <h1
-      className="text-[20px] mb-1"
-      style={{ fontFamily: "var(--font-dm-serif-display), serif", color: GUEST_BASE_PALETTE.forest }}
-    >
-      {children}
-    </h1>
+    <div className="flex flex-col gap-1.5">
+      {label ? <p className={SECTION_EYEBROW_CLASS}>{label}</p> : null}
+      <h1 className={SECTION_TITLE_CLASS} style={SECTION_TITLE_STYLE}>
+        {children}
+      </h1>
+    </div>
   );
 }
 
 export function StudioIntro({ children }: { children: ReactNode }) {
-  return (
-    <p className="text-[13px] leading-relaxed mb-8" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-      {children}
-    </p>
-  );
+  return <p className={`${SECTION_INTRO_CLASS} mt-1.5 mb-8`}>{children}</p>;
 }
