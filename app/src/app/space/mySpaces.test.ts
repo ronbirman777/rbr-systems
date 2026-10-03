@@ -94,11 +94,11 @@ describe("My Spaces - registry-aware (TASK 027.5 Phase 2B)", () => {
     expect(textOf(tree)).toContain("Time to Flow");
   });
 
-  it("Teach: Manage Space / Preview point at the Teach Studio; Publish is explicitly unavailable, not offered", async () => {
+  it("Teach: Manage Space / Preview point at the Teach Studio and the Publish chip is offered", async () => {
     const tree = await render([tenant({ product_type: "teach" })]);
     expect(hrefs(tree)).toEqual([`/configurator/teach/${ID}`, `/configurator/teach/${ID}?section=publish`]);
-    expect(findByType(tree, PublishSpaceButton)).toHaveLength(0);
-    expect(textOf(tree)).toContain("Publishing for Time to Teach isn't available yet.");
+    expect(findByType(tree, PublishSpaceButton)).toHaveLength(1);
+    expect(textOf(tree)).not.toContain("isn't available yet");
   });
 
   it.each([["mystery"], [""], [null]])("unsupported product_type %j: no Studio links, no Publish, labelled unsupported", async (type) => {

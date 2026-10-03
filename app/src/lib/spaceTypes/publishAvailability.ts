@@ -7,13 +7,13 @@ import { resolveSpaceType, type SpaceTypeId } from "./registry";
  * builder in publish_space(), published-media handling). Anything else fails
  * closed: no Publish control is shown and the server action refuses.
  *
- * teach is false on purpose: its publish path needs the versioned-media audio
- * work and the Teach-aware publish_space() (later TASK 027.5 phases). Flip it
- * only when both have landed and are covered by tests.
+ * teach became true with migration 0028 (build_teach_payload + the Teach
+ * branch of publish_space()) together with the versioned-media publish flow in
+ * publishTeachSpace(). client_hub stays false: it has no publish path.
  */
 const PUBLISH_READY: Record<SpaceTypeId, boolean> = {
   retreat: true,
-  teach: false,
+  teach: true,
   client_hub: false,
 };
 

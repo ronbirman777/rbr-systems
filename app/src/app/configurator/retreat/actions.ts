@@ -1425,6 +1425,14 @@ export async function publishSpace(
   const tenantId = String(formData.get("tenantId") ?? "");
   if (!tenantId) return { error: "Missing space.", publishedAt: null };
 
+  // This action snapshots Retreat media only. A visible tenant of any other
+  // product publishes through its own action (publishSpaceByType dispatches);
+  // a tenant that is not visible falls through to the RPC, which rejects it.
+  const { data: tenantRow } = await supabase.from("tenants").select("product_type").eq("id", tenantId).maybeSingle();
+  if (tenantRow && tenantRow.product_type !== "retreat") {
+    return { error: "This Space can't be published from here.", publishedAt: null };
+  }
+
   // UX-only pre-check, fails fast before the media Storage work below -
   // the authoritative enforcement is inside publish_space() itself (the
   // RPC call at the end of this function), which cannot be bypassed even

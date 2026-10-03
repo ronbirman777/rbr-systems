@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-/** TASK 027.5 Phase 2B: Publish dispatch - Retreat unchanged, everything else fails closed. */
+/** TASK 027.5 Phases 2B/4A: Publish dispatch - Retreat unchanged, Teach to its own action, everything else fails closed. */
 
 const state = vi.hoisted(() => ({
   user: { id: "u1" } as { id: string } | null,
   tenant: { product_type: "retreat" } as { product_type: unknown } | null,
   publishSpace: vi.fn(),
+  publishTeachSpace: vi.fn(),
   tenantQueries: [] as string[],
 }));
 
@@ -29,12 +30,7 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 vi.mock("@/app/configurator/retreat/actions", () => ({ publishSpace: state.publishSpace }));
-// If dispatch ever imported Teach's publish path, this would be hit.
-vi.mock("@/app/configurator/teach/actions", () => ({
-  publishTeachSpace: () => {
-    throw new Error("Teach publish must not be reachable from My Spaces in Phase 2B");
-  },
-}));
+vi.mock("@/app/configurator/teach/actions", () => ({ publishTeachSpace: state.publishTeachSpace }));
 
 import { publishSpaceByType } from "./publishActions";
 
@@ -51,6 +47,8 @@ beforeEach(() => {
   state.tenantQueries = [];
   state.publishSpace.mockReset();
   state.publishSpace.mockResolvedValue({ error: null, publishedAt: "2026-01-01T00:00:00Z" });
+  state.publishTeachSpace.mockReset();
+  state.publishTeachSpace.mockResolvedValue({ error: null, publishedAt: "2026-02-02T00:00:00Z" });
 });
 
 describe("publishSpaceByType", () => {
@@ -67,26 +65,42 @@ describe("publishSpaceByType", () => {
     expect(await publishSpaceByType(PREV, form("t1"))).toEqual({ error: "Access expired", publishedAt: null });
   });
 
+  it("Teach: dispatches to publishTeachSpace(tenantId) only - Retreat's publishSpace is never called", async () => {
+    state.tenant = { product_type: "teach" };
+    const result = await publishSpaceByType(PREV, form("t1"));
+    expect(state.publishTeachSpace).toHaveBeenCalledTimes(1);
+    expect(state.publishTeachSpace).toHaveBeenCalledWith("t1");
+    expect(state.publishSpace).not.toHaveBeenCalled();
+    expect(result).toEqual({ error: null, publishedAt: "2026-02-02T00:00:00Z" });
+  });
+
+  it("Teach: a publishTeachSpace error is passed through unchanged", async () => {
+    state.tenant = { product_type: "teach" };
+    state.publishTeachSpace.mockResolvedValue({ error: "Could not publish your media - x", publishedAt: null });
+    expect(await publishSpaceByType(PREV, form("t1"))).toEqual({ error: "Could not publish your media - x", publishedAt: null });
+  });
+
   it("reads product_type from the DB for the form's tenant, never from the form", async () => {
     const fd = form("t1");
     fd.set("product_type", "retreat");
     state.tenant = { product_type: "teach" };
-    const result = await publishSpaceByType(PREV, fd);
+    await publishSpaceByType(PREV, fd);
     expect(state.tenantQueries).toEqual(["product_type@t1"]);
-    expect(result.error).toBeTruthy();
     expect(state.publishSpace).not.toHaveBeenCalled();
+    expect(state.publishTeachSpace).toHaveBeenCalledTimes(1);
   });
 
-  it.each([["teach"], ["client_hub"], ["mystery"], [""], [null]])("fails closed for product_type %j: error returned, nothing published", async (type) => {
+  it.each([["client_hub"], ["mystery"], [""], [null]])("fails closed for product_type %j: error returned, nothing published", async (type) => {
     state.tenant = { product_type: type };
     const result = await publishSpaceByType(PREV, form("t1"));
     expect(result.error).toBeTruthy();
     expect(result.publishedAt).toBeNull();
     expect(state.publishSpace).not.toHaveBeenCalled();
+    expect(state.publishTeachSpace).not.toHaveBeenCalled();
   });
 
-  it("Teach: the message says publishing is not available yet", async () => {
-    state.tenant = { product_type: "teach" };
+  it("client_hub: the message says publishing is not available yet", async () => {
+    state.tenant = { product_type: "client_hub" };
     const result = await publishSpaceByType(PREV, form("t1"));
     expect(result.error).toMatch(/isn't available yet/);
   });

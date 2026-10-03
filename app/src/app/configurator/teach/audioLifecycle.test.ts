@@ -350,16 +350,3 @@ describe("published audio is immutable", () => {
     expect(fake.files.get(published)?.bytes).toBe(liveBytes);
   });
 });
-
-describe("publishTeachSpace stays unavailable", () => {
-  it("fails closed before touching media or the publish RPC", async () => {
-    const path = await uploadNew();
-    const before = objects();
-    const a = await actions();
-    const res = await a.publishTeachSpace(TENANT);
-    expect(res.publishedAt).toBeNull();
-    expect(res.error).toMatch(/isn't available yet/);
-    expect(objects()).toEqual(before);
-    expect(fake.files.has(path.replace("/draft.", "/published."))).toBe(false);
-  });
-});

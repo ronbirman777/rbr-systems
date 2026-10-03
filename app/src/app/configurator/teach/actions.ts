@@ -15,10 +15,12 @@ import {
   OPTIMIZED_IMAGE_MIME,
   isFileSizeAllowed,
   isDraftMediaPathForTenant,
+  collectMediaRefs,
   newUploadId,
   tenantMediaPath,
   versionedMediaPath,
 } from "@/lib/media/path";
+import { cleanupStalePublishedMedia } from "@/lib/media/publishedCleanup";
 import { copyDraftAudioToPublished, copyDraftToPublished } from "@/lib/media/publish";
 import { removeDraftObjects } from "@/lib/media/draftCleanup";
 import {
@@ -593,17 +595,20 @@ export async function detachTeachAudio(tenantId: string, itemId: string): Promis
 export type TeachPublishState = { error: string | null; publishedAt: string | null };
 
 /**
- * Time to Teach publishing is NOT available yet (it is wired in a later
- * phase, together with the publish_space() Teach payload): this fails
- * closed before touching media or the RPC. The body below is the media
- * snapshot + RPC flow ported to the versioned-path helpers so that wiring
- * only has to lift the gate.
- *
- * Snapshot every current draft media object (item images, audio, primary
- * image, settings images) into its published path, THEN call the shared
- * publish_space() RPC. Same ordering and failure rule as Time to Flow's
- * publishSpace: any media failure stops before the RPC, so a "successful"
- * publish can never point at stale media.
+ * Time to Teach publish. Same media-ordering contract as Time to Flow's
+ * publishSpace (TASK 023 - published media is an immutable snapshot):
+ *  1. read the CURRENT snapshot's media refs (previousRefs);
+ *  2. copy every current draft media object (item images, audio, brand
+ *     images, settings images) to its published key inside the same
+ *     uploadId folder - create-only, so nothing the live snapshot
+ *     references is touched, and any failure stops BEFORE the RPC;
+ *  3. call publish_space(), the single atomic commit (it adds the Teach
+ *     payload only for product_type 'teach');
+ *  4. only after it commits, best-effort remove published objects the new
+ *     snapshot no longer references. A cleanup failure is logged and never
+ *     fails the Publish.
+ * Availability is decided by the registry (getPublishAvailability) and the
+ * product type is re-verified from the DB here, never from the client.
  */
 export async function publishTeachSpace(tenantId: string): Promise<TeachPublishState> {
   const { supabase, user } = await requireUser();
@@ -618,14 +623,22 @@ export async function publishTeachSpace(tenantId: string): Promise<TeachPublishS
     return { error: "This Space needs active access before it can be published.", publishedAt: null };
   }
 
-  const [{ data: itemRows }, { data: brandRow }, { data: settingsRows }] = await Promise.all([
+  const { data: previousSnapshot } = await supabase
+    .from("published_spaces")
+    .select("modules")
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  const previousRefs = collectMediaRefs(previousSnapshot?.modules ?? null);
+
+  const [{ data: itemRows }, { data: brandRow }, { data: settingsRows }, { data: coverRows }] = await Promise.all([
     supabase
       .from("module_items")
       .select("id, module_key, image_ref, metadata")
       .eq("tenant_id", tenantId)
       .in("module_key", TEACH_MEDIA_ITEM_KEYS as string[]),
-    supabase.from("brand_configs").select("hero_image_ref").eq("tenant_id", tenantId).maybeSingle(),
+    supabase.from("brand_configs").select("hero_image_ref, space_image_ref, logo_ref").eq("tenant_id", tenantId).maybeSingle(),
     supabase.from("module_settings").select("module_key, data").eq("tenant_id", tenantId).in("module_key", Object.keys(SETTINGS_IMAGE_SLOTS)),
+    supabase.from("module_configs").select("image_ref").eq("tenant_id", tenantId),
   ]);
 
   const settingsByKey = new Map((settingsRows ?? []).map((r) => [r.module_key as string, r.data as Record<string, unknown>]));
@@ -636,7 +649,15 @@ export async function publishTeachSpace(tenantId: string): Promise<TeachPublishS
     return typeof ref === "string" && isTenantMediaRef(tenantId, ref) ? ref : null;
   };
 
-  const jobs: Promise<unknown>[] = [copyDraftToPublished(supabase, brandRow?.hero_image_ref ?? null)];
+  const jobs: Promise<unknown>[] = [];
+  for (const ref of [
+    brandRow?.hero_image_ref ?? null,
+    brandRow?.space_image_ref ?? null,
+    brandRow?.logo_ref ?? null,
+    ...(coverRows ?? []).map((r) => r.image_ref as string | null),
+  ]) {
+    if (ref && isDraftMediaPathForTenant(tenantId, ref)) jobs.push(copyDraftToPublished(supabase, ref));
+  }
   for (const row of itemRows ?? []) {
     const imageRef = typeof row.image_ref === "string" && isDraftMediaPathForTenant(tenantId, row.image_ref) ? row.image_ref : null;
     jobs.push(copyDraftToPublished(supabase, imageRef));
@@ -660,5 +681,21 @@ export async function publishTeachSpace(tenantId: string): Promise<TeachPublishS
 
   const { data, error } = await supabase.rpc("publish_space", { p_tenant_id: tenantId });
   if (error) return { error: error.message, publishedAt: null };
+
+  try {
+    const { data: committed, error: readError } = await supabase
+      .from("published_spaces")
+      .select("modules")
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+    if (readError || !committed) throw new Error(readError?.message ?? "snapshot not readable");
+    await cleanupStalePublishedMedia(supabase, tenantId, previousRefs, collectMediaRefs(committed.modules));
+  } catch (cleanupError) {
+    console.error("publishTeachSpace: stale published media cleanup failed", {
+      tenantId,
+      message: cleanupError instanceof Error ? cleanupError.message : String(cleanupError),
+    });
+  }
+
   return { error: null, publishedAt: data as string };
 }

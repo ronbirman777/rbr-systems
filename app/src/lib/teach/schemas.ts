@@ -17,7 +17,7 @@ import { socialLinksSchema } from "@/lib/modules/socialLinks";
  * file is the single source of truth for what they may contain.
  *
  * Everything under these keys is guest-facing by design: build_teach_payload()
- * (migration 0019) publishes it. Do not store private data here.
+ * (migration 0028) publishes it. Do not store private data here.
  */
 
 export const TEACH_PRODUCT_TYPE = "teach" as const;

@@ -26,6 +26,7 @@ const mockModuleConfigsSelect = vi.fn();
 const mockRpc = vi.fn();
 const mockCopyDraftToPublished = vi.fn();
 const mockSnapshotSelect = vi.fn();
+const mockTenantSelect = vi.fn();
 const mockCleanup = vi.fn();
 const mockGetSpaceEntitlement = vi.fn();
 const mockDeriveCommercialAvailability = vi.fn();
@@ -45,6 +46,9 @@ vi.mock("@/lib/supabase/server", () => ({
       // module-level cover images, the same shape as module_items above.
       if (table === "module_configs") {
         return { select: () => ({ eq: mockModuleConfigsSelect }) };
+      }
+      if (table === "tenants") {
+        return { select: () => ({ eq: () => ({ maybeSingle: mockTenantSelect }) }) };
       }
       if (table === "published_spaces") {
         return { select: () => ({ eq: () => ({ maybeSingle: mockSnapshotSelect }) }) };
@@ -100,6 +104,7 @@ describe("publishSpace - every path resolves a well-formed PublishState, never t
     mockModuleConfigsSelect.mockResolvedValue({ data: [] });
     mockCopyDraftToPublished.mockResolvedValue(undefined);
     mockSnapshotSelect.mockResolvedValue({ data: { modules: {} }, error: null });
+    mockTenantSelect.mockResolvedValue({ data: { product_type: "retreat" } });
     mockCleanup.mockResolvedValue({ removed: [] });
     mockRpc.mockResolvedValue({ data: "2026-09-13T12:00:00.000Z", error: null });
   });
@@ -127,6 +132,23 @@ describe("publishSpace - every path resolves a well-formed PublishState, never t
     expect(result).toEqual({ error: "You need to be logged in.", publishedAt: null });
     expect(mockCopyDraftToPublished).not.toHaveBeenCalled();
     expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it.each([["teach"], ["client_hub"], ["mystery"]])("a visible %s Space is refused: Retreat's media snapshot never runs for another product", async (type) => {
+    mockTenantSelect.mockResolvedValue({ data: { product_type: type } });
+    const publishSpace = await loadPublishSpace();
+    const result = await publishSpace(PREV_STATE, formData("tenant-1"));
+    expect(result).toEqual({ error: "This Space can't be published from here.", publishedAt: null });
+    expect(mockCopyDraftToPublished).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it("a tenant that is not visible falls through to the RPC, which is the authoritative rejection", async () => {
+    mockTenantSelect.mockResolvedValue({ data: null });
+    mockRpc.mockResolvedValue({ data: null, error: { message: "Space not found, or you do not have access to it" } });
+    const publishSpace = await loadPublishSpace();
+    const result = await publishSpace(PREV_STATE, formData("tenant-1"));
+    expect(result.error).toMatch(/Space not found/);
   });
 
   it("missing tenantId: resolves with an error instead of throwing", async () => {
@@ -188,6 +210,7 @@ describe("publishSpace - TASK 023 ordering: copy -> commit -> cleanup", () => {
     vi.clearAllMocks();
     mockSnapshotSelect.mockReset();
     mockCopyDraftToPublished.mockReset();
+    mockTenantSelect.mockResolvedValue({ data: { product_type: "retreat" } });
     mockGetUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
     mockGetSpaceEntitlement.mockResolvedValue(null);
     mockDeriveCommercialAvailability.mockReturnValue({ canPublish: true });

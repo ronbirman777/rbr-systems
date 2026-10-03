@@ -15,7 +15,7 @@ export type FakeSupabase = ReturnType<typeof makeFakeSupabase>;
 
 export function makeFakeSupabase(userId: string | null = "user-1") {
   const files = new Map<string, { bytes: string; updatedAt: string; contentType?: string }>();
-  const tables: Record<string, Row[]> = { module_items: [], brand_configs: [], module_configs: [], published_spaces: [] };
+  const tables: Record<string, Row[]> = { module_items: [], brand_configs: [], module_configs: [], published_spaces: [], tenants: [], module_settings: [] };
   const fail: Record<string, Failure> = {};
   // Reported size overrides, so a test can simulate a 100 MB+ object without allocating one.
   const sizes = new Map<string, number>();
@@ -27,6 +27,8 @@ export function makeFakeSupabase(userId: string | null = "user-1") {
     brand_configs: ["tenant_id"],
     module_configs: ["tenant_id", "module_key"],
     published_spaces: ["tenant_id"],
+    tenants: ["id"],
+    module_settings: ["tenant_id", "module_key"],
   };
 
   class Query implements PromiseLike<{ data: unknown; error: Failure }> {

@@ -1,0 +1,206 @@
+{
+ "tenant_id": "11111111-2222-4333-8444-555555555555",
+ "product_type": "teach",
+ "name": "E2E Teacher",
+ "theme": {
+  "palette": "forest-sage",
+  "atmosphere": "calm-organic",
+  "customText": null,
+  "imageStyle": "rounded",
+  "customPrimary": null,
+  "customSecondary": null,
+  "customNavigation": null
+ },
+ "published_at": "2026-10-03T06:04:14.010487+00:00",
+ "timezone": "Asia/Bangkok",
+ "enabled_modules": [
+  "customPages",
+  "teachAudio",
+  "teachReadings"
+ ],
+ "modules": {
+  "brand": {
+   "hero": {
+    "imageRef": "11111111-2222-4333-8444-555555555555/brand/hero/94e28ea1-a170-461d-b4a2-a963c24c8b42/published.webp"
+   },
+   "logo": {
+    "imageRef": null
+   },
+   "space": {
+    "imageRef": null
+   }
+  },
+  "teach": {
+   "items": {
+    "teachAudio": [
+     {
+      "id": "71cd00af-296e-4c41-9a89-7a3b44a87918",
+      "title": "Practice",
+      "imageRef": null,
+      "metadata": {
+       "audioRef": "11111111-2222-4333-8444-555555555555/teachAudioFile/a1/94e28ea1-a170-461d-b4a2-a963c24c8b42/published.mp3",
+       "category": "Meditation",
+       "durationSeconds": 60
+      },
+      "subtitle": null,
+      "description": null,
+      "externalLink": null
+     }
+    ],
+    "customPages": [
+     {
+      "id": "64c17be6-5e3a-433d-b8a9-c27a034ba08d",
+      "title": "On",
+      "imageRef": null,
+      "metadata": {
+       "enabled": true
+      },
+      "subtitle": null,
+      "description": "body",
+      "externalLink": null
+     }
+    ],
+    "teachClasses": [
+     {
+      "id": "6f84b6c2-b9b7-4fe6-9e3e-0aa0134607e0",
+      "title": "Morning flow",
+      "imageRef": null,
+      "metadata": {
+       "venue": {
+        "name": "Venue",
+        "mapUrl": "https://maps.example.test/x",
+        "enabled": true
+       },
+       "endTime": "10:00",
+       "location": "Studio",
+       "timezone": "Asia/Bangkok",
+       "startDate": "2026-10-05",
+       "startTime": "09:00",
+       "recurrence": {
+        "end": {
+         "type": "never"
+        },
+        "freq": "weekly",
+        "interval": 1,
+        "byWeekday": [
+         1
+        ]
+       },
+       "registration": {
+        "value": "+66000000",
+        "method": "whatsapp"
+       }
+      },
+      "subtitle": null,
+      "description": null,
+      "externalLink": null
+     }
+    ],
+    "teachGallery": [
+     {
+      "id": "2e22d89e-96e5-4294-abab-e1bae4becf28",
+      "title": "G",
+      "imageRef": "11111111-2222-4333-8444-555555555555/teachGallery/g1/94e28ea1-a170-461d-b4a2-a963c24c8b42/published.webp",
+      "metadata": {},
+      "subtitle": null,
+      "description": null,
+      "externalLink": null
+     }
+    ],
+    "teachReadings": [
+     {
+      "id": "284aa58f-88b9-4c96-b3a5-c6b3fea41337",
+      "title": "Reading",
+      "imageRef": null,
+      "metadata": {
+       "date": "2026-10-01",
+       "excerpt": "x"
+      },
+      "subtitle": null,
+      "description": "body",
+      "externalLink": null
+     }
+    ],
+    "teachAvailability": [
+     {
+      "id": "05c26b8c-7df4-4563-9535-dcefb629886d",
+      "title": "Mon",
+      "imageRef": null,
+      "metadata": {
+       "to": "12:00",
+       "from": "10:00",
+       "repeat": "weekly",
+       "enabled": true,
+       "weekday": 1
+      },
+      "subtitle": null,
+      "description": null,
+      "externalLink": null
+     }
+    ],
+    "teachCertificates": [
+     {
+      "id": "4fb103d1-2efc-4e00-8f25-b031ef1c1f67",
+      "title": "Cert",
+      "imageRef": null,
+      "metadata": {
+       "year": "2020"
+      },
+      "subtitle": null,
+      "description": null,
+      "externalLink": null
+     }
+    ]
+   },
+   "settings": {
+    "teachAbout": {
+     "about": "About me",
+     "profile": {
+      "imageRef": "11111111-2222-4333-8444-555555555555/teachAbout/profile/39b0486e-82f3-4c4e-89b5-f90215ba9959/published.webp"
+     }
+    },
+    "teachStyle": {
+     "preset": "earth"
+    },
+    "teachContact": {
+     "title": "Hello",
+     "enabled": [
+      "whatsapp"
+     ],
+     "methods": {
+      "whatsapp": "+66000000"
+     },
+     "primary": "whatsapp"
+    },
+    "teachExplore": {
+     "cards": {
+      "teachAudio": {
+       "title": "Audio",
+       "imageRef": "11111111-2222-4333-8444-555555555555/teachExplore/teachAudio/39b0486e-82f3-4c4e-89b5-f90215ba9959/published.webp"
+      }
+     }
+    },
+    "teachProfile": {
+     "greeting": "Hi",
+     "teacherType": "Yoga"
+    },
+    "dailyInspiration": {
+     "quotes": [
+      "Breathe"
+     ],
+     "useFallback": false
+    }
+   }
+  },
+  "customPages": [
+   {
+    "body": "body",
+    "title": "On",
+    "imageRef": null,
+    "imagePosition": null
+   }
+  ],
+  "moduleCovers": {}
+ },
+ "slug": null
+}
