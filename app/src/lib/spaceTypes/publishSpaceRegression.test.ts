@@ -196,10 +196,11 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     }
   });
 
-  it("migration chain: 0028 is the single Teach migration, 0029 the single Storage-immutability migration, nothing after, main's 0019 untouched, no 0023 gap fill", () => {
+  it("migration chain: 0028 is the single Teach migration, 0029 the single Storage-immutability migration, 0030 the single uuid-safe media-policy fix, nothing after, main's 0019 untouched, no 0023 gap fill", () => {
     const names = migrations.map((m) => m.name);
     expect(names.filter((n) => n.startsWith("0029_"))).toEqual(["0029_versioned_media_update_deny.sql"]);
-    expect(names.some((n) => /^00(3\d|[4-9]\d)_/.test(n))).toBe(false);
+    expect(names.filter((n) => n.startsWith("0030_"))).toEqual(["0030_tenant_media_policies_uuid_safe.sql"]);
+    expect(names.some((n) => /^00(3[1-9]|[4-9]\d)_/.test(n))).toBe(false);
     expect(names.filter((n) => n.startsWith("0019_"))).toEqual(["0019_signup_profile.sql"]);
     expect(names.some((n) => n.startsWith("0023_"))).toBe(false);
     expect(names.filter((n) => n.startsWith("0028_"))).toHaveLength(1);

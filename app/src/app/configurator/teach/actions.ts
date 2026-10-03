@@ -95,6 +95,8 @@ async function loadTeachTenant(supabase: SupabaseClient, tenantId: string): Prom
 // Create
 // ---------------------------------------------------------------------------
 
+const CREATE_DEDUPE_WINDOW_MS = 60_000;
+
 /**
  * Create New Space -> Time to Teach. Creates the tenant immediately (the
  * slot trigger, enforce_space_slot_capacity() in 0017, is the real capacity
@@ -103,6 +105,22 @@ async function loadTeachTenant(supabase: SupabaseClient, tenantId: string): Prom
 export async function createTeachSpace(): Promise<void> {
   const { supabase, user } = await requireUser();
   if (!user) redirect("/log-in");
+
+  // Idempotency: a double click, a slow-network retry or a second tab must not
+  // mint a second Space. If this user created a still-untouched Teach Space a
+  // moment ago, open that one instead. A genuine second Space (or any Space the
+  // owner has renamed) is unaffected.
+  const { data: recent } = await supabase
+    .from("tenants")
+    .select("id")
+    .eq("product_type", TEACH_PRODUCT_TYPE)
+    .eq("created_by", user.id)
+    .eq("name", SPACE_TYPES.teach.copy.untitledName)
+    .gte("created_at", new Date(Date.now() - CREATE_DEDUPE_WINDOW_MS).toISOString())
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (recent) redirect(`/configurator/teach/${recent.id}`);
 
   const { data: tenant, error } = await supabase
     .from("tenants")
@@ -113,22 +131,26 @@ export async function createTeachSpace(): Promise<void> {
     redirect(error?.hint === "SLOT_LIMIT_REACHED" ? "/create?error=slots" : "/create?error=create");
   }
 
-  await supabase.from("brand_configs").upsert({
-    tenant_id: tenant.id,
-    name: SPACE_TYPES.teach.copy.untitledName,
-    custom_primary: DEFAULT_TEACH_PRESET.primary,
-    custom_secondary: DEFAULT_TEACH_PRESET.accent,
-    updated_at: new Date().toISOString(),
-  });
-  await supabase.from("module_settings").upsert({
-    tenant_id: tenant.id,
-    module_key: "teachStyle",
-    data: TEACH_SETTINGS_SCHEMAS.teachStyle.parse({ preset: DEFAULT_TEACH_PRESET.key, background: DEFAULT_TEACH_PRESET.background }),
-  });
-  await supabase.from("module_configs").upsert(
-    ["teachReadings", "teachAudio", "teachContact"].map((module_key) => ({ tenant_id: tenant.id, module_key, enabled: true })),
-    { onConflict: "tenant_id,module_key" }
-  );
+  // Independent draft defaults, written together so the redirect is not held up
+  // by three sequential round trips.
+  await Promise.all([
+    supabase.from("brand_configs").upsert({
+      tenant_id: tenant.id,
+      name: SPACE_TYPES.teach.copy.untitledName,
+      custom_primary: DEFAULT_TEACH_PRESET.primary,
+      custom_secondary: DEFAULT_TEACH_PRESET.accent,
+      updated_at: new Date().toISOString(),
+    }),
+    supabase.from("module_settings").upsert({
+      tenant_id: tenant.id,
+      module_key: "teachStyle",
+      data: TEACH_SETTINGS_SCHEMAS.teachStyle.parse({ preset: DEFAULT_TEACH_PRESET.key, background: DEFAULT_TEACH_PRESET.background }),
+    }),
+    supabase.from("module_configs").upsert(
+      ["teachReadings", "teachAudio", "teachContact"].map((module_key) => ({ tenant_id: tenant.id, module_key, enabled: true })),
+      { onConflict: "tenant_id,module_key" }
+    ),
+  ]);
 
   redirect(`/configurator/teach/${tenant.id}`);
 }

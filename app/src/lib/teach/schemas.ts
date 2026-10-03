@@ -167,6 +167,8 @@ export const dailyInspirationSchema = z.object({
 export type DailyInspiration = z.infer<typeof dailyInspirationSchema>;
 
 export const teachAboutSchema = z.object({
+  /** About Me navigation tab. Defaults ON (also for rows/snapshots saved before this field); only an explicit false hides it. */
+  showTab: z.boolean().default(true),
   about: optText(4000),
   teachingSince: z.number().int().min(1940).max(2100).nullable().catch(null).default(null),
   philosophy: optText(700),

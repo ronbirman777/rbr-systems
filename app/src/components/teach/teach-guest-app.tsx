@@ -5,6 +5,7 @@ import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import { getDailyQuoteFrom } from "@/lib/content/dailyQuotes";
 import type { TeachGuestData } from "@/lib/teach/guestData";
 import type { TeachExploreModule, TeachItem } from "@/lib/teach/schemas";
+import { exploreModuleStatus } from "@/lib/teach/moduleVisibility";
 import { teachStyleVars, textureBackground } from "@/lib/teach/style";
 import { TEACH_FONT_VARIABLES } from "@/lib/teach/fonts";
 import { safeHttpUrl, whatsappUrl, mailtoUrl, contactEntries, formatShortDate } from "@/lib/teach/links";
@@ -83,7 +84,7 @@ export function TeachGuestApp({
   embedded?: boolean;
   initialTab?: Tab;
 }) {
-  const [tab, setTab] = useState<Tab>(initialTab);
+  const [selectedTab, setTab] = useState<Tab>(initialTab);
   const [stack, setStack] = useState<Page[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -115,8 +116,9 @@ export function TeachGuestApp({
     [data.brand, style]
   );
 
-  const aboutHasContent = hasAboutContent(data);
-  const tabs = TABS.filter((t) => t.key !== "about" || aboutHasContent);
+  const tabs = visibleTabs(data);
+  // A hidden About tab can't stay selected (e.g. the Studio preview was on it when the teacher turned it off).
+  const tab = tabs.some((t) => t.key === selectedTab) ? selectedTab : "home";
 
   const url = (ref: string | null | undefined) => (ref ? (data.mediaUrls[ref] ?? null) : null);
 
@@ -212,11 +214,9 @@ function useIsDesktopContainer(ref: RefObject<HTMLDivElement | null>) {
   );
 }
 
-function hasAboutContent(data: TeachGuestData) {
-  const a = data.settings.teachAbout;
-  return Boolean(
-    a.about || a.philosophy || a.styles.length || a.teachingSince || a.socialLinks.length || a.whatsapp || a.email || a.profile.imageRef || data.gallery.length || data.certificates.length
-  );
+/** Tabs guests can navigate to. About Me is shown unless the teacher explicitly hid it. */
+export function visibleTabs(data: TeachGuestData) {
+  return TABS.filter((t) => t.key !== "about" || data.settings.teachAbout.showTab);
 }
 
 function DesktopTopNav({ data, tabs, tab, onTab, url }: { data: TeachGuestData; tabs: typeof TABS; tab: Tab; onTab: (t: Tab) => void; url: (r: string | null) => string | null }) {
@@ -942,18 +942,18 @@ function ExploreCard({
 
 function ExploreScreen({ data, url, open }: { data: TeachGuestData; url: (r: string | null) => string | null; open: (p: Page) => void }) {
   const cards = data.settings.teachExplore.cards;
-  const on = (k: TeachExploreModule) => data.enabledExplore.includes(k);
+  const on = (k: TeachExploreModule) => exploreModuleStatus(data, k) === "visible";
   const tiles: ReactNode[] = [];
   const fb = (c: string | null | undefined, v: string) => c ?? v;
-  if (on("teachReadings") && data.readings.length > 0) {
+  if (on("teachReadings")) {
     const c = cards.teachReadings;
     tiles.push(<ExploreCard key="r" tall feature title={c?.title ?? "My Readings"} subtitle={c?.subtitle ?? "Reflections & articles"} icon="book" image={url(c?.imageRef ?? null)} focal={c?.imagePosition ?? null} fallback={fb(c?.fallbackColor, "var(--rbr-primary)")} onClick={() => open({ kind: "readings" })} />);
   }
-  if (on("teachAudio") && data.audio.some((a) => a.metadata.audioRef)) {
+  if (on("teachAudio")) {
     const c = cards.teachAudio;
     tiles.push(<ExploreCard key="a" tall title={c?.title ?? "My Audio"} subtitle={c?.subtitle ?? "Practices to listen to"} icon="headphones" image={url(c?.imageRef ?? null)} focal={c?.imagePosition ?? null} fallback={fb(c?.fallbackColor, "var(--rbr-primary-dark)")} onClick={() => open({ kind: "audio" })} />);
   }
-  if (on("teachContact") && (contactEntries(data.settings.teachContact).length > 0 || data.settings.teachContact.address)) {
+  if (on("teachContact")) {
     const c = cards.teachContact;
     tiles.push(<ExploreCard key="c" title={c?.title ?? "Contact"} subtitle={c?.subtitle ?? "How to reach me"} icon="chat" image={url(c?.imageRef ?? null)} focal={c?.imagePosition ?? null} fallback={fb(c?.fallbackColor, "var(--rbr-secondary-dark)")} onClick={() => open({ kind: "contact" })} />);
   }

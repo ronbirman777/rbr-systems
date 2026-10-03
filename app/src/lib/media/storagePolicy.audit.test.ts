@@ -100,3 +100,52 @@ describe("migration 0029 - versioned media is immutable under Storage UPDATE", (
   });
 });
 
+
+/**
+ * TASK 027.5 QA correction. A stray non-UUID object (`__backup_test/...`) made the
+ * 0006 `::uuid` cast raise 22P02 inside storage.list for EVERY authenticated user,
+ * so every Space delete/Replace failed. 0030 makes the predicate deny instead of
+ * throw, without changing who is allowed.
+ */
+describe("migration 0030 - tenant-media policies are uuid-safe and security-neutral", () => {
+  const sql0030 = readFileSync(join(process.cwd(), "supabase/migrations/0030_tenant_media_policies_uuid_safe.sql"), "utf8");
+  const code0030 = sql0030
+    .split("\n")
+    .filter((l) => !l.trim().startsWith("--"))
+    .join("\n");
+  const stmts = code0030.split(/;\s*(?:\n|$)/).filter((s) => s.trim());
+
+  it("alters exactly the four 0006 policies in place and creates/drops nothing", () => {
+    expect(stmts).toHaveLength(4);
+    for (const name of Object.values(POLICIES)) expect(code0030).toContain(`alter policy "${name}"`);
+    expect(code0030).not.toMatch(/create policy|drop policy|create or replace function|disable row level security|grant |revoke /i);
+    expect(code0030).not.toContain("versioned media is immutable");
+  });
+
+  it("never casts to uuid outside a CASE branch guarded by a canonical-UUID regex (no throw on a non-UUID folder)", () => {
+    for (const s of stmts) {
+      const guarded = (s.match(/when \(storage\.foldername\(name\)\)\[1\] ~\* '\^\[0-9a-f\]\{8\}-\[0-9a-f\]\{4\}-\[0-9a-f\]\{4\}-\[0-9a-f\]\{4\}-\[0-9a-f\]\{12\}\$'\s+then public\.is_tenant_member\(\(\(storage\.foldername\(name\)\)\[1\]\)::uuid\)\s+else false\s+end/g) ?? []).length;
+      const casts = (s.match(/::uuid/g) ?? []).length;
+      expect(casts).toBeGreaterThan(0);
+      expect(guarded).toBe(casts);
+    }
+  });
+
+  it("keeps the bucket scope and the membership check, adds no OR branch, and leaves roles/commands alone", () => {
+    for (const s of stmts) {
+      expect(s).toContain("bucket_id = 'tenant-media'");
+      expect(s).toContain("public.is_tenant_member(");
+      expect(s).not.toMatch(/\bor\b/i);
+      expect(s).not.toMatch(/\bto (anon|public|authenticated)\b/i);
+    }
+    const update = stmts.find((s) => s.includes(POLICIES.update))!;
+    expect(update).toMatch(/\busing \(/);
+    expect(update).toMatch(/with check \(/);
+    expect(stmts.find((s) => s.includes(POLICIES.insert))).toMatch(/with check \(/);
+    expect(stmts.find((s) => s.includes(POLICIES.insert))).not.toMatch(/\busing \(/);
+    for (const k of ["select", "delete"] as const) {
+      expect(stmts.find((s) => s.includes(POLICIES[k]))).toMatch(/\busing \(/);
+      expect(stmts.find((s) => s.includes(POLICIES[k]))).not.toMatch(/with check/);
+    }
+  });
+});

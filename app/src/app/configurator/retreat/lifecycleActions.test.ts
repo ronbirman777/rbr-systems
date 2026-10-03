@@ -569,6 +569,106 @@ describe("lifecycleActions - Task 011", () => {
       expect(mockStorageRemove).toHaveBeenCalledWith(["11111111-1111-4111-8111-111111111111/facilitators/item-1/draft.jpg"]);
       expect(result.success).toBe(true);
     });
+
+    /**
+     * TASK 027.5 QA correction (Time to Teach delete). Teach Spaces store images AND
+     * audio under versioned {tenant}/{module}/{item}/{uploadId}/ folders. Deleting one
+     * must follow the same Storage-first order as every Space, reach those deep
+     * folders, and never delete the row while any object could remain.
+     */
+    describe("Time to Teach Space", () => {
+      const T = "22222222-2222-4222-8222-222222222222";
+      const confirm = () => formData({ tenantId: T, expectedName: "My Teaching Space", confirmName: "My Teaching Space" });
+
+      it("removes versioned image and audio objects at depth 4 before delete_space, then revalidates", async () => {
+        mockTenantSelect.mockResolvedValue({ data: { product_type: "teach" } });
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        const tree: Record<string, { id: string | null; name: string }[]> = {
+          [T]: [{ id: null, name: "teachAudio" }, { id: null, name: "teachAudioFile" }, { id: "o0", name: "hero.webp" }],
+          [`${T}/teachAudio`]: [{ id: null, name: "item-1" }],
+          [`${T}/teachAudio/item-1`]: [{ id: null, name: "up-1" }],
+          [`${T}/teachAudio/item-1/up-1`]: [{ id: "o1", name: "draft.webp" }, { id: "o2", name: "published.webp" }],
+          [`${T}/teachAudioFile`]: [{ id: null, name: "item-1" }],
+          [`${T}/teachAudioFile/item-1`]: [{ id: null, name: "up-2" }],
+          [`${T}/teachAudioFile/item-1/up-2`]: [{ id: "o3", name: "draft.mp3" }, { id: "o4", name: "published.mp3" }],
+        };
+        mockStorageList.mockImplementation((prefix: string) => Promise.resolve({ data: tree[prefix] ?? [], error: null }));
+        mockStorageRemove.mockResolvedValue({ error: null });
+        mockRpc.mockResolvedValue({ error: null });
+        const { deleteSpace } = await loadActions();
+
+        const result = await deleteSpace({ error: null }, confirm());
+
+        const removed = mockStorageRemove.mock.calls.flatMap((c) => c[0] as string[]).sort();
+        expect(removed).toEqual(
+          [
+            `${T}/hero.webp`,
+            `${T}/teachAudio/item-1/up-1/draft.webp`,
+            `${T}/teachAudio/item-1/up-1/published.webp`,
+            `${T}/teachAudioFile/item-1/up-2/draft.mp3`,
+            `${T}/teachAudioFile/item-1/up-2/published.mp3`,
+          ].sort()
+        );
+        expect(mockStorageRemove.mock.invocationCallOrder.at(-1)!).toBeLessThan(mockRpc.mock.invocationCallOrder[0]);
+        expect(mockRpc).toHaveBeenCalledWith("delete_space", { p_tenant_id: T });
+        expect(result.success).toBe(true);
+        expect(mockRevalidatePath).toHaveBeenCalledWith("/space");
+      });
+
+      it("deletes a brand-new Teach Space that has no media at all", async () => {
+        mockTenantSelect.mockResolvedValue({ data: { product_type: "teach" } });
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        mockStorageList.mockResolvedValue({ data: [], error: null });
+        mockRpc.mockResolvedValue({ error: null });
+        const { deleteSpace } = await loadActions();
+
+        const result = await deleteSpace({ error: null }, confirm());
+
+        expect(mockStorageRemove).not.toHaveBeenCalled();
+        expect(mockRpc).toHaveBeenCalledWith("delete_space", { p_tenant_id: T });
+        expect(result.success).toBe(true);
+      });
+
+      it("keeps the Space intact and retryable when Storage listing fails (e.g. the 22P02 policy error)", async () => {
+        mockTenantSelect.mockResolvedValue({ data: { product_type: "teach" } });
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        mockStorageList.mockResolvedValue({ data: null, error: { message: 'invalid input syntax for type uuid: "__backup_test"' } });
+        const { deleteSpace } = await loadActions();
+
+        const result = await deleteSpace({ error: null }, confirm());
+
+        expect(result.success).toBeUndefined();
+        expect(result.error).toBe("Couldn't delete this Space. Please try again.");
+        expect(mockStorageRemove).not.toHaveBeenCalled();
+        expect(mockRpc).not.toHaveBeenCalled();
+        expect(mockRevalidatePath).not.toHaveBeenCalled();
+      });
+
+      it("keeps the Space when a Storage remove fails part-way, never reaching delete_space", async () => {
+        mockTenantSelect.mockResolvedValue({ data: { product_type: "teach" } });
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        mockStorageList.mockResolvedValue({ data: [{ id: "o1", name: "hero.webp" }], error: null });
+        mockStorageRemove.mockResolvedValue({ error: { message: "boom" } });
+        const { deleteSpace } = await loadActions();
+
+        const result = await deleteSpace({ error: null }, confirm());
+
+        expect(result.error).toBeTruthy();
+        expect(mockRpc).not.toHaveBeenCalled();
+      });
+
+      it("never touches Storage for a non-owner member of a Teach Space (cross-tenant protection unchanged)", async () => {
+        mockTenantSelect.mockResolvedValue({ data: { product_type: "teach" } });
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "practitioner" }], error: null });
+        const { deleteSpace } = await loadActions();
+
+        const result = await deleteSpace({ error: null }, confirm());
+
+        expect(result.error).toBeTruthy();
+        expect(mockStorageList).not.toHaveBeenCalled();
+        expect(mockRpc).not.toHaveBeenCalled();
+      });
+    });
   });
 });
 
