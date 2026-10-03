@@ -180,12 +180,12 @@ describe("publish failure and retry", () => {
     expect(exists(pub(A))).toBe(false);
   });
 
-  it("copy/upload failure: no RPC, previous snapshot and A intact", async () => {
+  it("copy failure: no RPC, previous snapshot and A intact", async () => {
     const A = await uploadItem("meals", "item-1", "A");
     await publish();
     await uploadItem("meals", "item-1", "B", A);
     const rpcCalls = fake.rpc.mock.calls.length;
-    fake.setFailure("upload", "quota");
+    fake.setFailure("copy", "quota");
     const failed = await publish();
     expect(failed.error).toContain("Could not publish your photos");
     expect(fake.rpc.mock.calls.length).toBe(rpcCalls);
@@ -197,7 +197,7 @@ describe("publish failure and retry", () => {
     const A = await uploadItem("meals", "item-1", "A");
     const H = await uploadBrand("hero", "H");
     await publish();
-    fake.setFailure("download", "network");
+    fake.setFailure("copy", "network");
     await uploadItem("meals", "item-1", "B", A).catch(() => {});
     expect((await publish()).error).toContain("Could not publish your photos");
     expect(live()).toEqual([pub(A), pub(H)].sort());
@@ -298,5 +298,39 @@ describe("legacy single-path media (not migrated, not made less safe)", () => {
     await publish();
     expect(live()).toEqual([pub(B)]);
     expect(exists(legacyPub)).toBe(false);
+  });
+});
+
+describe("Phase 3C - versioned image lifecycle needs no Storage UPDATE", () => {
+  it("upload, replace and publish of items, covers and brand images never upsert, overwrite or re-upload a published object", async () => {
+    const A = await uploadItem("meals", "item-1", "A");
+    const C = await uploadCover("meals", "cover");
+    const H = await uploadBrand("hero", "H");
+    expect((await publish()).error).toBeNull();
+    const B = await uploadItem("meals", "item-1", "B", A);
+    expect((await publish()).error).toBeNull();
+    // retry of an already-published snapshot is idempotent
+    expect((await publish()).error).toBeNull();
+
+    const uploadCalls = fake.storageApi.upload.mock.calls as unknown as [string, unknown, { upsert?: boolean }][];
+    expect(uploadCalls.length).toBeGreaterThanOrEqual(4);
+    for (const [path, , opts] of uploadCalls) {
+      expect(opts.upsert).toBe(false);
+      expect(path).toMatch(/\/draft\./);
+    }
+    const copies = fake.storageApi.copy.mock.calls as unknown as [string, string][];
+    // every publish re-copies each live draft; re-copies are idempotent no-ops
+    expect([...new Set(copies.map(([, to]) => to))].sort()).toEqual([pub(A), pub(B), pub(C), pub(H)].sort());
+    expect(live()).toEqual([pub(B), pub(C), pub(H)].sort());
+    expect(bytesOf(pub(B))).toBe("B");
+  });
+
+  it("module covers and brand images still publish and keep their focal-point bytes", async () => {
+    const C = await uploadCover("meals", "cover");
+    const L = await uploadBrand("logo", "L");
+    expect((await publish()).error).toBeNull();
+    expect(live()).toEqual([pub(C), pub(L)].sort());
+    expect(bytesOf(pub(C))).toBe("cover");
+    expect(bytesOf(pub(L))).toBe("L");
   });
 });

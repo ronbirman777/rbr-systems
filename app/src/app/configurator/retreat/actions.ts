@@ -813,8 +813,9 @@ export type UploadModuleItemPhotoState = {
 };
 
 /**
- * Uploads (or replaces, via upsert at the same deterministic path) an
- * item's photo. Runs through the ordinary RLS-enforcing server client,
+ * Uploads an item's photo to a brand-new versioned path (new uploadId, so
+ * create-only: nothing is ever overwritten and no Storage UPDATE is
+ * needed). Runs through the ordinary RLS-enforcing server client,
  * never the admin client - the storage policies from migration 0006 are
  * what actually stop this from touching another tenant's files, not this
  * function's own logic (it can't even try: the path is always prefixed
@@ -888,7 +889,7 @@ export async function uploadModuleItemPhoto(
 
   const { error: uploadError } = await supabase.storage
     .from(MEDIA_BUCKET)
-    .upload(path, optimized, { upsert: true, contentType: OPTIMIZED_IMAGE_MIME });
+    .upload(path, optimized, { upsert: false, contentType: OPTIMIZED_IMAGE_MIME });
   if (uploadError) return { error: uploadError.message, imageRef: null, imageUrl: null };
 
   const { data: signed, error: signError } = await supabase.storage
@@ -1037,7 +1038,7 @@ export async function uploadModuleCoverPhoto(
 
   const { error: uploadError } = await supabase.storage
     .from(MEDIA_BUCKET)
-    .upload(path, optimized, { upsert: true, contentType: OPTIMIZED_IMAGE_MIME });
+    .upload(path, optimized, { upsert: false, contentType: OPTIMIZED_IMAGE_MIME });
   if (uploadError) return { error: uploadError.message, imageRef: null, imageUrl: null };
 
   const { data: signed, error: signError } = await supabase.storage
@@ -1236,7 +1237,7 @@ export async function uploadBrandImage(
 
   const { error: uploadError } = await supabase.storage
     .from(MEDIA_BUCKET)
-    .upload(path, optimized, { upsert: true, contentType: OPTIMIZED_IMAGE_MIME });
+    .upload(path, optimized, { upsert: false, contentType: OPTIMIZED_IMAGE_MIME });
   if (uploadError) return { error: uploadError.message, imageRef: null, imageUrl: null };
 
   const { data: signed, error: signError } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600);

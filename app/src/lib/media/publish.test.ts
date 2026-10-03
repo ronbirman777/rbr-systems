@@ -53,19 +53,28 @@ describe("copyDraftToPublished - only ever creates the published copy", () => {
     expect(await copyDraftToPublished(f.supabase, `${T}/meals/i/draft.webp`)).toBe(`${T}/meals/i/published.webp`);
   });
 
-  it("download failure -> MediaPublishError, nothing written", async () => {
+  it("copy failure on a versioned image -> MediaPublishError, nothing written", async () => {
     const f = makeFakeSupabase();
     f.put(`${T}/meals/i/up-1/draft.webp`, "B");
-    f.setFailure("download", "network error");
+    f.setFailure("copy", "network error");
     await expect(copyDraftToPublished(f.supabase, `${T}/meals/i/up-1/draft.webp`)).rejects.toThrow(MediaPublishError);
+    expect(f.storageApi.upload).not.toHaveBeenCalled();
+    expect(f.files.has(`${T}/meals/i/up-1/published.webp`)).toBe(false);
+  });
+
+  it("legacy image: download failure -> MediaPublishError, nothing written", async () => {
+    const f = makeFakeSupabase();
+    f.put(`${T}/meals/i/draft.webp`, "B");
+    f.setFailure("download", "network error");
+    await expect(copyDraftToPublished(f.supabase, `${T}/meals/i/draft.webp`)).rejects.toThrow(MediaPublishError);
     expect(f.storageApi.upload).not.toHaveBeenCalled();
   });
 
-  it("upload failure -> MediaPublishError", async () => {
+  it("legacy image: upload failure -> MediaPublishError", async () => {
     const f = makeFakeSupabase();
-    f.put(`${T}/meals/i/up-1/draft.webp`, "B");
+    f.put(`${T}/meals/i/draft.webp`, "B");
     f.setFailure("upload", "quota exceeded");
-    await expect(copyDraftToPublished(f.supabase, `${T}/meals/i/up-1/draft.webp`)).rejects.toThrow(MediaPublishError);
+    await expect(copyDraftToPublished(f.supabase, `${T}/meals/i/draft.webp`)).rejects.toThrow(MediaPublishError);
   });
 
   it("missing draft object -> MediaPublishError (never a silent skip)", async () => {
@@ -145,12 +154,75 @@ describe("copyDraftAudioToPublished - immutable, create-only audio publish copy"
     expect(f.files.has(published)).toBe(false);
   });
 
-  it("the image copy is unchanged: it still overwrites with upsert", async () => {
+  it("a versioned image publishes with a server-side copy, never upload/upsert", async () => {
     const f = makeFakeSupabase();
     f.put(`${T}/meals/i/up-1/draft.webp`, "B");
-    f.put(`${T}/meals/i/up-1/published.webp`, "stale");
     await copyDraftToPublished(f.supabase, `${T}/meals/i/up-1/draft.webp`);
-    expect(f.storageApi.upload).toHaveBeenCalledWith(`${T}/meals/i/up-1/published.webp`, expect.anything(), { upsert: true, contentType: "image/webp" });
+    expect(f.storageApi.copy).toHaveBeenCalledWith(`${T}/meals/i/up-1/draft.webp`, `${T}/meals/i/up-1/published.webp`);
+    expect(f.storageApi.upload).not.toHaveBeenCalled();
+    expect(f.storageApi.download).not.toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.anything());
+  });
+});
+
+describe("copyDraftToPublished - Phase 3C create-only image publish", () => {
+  const D = `${T}/meals/i/up-1/draft.webp`;
+  const P = `${T}/meals/i/up-1/published.webp`;
+
+  it("first publish creates the destination in the same uploadId folder", async () => {
+    const f = makeFakeSupabase();
+    f.put(D, "B");
+    expect(await copyDraftToPublished(f.supabase, D)).toBe(P);
+    expect(f.files.get(P)?.bytes).toBe("B");
+    expect(f.files.get(D)?.bytes).toBe("B");
+  });
+
+  it("uploadId is unchanged between the draft and its published sibling", async () => {
+    const f = makeFakeSupabase();
+    f.put(D, "B");
+    const out = (await copyDraftToPublished(f.supabase, D)) as string;
+    expect(out.split("/").slice(0, 4)).toEqual(D.split("/").slice(0, 4));
+  });
+
+  it("content type is preserved by the copy", async () => {
+    const f = makeFakeSupabase();
+    f.put(D, "B", undefined, "image/webp");
+    await copyDraftToPublished(f.supabase, D);
+    expect(f.files.get(P)?.contentType).toBe("image/webp");
+  });
+
+  it("identical retry is idempotent success (destination untouched)", async () => {
+    const f = makeFakeSupabase();
+    f.put(D, "B");
+    await copyDraftToPublished(f.supabase, D);
+    expect(await copyDraftToPublished(f.supabase, D)).toBe(P);
+    expect(f.files.get(P)?.bytes).toBe("B");
+    expect(f.storageApi.upload).not.toHaveBeenCalled();
+  });
+
+  it("a different-content collision fails closed and leaves the existing object", async () => {
+    const f = makeFakeSupabase();
+    f.put(D, "NEW-BYTES");
+    f.put(P, "OTHER-BYTE");
+    await expect(copyDraftToPublished(f.supabase, D)).rejects.toThrow(MediaPublishError);
+    expect(f.files.get(P)?.bytes).toBe("OTHER-BYTE");
+    expect(f.storageApi.upload).not.toHaveBeenCalled();
+  });
+
+  it("a same-size but different-bytes collision also fails closed", async () => {
+    const f = makeFakeSupabase();
+    f.put(D, "AAAA");
+    f.put(P, "BBBB");
+    await expect(copyDraftToPublished(f.supabase, D)).rejects.toThrow(MediaPublishError);
+    expect(f.files.get(P)?.bytes).toBe("BBBB");
+  });
+
+  it("legacy stable-path draft keeps its overwrite semantics (the only upsert left)", async () => {
+    const f = makeFakeSupabase();
+    f.put(`${T}/meals/i/draft.webp`, "new");
+    f.put(`${T}/meals/i/published.webp`, "stale");
+    await copyDraftToPublished(f.supabase, `${T}/meals/i/draft.webp`);
+    expect(f.storageApi.upload).toHaveBeenCalledWith(`${T}/meals/i/published.webp`, expect.anything(), { upsert: true, contentType: "image/webp" });
     expect(f.storageApi.copy).not.toHaveBeenCalled();
+    expect(f.files.get(`${T}/meals/i/published.webp`)?.bytes).toBe("new");
   });
 });

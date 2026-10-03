@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AUDIO_MIME_BY_EXTENSION } from "./audio";
-import { MEDIA_BUCKET, OPTIMIZED_IMAGE_MIME, parseVersionedMediaPath, publishedMediaPath } from "./path";
+import { MEDIA_BUCKET, OPTIMIZED_IMAGE_MIME, isVersionedMediaPath, parseVersionedMediaPath, publishedMediaPath } from "./path";
 
 /**
  * Thrown whenever a Storage operation this module performs fails - the
@@ -14,7 +14,7 @@ export class MediaPublishError extends Error {}
 /**
  * Copies one draft photo to its published counterpart - the only place a
  * draft becomes published media, shared by every image-bearing thing
- * (module items, module covers, brand Hero/Space/Logo).
+ * (module items, module covers, brand Hero/Space/Logo, Teach images).
  *
  * This function only ever CREATES a published object. It never lists or
  * deletes anything: removing published media is the post-publish sweep's
@@ -23,21 +23,22 @@ export class MediaPublishError extends Error {}
  * Publish fails - nothing the live snapshot references is touched before
  * publish_space() commits.
  *
- * Every upload has its own uploadId folder (see path.ts), so
- * `.../{uploadId}/published.webp` is written from bytes that never change
- * afterwards: re-running this for the same draft (a retry after a failed
- * publish, or a republish with an unchanged photo) rewrites identical
- * bytes and is safe. A different photo always lands at a different key,
- * so the live snapshot's object is never overwritten with different
- * content. (Legacy drafts without an uploadId folder still map to a
- * single stable published key and are overwritten in place, exactly as
- * before - documented as TASK 027 legacy scope, not migrated here.)
+ * VERSIONED drafts (`{tenant}/{module}/{item}/{uploadId}/draft.<ext>`,
+ * see isVersionedMediaPath) are published create-only and immutable,
+ * exactly like audio: the destination is the `published.<ext>` sibling in
+ * the SAME uploadId folder, made with Storage's server-side `copy` (which
+ * keeps the content type and refuses to overwrite). A retry where the
+ * destination already exists is idempotent success when it is
+ * byte-identical to the draft and a MediaPublishError otherwise. No
+ * versioned object is ever written with upsert, so normal operation needs
+ * no Storage UPDATE on versioned media.
  *
- * IMPORTANT - download+upload(upsert), not storage `copy`: `copy` errors
- * with 409 KeyAlreadyExists whenever the destination exists (confirmed
- * against Production), which breaks the legacy/retry case.
- * `{ cache: "no-store" }` on the download is required so a Next.js server
- * runtime never re-uploads a cached response body for the draft.
+ * LEGACY drafts (no uploadId folder, `{tenant}/{module}/{item}/draft.<ext>`)
+ * still map to one stable published key that is overwritten in place with
+ * download+upload(upsert) - documented as TASK 027 legacy scope, the only
+ * remaining path that needs Storage UPDATE. `{ cache: "no-store" }` on its
+ * download is required so a Next.js server runtime never re-uploads a
+ * cached response body for the draft.
  *
  * Returns the published path that was written (null when there is no
  * draft photo, i.e. nothing to copy).
@@ -49,6 +50,12 @@ export async function copyDraftToPublished(supabase: SupabaseClient, draftPath: 
   // as well, so there is nothing to copy.
   if (!publishedPath) return null;
 
+  if (isVersionedMediaPath(draftPath)) {
+    await copyImmutableObject(supabase, draftPath, publishedPath);
+    return publishedPath;
+  }
+
+  // Legacy stable-path overwrite (not a versioned object).
   const { data: draftBlob, error: downloadError } = await supabase.storage
     .from(MEDIA_BUCKET)
     .download(draftPath, {}, { cache: "no-store" });

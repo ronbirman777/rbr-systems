@@ -132,6 +132,29 @@ export function parseVersionedMediaPath(
 }
 
 /**
+ * Shape-only test for a VERSIONED media object path - the rule the
+ * publish copy and the future Storage UPDATE policy share:
+ *
+ *   exactly five "/"-separated segments
+ *   `{tenant}/{module}/{item}/{uploadId}/{draft|published}.<ext>`
+ *   where the first four match [A-Za-z0-9_-]+ and <ext> is [A-Za-z0-9]{1,8}
+ *
+ * Equivalent to: the object sits in exactly four folders and its file name
+ * is draft.<ext> or published.<ext>. The legacy stable layout
+ * (`{tenant}/{module}/{item}/draft.<ext>`) has three folders and is never
+ * matched. Unlike parseVersionedMediaPath it does not require the tenant
+ * segment to be a uuid (Storage policies cast it themselves, and the media
+ * tests use short tenant ids), and it accepts any extension case, so it
+ * errs toward treating an object as immutable.
+ */
+export function isVersionedMediaPath(path: string): boolean {
+  const segments = path.split("/");
+  if (segments.length !== 5) return false;
+  if (!segments.slice(0, 4).every((seg) => SEGMENT_RE.test(seg))) return false;
+  return /^(draft|published)\.[A-Za-z0-9]{1,8}$/.test(segments[4]);
+}
+
+/**
  * True only for a draft object that belongs to `tenantId`. Server actions
  * that delete Storage objects take the path from the client, so this is
  * the guard that keeps a crafted request from deleting a published object

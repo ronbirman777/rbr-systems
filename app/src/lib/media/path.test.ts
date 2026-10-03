@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { versionedMediaPath, parseVersionedMediaPath, collectImageRefs, collectMediaRefs, tenantMediaPath, publishedMediaPath, newUploadId, isDraftMediaPathForTenant, isPublishedMediaPath, isFileSizeAllowed, MAX_IMAGE_BYTES, isWellFormedMediaPath, MEDIA_SIGNED_URL_TTL_SECONDS } from "./path";
+import { versionedMediaPath, parseVersionedMediaPath, collectImageRefs, collectMediaRefs, tenantMediaPath, publishedMediaPath, newUploadId, isDraftMediaPathForTenant, isPublishedMediaPath, isFileSizeAllowed, MAX_IMAGE_BYTES, isWellFormedMediaPath, isVersionedMediaPath, MEDIA_SIGNED_URL_TTL_SECONDS } from "./path";
 
 describe("tenantMediaPath", () => {
   it("builds the draft path for a module_items-backed item", () => {
@@ -183,5 +183,31 @@ describe("collectMediaRefs vs collectImageRefs", () => {
   it("ignores non-string values and empty payloads", () => {
     expect(collectMediaRefs(null).size).toBe(0);
     expect(collectMediaRefs({ audioRef: 5, imageRef: null }).size).toBe(0);
+  });
+});
+
+describe("isVersionedMediaPath - the SQL-suitable versioned classification", () => {
+  it("accepts {tenant}/{module}/{item}/{uploadId}/(draft|published).<ext>, uuid or not, any module", () => {
+    expect(isVersionedMediaPath("t/m/i/u/draft.webp")).toBe(true);
+    expect(isVersionedMediaPath("t/m/i/u/published.mp3")).toBe(true);
+    expect(isVersionedMediaPath("t/teachAudioFile/i/u/draft.M4A")).toBe(true);
+    expect(isVersionedMediaPath("11111111-1111-4111-8111-111111111111/_cover/x/u/published.png")).toBe(true);
+  });
+
+  it("rejects legacy stable-layout paths and other shapes", () => {
+    expect(isVersionedMediaPath("t/m/i/draft.webp")).toBe(false);
+    expect(isVersionedMediaPath("t/m/i/published.webp")).toBe(false);
+    expect(isVersionedMediaPath("t/m/i/u/photo.png")).toBe(false);
+    expect(isVersionedMediaPath("t/m/i/u/draft")).toBe(false);
+    expect(isVersionedMediaPath("t/m/i/u/v/draft.webp")).toBe(false);
+    expect(isVersionedMediaPath("t/m/i/u/draft.webp/")).toBe(false);
+    expect(isVersionedMediaPath("t/m/../u/draft.webp")).toBe(false);
+    expect(isVersionedMediaPath("")).toBe(false);
+  });
+
+  it("agrees with parseVersionedMediaPath on every strict path", () => {
+    const p = versionedMediaPath("draft", { tenantId: "11111111-1111-4111-8111-111111111111", moduleKey: "meals", itemId: "i", uploadId: newUploadId(), ext: "webp" });
+    expect(parseVersionedMediaPath(p)).not.toBeNull();
+    expect(isVersionedMediaPath(p)).toBe(true);
   });
 });
