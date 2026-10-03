@@ -1,4 +1,5 @@
 import { INNERDWES_BRAND } from "./platform";
+import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
 
 /**
  * Display-layer identity for InnerDweS's product families. Maps the
@@ -17,6 +18,12 @@ export const PRODUCT_FAMILIES = {
     name: "Time to Heal",
     tagline: "For practitioners and their clients.",
     accent: INNERDWES_BRAND.sage,
+  },
+  // Time to Teach's identity lives in the Space Type Registry (source of truth).
+  teach: {
+    name: SPACE_TYPES.teach.product.name,
+    tagline: SPACE_TYPES.teach.product.tagline,
+    accent: SPACE_TYPES.teach.product.accent,
   },
   sanctuary: {
     name: "Time to Elevate",

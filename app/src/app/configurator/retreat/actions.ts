@@ -31,7 +31,7 @@ import {
   tenantMediaPath,
   newUploadId,
   isDraftMediaPathForTenant,
-  collectImageRefs,
+  collectMediaRefs,
 } from "@/lib/media/path";
 import { copyDraftToPublished } from "@/lib/media/publish";
 import { cleanupStalePublishedMedia } from "@/lib/media/publishedCleanup";
@@ -813,8 +813,9 @@ export type UploadModuleItemPhotoState = {
 };
 
 /**
- * Uploads (or replaces, via upsert at the same deterministic path) an
- * item's photo. Runs through the ordinary RLS-enforcing server client,
+ * Uploads an item's photo to a brand-new versioned path (new uploadId, so
+ * create-only: nothing is ever overwritten and no Storage UPDATE is
+ * needed). Runs through the ordinary RLS-enforcing server client,
  * never the admin client - the storage policies from migration 0006 are
  * what actually stop this from touching another tenant's files, not this
  * function's own logic (it can't even try: the path is always prefixed
@@ -888,7 +889,7 @@ export async function uploadModuleItemPhoto(
 
   const { error: uploadError } = await supabase.storage
     .from(MEDIA_BUCKET)
-    .upload(path, optimized, { upsert: true, contentType: OPTIMIZED_IMAGE_MIME });
+    .upload(path, optimized, { upsert: false, contentType: OPTIMIZED_IMAGE_MIME });
   if (uploadError) return { error: uploadError.message, imageRef: null, imageUrl: null };
 
   const { data: signed, error: signError } = await supabase.storage
@@ -1037,7 +1038,7 @@ export async function uploadModuleCoverPhoto(
 
   const { error: uploadError } = await supabase.storage
     .from(MEDIA_BUCKET)
-    .upload(path, optimized, { upsert: true, contentType: OPTIMIZED_IMAGE_MIME });
+    .upload(path, optimized, { upsert: false, contentType: OPTIMIZED_IMAGE_MIME });
   if (uploadError) return { error: uploadError.message, imageRef: null, imageUrl: null };
 
   const { data: signed, error: signError } = await supabase.storage
@@ -1236,7 +1237,7 @@ export async function uploadBrandImage(
 
   const { error: uploadError } = await supabase.storage
     .from(MEDIA_BUCKET)
-    .upload(path, optimized, { upsert: true, contentType: OPTIMIZED_IMAGE_MIME });
+    .upload(path, optimized, { upsert: false, contentType: OPTIMIZED_IMAGE_MIME });
   if (uploadError) return { error: uploadError.message, imageRef: null, imageUrl: null };
 
   const { data: signed, error: signError } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600);
@@ -1424,6 +1425,14 @@ export async function publishSpace(
   const tenantId = String(formData.get("tenantId") ?? "");
   if (!tenantId) return { error: "Missing space.", publishedAt: null };
 
+  // This action snapshots Retreat media only. A visible tenant of any other
+  // product publishes through its own action (publishSpaceByType dispatches);
+  // a tenant that is not visible falls through to the RPC, which rejects it.
+  const { data: tenantRow } = await supabase.from("tenants").select("product_type").eq("id", tenantId).maybeSingle();
+  if (tenantRow && tenantRow.product_type !== "retreat") {
+    return { error: "This Space can't be published from here.", publishedAt: null };
+  }
+
   // UX-only pre-check, fails fast before the media Storage work below -
   // the authoritative enforcement is inside publish_space() itself (the
   // RPC call at the end of this function), which cannot be bypassed even
@@ -1446,7 +1455,7 @@ export async function publishSpace(
     .select("modules")
     .eq("tenant_id", tenantId)
     .maybeSingle();
-  const previousRefs = collectImageRefs(previousSnapshot?.modules ?? null);
+  const previousRefs = collectMediaRefs(previousSnapshot?.modules ?? null);
 
   // Every draft photo reference, across every image-bearing module, the
   // three brand-level refs (Hero/Space/Logo) and module covers - the same
@@ -1505,7 +1514,7 @@ export async function publishSpace(
       .eq("tenant_id", tenantId)
       .maybeSingle();
     if (readError || !committed) throw new Error(readError?.message ?? "snapshot not readable");
-    await cleanupStalePublishedMedia(supabase, tenantId, previousRefs, collectImageRefs(committed.modules));
+    await cleanupStalePublishedMedia(supabase, tenantId, previousRefs, collectMediaRefs(committed.modules));
   } catch (cleanupError) {
     console.error("publishSpace: stale published media cleanup failed", {
       tenantId,

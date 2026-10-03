@@ -14,9 +14,11 @@ type Failure = { message: string } | null;
 export type FakeSupabase = ReturnType<typeof makeFakeSupabase>;
 
 export function makeFakeSupabase(userId: string | null = "user-1") {
-  const files = new Map<string, { bytes: string; updatedAt: string }>();
-  const tables: Record<string, Row[]> = { module_items: [], brand_configs: [], module_configs: [], published_spaces: [] };
+  const files = new Map<string, { bytes: string; updatedAt: string; contentType?: string }>();
+  const tables: Record<string, Row[]> = { module_items: [], brand_configs: [], module_configs: [], published_spaces: [], tenants: [], module_settings: [] };
   const fail: Record<string, Failure> = {};
+  // Reported size overrides, so a test can simulate a 100 MB+ object without allocating one.
+  const sizes = new Map<string, number>();
   let clock = Date.parse("2026-01-01T00:00:00Z");
   const tick = () => new Date((clock += 1000)).toISOString();
 
@@ -25,6 +27,8 @@ export function makeFakeSupabase(userId: string | null = "user-1") {
     brand_configs: ["tenant_id"],
     module_configs: ["tenant_id", "module_key"],
     published_spaces: ["tenant_id"],
+    tenants: ["id"],
+    module_settings: ["tenant_id", "module_key"],
   };
 
   class Query implements PromiseLike<{ data: unknown; error: Failure }> {
@@ -123,13 +127,36 @@ export function makeFakeSupabase(userId: string | null = "user-1") {
     download: vi.fn(async (path: string) => {
       if (fail.download) return { data: null, error: fail.download };
       const f = files.get(path);
-      return f ? { data: f.bytes, error: null } : { data: null, error: { message: "Object not found" } };
+      return f ? { data: new Blob([f.bytes]), error: null } : { data: null, error: { message: "Object not found" } };
     }),
-    upload: vi.fn(async (path: string, body: unknown) => {
+    upload: vi.fn(async (path: string, body: unknown, opts?: { upsert?: boolean; contentType?: string }) => {
       if (fail.upload) return { data: null, error: fail.upload };
-      files.set(path, { bytes: typeof body === "string" ? body : Buffer.from(body as Buffer).toString(), updatedAt: tick() });
+      if (opts?.upsert === false && files.has(path)) {
+        return { data: null, error: { message: "The resource already exists", statusCode: "409" } };
+      }
+      const bytes =
+        typeof body === "string" ? body : body instanceof Blob ? await body.text() : Buffer.from(body as Buffer).toString();
+      files.set(path, { bytes, updatedAt: tick(), contentType: opts?.contentType });
       return { data: { path }, error: null };
     }),
+    copy: vi.fn(async (from: string, to: string) => {
+      if (fail.copy) return { data: null, error: fail.copy };
+      const f = files.get(from);
+      if (!f) return { data: null, error: { message: "Object not found", statusCode: "404" } };
+      if (files.has(to)) return { data: null, error: { message: "The resource already exists", statusCode: "409" } };
+      files.set(to, { ...f, updatedAt: tick() });
+      return { data: { path: to }, error: null };
+    }),
+    info: vi.fn(async (path: string) => {
+      if (fail.info) return { data: null, error: fail.info };
+      const f = files.get(path);
+      if (!f) return { data: null, error: { message: "Object not found" } };
+      return {
+        data: { name: path, size: sizes.get(path) ?? Buffer.byteLength(f.bytes), contentType: f.contentType, etag: `etag:${f.bytes}` },
+        error: null,
+      };
+    }),
+    exists: vi.fn(async (path: string) => ({ data: files.has(path), error: null })),
     remove: vi.fn(async (paths: string[]) => {
       if (fail.remove) return { data: null, error: fail.remove };
       paths.forEach((p) => files.delete(p));
@@ -175,7 +202,9 @@ export function makeFakeSupabase(userId: string | null = "user-1") {
     tables,
     storageApi,
     rpc,
-    put: (path: string, bytes: string, updatedAt?: string) => files.set(path, { bytes, updatedAt: updatedAt ?? tick() }),
+    put: (path: string, bytes: string, updatedAt?: string, contentType?: string) =>
+      files.set(path, { bytes, updatedAt: updatedAt ?? tick(), contentType }),
+    setReportedSize: (path: string, size: number) => sizes.set(path, size),
     setFailure: (key: string, message: string | null) => {
       fail[key] = message ? { message } : null;
     },

@@ -19,6 +19,7 @@ const mockFromSelect = vi.fn();
 const mockFromCountSelect = vi.fn();
 const mockStorageList = vi.fn();
 const mockStorageRemove = vi.fn();
+const mockTenantSelect = vi.fn();
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
@@ -27,6 +28,9 @@ vi.mock("@/lib/supabase/server", () => ({
     from: (table: string) => {
       if (table === "user_space_slots") {
         return { select: () => ({ eq: () => ({ maybeSingle: mockFromSelect }) }) };
+      }
+      if (table === "tenants") {
+        return { select: () => ({ eq: () => ({ maybeSingle: mockTenantSelect }) }) };
       }
       if (table === "tenant_members") {
         return { select: () => ({ eq: () => ({ eq: mockFromCountSelect }) }) };
@@ -61,6 +65,7 @@ describe("lifecycleActions - Task 011", () => {
     // Task 017 default: an empty media listing, so tests that don't care
     // about Storage cleanup specifics reach delete_space() unimpeded.
     mockStorageList.mockResolvedValue({ data: [], error: null });
+    mockTenantSelect.mockResolvedValue({ data: { product_type: "retreat" } });
   });
 
   describe("getSpaceSlotSummary", () => {
@@ -317,6 +322,94 @@ describe("lifecycleActions - Task 011", () => {
       const { replaceSpace } = await loadActions();
 
       const result = await replaceSpace({ error: null }, formData({ ...confirmed, tenantId: "../other" }));
+
+      expect(result.error).toBeTruthy();
+      expect(mockStorageList).not.toHaveBeenCalled();
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("replaceSpace - Space Type Registry (TASK 027.5 Phase 2B)", () => {
+    const T = "11111111-1111-4111-8111-111111111111";
+    const unnamed = { tenantId: T, expectedName: "Real Name", confirmName: "Real Name" };
+
+    it("a Retreat Replace with no new name still defaults to 'Untitled Retreat' (unchanged)", async () => {
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      mockRpc.mockResolvedValue({ error: null });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData(unnamed));
+
+      expect(mockRpc).toHaveBeenCalledWith("replace_space", { p_tenant_id: T, p_new_name: "Untitled Retreat" });
+      expect(result.success).toBe(true);
+    });
+
+    it("a Teach Replace defaults from the Space's own type and keeps product_type (the RPC is only ever given id + name)", async () => {
+      mockTenantSelect.mockResolvedValue({ data: { product_type: "teach" } });
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      mockRpc.mockResolvedValue({ error: null });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData(unnamed));
+
+      // replace_space() never writes product_type (0027); the action sends
+      // nothing that could change it and performs no tenants write itself.
+      expect(mockRpc).toHaveBeenCalledTimes(1);
+      expect(mockRpc).toHaveBeenCalledWith("replace_space", { p_tenant_id: T, p_new_name: "My Teaching Space" });
+      expect(result.success).toBe(true);
+    });
+
+    it("a Teach Replace removes audio and every other object under the tenant folder, Storage first", async () => {
+      mockTenantSelect.mockResolvedValue({ data: { product_type: "teach" } });
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      mockStorageList.mockImplementation((prefix: string) => {
+        if (prefix === T) return Promise.resolve({ data: [{ id: null, name: "teachAudio" }], error: null });
+        if (prefix === `${T}/teachAudio`) return Promise.resolve({ data: [{ id: null, name: "item" }], error: null });
+        if (prefix === `${T}/teachAudio/item`) return Promise.resolve({ data: [{ id: "a1", name: "draft.mp3" }, { id: "a2", name: "published.mp3" }], error: null });
+        throw new Error(`unexpected prefix in test: ${prefix}`);
+      });
+      mockStorageRemove.mockResolvedValue({ error: null });
+      mockRpc.mockResolvedValue({ error: null });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData(unnamed));
+
+      const removed = mockStorageRemove.mock.calls.flatMap((c) => c[0] as string[]).sort();
+      expect(removed).toEqual([`${T}/teachAudio/item/draft.mp3`, `${T}/teachAudio/item/published.mp3`]);
+      expect(mockStorageRemove.mock.invocationCallOrder[0]).toBeLessThan(mockRpc.mock.invocationCallOrder[0]);
+      expect(result.success).toBe(true);
+    });
+
+    it("a Teach Replace whose Storage cleanup fails never resets the database (fail closed, retryable)", async () => {
+      mockTenantSelect.mockResolvedValue({ data: { product_type: "teach" } });
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      mockStorageList.mockResolvedValue({ data: null, error: { message: "boom" } });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData(unnamed));
+
+      expect(result.error).toBeTruthy();
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it.each([["mystery"], [""], [null]])("refuses product_type %j before any Storage or database change", async (product_type) => {
+      mockTenantSelect.mockResolvedValue({ data: { product_type } });
+      mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData(unnamed));
+
+      expect(result.error).toBeTruthy();
+      expect(mockStorageList).not.toHaveBeenCalled();
+      expect(mockStorageRemove).not.toHaveBeenCalled();
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+
+    it("refuses when the tenant cannot be read (not a member / not found) before any Storage or database change", async () => {
+      mockTenantSelect.mockResolvedValue({ data: null });
+      const { replaceSpace } = await loadActions();
+
+      const result = await replaceSpace({ error: null }, formData(unnamed));
 
       expect(result.error).toBeTruthy();
       expect(mockStorageList).not.toHaveBeenCalled();

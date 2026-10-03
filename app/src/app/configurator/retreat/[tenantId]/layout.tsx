@@ -8,6 +8,6 @@ export default async function StudioTenantLayout({
   params: Promise<{ tenantId: string }>;
 }) {
   const { tenantId } = await params;
-  await loadStudioTenant(tenantId);
+  await loadStudioTenant(tenantId, "retreat");
   return children;
 }

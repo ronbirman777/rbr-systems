@@ -23,6 +23,35 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({ storage: { from: () => ({ createSignedUrl: mockSign }) } }),
 }));
 
+// The signed-in member's own session client: module_items rows visible to
+// them (RLS), keyed by item id. `user` null = anonymous.
+let sessionUser: { id: string } | null = null;
+let draftRows: Array<{ id: string; tenant_id: string; metadata: Record<string, unknown> | null }> = [];
+let sessionThrows = false;
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: async () => {
+    if (sessionThrows) throw new Error("no cookies");
+    return {
+      auth: { getUser: async () => ({ data: { user: sessionUser } }) },
+      from: () => {
+        const f: Record<string, unknown> = {};
+        const q = {
+          select: () => q,
+          eq: (c: string, v: unknown) => {
+            f[c] = v;
+            return q;
+          },
+          maybeSingle: async () => ({
+            data: draftRows.find((r) => r.id === f.id && r.tenant_id === f.tenant_id) ?? null,
+            error: null,
+          }),
+        };
+        return q;
+      },
+    };
+  },
+}));
+
 const mockAccess = vi.fn();
 vi.mock("@/lib/guestAccess/effectiveAccess", () => ({ resolveGuestAccess: (...a: unknown[]) => mockAccess(...a) }));
 
@@ -130,5 +159,149 @@ describe("GET /api/media - published snapshot AND current guest access", () => {
     snapshot = { modules };
     expect((await call(`${TENANT}/meals/a/up-A/draft.webp`.split("/"))).status).toBe(404);
     expect(mockSign).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// TASK 027.5 Phase 3B - audio authorization
+// ---------------------------------------------------------------------------
+const ITEM = "33333333-3333-4333-8333-333333333333";
+const AUD = {
+  draftV1: `${TENANT}/teachAudioFile/${ITEM}/up-1/draft.mp3`,
+  draftV2: `${TENANT}/teachAudioFile/${ITEM}/up-2/draft.mp3`,
+  pubV1: `${TENANT}/teachAudioFile/${ITEM}/up-1/published.mp3`,
+  pubV2: `${TENANT}/teachAudioFile/${ITEM}/up-2/published.mp3`,
+};
+
+describe("GET /api/media - Teach audio (draft: referenced by current draft data; published: in the snapshot)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    sessionUser = { id: "member" };
+    sessionThrows = false;
+    draftRows = [{ id: ITEM, tenant_id: TENANT, metadata: { audioRef: AUD.draftV2 } }];
+    snapshot = { modules: { ...modules, teachAudio: [{ id: ITEM, audioRef: AUD.pubV1 }] } };
+    mockAccess.mockResolvedValue("granted");
+    mockSign.mockResolvedValue({ data: { signedUrl: "http://storage/sign/a?token=t" }, error: null });
+  });
+
+  it("1. signed-in member + draft audio the current draft data references -> 307, 60s URL, no-store", async () => {
+    const res = await call(AUD.draftV2.split("/"));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("location")).toBe("http://storage/sign/a?token=t");
+    expect(res.headers.get("cache-control")).toBe("private, no-store");
+    expect(mockSign).toHaveBeenCalledWith(AUD.draftV2, 60);
+  });
+
+  it("2. a random versioned draft audio object the draft data does not reference -> 404", async () => {
+    expect((await call(`${TENANT}/teachAudioFile/${ITEM}/up-zzz/draft.mp3`.split("/"))).status).toBe(404);
+    // an item that has no audio attached at all (unattached prepare/upload)
+    draftRows = [{ id: ITEM, tenant_id: TENANT, metadata: { audioRef: null } }];
+    expect((await call(AUD.draftV2.split("/"))).status).toBe(404);
+    expect(mockSign).not.toHaveBeenCalled();
+  });
+
+  it("3. stale prior draft version (replaced by a newer one) -> 404", async () => {
+    expect((await call(AUD.draftV1.split("/"))).status).toBe(404);
+    expect(mockSign).not.toHaveBeenCalled();
+  });
+
+  it("4. cross-tenant: tenant B's draft audio is never served through A's session or A's id", async () => {
+    const bPath = `${OTHER}/teachAudioFile/${ITEM}/up-2/draft.mp3`;
+    // B's row exists but is not visible to this member (RLS) - and its item id is A's
+    expect((await call(bPath.split("/"))).status).toBe(404);
+    // a B item id under A's tenant folder resolves to no A row
+    const foreign = `${TENANT}/teachAudioFile/44444444-4444-4444-8444-444444444444/up-2/draft.mp3`;
+    draftRows.push({ id: "44444444-4444-4444-8444-444444444444", tenant_id: OTHER, metadata: { audioRef: foreign } });
+    expect((await call(foreign.split("/"))).status).toBe(404);
+    expect(mockSign).not.toHaveBeenCalled();
+  });
+
+  it("5. malformed audio paths -> 404 before any session or snapshot lookup", async () => {
+    for (const p of [
+      [TENANT, "teachAudioFile", ITEM, "draft.mp3"],
+      [TENANT, "teachAudioFile", ITEM, "up-2", "..", "draft.mp3"],
+      [TENANT, "teachAudioFile", ITEM, "up-2", "draft.mp3", "extra"],
+      [TENANT, "teachAudioFile", ITEM, "up-2", "draft.mp3.exe"],
+      ["not-a-uuid", "teachAudioFile", ITEM, "up-2", "draft.mp3"],
+    ]) {
+      expect((await call(p)).status).toBe(404);
+    }
+    expect(mockSign).not.toHaveBeenCalled();
+  });
+
+  it("anonymous caller, or a session lookup failure, is denied draft audio (fail closed)", async () => {
+    sessionUser = null;
+    expect((await call(AUD.draftV2.split("/"))).status).toBe(404);
+    sessionUser = { id: "member" };
+    sessionThrows = true;
+    expect((await call(AUD.draftV2.split("/"))).status).toBe(404);
+    expect(mockSign).not.toHaveBeenCalled();
+  });
+
+  it("a draft-only reference never authorizes the published sibling", async () => {
+    expect((await call(AUD.pubV2.split("/"))).status).toBe(404); // not in snapshot, only the draft refers to up-2
+    expect(mockSign).not.toHaveBeenCalled();
+  });
+
+  it("6. guest + audio the published snapshot references -> 307 with the same 60s no-store contract", async () => {
+    sessionUser = null;
+    const res = await call(AUD.pubV1.split("/"));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("cache-control")).toBe("private, no-store");
+    expect(mockSign).toHaveBeenCalledWith(AUD.pubV1, 60);
+  });
+
+  it("7. guests never get draft audio, even the one the draft data references", async () => {
+    sessionUser = null;
+    expect((await call(AUD.draftV2.split("/"))).status).toBe(404);
+    expect((await call(AUD.draftV1.split("/"))).status).toBe(404);
+    expect(mockSign).not.toHaveBeenCalled();
+  });
+
+  it("7b. a snapshot that (wrongly) named a draft audio path still does not serve it to a guest", async () => {
+    sessionUser = null;
+    snapshot = { modules: { teachAudio: [{ id: ITEM, audioRef: AUD.draftV1 }] } };
+    expect((await call(AUD.draftV1.split("/"))).status).toBe(404);
+  });
+
+  it("8. stale published audio (replaced in the snapshot) -> 404 even though its object may still exist", async () => {
+    sessionUser = null;
+    snapshot = { modules: { teachAudio: [{ id: ITEM, audioRef: AUD.pubV2 }] } };
+    expect((await call(AUD.pubV1.split("/"))).status).toBe(404);
+    expect((await call(AUD.pubV2.split("/"))).status).toBe(307);
+    expect(mockSign).toHaveBeenCalledTimes(1);
+  });
+
+  it("9. private/code-gated and lapsed Spaces: audio follows the Space decision (hero/logo exception unchanged)", async () => {
+    sessionUser = null;
+    mockAccess.mockResolvedValue("code-required");
+    expect((await call(AUD.pubV1.split("/"))).status).toBe(404);
+    expect((await call(P.hero.split("/"))).status).toBe(307);
+    mockAccess.mockResolvedValue("unavailable");
+    expect((await call(AUD.pubV1.split("/"))).status).toBe(404);
+    expect((await call(P.hero.split("/"))).status).toBe(404);
+  });
+
+  it("9b. a cross-tenant published audio path is not in this tenant's snapshot -> 404", async () => {
+    sessionUser = null;
+    expect((await call([TENANT, OTHER, "teachAudioFile", ITEM, "up-1", "published.mp3"])).status).toBe(404);
+    expect((await call([OTHER, "teachAudioFile", ITEM, "up-1", "published.mp3"])).status).toBe(404); // other tenant has no snapshot
+  });
+
+  it("10. audio and image authorization coexist; images are not served as drafts through this route", async () => {
+    expect((await call(P.item.split("/"))).status).toBe(307);
+    expect((await call(AUD.pubV1.split("/"))).status).toBe(307);
+    expect((await call(AUD.draftV2.split("/"))).status).toBe(307);
+    // a signed-in member does NOT gain draft IMAGE access here
+    expect((await call(`${TENANT}/meals/a/up-A/draft.webp`.split("/"))).status).toBe(404);
+    expect((await call(P.draft.split("/"))).status).toBe(404);
+  });
+
+  it("11/12. TTL stays 60 and every audio response (served or denied) is private, no-store", async () => {
+    for (const path of [AUD.draftV2, AUD.pubV1, AUD.draftV1, AUD.pubV2]) {
+      const res = await call(path.split("/"));
+      expect(res.headers.get("cache-control")).toBe("private, no-store");
+    }
+    for (const c of mockSign.mock.calls) expect(c[1]).toBe(60);
   });
 });

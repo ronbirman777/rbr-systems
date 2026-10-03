@@ -56,3 +56,26 @@ export function getDailyQuote(dateIso: string): DailyQuote {
   const index = Math.min(Math.max(day - 1, 0), DAILY_QUOTES.length - 1);
   return DAILY_QUOTES[index];
 }
+
+/**
+ * Time to Teach (shared, additive): a Space may author its own Daily
+ * Inspiration list. Same determinism rule as getDailyQuote - one quote per
+ * calendar day in the Space's time zone, identical for every guest - but
+ * rotating through the tenant's list by day-of-year so any list length
+ * cycles evenly. An empty list falls back to the shared InnerDweS set when
+ * `useFallback` is on, otherwise shows nothing. getDailyQuote() above is
+ * unchanged, so Time to Flow's behaviour is untouched.
+ */
+export function getDailyQuoteFrom(
+  dateIso: string,
+  customQuotes: readonly string[],
+  useFallback = true,
+  source: string | null = null
+): DailyQuote | null {
+  const quotes = customQuotes.map((q) => q.trim()).filter(Boolean);
+  if (quotes.length === 0) return useFallback ? getDailyQuote(dateIso) : null;
+  const d = new Date(`${dateIso}T12:00:00Z`);
+  const start = Date.UTC(d.getUTCFullYear(), 0, 1, 12);
+  const dayOfYear = Number.isNaN(d.getTime()) ? 0 : Math.round((d.getTime() - start) / 86_400_000);
+  return { text: quotes[dayOfYear % quotes.length], source: source ?? "" };
+}

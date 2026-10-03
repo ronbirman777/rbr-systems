@@ -82,6 +82,78 @@ export function newUploadId(): string {
   return globalThis.crypto.randomUUID();
 }
 
+const SEGMENT_RE = /^[A-Za-z0-9_-]+$/;
+const EXT_RE = /^[a-z0-9]{1,8}$/;
+
+export type VersionedMediaKind = "draft" | "published";
+
+export type VersionedMediaParts = {
+  tenantId: string;
+  moduleKey: string;
+  itemId: string;
+  uploadId: string;
+  ext: string;
+};
+
+/**
+ * The one builder for a versioned object path
+ * (`{tenant}/{module}/{item}/{uploadId}/{draft|published}.<ext>`). It
+ * generalizes tenantMediaPath for any media kind (audio today) and
+ * validates every segment, so a crafted id can never smuggle a `/`, `..`
+ * or an unexpected extension into a Storage key. Throws on bad input -
+ * callers build paths from server-trusted values, so a throw is a bug.
+ */
+export function versionedMediaPath(kind: VersionedMediaKind, parts: VersionedMediaParts): string {
+  const { tenantId, moduleKey, itemId, uploadId, ext } = parts;
+  if (!tenantId || !isTenantId(tenantId)) throw new Error("Invalid tenant id for media path.");
+  if (!SEGMENT_RE.test(moduleKey)) throw new Error("Invalid module key for media path.");
+  if (!SEGMENT_RE.test(itemId)) throw new Error("Invalid item id for media path.");
+  if (!SEGMENT_RE.test(uploadId)) throw new Error("Invalid upload id for media path.");
+  if (!EXT_RE.test(ext)) throw new Error("Invalid file extension for media path.");
+  return `${tenantId}/${moduleKey}/${itemId}/${uploadId}/${kind}.${ext}`;
+}
+
+/**
+ * Strict inverse of versionedMediaPath: the parts of a versioned draft or
+ * published path, or null for anything else (legacy unversioned shape,
+ * foreign tenant segment, traversal, wrong extension...).
+ */
+export function parseVersionedMediaPath(
+  path: string
+): (VersionedMediaParts & { kind: VersionedMediaKind }) | null {
+  const segments = path.split("/");
+  if (segments.length !== 5) return null;
+  const [tenantId, moduleKey, itemId, uploadId, file] = segments;
+  const match = file.match(/^(draft|published)\.([a-z0-9]{1,8})$/);
+  if (!match) return null;
+  if (!isTenantId(tenantId)) return null;
+  if (!SEGMENT_RE.test(moduleKey) || !SEGMENT_RE.test(itemId) || !SEGMENT_RE.test(uploadId)) return null;
+  return { tenantId, moduleKey, itemId, uploadId, ext: match[2], kind: match[1] as VersionedMediaKind };
+}
+
+/**
+ * Shape-only test for a VERSIONED media object path - the rule the
+ * publish copy and the future Storage UPDATE policy share:
+ *
+ *   exactly five "/"-separated segments
+ *   `{tenant}/{module}/{item}/{uploadId}/{draft|published}.<ext>`
+ *   where the first four match [A-Za-z0-9_-]+ and <ext> is [A-Za-z0-9]{1,8}
+ *
+ * Equivalent to: the object sits in exactly four folders and its file name
+ * is draft.<ext> or published.<ext>. The legacy stable layout
+ * (`{tenant}/{module}/{item}/draft.<ext>`) has three folders and is never
+ * matched. Unlike parseVersionedMediaPath it does not require the tenant
+ * segment to be a uuid (Storage policies cast it themselves, and the media
+ * tests use short tenant ids), and it accepts any extension case, so it
+ * errs toward treating an object as immutable.
+ */
+export function isVersionedMediaPath(path: string): boolean {
+  const segments = path.split("/");
+  if (segments.length !== 5) return false;
+  if (!segments.slice(0, 4).every((seg) => SEGMENT_RE.test(seg))) return false;
+  return /^(draft|published)\.[A-Za-z0-9]{1,8}$/.test(segments[4]);
+}
+
 /**
  * True only for a draft object that belongs to `tenantId`. Server actions
  * that delete Storage objects take the path from the client, so this is
@@ -159,14 +231,7 @@ export function isWellFormedMediaPath(segments: string[]): boolean {
   );
 }
 
-/**
- * Walks a published_spaces.modules payload and collects every string value
- * found under a key literally named "imageRef", anywhere in the structure.
- * This is what makes the guest media route generic across future modules -
- * a new module's published items just need an `imageRef` field and they're
- * automatically covered, no route changes required.
- */
-export function collectImageRefs(modules: unknown): Set<string> {
+function collectRefsByKey(modules: unknown, keys: ReadonlySet<string>): Set<string> {
   const refs = new Set<string>();
   function walk(node: unknown) {
     if (Array.isArray(node)) {
@@ -175,7 +240,7 @@ export function collectImageRefs(modules: unknown): Set<string> {
     }
     if (node && typeof node === "object") {
       for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
-        if (key === "imageRef" && typeof value === "string") {
+        if (keys.has(key) && typeof value === "string") {
           refs.add(value);
         } else {
           walk(value);
@@ -185,4 +250,26 @@ export function collectImageRefs(modules: unknown): Set<string> {
   }
   walk(modules);
   return refs;
+}
+
+const IMAGE_REF_KEYS: ReadonlySet<string> = new Set(["imageRef"]);
+const MEDIA_REF_KEYS: ReadonlySet<string> = new Set(["imageRef", "audioRef"]);
+
+/**
+ * Walks a published_spaces.modules payload and collects every string value
+ * found under a key literally named "imageRef", anywhere in the structure.
+ * This is what makes the guest media route generic across future modules -
+ * a new module's published items just need an `imageRef` field and they're
+ * automatically covered, no route changes required. Image-only on purpose
+ * and kept for image-only semantics: anything that AUTHORIZES or PROTECTS
+ * published objects (the guest media route, the stale-media sweep) must use
+ * collectMediaRefs, or an audio object would look unreferenced.
+ */
+export function collectImageRefs(modules: unknown): Set<string> {
+  return collectRefsByKey(modules, IMAGE_REF_KEYS);
+}
+
+/** Every media ref in a published payload: `imageRef` and `audioRef`. */
+export function collectMediaRefs(modules: unknown): Set<string> {
+  return collectRefsByKey(modules, MEDIA_REF_KEYS);
 }
