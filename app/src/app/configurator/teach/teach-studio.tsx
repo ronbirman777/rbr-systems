@@ -25,7 +25,6 @@ import {
   saveTeachModules,
   saveTeachSettings,
   uploadTeachSettingsImage,
-  removeTeachDraftMedia,
   deleteTeachItem,
   prepareTeachAudioUpload,
   attachTeachAudio,
@@ -148,7 +147,6 @@ export type StudioApi = {
   uploadItemImage: <K extends TeachEditableItemKey>(key: K, item: EditableTeachItem<K>, index: number, file: File) => Promise<{ ref: string | null; error: string | null }>;
   removeItemImage: <K extends TeachEditableItemKey>(key: K, item: EditableTeachItem<K>) => Promise<string | null>;
   uploadSettingsImage: (settingsKey: "teachAbout" | "teachContact" | "teachExplore", slot: string, file: File) => Promise<{ ref: string | null; error: string | null }>;
-  removeDraftMedia: (ref: string) => Promise<string | null>;
   prepareAudioUpload: (item: EditableTeachItem<"teachAudio">, index: number, mimeType: string, sizeBytes: number) => Promise<{ error: string | null; path: string | null }>;
   attachAudio: (itemId: string, ref: string, durationSeconds: number | null) => Promise<string | null>;
   detachAudio: (itemId: string) => Promise<string | null>;
@@ -403,12 +401,6 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
     setMediaUrl(res.imageRef, res.imageUrl);
     return { ref: res.imageRef, error: null };
   };
-  const removeDraftMedia = async (ref: string) => {
-    const res = await removeTeachDraftMedia(tenantId, ref);
-    if (res.error) return res.error;
-    setMediaUrl(ref, null);
-    return null;
-  };
 
   const removeItem: StudioApi["removeItem"] = async (key, id) => {
     const res = await deleteTeachItem(tenantId, key, id);
@@ -455,7 +447,6 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
     uploadItemImage,
     removeItemImage,
     uploadSettingsImage,
-    removeDraftMedia,
     prepareAudioUpload: (item, index, mimeType, sizeBytes) =>
       prepareTeachAudioUpload(
         tenantId,

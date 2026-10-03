@@ -36,7 +36,12 @@ vi.mock("@/lib/supabase/server", () => ({
           delete: () => ({ eq: () => ({ in: mockDelete }) }),
         };
       }
-      if (table === "module_settings") return { upsert: mockSettingsUpsert };
+      if (table === "module_settings") {
+        return {
+          upsert: mockSettingsUpsert,
+          select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) }),
+        };
+      }
       throw new Error(`unexpected table in test: ${table}`);
     },
   }),

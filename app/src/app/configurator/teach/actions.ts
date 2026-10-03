@@ -214,6 +214,15 @@ export async function saveTeachSettings(tenantId: string, key: TeachSettingsKey,
     if (!isTenantMediaRef(tenantId, ref)) return { error: "An image reference wasn't valid - please re-upload it." };
   }
 
+  // The refs this row points at BEFORE the save: the only candidates for
+  // cleanup afterwards. A failed read just means nothing is cleaned up.
+  const { data: previous } = await supabase
+    .from("module_settings")
+    .select("data")
+    .eq("tenant_id", tenantId)
+    .eq("module_key", key)
+    .maybeSingle();
+
   const { error } = await supabase
     .from("module_settings")
     .upsert(
@@ -221,7 +230,74 @@ export async function saveTeachSettings(tenantId: string, key: TeachSettingsKey,
       { onConflict: "tenant_id,module_key" }
     );
   if (error) return { error: error.message };
+
+  await removeReplacedSettingsImages(supabase, tenantId, collectTeachMediaRefs(previous?.data), collectTeachMediaRefs(parsed.data));
   return OK;
+}
+
+/**
+ * Every media ref the tenant's saved DRAFT state points at right now, across
+ * ALL rows that can hold one (settings singletons, item images and audio,
+ * brand images, Explore module covers). Returns null when any read fails, so
+ * the caller can fail closed: an unprovable "nobody references this" never
+ * deletes anything.
+ */
+async function currentDraftRefs(supabase: SupabaseClient, tenantId: string): Promise<Set<string> | null> {
+  const [settings, items, brand, configs] = await Promise.all([
+    supabase.from("module_settings").select("data").eq("tenant_id", tenantId),
+    supabase.from("module_items").select("image_ref, metadata").eq("tenant_id", tenantId),
+    supabase.from("brand_configs").select("hero_image_ref, space_image_ref, logo_ref").eq("tenant_id", tenantId),
+    supabase.from("module_configs").select("image_ref").eq("tenant_id", tenantId),
+  ]);
+  if (settings.error || items.error || brand.error || configs.error) return null;
+  const refs = new Set<string>();
+  const add = (v: unknown) => {
+    if (typeof v === "string" && v) refs.add(v);
+  };
+  for (const row of settings.data ?? []) collectTeachMediaRefs(row.data).forEach(add);
+  for (const row of items.data ?? []) {
+    add(row.image_ref);
+    collectTeachMediaRefs(row.metadata).forEach(add);
+  }
+  for (const row of brand.data ?? []) {
+    add(row.hero_image_ref);
+    add(row.space_image_ref);
+    add(row.logo_ref);
+  }
+  for (const row of configs.data ?? []) add(row.image_ref);
+  return refs;
+}
+
+/**
+ * After a settings save COMMITS, removes the draft images that save stopped
+ * referencing (Remove, or Replace with a new upload) - and only those that
+ * nothing else in the Space's saved state references. The invariant is that a
+ * persisted media object is never deleted while any saved row still points at
+ * it: nothing is deleted before the save succeeds (the Studio's Remove button
+ * only changes the form), and if the "no other reference" proof cannot be
+ * completed the object is kept for later orphan cleanup. Published copies are
+ * never touched here and audio refs are excluded (detachTeachAudio owns them).
+ * Best-effort: a failure leaves an unreferenced draft behind and never
+ * affects the already-saved settings.
+ */
+async function removeReplacedSettingsImages(
+  supabase: SupabaseClient,
+  tenantId: string,
+  previousRefs: string[],
+  savedRefs: string[]
+): Promise<void> {
+  const kept = new Set(savedRefs);
+  const candidates = [...new Set(previousRefs)].filter(
+    (ref) => !kept.has(ref) && isDraftMediaPathForTenant(tenantId, ref) && ref.split("/")[1] !== TEACH_AUDIO_FOLDER_KEY
+  );
+  if (candidates.length === 0) return;
+  try {
+    const referenced = await currentDraftRefs(supabase, tenantId);
+    if (!referenced) return;
+    await removeDraftObjects(supabase, tenantId, candidates.filter((ref) => !referenced.has(ref)));
+  } catch (error) {
+    console.error("saveTeachSettings: replaced image cleanup failed", error instanceof Error ? error.message : error);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -423,22 +499,6 @@ export async function uploadTeachSettingsImage(formData: FormData): Promise<Teac
   const { data: signed } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600);
   return { error: null, imageRef: path, imageUrl: signed?.signedUrl ?? null };
 }
-
-/**
- * Deletes one of this tenant's own draft settings images. Audio files are
- * excluded on purpose: they go through detachTeachAudio, which clears the
- * row's reference in the same step so it never points at a removed object.
- */
-export async function removeTeachDraftMedia(tenantId: string, ref: string): Promise<TeachActionState> {
-  const { supabase, user } = await requireUser();
-  if (!user) return { error: "You need to be logged in." };
-  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
-  if (!isTenantMediaRef(tenantId, ref) || ref.split("/")[1] === TEACH_AUDIO_FOLDER_KEY) return { error: "Unknown media." };
-  const { error } = await supabase.storage.from(MEDIA_BUCKET).remove([ref]);
-  if (error) return { error: error.message };
-  return OK;
-}
-
 
 // ---------------------------------------------------------------------------
 // Audio files: versioned, immutable draft objects

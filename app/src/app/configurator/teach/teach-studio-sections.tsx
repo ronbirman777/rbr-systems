@@ -324,10 +324,8 @@ function SettingsImage({
         return null;
       }}
       onRemove={async () => {
-        if (value.imageRef) {
-          const err = await api.removeDraftMedia(value.imageRef);
-          if (err) return err;
-        }
+        // Form state only: the saved row keeps pointing at the object until
+        // Save succeeds, and saveTeachSettings removes it afterwards.
         onChange({ imageRef: null, imagePosition: null });
         return null;
       }}
