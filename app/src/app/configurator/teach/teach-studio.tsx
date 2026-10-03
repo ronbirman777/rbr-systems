@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 const noopSubscribe = () => () => {};
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { TeachGuestApp } from "@/components/teach/teach-guest-app";
+import { resolveListUpdate, resolvePatch, type ListUpdate, type Patch } from "./studioStateUpdates";
 import { todayInTimezone, currentTimeInTimezone } from "@/lib/timezone";
 import type { TeachGuestData } from "@/lib/teach/guestData";
 import { expandClassesForWindow, guestWindow } from "@/lib/teach/recurrence";
@@ -134,9 +135,11 @@ export type StudioApi = {
   setColors: (c: TeachStudioInitial["colors"]) => void;
   heroImageRef: string | null;
   settings: TeachSettings;
-  updateSetting: <K extends TeachSettingsKey>(key: K, patch: Partial<TeachSettings[K]>, section: SectionKey) => void;
+  /** A function patch is computed from the LATEST slice, so async completions never write render-time snapshots. */
+  updateSetting: <K extends TeachSettingsKey>(key: K, patch: Patch<TeachSettings[K]>, section: SectionKey) => void;
   items: ItemsState;
-  setItems: <K extends TeachEditableItemKey>(key: K, next: EditableTeachItem<K>[], section: SectionKey) => void;
+  /** A function update receives the LATEST list; use it from anything that runs after an await. */
+  setItems: <K extends TeachEditableItemKey>(key: K, next: ListUpdate<EditableTeachItem<K>>, section: SectionKey) => void;
   removeItem: <K extends TeachEditableItemKey>(key: K, id: string) => Promise<string | null>;
   enabledExplore: TeachExploreModule[];
   setEnabledExplore: (v: TeachExploreModule[]) => void;
@@ -236,11 +239,11 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
   const mediaUrl = useCallback((ref: string | null | undefined) => (ref ? (mediaUrls[ref] ?? null) : null), [mediaUrls]);
 
   const updateSetting: StudioApi["updateSetting"] = (key, patch, s) => {
-    setSettings((prev) => ({ ...prev, [key]: { ...prev[key], ...patch } }));
+    setSettings((prev) => ({ ...prev, [key]: { ...prev[key], ...resolvePatch(patch, prev[key]) } }));
     markDirty(s);
   };
   const setItems: StudioApi["setItems"] = (key, next, s) => {
-    setItemsState((prev) => ({ ...prev, [key]: next }));
+    setItemsState((prev) => ({ ...prev, [key]: resolveListUpdate(next, prev[key]) }));
     markDirty(s);
   };
 

@@ -67,6 +67,7 @@ import {
 } from "@/lib/teach/links";
 import { WEEKDAY_LABELS, describeAvailability, formatDuration, sortClasses } from "@/lib/teach/schedule";
 import type { StudioApi, SectionKey } from "./teach-studio";
+import { audioAttached, audioDetached, imageRemoved, imageUploaded, moveItemById, patchExploreCard, patchItemById, patchSlot, type Patch } from "./studioStateUpdates";
 import {
   Card,
   ColorField,
@@ -142,7 +143,7 @@ function ItemList<K extends TeachEditableItemKey>({
   addLabel: string;
   emptyText: string;
   summary: (item: EditableTeachItem<K>) => { title: string; sub: string; thumb?: string | null };
-  editor: (item: EditableTeachItem<K>, update: (patch: Partial<EditableTeachItem<K>>) => void, index: number) => ReactNode;
+  editor: (item: EditableTeachItem<K>, update: (patch: Patch<EditableTeachItem<K>>) => void, index: number) => ReactNode;
   reorder?: boolean;
   order?: (items: EditableTeachItem<K>[]) => EditableTeachItem<K>[];
   max?: number;
@@ -153,16 +154,11 @@ function ItemList<K extends TeachEditableItemKey>({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const update = (id: string, patch: Partial<EditableTeachItem<K>>) =>
-    api.setItems(moduleKey, items.map((it) => (it.id === id ? { ...it, ...patch } : it)), section);
-  const move = (id: string, dir: -1 | 1) => {
-    const i = items.findIndex((it) => it.id === id);
-    const j = i + dir;
-    if (i < 0 || j < 0 || j >= items.length) return;
-    const next = [...items];
-    [next[i], next[j]] = [next[j], next[i]];
-    api.setItems(moduleKey, next, section);
-  };
+  // Always merges into the latest list (functional update): late async
+  // completions must not write back a render-time snapshot of the list.
+  const update = (id: string, patch: Patch<EditableTeachItem<K>>) =>
+    api.setItems(moduleKey, (prev) => patchItemById(prev, id, patch), section);
+  const move = (id: string, dir: -1 | 1) => api.setItems(moduleKey, (prev) => moveItemById(prev, id, dir), section);
   const add = () => {
     const item = {
       id: newId(),
@@ -261,7 +257,7 @@ function ItemImage<K extends TeachEditableItemKey>({
   section: SectionKey;
   item: EditableTeachItem<K>;
   index: number;
-  update: (patch: Partial<EditableTeachItem<K>>) => void;
+  update: (patch: Patch<EditableTeachItem<K>>) => void;
   label: string;
   previewClassName?: string;
   hint?: string;
@@ -274,18 +270,20 @@ function ItemImage<K extends TeachEditableItemKey>({
       focal={meta.imagePosition ?? null}
       previewClassName={previewClassName}
       hint={hint}
-      onFocal={(f) => update({ metadata: { ...item.metadata, imagePosition: f } })}
+      onFocal={(f) => update((cur) => ({ metadata: { ...cur.metadata, imagePosition: f } }))}
       onUpload={async (file) => {
         const res = await api.uploadItemImage(moduleKey, item, index, file);
         if (res.error || !res.ref) return res.error ?? "Upload failed.";
-        update({ imageRef: res.ref, metadata: { ...item.metadata, imagePosition: null } });
+        const ref = res.ref;
+        // Touch only the image fields of this item, against the latest state.
+        update(imageUploaded<EditableTeachItem<K>>(ref));
         api.markDirty(section);
         return null;
       }}
       onRemove={async () => {
         const err = await api.removeItemImage(moduleKey, item);
         if (err) return err;
-        update({ imageRef: null, imageUrl: null, metadata: { ...item.metadata, imagePosition: null } });
+        update(imageRemoved<EditableTeachItem<K>>());
         return null;
       }}
     />
@@ -306,7 +304,7 @@ function SettingsImage({
   settingsKey: "teachAbout" | "teachContact" | "teachExplore";
   slot: string;
   value: { imageRef: string | null; imagePosition: { x: number; y: number } | null };
-  onChange: (v: { imageRef: string | null; imagePosition: { x: number; y: number } | null }) => void;
+  onChange: (v: { imageRef?: string | null; imagePosition: { x: number; y: number } | null }) => void;
   label: string;
   previewClassName?: string;
 }) {
@@ -316,7 +314,7 @@ function SettingsImage({
       imageUrl={api.mediaUrl(value.imageRef)}
       focal={value.imagePosition}
       previewClassName={previewClassName}
-      onFocal={(f) => onChange({ ...value, imagePosition: f })}
+      onFocal={(f) => onChange({ imagePosition: f })}
       onUpload={async (file) => {
         const res = await api.uploadSettingsImage(settingsKey, slot, file);
         if (res.error || !res.ref) return res.error ?? "Upload failed.";
@@ -1033,9 +1031,9 @@ function addDaysIso(dateIso: string, days: number): string {
   return d.toISOString().slice(0, 10);
 }
 
-function ClassEditor({ api, item, update, index }: { api: StudioApi; item: EditableTeachItem<"teachClasses">; update: (p: Partial<EditableTeachItem<"teachClasses">>) => void; index: number }) {
+function ClassEditor({ api, item, update, index }: { api: StudioApi; item: EditableTeachItem<"teachClasses">; update: (p: Patch<EditableTeachItem<"teachClasses">>) => void; index: number }) {
   const m = item.metadata;
-  const setM = (patch: Partial<typeof m>) => update({ metadata: { ...m, ...patch } });
+  const setM = (patch: Partial<typeof m>) => update((cur) => ({ metadata: { ...cur.metadata, ...patch } }));
   const reg = m.registration;
   const setReg = (patch: Partial<typeof reg>) => setM({ registration: { ...reg, ...patch } });
   const venue = m.venue;
@@ -1180,9 +1178,9 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
   );
 }
 
-function AvailabilityEditor({ item, update }: { item: EditableTeachItem<"teachAvailability">; update: (p: Partial<EditableTeachItem<"teachAvailability">>) => void }) {
+function AvailabilityEditor({ item, update }: { item: EditableTeachItem<"teachAvailability">; update: (p: Patch<EditableTeachItem<"teachAvailability">>) => void }) {
   const m = item.metadata;
-  const setM = (patch: Partial<typeof m>) => update({ metadata: { ...m, ...patch } });
+  const setM = (patch: Partial<typeof m>) => update((cur) => ({ metadata: { ...cur.metadata, ...patch } }));
   const toggleMethod = (k: (typeof AVAILABILITY_METHODS)[number]) => setM({ methods: m.methods.includes(k) ? m.methods.filter((x) => x !== k) : [...m.methods, k] });
   return (
     <>
@@ -1301,7 +1299,7 @@ export function AboutSection({ api }: Props) {
     <>
       <SectionHeader eyebrow="Teaching" title="About Me" intro="Your story, told well. Everything is optional — empty fields never appear to guests." />
       <Card title="Profile" description="Shown at the top of About Me, under your name.">
-        <SettingsImage api={api} settingsKey="teachAbout" slot="profile" value={a.profile} onChange={(v) => set({ profile: v })} label="Profile image · circle crop" previewClassName="w-[120px] h-[120px] rounded-full" />
+        <SettingsImage api={api} settingsKey="teachAbout" slot="profile" value={a.profile} onChange={(v) => api.updateSetting("teachAbout", (latest) => patchSlot(latest, "profile", v), "about")} label="Profile image · circle crop" previewClassName="w-[120px] h-[120px] rounded-full" />
         <Grid>
           <TextField
             label="Teaching since (year)"
@@ -1369,7 +1367,7 @@ export function AboutSection({ api }: Props) {
                 <TextField label="Issuer" value={str(item.subtitle)} onChange={(v) => update({ subtitle: nul(v) })} placeholder="Yoga Alliance RYT-500" />
               </Grid>
               <Grid>
-                <TextField label="Year" value={str(item.metadata.year)} onChange={(v) => update({ metadata: { ...item.metadata, year: nul(v) } })} maxLength={12} />
+                <TextField label="Year" value={str(item.metadata.year)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, year: nul(v) } }))} maxLength={12} />
                 <TextField label="Details (optional)" value={str(item.description)} onChange={(v) => update({ description: nul(v) })} placeholder="120 hours · Rishikesh" />
               </Grid>
               <ItemImage api={api} moduleKey="teachCertificates" section="about" item={item} index={index} update={update} label="Certificate image (optional)" />
@@ -1398,8 +1396,8 @@ const FALLBACK_SWATCHES = ["#5B7A6E", "#2D4A3E", "#7E6A57", "#A9553A", "#6A4C6B"
 export function ModulesSection({ api }: Props) {
   const cards = api.settings.teachExplore.cards;
   const setCard = (k: "teachReadings" | "teachAudio" | "teachContact", patch: Partial<ExploreCard>) => {
-    const current: ExploreCard = cards[k] ?? { title: null, subtitle: null, imageRef: null, imagePosition: null, fallbackColor: null };
-    api.updateSetting("teachExplore", { cards: { ...cards, [k]: { ...current, ...patch } } }, "modules");
+    // Computed from the latest teachExplore slice so a late upload only changes this card's image fields.
+    api.updateSetting("teachExplore", (latest) => ({ cards: patchExploreCard(latest.cards, k, patch) }), "modules");
   };
   return (
     <>
@@ -1486,14 +1484,14 @@ export function ReadingsSection({ api }: Props) {
             <>
               <Grid>
                 <TextField label="Title" value={item.title} onChange={(v) => update({ title: v })} maxLength={160} />
-                <CategoryField id={`cat-${item.id}`} value={item.metadata.category} onChange={(v) => update({ metadata: { ...item.metadata, category: v } })} options={READING_CATEGORIES} />
+                <CategoryField id={`cat-${item.id}`} value={item.metadata.category} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, category: v } }))} options={READING_CATEGORIES} />
               </Grid>
               <ItemImage api={api} moduleKey="teachReadings" section="readings" item={item} index={index} update={update} label="Primary image" previewClassName="w-[160px] h-[100px] rounded-xl" />
-              <TextArea label="Short excerpt" value={str(item.metadata.excerpt)} onChange={(v) => update({ metadata: { ...item.metadata, excerpt: nul(v) } })} rows={2} maxLength={500} />
+              <TextArea label="Short excerpt" value={str(item.metadata.excerpt)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, excerpt: nul(v) } }))} rows={2} maxLength={500} />
               <TextArea label="Body" value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={8} hint="Blank line = new paragraph. Also: - lists, > quotes, **bold**, *italic*, [link](https://…)." />
               <Grid cols={3}>
-                <TextField label="Author" value={str(item.metadata.author)} onChange={(v) => update({ metadata: { ...item.metadata, author: nul(v) } })} placeholder={api.name} />
-                <TextField label="Date" type="date" value={str(item.metadata.date)} onChange={(v) => update({ metadata: { ...item.metadata, date: v || null } })} />
+                <TextField label="Author" value={str(item.metadata.author)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, author: nul(v) } }))} placeholder={api.name} />
+                <TextField label="Date" type="date" value={str(item.metadata.date)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, date: v || null } }))} />
                 <TextField label="External article URL" value={str(item.externalLink)} onChange={(v) => update({ externalLink: nul(v) })} inputMode="url" hint="Optional — adds “Read the full article ↗”." />
               </Grid>
             </>
@@ -1536,7 +1534,7 @@ function detectDuration(file: File): Promise<number | null> {
   });
 }
 
-function AudioFileField({ api, item, update, index }: { api: StudioApi; item: EditableTeachItem<"teachAudio">; update: (p: Partial<EditableTeachItem<"teachAudio">>) => void; index: number }) {
+function AudioFileField({ api, item, update, index }: { api: StudioApi; item: EditableTeachItem<"teachAudio">; update: (p: Patch<EditableTeachItem<"teachAudio">>) => void; index: number }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1574,7 +1572,7 @@ function AudioFileField({ api, item, update, index }: { api: StudioApi; item: Ed
     }
     const { data: signed } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600);
     api.setMediaUrl(path, signed?.signedUrl ?? null);
-    update({ metadata: { ...item.metadata, audioRef: path, durationSeconds: duration } });
+    update(audioAttached<EditableTeachItem<"teachAudio">>(path, duration));
     setBusy(null);
   }
 
@@ -1604,7 +1602,7 @@ function AudioFileField({ api, item, update, index }: { api: StudioApi; item: Ed
               const err = await api.detachAudio(item.id);
               setBusy(null);
               if (err) setError(err);
-              else update({ metadata: { ...item.metadata, audioRef: null, durationSeconds: null } });
+              else update(audioDetached<EditableTeachItem<"teachAudio">>());
             }}
           >
             Remove
@@ -1646,12 +1644,12 @@ export function AudioSection({ api }: Props) {
             <>
               <Grid>
                 <TextField label="Title" value={item.title} onChange={(v) => update({ title: v })} maxLength={160} />
-                <CategoryField id={`acat-${item.id}`} value={item.metadata.category} onChange={(v) => update({ metadata: { ...item.metadata, category: v } })} options={AUDIO_CATEGORIES} />
+                <CategoryField id={`acat-${item.id}`} value={item.metadata.category} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, category: v } }))} options={AUDIO_CATEGORIES} />
               </Grid>
               <AudioFileField api={api} item={item} update={update} index={index} />
               <ItemImage api={api} moduleKey="teachAudio" section="audio" item={item} index={index} update={update} label="Cover image" previewClassName="w-[110px] h-[110px] rounded-xl" />
               <TextArea label="Description" value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={3} maxLength={2000} />
-              <TextArea label="Teacher note (optional)" value={str(item.metadata.teacherNote)} onChange={(v) => update({ metadata: { ...item.metadata, teacherNote: nul(v) } })} rows={2} maxLength={800} />
+              <TextArea label="Teacher note (optional)" value={str(item.metadata.teacherNote)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, teacherNote: nul(v) } }))} rows={2} maxLength={800} />
             </>
           )}
         />
@@ -1718,7 +1716,7 @@ export function ContactSection({ api }: Props) {
           <TextField label="Title" value={str(c.title)} onChange={(v) => set({ title: nul(v) })} placeholder="Let’s connect" maxLength={80} />
           <TextField label="Intro" value={str(c.intro)} onChange={(v) => set({ intro: nul(v) })} maxLength={500} />
         </Grid>
-        <SettingsImage api={api} settingsKey="teachContact" slot="cover" value={c.cover} onChange={(v) => set({ cover: v })} label="Cover image (optional)" previewClassName="w-[180px] h-[100px] rounded-xl" />
+        <SettingsImage api={api} settingsKey="teachContact" slot="cover" value={c.cover} onChange={(v) => api.updateSetting("teachContact", (latest) => patchSlot(latest, "cover", v), "contact")} label="Cover image (optional)" previewClassName="w-[180px] h-[100px] rounded-xl" />
         <Hint>Contact form: not included in this version — InnerDweS has no shared form/email delivery system yet.</Hint>
       </Card>
       <SaveBar api={api} section="contact" />
@@ -1746,7 +1744,7 @@ export function CustomPagesSection({ api }: Props) {
           summary={(p) => ({ title: p.title, sub: `${p.subtitle ?? "Custom page"}${p.metadata.enabled ? "" : " · hidden"}`, thumb: api.mediaUrl(p.imageRef) })}
           editor={(item, update, index) => (
             <>
-              <Toggle checked={item.metadata.enabled} onChange={(v) => update({ metadata: { ...item.metadata, enabled: v } })} label="Visible to guests" />
+              <Toggle checked={item.metadata.enabled} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, enabled: v } }))} label="Visible to guests" />
               <Grid>
                 <TextField label="Title" value={item.title} onChange={(v) => update({ title: v })} maxLength={160} />
                 <TextField label="Eyebrow / subtitle (optional)" value={str(item.subtitle)} onChange={(v) => update({ subtitle: nul(v) })} maxLength={90} />
@@ -1756,14 +1754,14 @@ export function CustomPagesSection({ api }: Props) {
                 <Label>Fallback colour (card without image)</Label>
                 <div className="flex flex-wrap gap-2">
                   {FALLBACK_SWATCHES.map((h) => (
-                    <button key={h} type="button" aria-label={`Fallback ${h}`} aria-pressed={item.metadata.fallbackColor === h} onClick={() => update({ metadata: { ...item.metadata, fallbackColor: h } })} className="w-8 h-8 rounded-full" style={{ background: h, outline: item.metadata.fallbackColor === h ? "2px solid #192B21" : "none", outlineOffset: 2 }} />
+                    <button key={h} type="button" aria-label={`Fallback ${h}`} aria-pressed={item.metadata.fallbackColor === h} onClick={() => update((cur) => ({ metadata: { ...cur.metadata, fallbackColor: h } }))} className="w-8 h-8 rounded-full" style={{ background: h, outline: item.metadata.fallbackColor === h ? "2px solid #192B21" : "none", outlineOffset: 2 }} />
                   ))}
                 </div>
               </div>
               <TextArea label="Content" value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={8} hint="Blank line = new paragraph. Also: - lists, > quotes, **bold**, *italic*, [link](https://…). No raw HTML." />
               <Grid>
-                <TextField label="Button label (optional)" value={str(item.metadata.buttonLabel)} onChange={(v) => update({ metadata: { ...item.metadata, buttonLabel: nul(v) } })} maxLength={60} />
-                <TextField label="Button link" value={str(item.metadata.buttonUrl)} onChange={(v) => update({ metadata: { ...item.metadata, buttonUrl: nul(v) } })} inputMode="url" />
+                <TextField label="Button label (optional)" value={str(item.metadata.buttonLabel)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, buttonLabel: nul(v) } }))} maxLength={60} />
+                <TextField label="Button link" value={str(item.metadata.buttonUrl)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, buttonUrl: nul(v) } }))} inputMode="url" />
               </Grid>
             </>
           )}
