@@ -148,4 +148,12 @@ describe("migration 0030 - tenant-media policies are uuid-safe and security-neut
       expect(stmts.find((s) => s.includes(POLICIES[k]))).not.toMatch(/with check/);
     }
   });
+
+  it("documents a rollback that restores the exact 0006 predicate for all four policies, and states no data is touched", () => {
+    expect(sql0030).toMatch(/ROLLBACK/);
+    expect(sql0030).toMatch(/NO DATA IS TOUCHED/);
+    const rollbackLines = sql0030.split("\n").filter((l) => /^--\s+(alter policy|\s*(using|with check) \()/.test(l));
+    expect(rollbackLines.filter((l) => l.includes("alter policy"))).toHaveLength(4);
+    expect(rollbackLines.join("\n").match(/\(\(storage\.foldername\(name\)\)\[1\]\)::uuid\)/g)?.length).toBe(5);
+  });
 });

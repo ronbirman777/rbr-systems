@@ -109,7 +109,10 @@ export async function createTeachSpace(): Promise<void> {
   // Idempotency: a double click, a slow-network retry or a second tab must not
   // mint a second Space. If this user created a still-untouched Teach Space a
   // moment ago, open that one instead. A genuine second Space (or any Space the
-  // owner has renamed) is unaffected.
+  // owner has renamed) is unaffected. Key: same user + Teach + still-untitled name
+  // + created in the last 60s. Known limit: this is a read-then-insert, so two truly
+  // simultaneous requests (e.g. two tabs in the same instant) can both miss it; the
+  // slot trigger still bounds the damage. A durable request key is the real fix.
   const { data: recent } = await supabase
     .from("tenants")
     .select("id")

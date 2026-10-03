@@ -23,6 +23,21 @@
 --   The 0029 RESTRICTIVE UPDATE policy is not touched. service_role bypasses
 --   RLS as before (server-side cleanup is unchanged).
 --
+-- NO DATA IS TOUCHED. No bucket, object or table row is read or rewritten; only
+-- the four policy expressions change. Re-applying is a no-op (idempotent).
+--
+-- ROLLBACK (restores the exact 0006 predicates, INCLUDING their 22P02 hazard on
+-- a non-UUID first folder - so remove any stray non-UUID object first):
+--   alter policy "tenant members can read their own media" on storage.objects
+--     using (bucket_id = 'tenant-media' and public.is_tenant_member(((storage.foldername(name))[1])::uuid));
+--   alter policy "tenant members can upload their own media" on storage.objects
+--     with check (bucket_id = 'tenant-media' and public.is_tenant_member(((storage.foldername(name))[1])::uuid));
+--   alter policy "tenant members can replace their own media" on storage.objects
+--     using (bucket_id = 'tenant-media' and public.is_tenant_member(((storage.foldername(name))[1])::uuid))
+--     with check (bucket_id = 'tenant-media' and public.is_tenant_member(((storage.foldername(name))[1])::uuid));
+--   alter policy "tenant members can delete their own media" on storage.objects
+--     using (bucket_id = 'tenant-media' and public.is_tenant_member(((storage.foldername(name))[1])::uuid));
+--
 -- ALTER POLICY is used (not drop/create): atomic, no instant without a policy,
 -- policy names and the one-per-command shape asserted by the catalog
 -- verification stay intact.

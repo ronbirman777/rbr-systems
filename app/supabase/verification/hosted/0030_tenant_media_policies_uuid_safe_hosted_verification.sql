@@ -99,7 +99,90 @@ begin
     rep := rep || 'FAIL 6 own-tenant insert denied: ' || err || E'\n';
   end;
 
+  -- 7-12: composition with the 0029 RESTRICTIVE policy, legacy compatibility, UPDATE/DELETE
+  -- equivalence, anon. Extra seed rows are added as the table owner, then the member session resumes.
   reset role;
+  insert into storage.objects (bucket_id, name) values
+    ('tenant-media', t1 || '/mod/item/draft.webp'),                -- legacy stable path (3 folders)
+    ('tenant-media', t1 || '/mod/item/up1/published.webp'),        -- versioned (4 folders)
+    ('tenant-media', t1 || '/mod/item/up1/draft.webp'),            -- versioned (4 folders)
+    ('tenant-media', t2 || '/mod/item/draft.webp'),                -- other tenant, legacy
+    ('tenant-media', stray || '/upd.webp');                        -- stray non-UUID folder
+  perform set_config('request.jwt.claims', json_build_object('sub', u1, 'role', 'authenticated')::text, true);
+  set local role authenticated;
+
+  begin
+    update storage.objects set updated_at = now() where bucket_id = 'tenant-media' and name = t1 || '/mod/item/draft.webp';
+    get diagnostics n = row_count;
+    rep := rep || case when n = 1 then 'PASS' else 'FAIL' end || ' 7 member may still overwrite a LEGACY stable-path object (' || n || E' row)\n';
+    if n <> 1 then fails := fails + 1; end if;
+  exception when others then
+    get stacked diagnostics err = message_text; fails := fails + 1; rep := rep || 'FAIL 7 threw: ' || err || E'\n';
+  end;
+
+  begin
+    update storage.objects set updated_at = now() where bucket_id = 'tenant-media' and name = t1 || '/mod/item/up1/published.webp';
+    get diagnostics n = row_count;
+    rep := rep || case when n = 0 then 'PASS' else 'FAIL' end || ' 8 0029 restrictive policy still blocks overwriting a VERSIONED object (' || n || E' rows)\n';
+    if n <> 0 then fails := fails + 1; end if;
+  exception when others then
+    get stacked diagnostics err = message_text; fails := fails + 1; rep := rep || 'FAIL 8 threw: ' || err || E'\n';
+  end;
+
+  begin
+    update storage.objects set name = t1 || '/mod/item/up2/draft.webp' where bucket_id = 'tenant-media' and name = t1 || '/mod/item/draft.webp';
+    fails := fails + 1; rep := rep || E'FAIL 9 renaming legacy INTO a versioned path was ALLOWED\n';
+  exception when others then
+    get stacked diagnostics st = returned_sqlstate;
+    rep := rep || case when st = '42501' then 'PASS' else 'FAIL' end || ' 9 0029 WITH CHECK still blocks legacy->versioned rename (' || st || E')\n';
+    if st <> '42501' then fails := fails + 1; end if;
+  end;
+
+  -- Storage's protect_delete trigger blocks direct deletes unless this transaction-local flag is set (RLS still applies).
+  perform set_config('storage.allow_delete_query', 'true', true);
+
+  begin
+    update storage.objects set updated_at = now() where bucket_id = 'tenant-media' and name = t2 || '/mod/item/draft.webp';
+    get diagnostics n = row_count;
+    delete from storage.objects where bucket_id = 'tenant-media' and name = t2 || '/mod/item/draft.webp';
+    get diagnostics st = row_count;
+    rep := rep || case when n = 0 and st = '0' then 'PASS' else 'FAIL' end || ' 10 cross-tenant UPDATE and DELETE affect 0 rows (' || n || '/' || st || E')\n';
+    if not (n = 0 and st = '0') then fails := fails + 1; end if;
+  exception when others then
+    get stacked diagnostics err = message_text; fails := fails + 1; rep := rep || 'FAIL 10 threw: ' || err || E'\n';
+  end;
+
+  begin
+    update storage.objects set updated_at = now() where bucket_id = 'tenant-media' and name = stray || '/upd.webp';
+    get diagnostics n = row_count;
+    delete from storage.objects where bucket_id = 'tenant-media' and name = stray || '/upd.webp';
+    get diagnostics st = row_count;
+    rep := rep || case when n = 0 and st = '0' then 'PASS' else 'FAIL' end || ' 11 non-UUID folder: UPDATE/DELETE affect 0 rows and do not throw (' || n || '/' || st || E')\n';
+    if not (n = 0 and st = '0') then fails := fails + 1; end if;
+  exception when others then
+    get stacked diagnostics err = message_text; fails := fails + 1; rep := rep || 'FAIL 11 threw: ' || err || E'\n';
+  end;
+
+  begin
+    delete from storage.objects where bucket_id = 'tenant-media' and name = t1 || '/mod/item/up1/published.webp';
+    get diagnostics n = row_count;
+    rep := rep || case when n = 1 then 'PASS' else 'FAIL' end || ' 12 member DELETE of own versioned object still allowed (Storage-first cleanup needs it) (' || n || E')\n';
+    if n <> 1 then fails := fails + 1; end if;
+  exception when others then
+    get stacked diagnostics err = message_text; fails := fails + 1; rep := rep || 'FAIL 12 threw: ' || err || E'\n';
+  end;
+
+  reset role;
+  set local role anon;
+  begin
+    select count(*) into n from storage.objects where bucket_id = 'tenant-media';
+    rep := rep || case when n = 0 then 'PASS' else 'FAIL' end || ' 13 anon sees nothing and nothing throws (' || n || E')\n';
+    if n <> 0 then fails := fails + 1; end if;
+  exception when others then
+    get stacked diagnostics err = message_text; fails := fails + 1; rep := rep || 'FAIL 13 threw: ' || err || E'\n';
+  end;
+  reset role;
+
   raise exception E'% (%)\n%', case when fails = 0 then '0030 VERIFICATION PASS' else '0030 VERIFICATION FAIL' end, fails || ' failed', rep;
 end $$;
 
