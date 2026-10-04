@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findBrandPreset, getBrandPresets, matchBrandPreset } from "./presets";
+import { findBrandPreset, getBrandPresets, matchBrandPreset, presetColorUpdate } from "./presets";
 import { IMAGE_SHAPES, imageShapeAspect, imageShapeRadius, isImageShape, shapeFromAtmosphereTreatment } from "./imageShape";
 import { TEACH_PRESETS } from "@/lib/teach/style";
 
@@ -27,6 +27,28 @@ describe("shared brand presets", () => {
     expect(matchBrandPreset("retreat", { primary: "#000000", accent: "#ffffff" })).toBeNull();
     expect(matchBrandPreset("retreat", { primary: null, accent: null })).toBeNull();
     expect(findBrandPreset("retreat", "nope")).toBeNull();
+  });
+});
+
+describe("brand preset application", () => {
+  it("a preset click writes primary + accent only (no navigation/text/background overwrite)", () => {
+    for (const product of ["retreat", "teach", "client_hub"] as const) {
+      for (const p of getBrandPresets(product)) {
+        expect(Object.keys(presetColorUpdate(p)).sort()).toEqual(["accent", "primary"]);
+      }
+    }
+  });
+  it("presets are pure data: resolving them never mutates the registry or any saved brand", () => {
+    const before = JSON.stringify(getBrandPresets("retreat"));
+    matchBrandPreset("retreat", { primary: "#2D4A3E", accent: "#6B9478" });
+    presetColorUpdate(getBrandPresets("retreat")[0]);
+    expect(JSON.stringify(getBrandPresets("retreat"))).toBe(before);
+  });
+  it("every Teach preset resolves through the shared registry with its own colours", () => {
+    for (const t of TEACH_PRESETS) {
+      const found = findBrandPreset("teach", t.key);
+      expect(found).toMatchObject({ primary: t.primary, accent: t.accent, background: t.background });
+    }
   });
 });
 

@@ -31,7 +31,7 @@ import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, Studi
 import { StudioTopBar } from "@/components/studio/studio-top-bar";
 import { saveStatusLabel, PREVIEW_DRAFT_LABEL, PREVIEW_DRAFT_CAPTION, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
 import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
-import { getBrandPresets, matchBrandPreset } from "@/lib/brand/presets";
+import { getBrandPresets, matchBrandPreset, presetColorUpdate } from "@/lib/brand/presets";
 import { EmptyState } from "@/components/studio/empty-state";
 import { StatusPill } from "@/components/studio/status-pill";
 import { ReadinessChecklist, type ReadinessItem } from "@/components/studio/readiness-checklist";
@@ -1919,9 +1919,9 @@ export function RetreatConfigurator({
                 presets={getBrandPresets("retreat")}
                 activeKey={matchBrandPreset("retreat", { primary: effectivePrimary, accent: effectiveSecondary })?.key ?? null}
                 onApply={(preset) => {
-                  setCustomPrimary(preset.primary);
-                  setCustomSecondary(preset.accent);
-                  setCustomNavigation(preset.primary);
+                  const next = presetColorUpdate(preset);
+                  setCustomPrimary(next.primary);
+                  setCustomSecondary(next.accent);
                   setPresetNonce((n) => n + 1);
                   dirty.markDirty("identityAndBrand");
                 }}

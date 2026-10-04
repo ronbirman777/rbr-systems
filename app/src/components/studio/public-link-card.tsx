@@ -14,11 +14,13 @@ export function PublicLinkCard({
   openHref,
   published,
   title = "Guest App link",
+  openLabel = "Open Guest App",
 }: {
   url: string;
   openHref: string;
   published: boolean;
   title?: string;
+  openLabel?: string;
 }) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -43,6 +45,7 @@ export function PublicLinkCard({
           <button
             type="button"
             onClick={copy}
+            aria-live="polite"
             className="min-h-10 px-4 rounded-full border border-[#192B21]/20 text-[12.5px] font-semibold text-[#192B21]"
           >
             {copied ? "Copied" : "Copy link"}
@@ -54,7 +57,8 @@ export function PublicLinkCard({
               rel="noopener noreferrer"
               className="inline-flex items-center min-h-10 px-4 rounded-full bg-[#192B21] text-white text-[12.5px] font-semibold"
             >
-              Open Guest App ↗
+              {openLabel} ↗
+              <span className="sr-only"> (opens in a new tab)</span>
             </a>
           ) : null}
         </div>

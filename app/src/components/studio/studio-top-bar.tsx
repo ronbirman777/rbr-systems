@@ -18,6 +18,8 @@ export function StudioTopBar({
   onPublish,
   publishLabel = "Publish",
   trailing,
+  backHref = "/space",
+  backLabel = "My Spaces",
 }: {
   name: string;
   fallbackName: string;
@@ -27,11 +29,13 @@ export function StudioTopBar({
   onPublish: () => void;
   publishLabel?: string;
   trailing?: ReactNode;
+  backHref?: string;
+  backLabel?: string;
 }) {
   const back = (
     <>
       <InnerDweSMark size={20} />
-      My Spaces
+      {backLabel}
     </>
   );
   return (
@@ -45,7 +49,7 @@ export function StudioTopBar({
             {back}
           </button>
         ) : (
-          <Link href="/space" className="flex items-center gap-2 min-h-11 text-[12.5px] font-medium text-[#192B21]">
+          <Link href={backHref} className="flex items-center gap-2 min-h-11 text-[12.5px] font-medium text-[#192B21]">
             {back}
           </Link>
         )}

@@ -78,4 +78,30 @@ describe("shared Studio components", () => {
     expect(out).toContain("All changes saved");
     expect(out).toContain("Publish");
   });
+
+  it("ReadinessChecklist gives screen readers a text alternative for the tick/warning icons", () => {
+    const out = html(createElement(ReadinessChecklist, { items: [{ ok: true, label: "Name" }, { ok: false, label: "Cover" }] }));
+    expect(out).toContain("Done: ");
+    expect(out).toContain("Needs attention: ");
+  });
+
+  it("StudioTopBar and PublicLinkCard take their route and wording from props (product-neutral defaults)", () => {
+    const bar = html(createElement(StudioTopBar, { name: "", fallbackName: "My Space", productBadge: "Time to X", saveStatus: "ok", onPublish: () => {}, backHref: "/hub", backLabel: "My Hub" }));
+    expect(bar).toContain('href="/hub"');
+    expect(bar).toContain("My Hub");
+    expect(bar).toContain("My Space");
+    const link = html(createElement(PublicLinkCard, { url: "https://a.test/s/x", openHref: "/s/x", published: true, openLabel: "Open the app" }));
+    expect(link).toContain("Open the app");
+    expect(link).toContain("opens in a new tab");
+  });
+
+  it("generic components embed no product names beyond the shared 'Guest App' noun", () => {
+    const out = [
+      html(createElement(PublicLinkCard, { url: "https://a.test/s/x", openHref: "/s/x", published: false })),
+      html(createElement(QrCodeCard, { tenantId: id, slug: "x", published: false })),
+      html(createElement(EmptyState, { title: "T", body: "B" })),
+      html(createElement(StatusPill, { state: "draft" })),
+    ].join("");
+    expect(out).not.toMatch(/retreat|teach|heal|flow\b/i);
+  });
 });

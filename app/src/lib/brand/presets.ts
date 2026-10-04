@@ -67,3 +67,12 @@ export function matchBrandPreset(
   const a = current.accent.toLowerCase();
   return REGISTRY[product].find((x) => x.primary.toLowerCase() === p && x.accent.toLowerCase() === a) ?? null;
 }
+
+/**
+ * The colour fields a preset click may write: primary and accent only.
+ * Navigation / text (and anything else custom) are never touched, so
+ * applying a preset cannot silently overwrite another saved colour.
+ */
+export function presetColorUpdate(preset: BrandPreset): { primary: string; accent: string } {
+  return { primary: preset.primary, accent: preset.accent };
+}

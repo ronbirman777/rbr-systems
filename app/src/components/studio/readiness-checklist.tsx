@@ -15,6 +15,7 @@ export function ReadinessChecklist({ items }: { items: readonly ReadinessItem[] 
             {item.ok ? "✓" : "!"}
           </span>
           <span className={item.ok ? "text-[#192B21]" : "text-[#8A4F27]"}>
+            <span className="sr-only">{item.ok ? "Done: " : "Needs attention: "}</span>
             {item.label}
             {!item.ok && item.hint ? <span className="block text-[12px] text-[#8C8A84]">{item.hint}</span> : null}
           </span>
