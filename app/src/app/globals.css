@@ -87,6 +87,31 @@ body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
 
+/*
+ * Shared Guest viewport shell - every published Guest App (Time to Teach
+ * today; Flow/Heal as they adopt it) wraps its root in .guest-viewport.
+ *
+ * Root cause this fixes: guest-facing copy is arbitrary teacher/organizer
+ * input. A pasted tracking URL or a long compound word is ONE unbreakable
+ * token, and its min-content width can exceed a 320px phone. min-content
+ * propagates up through every w-full / flex / grid ancestor, so a single
+ * such token widens <main> itself; a centred (mx-auto) container then
+ * overflows on BOTH sides, which is what makes the page drag sideways.
+ *
+ * `overflow-wrap: anywhere` rather than `break-word` is the whole point:
+ * only `anywhere` also shrinks the element's min-content contribution, so
+ * the width never propagates in the first place. `break-word` would wrap
+ * the glyphs but still report the wide min-content, and the page would
+ * still slide. Elements that opt into `truncate` (white-space: nowrap)
+ * are unaffected - nowrap wins.
+ */
+.guest-viewport {
+  max-width: 100%;
+}
+.guest-viewport :is(p, h1, h2, h3, h4, h5, h6, li, dd, dt, blockquote, figcaption, span, a, button, label) {
+  overflow-wrap: anywhere;
+}
+
 /* Guest app tab bar: horizontal scroll without a visible scrollbar, so the
    nav keeps working cleanly as the module catalog grows past what fits. */
 .no-scrollbar {

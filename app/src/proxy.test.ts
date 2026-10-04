@@ -94,14 +94,20 @@ describe("proxy() - Task 011A strict site-wide password gate", () => {
       expectGatedTo(res, "/configurator/retreat/t1");
     });
 
-    it("gates Guest App routes, including a guest-subdomain root rewritten to /s/[slug]", async () => {
+    // Guest App routes were gated under Task 011A's "the entire site is
+    // private" rule. That rule is now explicitly narrowed: a PUBLISHED
+    // Guest App is a public address its owner shares with students, so it
+    // is exempt (see isPublicGuestPath and the dedicated describe block
+    // below). Everything else Task 011A gated is still gated, which the
+    // cases around this one continue to prove.
+    it("no longer gates Guest App routes, published Spaces being public by design", async () => {
       const res = await proxy(
         req(`https://${PRODUCTION_APEX}/g/00000000-0000-0000-0000-000000000000`, { host: PRODUCTION_APEX })
       );
-      expectGatedTo(res, "/g/00000000-0000-0000-0000-000000000000");
+      expectNotGated(res);
 
       const res2 = await proxy(req("https://myretreat.innerdwes.com/", { host: "myretreat.innerdwes.com" }));
-      expectGatedTo(res2, "/s/myretreat");
+      expectNotGated(res2);
     });
 
     it("no longer exempts opengraph-image (marketing-only exemption removed)", async () => {
@@ -165,6 +171,71 @@ describe("proxy() - Task 011A strict site-wide password gate", () => {
         })
       );
       expectNotGated(res!);
+    });
+  });
+
+  describe("published Guest Apps stay public while the gate is on", () => {
+    beforeEach(() => {
+      process.env.INNERDWES_PREVIEW_PASSWORD = TEST_PASSWORD;
+    });
+
+    const publicPaths = [
+      "/s/teacherexample",
+      "/s/teacherexample/social/ybtw5gmm",
+      "/g/a535bf4d-ea7d-4970-9240-c4b8db5fb961",
+      "/api/media/a535bf4d-ea7d-4970-9240-c4b8db5fb961/brand/hero/h1/published.webp",
+    ];
+
+    it.each(publicPaths)("serves %s without the preview password", async (path) => {
+      const res = await proxy(req(`https://${PRODUCTION_APEX}${path}`, { host: PRODUCTION_APEX }));
+      expectNotGated(res);
+    });
+
+    it("treats a crawler exactly like a person - no user-agent bypass either way", async () => {
+      const headers = new Headers({ host: PRODUCTION_APEX, "user-agent": "WhatsApp/2.23" });
+      const crawler = await proxy(new NextRequest(`https://${PRODUCTION_APEX}/s/teacherexample`, { headers }));
+      expectNotGated(crawler);
+
+      // ...and a crawler still cannot reach anything that is not public.
+      const studioHeaders = new Headers({ host: PRODUCTION_APEX, "user-agent": "WhatsApp/2.23" });
+      const studio = await proxy(new NextRequest(`https://${PRODUCTION_APEX}/space`, { headers: studioHeaders }));
+      expectGatedTo(studio, "/space");
+    });
+
+    it("exempts a guest subdomain root, which is rewritten to the same /s/<slug> route", async () => {
+      const res = await proxy(req("https://teacherexample.innerdwes.com/", { host: "teacherexample.innerdwes.com" }));
+      expectNotGated(res);
+    });
+
+    it("still gates app.innerdwes.com's root, which is rewritten to /space", async () => {
+      const res = await proxy(req(`https://${PRODUCTION_APP}/`, { host: PRODUCTION_APP }));
+      expectGatedTo(res, "/space");
+    });
+
+    const stillGated = [
+      "/space",
+      "/configurator/teach/a535bf4d-ea7d-4970-9240-c4b8db5fb961",
+      "/create",
+      "/api/qr/a535bf4d-ea7d-4970-9240-c4b8db5fb961",
+      "/api/share-card/a535bf4d-ea7d-4970-9240-c4b8db5fb961",
+      "/log-in",
+      "/sign-up",
+      "/",
+      "/time-to-heal",
+    ];
+
+    it.each(stillGated)("keeps %s behind the password", async (path) => {
+      const res = await proxy(req(`https://${PRODUCTION_APEX}${path}`, { host: PRODUCTION_APEX }));
+      expectGatedTo(res, path);
+    });
+
+    it("does not let a prefix lookalike through", async () => {
+      // /space must never be mistaken for the /s/ prefix, and a bare
+      // prefix addresses no Space at all.
+      for (const path of ["/space", "/s", "/g", "/api/media", "/spaces/x"]) {
+        const res = await proxy(req(`https://${PRODUCTION_APEX}${path}`, { host: PRODUCTION_APEX }));
+        expectGatedTo(res, path);
+      }
     });
   });
 

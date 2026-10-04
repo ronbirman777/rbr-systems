@@ -144,7 +144,7 @@ export function TeachGuestApp({
   return (
     <div
       ref={rootRef}
-      className={`tt-root ${TEACH_FONT_VARIABLES} @container relative flex flex-col ${embedded ? "h-full" : "min-h-dvh"}`}
+      className={`tt-root guest-viewport ${TEACH_FONT_VARIABLES} @container relative flex flex-col ${embedded ? "h-full" : "min-h-dvh"}`}
       style={{
         ...vars,
         background: "var(--tt-bg)",
@@ -156,7 +156,7 @@ export function TeachGuestApp({
     >
       <style>{TEACH_CSS}</style>
       <DesktopTopNav data={data} tabs={tabs} tab={tab} onTab={goTab} url={url} />
-      <div ref={scrollRef} className={`relative flex-1 ${embedded ? "overflow-y-auto overflow-x-hidden" : ""}`}>
+      <div ref={scrollRef} className={`relative flex-1 overflow-x-clip ${embedded ? "overflow-y-auto" : ""}`}>
         {style.organicShapes && !page ? <OrganicShapes /> : null}
         <main className="relative w-full mx-auto @4xl:max-w-[1180px] pt-2 @min-[40rem]:pt-6 @4xl:pt-10 pb-6 @min-[40rem]:pb-16">{body}</main>
       </div>

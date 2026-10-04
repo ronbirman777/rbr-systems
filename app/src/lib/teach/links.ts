@@ -1,3 +1,4 @@
+import { normalizeWhatsAppNumber, whatsappUrl } from "@/lib/share/whatsapp";
 import type {
   AvailabilityMetadata,
   ClassMetadata,
@@ -46,23 +47,12 @@ export function telegramUrl(raw: string | null | undefined): string | null {
   return safeHttpUrl(v);
 }
 
-/** Digits only, international format without "+", 8-15 digits (E.164). */
-export function normalizeWhatsAppNumber(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  let digits = raw.replace(/[^\d+]/g, "");
-  if (digits.startsWith("+")) digits = digits.slice(1);
-  if (digits.startsWith("00")) digits = digits.slice(2);
-  digits = digits.replace(/\D/g, "");
-  return /^\d{8,15}$/.test(digits) ? digits : null;
-}
-
-export function whatsappUrl(number: string | null | undefined, message?: string | null): string | null {
-  const digits = normalizeWhatsAppNumber(number);
-  if (!digits) return null;
-  return message && message.trim()
-    ? `https://wa.me/${digits}?text=${encodeURIComponent(message.trim())}`
-    : `https://wa.me/${digits}`;
-}
+/**
+ * WhatsApp number/link building is product-agnostic and lives in
+ * lib/share/whatsapp.ts; re-exported here so Teach call sites keep their
+ * single import and there is only one definition in the codebase.
+ */
+export { normalizeWhatsAppNumber, whatsappUrl };
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -96,12 +86,13 @@ export const TEMPLATE_VARIABLES = [
   "start_time",
   "end_time",
   "location",
+  "space_url",
 ] as const;
 export type TemplateVariable = (typeof TEMPLATE_VARIABLES)[number];
 export type TemplateValues = Partial<Record<TemplateVariable, string | null>>;
 
 export const DEFAULT_CLASS_WHATSAPP_TEMPLATE =
-  "Hi {{teacher_name}}, I'd like to join {{class_name}} on {{date}} at {{start_time}}.";
+  "Hi {{teacher_name}}, I'd like to join {{class_name}} on {{date}} at {{start_time}}. Could you please confirm availability?\n{{space_url}}";
 export const DEFAULT_PRIVATE_WHATSAPP_TEMPLATE =
   "Hi {{teacher_name}}, I'd love a private session on {{date}} between {{start_time}} and {{end_time}}.";
 
@@ -166,7 +157,8 @@ export type RegistrationCta = { href: string; label: string; method: Registratio
 export function classTemplateValues(
   teacherName: string,
   title: string,
-  meta: Pick<ClassMetadata, "startDate" | "startTime" | "endTime" | "location">
+  meta: Pick<ClassMetadata, "startDate" | "startTime" | "endTime" | "location">,
+  spaceUrl?: string | null
 ): TemplateValues {
   return {
     teacher_name: teacherName,
@@ -175,6 +167,7 @@ export function classTemplateValues(
     start_time: meta.startTime,
     end_time: meta.endTime,
     location: meta.location,
+    space_url: spaceUrl ?? null,
   };
 }
 
@@ -187,12 +180,15 @@ export function venueBookingUrl(venue: Venue): string | null {
 export function buildRegistrationCta(
   teacherName: string,
   title: string,
-  meta: ClassMetadata
+  meta: ClassMetadata,
+  /** Public Guest App URL, woven into the prefilled message so the teacher
+   * can see which Space an enquiry came from. Omitted when unknown. */
+  spaceUrl?: string | null
 ): RegistrationCta | null {
   const { method, value, buttonLabel, whatsappTemplate } = meta.registration;
   if (!method) return null;
   const label = buttonLabel ?? (method === "venueLink" && meta.venue.name ? `Book with ${meta.venue.name}` : DEFAULT_BUTTON_LABEL[method]);
-  const message = renderTemplate(whatsappTemplate ?? DEFAULT_CLASS_WHATSAPP_TEMPLATE, classTemplateValues(teacherName, title, meta));
+  const message = renderTemplate(whatsappTemplate ?? DEFAULT_CLASS_WHATSAPP_TEMPLATE, classTemplateValues(teacherName, title, meta, spaceUrl));
   let href: string | null = null;
   switch (method) {
     case "whatsapp":

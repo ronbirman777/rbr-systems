@@ -133,7 +133,7 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
   return (
     <main
       style={{ ...vars, background: "var(--rbr-parchment-deep)" }}
-      className="flex-1 flex items-center justify-center sm:p-6 p-0"
+      className="guest-viewport flex-1 flex items-center justify-center sm:p-6 p-0"
     >
       <div
         className="relative flex flex-col overflow-hidden sm:rounded-[44px] w-full sm:w-[390px] sm:h-[780px] h-full"
