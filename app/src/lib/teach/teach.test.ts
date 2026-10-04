@@ -36,7 +36,8 @@ import {
   teachItemFieldsSchema,
   type TeachItem,
 } from "./schemas";
-import { TEACH_PRESETS, teachStyleVars } from "./style";
+import { DEFAULT_TEACH_PRESET, TEACH_LEGACY_PRESETS, teachStyleVars } from "./style";
+import { CANONICAL_BRAND_PRESETS } from "@/lib/brand/presets";
 import { contrastRatio, hexToRgb } from "@/lib/theme/contrast";
 import { focalPointToObjectPosition, optionalFocalPointSchema } from "@/lib/media/focalPoint";
 import { clampImagePosition, objectPositionStyle, parseImagePosition } from "@/lib/modules/imagePosition";
@@ -314,9 +315,19 @@ describe("daily inspiration", () => {
 
 describe("presets & style", () => {
   it("every preset primary keeps white button text at WCAG AA", () => {
-    for (const p of TEACH_PRESETS) {
+    for (const p of TEACH_LEGACY_PRESETS) {
       expect(contrastRatio(hexToRgb(p.primary), hexToRgb("#FFFFFF")), p.label).toBeGreaterThanOrEqual(4.5);
     }
+  });
+
+  it("every canonical preset keeps its text readable on its surface tint (WCAG AA)", () => {
+    for (const p of CANONICAL_BRAND_PRESETS) {
+      expect(contrastRatio(hexToRgb(p.text), hexToRgb(p.surface)), p.label).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("new Spaces start on a preset whose primary keeps white button text at WCAG AA", () => {
+    expect(contrastRatio(hexToRgb(DEFAULT_TEACH_PRESET.primary), hexToRgb("#FFFFFF"))).toBeGreaterThanOrEqual(4.5);
   });
 
   it("style tokens are closed-set CSS values", () => {

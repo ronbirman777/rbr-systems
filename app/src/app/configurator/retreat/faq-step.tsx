@@ -5,6 +5,7 @@ import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/mo
 import type { EditableFaqItem } from "@/lib/modules/faq";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { EmptyState } from "@/components/studio/empty-state";
 import { saveFaq, type SaveFaqState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
@@ -129,6 +130,12 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, on
           );
         })}
       </div>
+
+      {faq.length === 0 && (
+        <div className="mb-4">
+          <EmptyState title="No questions yet" body="Answer the questions guests ask most, such as wifi, check-out or what to bring. Use + Add Question below to start." />
+        </div>
+      )}
 
       <button
         type="button"

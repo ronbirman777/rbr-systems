@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { optionalFocalPointSchema } from "@/lib/media/focalPoint";
 import { socialLinksSchema } from "@/lib/modules/socialLinks";
+import { BRAND_PRESET_KEYS } from "@/lib/brand/presets";
 
 /**
  * Time to Teach content model.
@@ -44,6 +45,18 @@ export const TEACH_SETTINGS_KEYS = [
   "teachExplore",
 ] as const;
 export type TeachSettingsKey = (typeof TEACH_SETTINGS_KEYS)[number];
+
+/**
+ * Private (never published) module_settings singleton: the teacher's explicit
+ * opt-in to be listed on InnerDweS (future Teachers directory / homepage
+ * promotion). Deliberately NOT in TEACH_SETTINGS_KEYS - build_teach_payload
+ * never copies it into the public snapshot, and the default is always OFF.
+ */
+export const TEACH_DIRECTORY_KEY = "teachDirectory" as const;
+export const teachDirectorySchema = z.object({
+  listed: z.boolean().catch(false).default(false),
+});
+export type TeachDirectory = z.infer<typeof teachDirectorySchema>;
 
 /** Explore modules a teacher can switch on (module_configs rows). */
 export const TEACH_EXPLORE_MODULES = ["teachReadings", "teachAudio", "teachContact", "customPages"] as const;
@@ -117,7 +130,8 @@ export const teachProfileSchema = z.object({
 });
 export type TeachProfile = z.infer<typeof teachProfileSchema>;
 
-export const TEACH_PRESET_KEYS = [
+/** Pre-canonical preset keys. Kept so Spaces saved before the shared brand registry still parse. */
+export const TEACH_LEGACY_PRESET_KEYS = [
   "calm",
   "earth",
   "sage",
@@ -128,6 +142,7 @@ export const TEACH_PRESET_KEYS = [
   "sacred",
   "minimal",
 ] as const;
+export const TEACH_PRESET_KEYS = [...TEACH_LEGACY_PRESET_KEYS, ...BRAND_PRESET_KEYS] as const;
 export type TeachPresetKey = (typeof TEACH_PRESET_KEYS)[number];
 
 export const TEACH_TYPOGRAPHY = ["classic", "editorial", "serene", "modern"] as const;

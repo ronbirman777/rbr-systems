@@ -4,8 +4,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 const toggles = vi.hoisted(() => [] as { label: string; checked: boolean; onChange: (v: boolean) => void }[]);
-vi.mock("./studio-fields", async (orig) => {
-  const actual = await orig<typeof import("./studio-fields")>();
+vi.mock("@/components/studio/studio-fields", async (orig) => {
+  const actual = await orig<typeof import("@/components/studio/studio-fields")>();
   return {
     ...actual,
     Toggle: (p: { label: string; checked: boolean; onChange: (v: boolean) => void }) => {

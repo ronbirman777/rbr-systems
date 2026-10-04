@@ -134,6 +134,23 @@ describe("Teach Studio server actions", () => {
     expect(mockSettingsUpsert.mock.calls[0][0].data.profile.imagePosition).toEqual({ x: 20, y: 30 });
   });
 
+  it("saves the directory opt-in as a private module_settings key, default-safe", async () => {
+    const { saveTeachDirectoryListing } = await actions();
+    expect((await saveTeachDirectoryListing(TENANT, true)).error).toBeNull();
+    expect(mockSettingsUpsert.mock.calls[0][0]).toMatchObject({ tenant_id: TENANT, module_key: "teachDirectory", data: { listed: true } });
+    await saveTeachDirectoryListing(TENANT, "yes" as never);
+    expect(mockSettingsUpsert.mock.calls[1][0].data).toEqual({ listed: false });
+  });
+
+  it("directory opt-in requires a signed-in user and a Teach Space", async () => {
+    const { saveTeachDirectoryListing } = await actions();
+    mockTenantProductType.mockResolvedValue({ data: { product_type: "retreat" } });
+    expect((await saveTeachDirectoryListing(TENANT, true)).error).toBe("Space not found.");
+    mockGetUser.mockResolvedValue({ data: { user: null } });
+    expect((await saveTeachDirectoryListing(TENANT, true)).error).toMatch(/logged in/);
+    expect(mockSettingsUpsert).not.toHaveBeenCalled();
+  });
+
   it("enforces the shared Custom Pages limit server-side", async () => {
     const { saveTeachItems } = await actions();
     const pages = Array.from({ length: 4 }, (_, i) => ({ id: `aaaaaaaa-bbbb-4ccc-8ddd-00000000000${i}`, title: `P${i}`, metadata: {} }));

@@ -2,6 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { ArrivalInfo } from "@/lib/modules/arrival";
+import { EmptyState } from "@/components/studio/empty-state";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, StudioIntro } from "./studio-ui";
 import { saveArrivalInfo, type SaveArrivalInfoState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
@@ -90,6 +91,15 @@ export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDir
         Everything guests need before and on arrival. Clear, calm information makes a big difference to first
         impressions.
       </StudioIntro>
+
+      {Object.values(info).every((v) => !v) && (
+        <div className="mb-6">
+          <EmptyState
+            title="No arrival information yet"
+            body="Start with check-in and check-out times and your address - guests see these first on the Arrival screen. Everything else is optional."
+          />
+        </div>
+      )}
 
       <StudioSectionSub first>Arrival Basics</StudioSectionSub>
       <div className="grid grid-cols-2 gap-4">

@@ -12,7 +12,10 @@ import { MEDIA_BUCKET } from "@/lib/media/path";
 import { uploadAudioDraftObject } from "@/lib/teach/audioUpload";
 import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL, type SocialPlatform } from "@/lib/modules/socialLinks";
 import { checkSlugAvailability, reserveSlug } from "@/app/configurator/retreat/actions";
-import { publishTeachSpace } from "./actions";
+import { publishTeachSpace, saveTeachDirectoryListing } from "./actions";
+import { PublicLinkCard } from "@/components/studio/public-link-card";
+import { QrCodeCard } from "@/components/studio/qr-code-card";
+import { publicSpaceUrl, guestAppPath } from "@/lib/studio/publicLink";
 import {
   AUDIO_ALLOWED_TYPES,
   AVAILABILITY_METHODS,
@@ -50,7 +53,6 @@ import {
   OVERLAY_LABEL,
   QUOTE_LABEL,
   SPACING_LABEL,
-  TEACH_PRESETS,
   TEXTURE_LABEL,
   TYPOGRAPHY_LABEL,
 } from "@/lib/teach/style";
@@ -67,8 +69,10 @@ import {
 } from "@/lib/teach/links";
 import { EXPLORE_MODULE_EMPTY_HINT, exploreModuleStatus } from "@/lib/teach/moduleVisibility";
 import { WEEKDAY_LABELS, describeAvailability, formatDuration, sortClasses } from "@/lib/teach/schedule";
+import { getBrandPresets, presetColorUpdate } from "@/lib/brand/presets";
 import type { StudioApi, SectionKey } from "./teach-studio";
 import { audioAttached, audioDetached, imageRemoved, imageUploaded, moveItemById, patchExploreCard, patchItemById, patchSlot, type Patch } from "./studioStateUpdates";
+import { SectionHeader } from "@/components/studio/section-header";
 import {
   Card,
   ColorField,
@@ -82,25 +86,13 @@ import {
   TextField,
   Toggle,
   INPUT,
-} from "./studio-fields";
+} from "@/components/studio/studio-fields";
 
 type Props = { api: StudioApi };
 
 // ---------------------------------------------------------------------------
 // Shared section chrome
 // ---------------------------------------------------------------------------
-
-function SectionHeader({ eyebrow, title, intro }: { eyebrow: string; title: string; intro: string }) {
-  return (
-    <header className="flex flex-col gap-1.5">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9A7B4F]">{eyebrow}</p>
-      <h1 className="text-[30px] leading-tight text-[#192B21]" style={{ fontFamily: "var(--font-fraunces), serif" }}>
-        {title}
-      </h1>
-      <p className="text-[13.5px] text-[#6F6C66] leading-relaxed max-w-[62ch]">{intro}</p>
-    </header>
-  );
-}
 
 function SaveBar({ api, section }: { api: StudioApi; section: SectionKey }) {
   const dirty = api.isDirty(section);
@@ -506,13 +498,15 @@ export function BrandSection({ api }: Props) {
   const style = api.settings.teachStyle;
   const set = (patch: Partial<typeof style>) => api.updateSetting("teachStyle", patch, "brand");
   const [advanced, setAdvanced] = useState(Boolean(api.colors.navigation || api.colors.text));
+  const presets = getBrandPresets("teach");
+  const customSelected = !presets.some((p) => p.key === style.preset);
   const opt = <T extends string>(keys: readonly T[], labels: Record<T, string>) => keys.map((k) => ({ value: k, label: labels[k] }));
   return (
     <>
       <SectionHeader eyebrow="My teaching space" title="Brand" intro="Colours and a few carefully chosen style options. Every combination stays readable and works on phones and desktops." />
       <Card title="Colour palette" description="Start from a preset or build your own. Presets are optional.">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" role="radiogroup" aria-label="Palette presets">
-          {TEACH_PRESETS.map((p) => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" role="radiogroup" aria-label="Palette presets" data-testid="brand-presets">
+          {presets.map((p) => {
             const selected = style.preset === p.key;
             return (
               <button
@@ -521,29 +515,45 @@ export function BrandSection({ api }: Props) {
                 role="radio"
                 aria-checked={selected}
                 onClick={() => {
-                  api.setColors({ ...api.colors, primary: p.primary, accent: p.accent });
-                  set({ preset: p.key, background: p.background });
+                  const next = presetColorUpdate("teach", p);
+                  api.setColors({ primary: next.primary, accent: next.accent, navigation: next.navigation, text: next.text });
+                  setAdvanced(true);
+                  set({ preset: p.key, background: next.surface });
                 }}
                 className="flex flex-col gap-2 p-3 rounded-xl text-left"
-                style={{ background: p.background, border: selected ? "2px solid #192B21" : "1px solid #E2DACD" }}
+                style={{ background: p.surface, border: selected ? "2px solid #192B21" : "1px solid #E2DACD" }}
               >
                 <span className="flex gap-1.5">
                   <span className="w-6 h-6 rounded-full" style={{ background: p.primary }} />
                   <span className="w-6 h-6 rounded-full" style={{ background: p.accent }} />
                 </span>
-                <span className="text-[13px] font-semibold" style={{ color: p.primary }}>
+                <span className="text-[13px] font-semibold" style={{ color: p.text }}>
                   {p.label}
                 </span>
               </button>
             );
           })}
+          <button
+            type="button"
+            role="radio"
+            aria-checked={customSelected}
+            onClick={() => set({ preset: "custom" })}
+            className="flex flex-col gap-2 p-3 rounded-xl text-left bg-white"
+            style={{ border: customSelected ? "2px solid #192B21" : "1px dashed #CFC4B4" }}
+          >
+            <span className="flex gap-1.5">
+              <span className="w-6 h-6 rounded-full" style={{ background: api.colors.primary }} />
+              <span className="w-6 h-6 rounded-full" style={{ background: api.colors.accent }} />
+            </span>
+            <span className="text-[13px] font-semibold text-[#192B21]">Custom colors</span>
+          </button>
         </div>
         <Grid>
           <ColorField
             label="Primary colour"
             value={api.colors.primary}
             checkWhiteText
-            swatches={TEACH_PRESETS.map((p) => ({ label: p.label, hex: p.primary }))}
+            swatches={presets.map((p) => ({ label: p.label, hex: p.primary }))}
             onChange={(hex) => {
               api.setColors({ ...api.colors, primary: hex });
               set({ preset: "custom" });
@@ -553,7 +563,7 @@ export function BrandSection({ api }: Props) {
           <ColorField
             label="Accent colour"
             value={api.colors.accent}
-            swatches={TEACH_PRESETS.map((p) => ({ label: p.label, hex: p.accent }))}
+            swatches={presets.map((p) => ({ label: p.label, hex: p.accent }))}
             onChange={(hex) => {
               api.setColors({ ...api.colors, accent: hex });
               set({ preset: "custom" });
@@ -568,8 +578,14 @@ export function BrandSection({ api }: Props) {
         }} label="Fine-tune navigation and text colours" description="Optional — by default both follow your primary colour." />
         {advanced ? (
           <Grid>
-            <ColorField label="Navigation colour" value={api.colors.navigation ?? api.colors.primary} onChange={(hex) => api.setColors({ ...api.colors, navigation: hex })} />
-            <ColorField label="Text colour" value={api.colors.text ?? api.colors.primary} onChange={(hex) => api.setColors({ ...api.colors, text: hex })} />
+            <ColorField label="Navigation colour" value={api.colors.navigation ?? api.colors.primary} onChange={(hex) => {
+              api.setColors({ ...api.colors, navigation: hex });
+              set({ preset: "custom" });
+            }} />
+            <ColorField label="Text colour" value={api.colors.text ?? api.colors.primary} onChange={(hex) => {
+              api.setColors({ ...api.colors, text: hex });
+              set({ preset: "custom" });
+            }} />
           </Grid>
         ) : null}
       </Card>
@@ -1801,7 +1817,6 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
     { ok: noRegistration.length === 0, text: noRegistration.length === 0 ? "Every class has a registration method" : `${noRegistration.length} class(es) have no working registration method — no join button will show` },
   ];
   const blocked = checks.some((c) => c.blocking && !c.ok);
-  const liveHref = api.slug ? `/s/${api.slug}` : `/g/${api.tenantId}`;
 
   async function publish() {
     setBusy(true);
@@ -1839,11 +1854,6 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
           <StudioButton onClick={publish} disabled={busy || blocked}>
             {busy ? "Publishing…" : api.publishedAt ? "Republish" : "Publish now"}
           </StudioButton>
-          {api.publishedAt ? (
-            <a href={liveHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-10 px-4 rounded-full border border-[#192B21]/20 text-[12.5px] font-semibold text-[#192B21]">
-              Open live app ↗
-            </a>
-          ) : null}
         </div>
         {message ? (
           <p role={message.ok ? "status" : "alert"} className={`text-[13px] ${message.ok ? "text-[#3F6A4C]" : "text-[#8F3B3B]"}`}>
@@ -1852,9 +1862,59 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
         ) : null}
         <Hint>{api.publishedAt ? `Last published ${api.publishedAt.slice(0, 16).replace("T", " ")} UTC` : "Not published yet."}</Hint>
       </Card>
+      <Card title="Share your Guest App" description="Send guests this link or let them scan the QR code. It never contains an access token - it is simply your public Guest App address.">
+        <PublicLinkCard url={publicSpaceUrl(api.tenantId, api.slug)} openHref={guestAppPath(api.tenantId, api.slug)} published={Boolean(api.publishedAt)} />
+        <QrCodeCard tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} />
+      </Card>
+      <DirectoryOptInCard tenantId={api.tenantId} initialListed={api.directoryListed} />
       <Card title="Draft preview" description="The real Guest App with your current draft. Mobile layout below; the live app switches to a two-column layout on wide screens.">
         <div className="mx-auto w-full max-w-[380px] h-[720px] rounded-[36px] overflow-hidden border-[6px] border-[#D9D1C3]">{preview}</div>
       </Card>
     </>
+  );
+}
+
+/** Explicit opt-in (default OFF) for the future public Teachers directory / InnerDweS promotion. Saves on toggle; private to the owner. */
+export function DirectoryOptInCard({ tenantId, initialListed }: { tenantId: string; initialListed: boolean }) {
+  const [listed, setListed] = useState(initialListed);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function toggle() {
+    const next = !listed;
+    setBusy(true);
+    setError(null);
+    setListed(next);
+    const res = await saveTeachDirectoryListing(tenantId, next);
+    setBusy(false);
+    if (res.error) {
+      setListed(!next);
+      setError(res.error);
+    }
+  }
+
+  return (
+    <Card title="List me on InnerDweS" description="Optional. Off unless you turn it on - we never list anyone automatically. If you opt in, you may be featured in the upcoming InnerDweS Teachers directory and on our website.">
+      <div className="flex items-center gap-3" data-testid="directory-opt-in">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={listed}
+          aria-label="List me on InnerDweS"
+          onClick={toggle}
+          disabled={busy}
+          className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${listed ? "bg-[#192B21]" : "bg-[#D9D1C3]"}`}
+        >
+          <span aria-hidden="true" className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${listed ? "translate-x-6" : "translate-x-1"}`} />
+        </button>
+        <span className="text-[13px] text-[#232926]">{listed ? "Yes, list me on InnerDweS" : "Not listed"}</span>
+      </div>
+      {error ? (
+        <p role="alert" className="text-[13px] text-[#8F3B3B]">
+          {error}
+        </p>
+      ) : null}
+      <Hint>You can change this at any time. Turning it on does not publish anything by itself.</Hint>
+    </Card>
   );
 }

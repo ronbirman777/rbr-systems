@@ -8,6 +8,7 @@ import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/mo
 import type { EditableTreatment } from "@/lib/modules/treatment";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { EmptyState } from "@/components/studio/empty-state";
 import { saveTreatments, type SaveTreatmentsState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
@@ -184,6 +185,12 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
           );
         })}
       </div>
+
+      {treatments.length === 0 && (
+        <div className="mb-4">
+          <EmptyState title="No treatments yet" body="Add the treatments or sessions guests can book, with duration and a short description. Use + Add Treatment below to start." />
+        </div>
+      )}
 
       <button
         type="button"

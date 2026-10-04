@@ -8,6 +8,7 @@ import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/mo
 import type { EditableFacility } from "@/lib/modules/facility";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { EmptyState } from "@/components/studio/empty-state";
 import { saveFacilities, type SaveFacilitiesState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
@@ -162,6 +163,12 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
           );
         })}
       </div>
+
+      {facilities.length === 0 && (
+        <div className="mb-4">
+          <EmptyState title="No facilities yet" body="Add the spaces guests can use - sauna, pool, yoga shala - with opening hours. Use + Add Facility below to start." />
+        </div>
+      )}
 
       <button
         type="button"

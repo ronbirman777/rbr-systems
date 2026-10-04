@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { StudioHeading, StudioIntro } from "./studio-ui";
-import { buildGuestSpaceUrl } from "@/lib/guestSpaceUrl";
+import { publicSpaceUrl, guestAppPath, qrImagePath } from "@/lib/studio/publicLink";
+import { StatusPill } from "@/components/studio/status-pill";
+import { PublicLinkCard } from "@/components/studio/public-link-card";
+import { QrCodeCard } from "@/components/studio/qr-code-card";
 import { CARD_WIDTH, CARD_HEIGHT, drawShareCard, canvasToPngBlob } from "./shareCard";
 import { GuestAccessPanel } from "./guest-access-panel";
 import type { GuestAccessSettings } from "./guestAccessActions";
@@ -23,20 +26,20 @@ export type ShareSpaceStepProps = {
   initialGuestAccessSettings: GuestAccessSettings;
 };
 
-const STATUS_COPY: Record<ShareSpaceStatus, { label: string; dotClass: string; detail: string }> = {
+const STATUS_COPY: Record<ShareSpaceStatus, { label: string; pill: "draft" | "published"; detail: string }> = {
   live: {
-    label: "Live",
-    dotClass: "bg-idw-sage",
+    label: "Published",
+    pill: "published",
     detail: "Guests can open your app at this link right now.",
   },
   draft: {
     label: "Draft",
-    dotClass: "bg-idw-clay",
+    pill: "draft",
     detail: "Publish your Space first - this link won't work for guests until then.",
   },
   inactive: {
     label: "Inactive",
-    dotClass: "bg-idw-forest/30",
+    pill: "draft",
     detail: "This Space was published, but isn't currently publicly available. Check your commercial access.",
   },
 };
@@ -66,13 +69,12 @@ export function ShareSpaceStep({
   status,
   initialGuestAccessSettings,
 }: ShareSpaceStepProps) {
-  const [copied, setCopied] = useState(false);
   const [previewReady, setPreviewReady] = useState(false);
   const [busy, setBusy] = useState<"share" | "save" | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const previewRef = useRef<HTMLCanvasElement>(null);
-  const url = buildGuestSpaceUrl(tenantId, slug);
-  const qrSrc = `/api/qr/${tenantId}`;
+  const url = publicSpaceUrl(tenantId, slug);
+  const qrSrc = qrImagePath(tenantId);
   const copy = STATUS_COPY[status];
   const canShareOrSave = status === "live";
 
@@ -131,18 +133,6 @@ export function ShareSpaceStep({
     URL.revokeObjectURL(objectUrl);
   }
 
-  async function handleCopy() {
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard permission denied or unavailable - the URL is still
-      // fully visible and selectable in the field below, so there's
-      // nothing more useful to do than leave the button unchanged.
-    }
-  }
-
   async function handleSaveImage() {
     setActionError(null);
     setBusy("save");
@@ -198,7 +188,7 @@ export function ShareSpaceStep({
       <StudioHeading>Share Your Space</StudioHeading>
       <StudioIntro>Everything you need to send your retreat app to guests, in one place.</StudioIntro>
 
-      <div className="rounded-2xl border p-5 flex items-center gap-4" style={{ borderColor: "rgba(45,74,62,0.12)" }}>
+      <div className="rounded-2xl border border-[#E2DACD] bg-white p-5 flex items-center gap-4" data-testid="share-status-card">
         <div
           className="w-16 h-16 rounded-xl overflow-hidden shrink-0"
           style={{ background: GUEST_BASE_PALETTE.parchmentDeep }}
@@ -209,51 +199,17 @@ export function ShareSpaceStep({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[15px] font-medium truncate" style={{ color: GUEST_BASE_PALETTE.forest }}>
-            {name}
-          </p>
-          <div className="flex items-center gap-1.5 mt-1">
-            <span className={`w-2 h-2 rounded-full ${copy.dotClass}`} />
-            <span className="text-xs font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
-              {copy.label}
-            </span>
+          <p className="text-[15px] font-medium truncate text-[#192B21]">{name}</p>
+          <div className="mt-1.5">
+            <StatusPill state={copy.pill} label={copy.label} />
           </div>
         </div>
       </div>
-      <p className="text-xs mt-2 leading-relaxed" style={{ color: GUEST_BASE_PALETTE.mist }}>
-        {copy.detail}
-      </p>
+      <p className="text-xs mt-2 leading-relaxed text-[#6F6C66]">{copy.detail}</p>
 
-      <div className="mt-6 rounded-2xl border p-4" style={{ borderColor: "rgba(45,74,62,0.12)" }}>
-        <div className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: GUEST_BASE_PALETTE.mist }}>
-          Guest App URL
-        </div>
-        <div className="flex items-center gap-2 mt-2">
-          <input
-            readOnly
-            value={url}
-            onFocus={(e) => e.currentTarget.select()}
-            className="flex-1 min-w-0 text-[13px] bg-transparent outline-none"
-            style={{ color: GUEST_BASE_PALETTE.forest }}
-          />
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="shrink-0 text-[11px] font-medium px-3 py-1.5 rounded-full border"
-            style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
-          >
-            {copied ? "Copied!" : "Copy Link"}
-          </button>
-        </div>
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block mt-3 text-[12px] underline"
-          style={{ color: GUEST_BASE_PALETTE.forest }}
-        >
-          Open Guest App ↗
-        </a>
+      <div className="mt-6 flex flex-col gap-4">
+        <PublicLinkCard url={url} openHref={guestAppPath(tenantId, slug)} published={status !== "draft"} />
+        <QrCodeCard tenantId={tenantId} slug={slug} published={status === "live"} />
       </div>
 
       <GuestAccessPanel tenantId={tenantId} initialSettings={initialGuestAccessSettings} />
