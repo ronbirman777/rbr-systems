@@ -10,6 +10,7 @@ import { TeachIcon, type TeachIconName } from "./teach-icons";
 import { TeachImage } from "./teach-image";
 import { TeachRichText } from "./teach-rich-text";
 import { BackButton, Chip, DisplayHeading, EmptyState, Eyebrow, PillLink } from "./teach-ui";
+import { cardImage } from "@/lib/teach/cardImage";
 
 const media = (data: TeachGuestData, ref: string | null | undefined) => (ref ? (data.mediaUrls[ref] ?? null) : null);
 
@@ -61,7 +62,7 @@ export function ReadingsScreen({ data, onBack, onOpen, title }: { data: TeachGue
       ) : (
         <>
           <button type="button" onClick={() => onOpen(featured.id)} className="tt-reveal text-left overflow-hidden @4xl:grid @4xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
-            <TeachImage src={media(data, featured.imageRef)} focal={featured.metadata.imagePosition} alt="" fallbackLabel={featured.title} className="w-full h-[200px] @min-[40rem]:h-[280px] @4xl:h-full @4xl:min-h-[360px]" />
+            <TeachImage {...cardImage(data, "teachReadings", featured)} alt="" fallbackLabel={featured.title} className="w-full h-[200px] @min-[40rem]:h-[280px] @4xl:h-full @4xl:min-h-[360px]" />
             <span className="flex flex-col gap-1.5 p-4 @min-[40rem]:p-6 @4xl:p-10 @4xl:justify-center @4xl:gap-3">
               <Eyebrow tone="primary">
                 {[featured.metadata.category, readMinutes(featured) ? `${readMinutes(featured)} min read` : featured.externalLink ? "External article" : null].filter(Boolean).join(" · ")}
@@ -80,7 +81,7 @@ export function ReadingsScreen({ data, onBack, onOpen, title }: { data: TeachGue
             {rest.map((r) => (
               <li key={r.id}>
                 <button type="button" onClick={() => onOpen(r.id)} className="tt-reveal w-full h-full text-left flex items-center gap-3 p-2.5 @4xl:flex-col @4xl:items-stretch @4xl:gap-0 @4xl:p-0 @4xl:overflow-hidden" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
-                  <TeachImage src={media(data, r.imageRef)} focal={r.metadata.imagePosition} alt="" fallbackLabel={r.title} className="w-[78px] h-[78px] @4xl:w-full @4xl:h-[180px] @4xl:!rounded-none shrink-0" style={{ borderRadius: "var(--tt-radius-image)" }} />
+                  <TeachImage {...cardImage(data, "teachReadings", r)} alt="" fallbackLabel={r.title} className="w-[78px] h-[78px] @4xl:w-full @4xl:h-[180px] @4xl:!rounded-none shrink-0" style={{ borderRadius: "var(--tt-radius-image)" }} />
                   <span className="flex-1 min-w-0 flex flex-col gap-1 @4xl:p-4 @4xl:gap-1.5">
                     {r.metadata.category ? <Eyebrow tone="primary">{r.metadata.category}</Eyebrow> : null}
                     <DisplayHeading as="h3" size={16.5} className="line-clamp-2">
@@ -107,7 +108,7 @@ export function ReadingDetailScreen({ data, item, onBack }: { data: TeachGuestDa
   return (
     <article className="flex flex-col pb-8">
       <div className="relative @4xl:mx-10 @4xl:overflow-hidden @4xl:rounded-[var(--tt-radius-card)]">
-        <TeachImage src={media(data, item.imageRef)} focal={item.metadata.imagePosition} alt="" fallbackLabel={item.title} className="w-full h-[260px] @min-[40rem]:h-[360px] @4xl:h-[460px]" />
+        <TeachImage {...cardImage(data, "teachReadings", item)} alt="" fallbackLabel={item.title} className="w-full h-[260px] @min-[40rem]:h-[360px] @4xl:h-[460px]" />
         <div className="absolute top-3 left-3 @4xl:top-5 @4xl:left-5">
           <button type="button" onClick={onBack} aria-label="Back to My Readings" className="w-11 h-11 rounded-full flex items-center justify-center shadow" style={{ background: "var(--tt-surface)", color: "var(--rbr-text)" }}>
             <TeachIcon name="chevronLeft" size={20} strokeWidth={2} />
@@ -184,7 +185,7 @@ export function AudioListScreen({ data, onBack, onOpen, title }: { data: TeachGu
       ) : (
         <>
           <button type="button" onClick={() => onOpen(featured.id)} className="tt-reveal relative overflow-hidden text-left h-[190px] @min-[40rem]:h-[260px] @4xl:h-[360px]" style={{ borderRadius: "var(--tt-radius-card)" }}>
-            <TeachImage src={media(data, featured.imageRef)} focal={featured.metadata.imagePosition} alt="" fallbackLabel={featured.title} className="absolute inset-0 w-full h-full" />
+            <TeachImage {...cardImage(data, "teachAudio", featured)} alt="" fallbackLabel={featured.title} className="absolute inset-0 w-full h-full" />
             <span aria-hidden="true" className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 30%, rgb(20 30 25 / calc(var(--tt-overlay) + 0.25)))" }} />
             <span className="absolute left-4 bottom-4 right-20 @4xl:left-8 @4xl:bottom-8 @4xl:right-32 flex flex-col gap-1">
               <Eyebrow tone="light">{[featured.metadata.category, formatDuration(featured.metadata.durationSeconds)].filter(Boolean).join(" · ")}</Eyebrow>
@@ -200,7 +201,7 @@ export function AudioListScreen({ data, onBack, onOpen, title }: { data: TeachGu
             {rest.map((t) => (
               <li key={t.id}>
                 <button type="button" onClick={() => onOpen(t.id)} className="tt-reveal w-full text-left flex items-center gap-3 p-2.5" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
-                  <TeachImage src={media(data, t.imageRef)} focal={t.metadata.imagePosition} alt="" fallbackLabel={t.title} className="w-16 h-16 shrink-0" style={{ borderRadius: "var(--tt-radius-image)" }} />
+                  <TeachImage {...cardImage(data, "teachAudio", t)} alt="" fallbackLabel={t.title} className="w-16 h-16 shrink-0" style={{ borderRadius: "var(--tt-radius-image)" }} />
                   <span className="flex-1 min-w-0 flex flex-col gap-0.5">
                     {t.metadata.category ? <Eyebrow tone="primary">{t.metadata.category}</Eyebrow> : null}
                     <DisplayHeading as="h3" size={16.5} className="truncate">
@@ -264,8 +265,7 @@ export function AudioPlayerScreen({ data, item, onBack }: { data: TeachGuestData
       </div>
       <div className="px-7 flex flex-col items-center gap-5 max-w-[520px] w-full mx-auto @4xl:max-w-[1000px] @4xl:grid @4xl:grid-cols-[400px_minmax(0,1fr)] @4xl:gap-16 @4xl:px-10 @4xl:pt-6">
         <TeachImage
-          src={media(data, item.imageRef)}
-          focal={item.metadata.imagePosition}
+          {...cardImage(data, "teachAudio", item)}
           alt=""
           fallbackLabel={item.title}
           className="w-full max-w-[300px] @4xl:max-w-none aspect-square"

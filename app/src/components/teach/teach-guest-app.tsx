@@ -1,5 +1,6 @@
 "use client";
 
+import { cardImage } from "@/lib/teach/cardImage";
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import { getDailyQuoteFrom } from "@/lib/content/dailyQuotes";
@@ -463,7 +464,7 @@ function HomeScreen({
               <div className="grid grid-cols-2 gap-2.5 @min-[40rem]:gap-4">
                 {latestReading ? (
                   <button type="button" onClick={() => open({ kind: "reading", id: latestReading.id })} className="tt-reveal text-left overflow-hidden flex flex-col" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
-                    <TeachImage src={url(latestReading.imageRef)} focal={latestReading.metadata.imagePosition} alt="" fallbackLabel={latestReading.title} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
+                    <TeachImage {...cardImage(data, "teachReadings", latestReading)} alt="" fallbackLabel={latestReading.title} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
                     <span className="p-3 @min-[40rem]:p-4 flex flex-col gap-1">
                       <Eyebrow tone="primary">Reading</Eyebrow>
                       <span className="text-[15px] @min-[40rem]:text-[18px] leading-tight line-clamp-2" style={{ fontFamily: "var(--tt-font-display)" }}>
@@ -474,7 +475,7 @@ function HomeScreen({
                 ) : null}
                 {latestAudio ? (
                   <button type="button" onClick={() => open({ kind: "track", id: latestAudio.id })} className="tt-reveal text-left overflow-hidden flex flex-col" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
-                    <TeachImage src={url(latestAudio.imageRef)} focal={latestAudio.metadata.imagePosition} alt="" fallbackLabel={latestAudio.title} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
+                    <TeachImage {...cardImage(data, "teachAudio", latestAudio)} alt="" fallbackLabel={latestAudio.title} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
                     <span className="p-3 @min-[40rem]:p-4 flex flex-col gap-1">
                       <Eyebrow tone="primary">Listen</Eyebrow>
                       <span className="text-[15px] @min-[40rem]:text-[18px] leading-tight line-clamp-2" style={{ fontFamily: "var(--tt-font-display)" }}>
