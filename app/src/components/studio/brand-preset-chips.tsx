@@ -10,11 +10,16 @@ export function BrandPresetChips({
   activeKey,
   onApply,
   label = "Start from a preset",
+  customActive,
+  onCustom,
 }: {
   presets: readonly BrandPreset[];
   activeKey: string | null;
   onApply: (preset: BrandPreset) => void;
   label?: string;
+  /** Renders the separate "Custom colors" option when onCustom is given. */
+  customActive?: boolean;
+  onCustom?: () => void;
 }) {
   return (
     <div data-testid="brand-presets">
@@ -42,6 +47,20 @@ export function BrandPresetChips({
             </button>
           );
         })}
+        {onCustom ? (
+          <button
+            type="button"
+            onClick={onCustom}
+            aria-pressed={Boolean(customActive)}
+            className={`min-h-11 inline-flex items-center gap-2 px-3.5 rounded-full border border-dashed text-[12.5px] transition-colors ${
+              customActive
+                ? "border-[#192B21] bg-white font-semibold text-[#192B21] shadow-sm"
+                : "border-[#CFC4B4] bg-white/60 text-[#4A4A44] hover:bg-white"
+            }`}
+          >
+            Custom colors
+          </button>
+        ) : null}
       </div>
     </div>
   );

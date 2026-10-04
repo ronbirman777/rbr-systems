@@ -142,12 +142,14 @@ export async function createTeachSpace(): Promise<void> {
       name: SPACE_TYPES.teach.copy.untitledName,
       custom_primary: DEFAULT_TEACH_PRESET.primary,
       custom_secondary: DEFAULT_TEACH_PRESET.accent,
+      custom_navigation: DEFAULT_TEACH_PRESET.navigation,
+      custom_text: DEFAULT_TEACH_PRESET.text,
       updated_at: new Date().toISOString(),
     }),
     supabase.from("module_settings").upsert({
       tenant_id: tenant.id,
       module_key: "teachStyle",
-      data: TEACH_SETTINGS_SCHEMAS.teachStyle.parse({ preset: DEFAULT_TEACH_PRESET.key, background: DEFAULT_TEACH_PRESET.background }),
+      data: TEACH_SETTINGS_SCHEMAS.teachStyle.parse({ preset: DEFAULT_TEACH_PRESET.key, background: DEFAULT_TEACH_PRESET.surface }),
     }),
     supabase.from("module_configs").upsert(
       ["teachReadings", "teachAudio", "teachContact"].map((module_key) => ({ tenant_id: tenant.id, module_key, enabled: true })),

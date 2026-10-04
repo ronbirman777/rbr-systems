@@ -1043,6 +1043,8 @@ export function RetreatConfigurator({
   const effectiveSecondary = customSecondary ?? PALETTES[palette].secondary;
   const effectiveNavigation = customNavigation ?? effectivePrimary;
   const effectiveText = customText ?? effectivePrimary;
+  const activePresetKey =
+    matchBrandPreset("retreat", { primary: customPrimary, accent: customSecondary, navigation: customNavigation, text: customText })?.key ?? null;
   const readabilityTextColor = safeTextColor(effectivePrimary);
   const readabilityPasses = meetsAA(effectivePrimary, readabilityTextColor);
   // App Text Color is drawn directly on the app's own light background,
@@ -1917,17 +1919,22 @@ export function RetreatConfigurator({
             <div className="mb-8">
               <BrandPresetChips
                 presets={getBrandPresets("retreat")}
-                activeKey={matchBrandPreset("retreat", { primary: effectivePrimary, accent: effectiveSecondary })?.key ?? null}
+                activeKey={activePresetKey}
+                customActive={activePresetKey === null}
+                onCustom={() => document.getElementById("flow-custom-colors")?.scrollIntoView({ block: "nearest", behavior: "smooth" })}
                 onApply={(preset) => {
-                  const next = presetColorUpdate(preset);
+                  const next = presetColorUpdate("retreat", preset);
                   setCustomPrimary(next.primary);
                   setCustomSecondary(next.accent);
+                  setCustomNavigation(next.navigation);
+                  setCustomText(next.text);
                   setPresetNonce((n) => n + 1);
                   dirty.markDirty("identityAndBrand");
                 }}
               />
             </div>
 
+            <div id="flow-custom-colors">
             <ColorPicker
               key={`primary-${presetNonce}`}
               label="Primary Color"
@@ -1959,6 +1966,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
+              key={`text-${presetNonce}`}
               label="App Text Color"
               hint="Used for headings, session titles and quote text."
               value={effectiveText}
@@ -1967,6 +1975,7 @@ export function RetreatConfigurator({
                 dirty.markDirty("identityAndBrand");
               }}
             />
+            </div>
 
             <StudioSectionSub>Hero Photography</StudioSectionSub>
             <p className="text-[11px] -mt-2 mb-3" style={{ color: GUEST_BASE_PALETTE.mist }}>

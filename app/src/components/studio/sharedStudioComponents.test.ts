@@ -69,6 +69,16 @@ describe("shared Studio components", () => {
     const out = html(createElement(BrandPresetChips, { presets, activeKey: presets[1].key, onApply: () => {} }));
     for (const p of presets) expect(out).toContain(p.label);
     expect(out.match(/aria-pressed="true"/g)).toHaveLength(1);
+    expect(out).not.toContain("Custom colors");
+  });
+
+  it("BrandPresetChips shows a separate Custom colors option when asked, active only with no preset", () => {
+    const presets = getBrandPresets("retreat");
+    const custom = html(createElement(BrandPresetChips, { presets, activeKey: null, customActive: true, onCustom: () => {}, onApply: () => {} }));
+    expect(custom).toContain("Custom colors");
+    expect(custom.match(/aria-pressed="true"/g)).toHaveLength(1);
+    const preset = html(createElement(BrandPresetChips, { presets, activeKey: presets[0].key, customActive: false, onCustom: () => {}, onApply: () => {} }));
+    expect(preset.match(/aria-pressed="true"/g)).toHaveLength(1);
   });
 
   it("StudioTopBar shows name, badge, save status and the Publish action", () => {

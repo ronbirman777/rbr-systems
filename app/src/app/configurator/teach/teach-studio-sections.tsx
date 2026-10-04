@@ -50,7 +50,6 @@ import {
   OVERLAY_LABEL,
   QUOTE_LABEL,
   SPACING_LABEL,
-  TEACH_PRESETS,
   TEXTURE_LABEL,
   TYPOGRAPHY_LABEL,
 } from "@/lib/teach/style";
@@ -67,6 +66,7 @@ import {
 } from "@/lib/teach/links";
 import { EXPLORE_MODULE_EMPTY_HINT, exploreModuleStatus } from "@/lib/teach/moduleVisibility";
 import { WEEKDAY_LABELS, describeAvailability, formatDuration, sortClasses } from "@/lib/teach/schedule";
+import { getBrandPresets, presetColorUpdate } from "@/lib/brand/presets";
 import type { StudioApi, SectionKey } from "./teach-studio";
 import { audioAttached, audioDetached, imageRemoved, imageUploaded, moveItemById, patchExploreCard, patchItemById, patchSlot, type Patch } from "./studioStateUpdates";
 import { SectionHeader } from "@/components/studio/section-header";
@@ -495,13 +495,15 @@ export function BrandSection({ api }: Props) {
   const style = api.settings.teachStyle;
   const set = (patch: Partial<typeof style>) => api.updateSetting("teachStyle", patch, "brand");
   const [advanced, setAdvanced] = useState(Boolean(api.colors.navigation || api.colors.text));
+  const presets = getBrandPresets("teach");
+  const customSelected = !presets.some((p) => p.key === style.preset);
   const opt = <T extends string>(keys: readonly T[], labels: Record<T, string>) => keys.map((k) => ({ value: k, label: labels[k] }));
   return (
     <>
       <SectionHeader eyebrow="My teaching space" title="Brand" intro="Colours and a few carefully chosen style options. Every combination stays readable and works on phones and desktops." />
       <Card title="Colour palette" description="Start from a preset or build your own. Presets are optional.">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" role="radiogroup" aria-label="Palette presets">
-          {TEACH_PRESETS.map((p) => {
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" role="radiogroup" aria-label="Palette presets" data-testid="brand-presets">
+          {presets.map((p) => {
             const selected = style.preset === p.key;
             return (
               <button
@@ -510,29 +512,45 @@ export function BrandSection({ api }: Props) {
                 role="radio"
                 aria-checked={selected}
                 onClick={() => {
-                  api.setColors({ ...api.colors, primary: p.primary, accent: p.accent });
-                  set({ preset: p.key, background: p.background });
+                  const next = presetColorUpdate("teach", p);
+                  api.setColors({ primary: next.primary, accent: next.accent, navigation: next.navigation, text: next.text });
+                  setAdvanced(true);
+                  set({ preset: p.key, background: next.surface });
                 }}
                 className="flex flex-col gap-2 p-3 rounded-xl text-left"
-                style={{ background: p.background, border: selected ? "2px solid #192B21" : "1px solid #E2DACD" }}
+                style={{ background: p.surface, border: selected ? "2px solid #192B21" : "1px solid #E2DACD" }}
               >
                 <span className="flex gap-1.5">
                   <span className="w-6 h-6 rounded-full" style={{ background: p.primary }} />
                   <span className="w-6 h-6 rounded-full" style={{ background: p.accent }} />
                 </span>
-                <span className="text-[13px] font-semibold" style={{ color: p.primary }}>
+                <span className="text-[13px] font-semibold" style={{ color: p.text }}>
                   {p.label}
                 </span>
               </button>
             );
           })}
+          <button
+            type="button"
+            role="radio"
+            aria-checked={customSelected}
+            onClick={() => set({ preset: "custom" })}
+            className="flex flex-col gap-2 p-3 rounded-xl text-left bg-white"
+            style={{ border: customSelected ? "2px solid #192B21" : "1px dashed #CFC4B4" }}
+          >
+            <span className="flex gap-1.5">
+              <span className="w-6 h-6 rounded-full" style={{ background: api.colors.primary }} />
+              <span className="w-6 h-6 rounded-full" style={{ background: api.colors.accent }} />
+            </span>
+            <span className="text-[13px] font-semibold text-[#192B21]">Custom colors</span>
+          </button>
         </div>
         <Grid>
           <ColorField
             label="Primary colour"
             value={api.colors.primary}
             checkWhiteText
-            swatches={TEACH_PRESETS.map((p) => ({ label: p.label, hex: p.primary }))}
+            swatches={presets.map((p) => ({ label: p.label, hex: p.primary }))}
             onChange={(hex) => {
               api.setColors({ ...api.colors, primary: hex });
               set({ preset: "custom" });
@@ -542,7 +560,7 @@ export function BrandSection({ api }: Props) {
           <ColorField
             label="Accent colour"
             value={api.colors.accent}
-            swatches={TEACH_PRESETS.map((p) => ({ label: p.label, hex: p.accent }))}
+            swatches={presets.map((p) => ({ label: p.label, hex: p.accent }))}
             onChange={(hex) => {
               api.setColors({ ...api.colors, accent: hex });
               set({ preset: "custom" });
@@ -557,8 +575,14 @@ export function BrandSection({ api }: Props) {
         }} label="Fine-tune navigation and text colours" description="Optional — by default both follow your primary colour." />
         {advanced ? (
           <Grid>
-            <ColorField label="Navigation colour" value={api.colors.navigation ?? api.colors.primary} onChange={(hex) => api.setColors({ ...api.colors, navigation: hex })} />
-            <ColorField label="Text colour" value={api.colors.text ?? api.colors.primary} onChange={(hex) => api.setColors({ ...api.colors, text: hex })} />
+            <ColorField label="Navigation colour" value={api.colors.navigation ?? api.colors.primary} onChange={(hex) => {
+              api.setColors({ ...api.colors, navigation: hex });
+              set({ preset: "custom" });
+            }} />
+            <ColorField label="Text colour" value={api.colors.text ?? api.colors.primary} onChange={(hex) => {
+              api.setColors({ ...api.colors, text: hex });
+              set({ preset: "custom" });
+            }} />
           </Grid>
         ) : null}
       </Card>

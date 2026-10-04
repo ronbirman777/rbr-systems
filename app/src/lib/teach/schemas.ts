@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { optionalFocalPointSchema } from "@/lib/media/focalPoint";
 import { socialLinksSchema } from "@/lib/modules/socialLinks";
+import { BRAND_PRESET_KEYS } from "@/lib/brand/presets";
 
 /**
  * Time to Teach content model.
@@ -117,7 +118,8 @@ export const teachProfileSchema = z.object({
 });
 export type TeachProfile = z.infer<typeof teachProfileSchema>;
 
-export const TEACH_PRESET_KEYS = [
+/** Pre-canonical preset keys. Kept so Spaces saved before the shared brand registry still parse. */
+export const TEACH_LEGACY_PRESET_KEYS = [
   "calm",
   "earth",
   "sage",
@@ -128,6 +130,7 @@ export const TEACH_PRESET_KEYS = [
   "sacred",
   "minimal",
 ] as const;
+export const TEACH_PRESET_KEYS = [...TEACH_LEGACY_PRESET_KEYS, ...BRAND_PRESET_KEYS] as const;
 export type TeachPresetKey = (typeof TEACH_PRESET_KEYS)[number];
 
 export const TEACH_TYPOGRAPHY = ["classic", "editorial", "serene", "modern"] as const;

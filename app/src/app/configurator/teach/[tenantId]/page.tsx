@@ -17,7 +17,7 @@ import {
   type TeachSettings,
 } from "@/lib/teach/schemas";
 import { enabledExploreFrom } from "@/lib/teach/guestData";
-import { DEFAULT_TEACH_PRESET } from "@/lib/teach/style";
+import { LEGACY_TEACH_FALLBACK } from "@/lib/teach/style";
 import { TeachStudio, type TeachStudioInitial } from "../teach-studio";
 
 export const dynamic = "force-dynamic";
@@ -92,8 +92,8 @@ export default async function TeachStudioPage({
     slug: tenant.slug ?? null,
     timezone: tenant.timezone ?? DEFAULT_TIMEZONE,
     colors: {
-      primary: brand?.custom_primary ?? DEFAULT_TEACH_PRESET.primary,
-      accent: brand?.custom_secondary ?? DEFAULT_TEACH_PRESET.accent,
+      primary: brand?.custom_primary ?? LEGACY_TEACH_FALLBACK.primary,
+      accent: brand?.custom_secondary ?? LEGACY_TEACH_FALLBACK.accent,
       navigation: brand?.custom_navigation ?? null,
       text: brand?.custom_text ?? null,
     },

@@ -1,52 +1,62 @@
-import { TEACH_PRESETS } from "@/lib/teach/style";
 import type { ProductTypeKey } from "./productFamilies";
 
 /**
- * Shared Brand preset architecture. A preset is a named starting point for
- * the colour roles every product's Brand step exposes. Presets are a UI
- * convenience only: applying one just populates the product's existing
- * colour fields (custom hex values), which stay fully editable - nothing
- * new is persisted and no schema is involved.
+ * The canonical InnerDweS Brand presets - the single source of truth for
+ * every product's Brand step (Time to Flow, Time to Teach and, later,
+ * Time to Heal). Each preset is the full five-role brand model:
  *
- * Roles a preset may set: primary + accent are universal; background and
- * text are optional because not every product lets the organizer change
- * them (Time to Flow's Guest App uses the fixed InnerDweS base palette for
- * background/text; Time to Teach has a background colour).
+ *   primary     buttons, highlights
+ *   accent      dividers, soft details
+ *   navigation  navigation / app background tint
+ *   text        body text base
+ *   surface     tint behind cards and pages
+ *
+ * Presets are a UI convenience only. Applying one writes those roles into the
+ * product's existing colour fields (custom hex values), which stay fully
+ * editable ("Custom colors"). Nothing new is persisted, no schema is involved,
+ * and merely changing a preset here never rewrites a saved Space - a Space
+ * only changes when its organizer explicitly clicks a preset.
  */
 export type BrandPreset = {
-  key: string;
+  key: BrandPresetKey;
   label: string;
   primary: string;
   accent: string;
-  background?: string;
-  text?: string;
+  navigation: string;
+  text: string;
+  surface: string;
 };
+
+export const BRAND_PRESET_KEYS = [
+  "softSky",
+  "sageLight",
+  "deepNavy",
+  "warmKhaki",
+  "earthBrown",
+  "dustyRose",
+  "terracotta",
+  "forest",
+] as const;
+export type BrandPresetKey = (typeof BRAND_PRESET_KEYS)[number];
 
 export type BrandPresetProduct = Extract<ProductTypeKey, "retreat" | "teach" | "client_hub">;
 
-const TEACH_BRAND_PRESETS: readonly BrandPreset[] = TEACH_PRESETS.map((p) => ({
-  key: p.key,
-  label: p.label,
-  primary: p.primary,
-  accent: p.accent,
-  background: p.background,
-}));
-
-/** Time to Flow starter looks. Colours only; the Guest App base palette is fixed. */
-const FLOW_BRAND_PRESETS: readonly BrandPreset[] = [
-  { key: "forest", label: "Forest", primary: "#2D4A3E", accent: "#6B9478" },
-  { key: "ocean", label: "Ocean", primary: "#3B6E8F", accent: "#C4785A" },
-  { key: "clay", label: "Clay", primary: "#C4785A", accent: "#4A6B3B" },
-  { key: "dusk", label: "Dusk", primary: "#5C4A6B", accent: "#C4A36A" },
-  { key: "ember", label: "Ember", primary: "#8F3B3B", accent: "#6B9478" },
-  { key: "stone", label: "Stone", primary: "#5C5249", accent: "#C4785A" },
+export const CANONICAL_BRAND_PRESETS: readonly BrandPreset[] = [
+  { key: "softSky", label: "Soft Sky", primary: "#5F7F8C", accent: "#B7CED6", navigation: "#EAF2F4", text: "#26343A", surface: "#F6FAFB" },
+  { key: "sageLight", label: "Sage Light", primary: "#6F846C", accent: "#BAC5B2", navigation: "#E7EDE3", text: "#283229", surface: "#F5F7F2" },
+  { key: "deepNavy", label: "Deep Navy", primary: "#2D4053", accent: "#91A8B8", navigation: "#E1E8ED", text: "#202B34", surface: "#F5F7F8" },
+  { key: "warmKhaki", label: "Warm Khaki", primary: "#7B735E", accent: "#C8B98E", navigation: "#EEE8D8", text: "#373329", surface: "#F8F4EB" },
+  { key: "earthBrown", label: "Earth Brown", primary: "#6A4B3A", accent: "#B58E72", navigation: "#E9DED5", text: "#34271F", surface: "#F7F1EC" },
+  { key: "dustyRose", label: "Dusty Rose", primary: "#8B6268", accent: "#D7B4B7", navigation: "#F0E3E4", text: "#3A2B2E", surface: "#FAF5F5" },
+  { key: "terracotta", label: "Terracotta", primary: "#A86750", accent: "#D6A28D", navigation: "#F1E1D8", text: "#3A2922", surface: "#FBF5F1" },
+  { key: "forest", label: "Forest", primary: "#192B21", accent: "#BAC5B2", navigation: "#EBE1D5", text: "#232926", surface: "#F3EFE7" },
 ];
 
+/** Every product resolves from the same registry. client_hub has no Brand UI yet. */
 const REGISTRY: Record<BrandPresetProduct, readonly BrandPreset[]> = {
-  retreat: FLOW_BRAND_PRESETS,
-  teach: TEACH_BRAND_PRESETS,
-  // Time to Heal reuses the Flow starter set until it has its own.
-  client_hub: FLOW_BRAND_PRESETS,
+  retreat: CANONICAL_BRAND_PRESETS,
+  teach: CANONICAL_BRAND_PRESETS,
+  client_hub: CANONICAL_BRAND_PRESETS,
 };
 
 export function getBrandPresets(product: BrandPresetProduct): readonly BrandPreset[] {
@@ -57,22 +67,39 @@ export function findBrandPreset(product: BrandPresetProduct, key: string): Brand
   return REGISTRY[product].find((p) => p.key === key) ?? null;
 }
 
-/** The preset whose primary + accent match the current colours, if any. */
-export function matchBrandPreset(
-  product: BrandPresetProduct,
-  current: { primary: string | null; accent: string | null },
-): BrandPreset | null {
-  if (!current.primary || !current.accent) return null;
-  const p = current.primary.toLowerCase();
-  const a = current.accent.toLowerCase();
-  return REGISTRY[product].find((x) => x.primary.toLowerCase() === p && x.accent.toLowerCase() === a) ?? null;
-}
+const same = (a: string | null | undefined, b: string) => (a ?? "").toLowerCase() === b.toLowerCase();
 
 /**
- * The colour fields a preset click may write: primary and accent only.
- * Navigation / text (and anything else custom) are never touched, so
- * applying a preset cannot silently overwrite another saved colour.
+ * The preset whose roles all equal the current colours, if any. Strict: a
+ * Space that only shares primary + accent (navigation/text derived or custom)
+ * is "Custom colors", not the preset. `surface` is compared only when the
+ * product persists one (Teach); Flow's background is fixed.
  */
-export function presetColorUpdate(preset: BrandPreset): { primary: string; accent: string } {
-  return { primary: preset.primary, accent: preset.accent };
+export function matchBrandPreset(
+  product: BrandPresetProduct,
+  current: { primary: string | null; accent: string | null; navigation: string | null; text: string | null; surface?: string | null },
+): BrandPreset | null {
+  return (
+    REGISTRY[product].find(
+      (x) =>
+        same(current.primary, x.primary) &&
+        same(current.accent, x.accent) &&
+        same(current.navigation, x.navigation) &&
+        same(current.text, x.text) &&
+        (current.surface === undefined || same(current.surface, x.surface)),
+    ) ?? null
+  );
+}
+
+export type BrandPresetColors = { primary: string; accent: string; navigation: string; text: string; surface?: string };
+
+/**
+ * The colour fields a preset click writes - the preset's full model for the
+ * roles that product persists. Time to Teach also persists the surface tint
+ * (its background); Time to Flow keeps its fixed Guest App base, so no
+ * surface is written there.
+ */
+export function presetColorUpdate(product: BrandPresetProduct, preset: BrandPreset): BrandPresetColors {
+  const base = { primary: preset.primary, accent: preset.accent, navigation: preset.navigation, text: preset.text };
+  return product === "teach" ? { ...base, surface: preset.surface } : base;
 }

@@ -1,5 +1,6 @@
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import type { TeachPresetKey, TeachStyle } from "./schemas";
+import { CANONICAL_BRAND_PRESETS, findBrandPreset, type BrandPreset } from "@/lib/brand/presets";
+import type { TEACH_LEGACY_PRESET_KEYS, TeachStyle } from "./schemas";
 
 /**
  * Time to Teach's controlled visual layer. Colours still flow through the
@@ -9,9 +10,15 @@ import type { TeachPresetKey, TeachStyle } from "./schemas";
  * readable.
  */
 
-export type TeachPreset = { key: TeachPresetKey; label: string; primary: string; accent: string; background: string };
+/**
+ * LEGACY Teach presets, kept ONLY so Spaces saved before the shared brand
+ * registry (lib/brand/presets.ts) keep resolving their old preset key. They
+ * are not offered in any UI. Saved colours live in brand_configs, so old
+ * Spaces render exactly as saved regardless of this table.
+ */
+export type TeachLegacyPreset = { key: (typeof TEACH_LEGACY_PRESET_KEYS)[number]; label: string; primary: string; accent: string; background: string };
 
-export const TEACH_PRESETS: readonly TeachPreset[] = [
+export const TEACH_LEGACY_PRESETS: readonly TeachLegacyPreset[] = [
   { key: "calm", label: "Calm", primary: "#5B7A6E", accent: "#C9A98A", background: "#F6F2EA" },
   { key: "earth", label: "Earth", primary: "#7A4E34", accent: "#C98B5E", background: "#F3ECE2" },
   { key: "sage", label: "Sage", primary: "#52745A", accent: "#C9B48C", background: "#F4F1E8" },
@@ -23,11 +30,21 @@ export const TEACH_PRESETS: readonly TeachPreset[] = [
   { key: "minimal", label: "Minimal", primary: "#2A2A28", accent: "#9A958C", background: "#FAFAF7" },
 ];
 
-export function presetByKey(key: string): TeachPreset | null {
-  return TEACH_PRESETS.find((p) => p.key === key) ?? null;
+/** Resolve a persisted preset key: canonical presets first, then the legacy keys of older Spaces. */
+export function presetByKey(key: string): { key: string; label: string; primary: string; accent: string; background: string } | null {
+  const canonical = findBrandPreset("teach", key);
+  if (canonical) return { key: canonical.key, label: canonical.label, primary: canonical.primary, accent: canonical.accent, background: canonical.surface };
+  return TEACH_LEGACY_PRESETS.find((p) => p.key === key) ?? null;
 }
 
-export const DEFAULT_TEACH_PRESET = TEACH_PRESETS[0];
+/**
+ * Colours a brand-new Teach Space starts with (full canonical model). Existing Spaces are never touched.
+ * Forest: its primary keeps white button text at WCAG AA (several lighter presets do not).
+ */
+export const DEFAULT_TEACH_PRESET: BrandPreset = CANONICAL_BRAND_PRESETS.find((p) => p.key === "forest")!;
+
+/** What the Studio shows for a Space that has no saved colours at all (pre-registry default); never written back. */
+export const LEGACY_TEACH_FALLBACK: TeachLegacyPreset = TEACH_LEGACY_PRESETS[0];
 
 export const TYPOGRAPHY_LABEL = { classic: "Classic", editorial: "Editorial", serene: "Serene", modern: "Modern" } as const;
 export const CORNERS_LABEL = { soft: "Soft", rounded: "Rounded", minimal: "Minimal" } as const;
