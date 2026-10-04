@@ -22,3 +22,17 @@ export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:30
  * at cutover; until then it falls back to SITE_URL so nothing breaks
  * before that env var exists. */
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || SITE_URL;
+
+/**
+ * The origin guests are actually sent to - the public Guest App address
+ * that goes into a QR code, a Copy Link, a WhatsApp share, og:url and the
+ * canonical tag. Separate from APP_URL (the Studio/organizer origin)
+ * because a shared link must be the public one: innerdwes.com/s/<slug>,
+ * not app.innerdwes.com/s/<slug>. Both hosts serve /s/[slug] identically,
+ * so this is a presentation choice, not a routing one.
+ *
+ * Set NEXT_PUBLIC_GUEST_URL to pin it explicitly. Without it this falls
+ * back to SITE_URL (the marketing/canonical apex), which is what the
+ * domain cutover already points at innerdwes.com.
+ */
+export const GUEST_PUBLIC_ORIGIN = process.env.NEXT_PUBLIC_GUEST_URL || SITE_URL;

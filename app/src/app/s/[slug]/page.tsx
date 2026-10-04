@@ -1,11 +1,12 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { createPublicClient } from "@/lib/supabase/public";
 import type { PublishedSpaceRow } from "@/components/guest/published-space-screen";
 import { renderPublishedSpace } from "@/lib/spaceTypes/guestRenderers";
 import { guestAccessCopy } from "@/lib/spaceTypes/guestAccessCopy";
-import { resolveGuestAccess } from "@/lib/guestAccess/effectiveAccess";
 import { GuestAccessScreen } from "@/components/guest/guest-access-screen";
 import { extractPublishedGuestIdentity } from "@/lib/guestAccess/publishedIdentity";
+import { socialSpaceBySlug } from "@/lib/share/publishedSocialSpace";
+import { spaceMetadata } from "@/lib/share/socialMetadata";
 
 /**
  * The slug-addressed counterpart to /g/[tenantId] - same unauthenticated,
@@ -31,24 +32,29 @@ import { extractPublishedGuestIdentity } from "@/lib/guestAccess/publishedIdenti
  */
 export const dynamic = "force-dynamic";
 
+/**
+ * Link-preview metadata for the public Guest App address. Built from the
+ * same per-request read the page body uses (socialSpaceBySlug is memoised
+ * with React cache), so adding social metadata costs no extra query.
+ */
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const loaded = await socialSpaceBySlug(slug);
+  return spaceMetadata(loaded, `/s/${slug}`);
+}
+
 export default async function GuestSpaceBySlugPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const supabase = createPublicClient();
+  const loaded = await socialSpaceBySlug(slug);
 
-  const { data: space } = await supabase
-    .from("published_spaces")
-    .select("tenant_id, product_type, name, theme, timezone, enabled_modules, modules")
-    .eq("slug", slug)
-    .maybeSingle<PublishedSpaceRow & { tenant_id: string; product_type: string }>();
-
-  if (!space) notFound();
-  const access = await resolveGuestAccess(space.tenant_id);
-  if (access === "unavailable") notFound();
-  if (access === "code-required") {
+  if (!loaded) notFound();
+  const space = loaded.row as unknown as PublishedSpaceRow & { tenant_id: string; product_type: string };
+  if (loaded.access === "unavailable") notFound();
+  if (loaded.access === "code-required") {
     const identity = extractPublishedGuestIdentity(space);
     return <GuestAccessScreen tenantId={space.tenant_id} {...identity} copy={guestAccessCopy(space.product_type)} />;
   }

@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { createPublicClient } from "@/lib/supabase/public";
+import { socialSpaceByTenantId } from "@/lib/share/publishedSocialSpace";
+import { spaceMetadata } from "@/lib/share/socialMetadata";
 import type { PublishedSpaceRow } from "@/components/guest/published-space-screen";
 import { renderPublishedSpace } from "@/lib/spaceTypes/guestRenderers";
 import { guestAccessCopy } from "@/lib/spaceTypes/guestAccessCopy";
@@ -32,6 +35,19 @@ import { extractPublishedGuestIdentity } from "@/lib/guestAccess/publishedIdenti
  * Next's route cache the way it did before.
  */
 export const dynamic = "force-dynamic";
+
+/**
+ * Link-preview metadata for the id-addressed address. A Space that has
+ * reserved a slug canonicalises to /s/<slug> - that is the address worth
+ * sharing, and the one that owns the generated preview image - so this
+ * route carries the title/description and points at it rather than
+ * growing an image route of its own.
+ */
+export async function generateMetadata({ params }: { params: Promise<{ tenantId: string }> }): Promise<Metadata> {
+  const { tenantId } = await params;
+  const loaded = await socialSpaceByTenantId(tenantId);
+  return spaceMetadata(loaded, loaded?.slug ? `/s/${loaded.slug}` : `/g/${tenantId}`);
+}
 
 export default async function GuestSpacePage({
   params,

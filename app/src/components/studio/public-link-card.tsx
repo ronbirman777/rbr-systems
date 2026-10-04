@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { copyTextToClipboard, displayPublicUrl } from "@/lib/studio/publicLink";
+import { copyTextToClipboard, displayPublicUrl, shareOnWhatsAppUrl } from "@/lib/studio/publicLink";
 
 /**
  * Public link row shared by every Studio's Publish & Share surface: the
@@ -15,13 +15,19 @@ export function PublicLinkCard({
   published,
   title = "Guest App link",
   openLabel = "Open Guest App",
+  shareName,
+  shareRole = null,
 }: {
   url: string;
   openHref: string;
   published: boolean;
   title?: string;
   openLabel?: string;
+  /** Space/teacher name used in the WhatsApp share text. Omit to hide that action. */
+  shareName?: string | null;
+  shareRole?: string | null;
 }) {
+  const whatsapp = shareName ? shareOnWhatsAppUrl(shareName, shareRole, url) : null;
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
@@ -50,6 +56,18 @@ export function PublicLinkCard({
           >
             {copied ? "Copied" : "Copy link"}
           </button>
+          {published && whatsapp ? (
+            <a
+              href={whatsapp}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center min-h-10 px-4 rounded-full border border-[#192B21]/20 text-[12.5px] font-semibold text-[#192B21]"
+              data-testid="share-whatsapp"
+            >
+              Share on WhatsApp
+              <span className="sr-only"> (opens in a new tab)</span>
+            </a>
+          ) : null}
           {published ? (
             <a
               href={openHref}

@@ -15,6 +15,8 @@ import { checkSlugAvailability, reserveSlug } from "@/app/configurator/retreat/a
 import { publishTeachSpace, saveTeachDirectoryListing } from "./actions";
 import { PublicLinkCard } from "@/components/studio/public-link-card";
 import { QrCodeCard } from "@/components/studio/qr-code-card";
+import { ShareCardPanel } from "@/components/studio/share-card-panel";
+import { ClassWhatsAppQr } from "@/components/studio/class-whatsapp-qr";
 import { publicSpaceUrl, guestAppPath } from "@/lib/studio/publicLink";
 import {
   AUDIO_ALLOWED_TYPES,
@@ -1148,6 +1150,7 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
             previewValues={classTemplateValues(api.name || "Your name", item.title || "Class", m)}
           />
         ) : null}
+        {reg.method === "whatsapp" && cta ? <ClassWhatsAppQr tenantId={api.tenantId} classId={item.id} /> : null}
         {reg.method ? (
           cta ? (
             <p className="text-[12px] text-[#3F6A4C]">✓ Guests will see “{cta.label}”.</p>
@@ -1863,8 +1866,15 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
         <Hint>{api.publishedAt ? `Last published ${api.publishedAt.slice(0, 16).replace("T", " ")} UTC` : "Not published yet."}</Hint>
       </Card>
       <Card title="Share your Guest App" description="Send guests this link or let them scan the QR code. It never contains an access token - it is simply your public Guest App address.">
-        <PublicLinkCard url={publicSpaceUrl(api.tenantId, api.slug)} openHref={guestAppPath(api.tenantId, api.slug)} published={Boolean(api.publishedAt)} />
+        <PublicLinkCard
+          url={publicSpaceUrl(api.tenantId, api.slug)}
+          openHref={guestAppPath(api.tenantId, api.slug)}
+          published={Boolean(api.publishedAt)}
+          shareName={api.name}
+          shareRole={api.settings.teachProfile.teacherType}
+        />
         <QrCodeCard tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} />
+        <ShareCardPanel tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} />
       </Card>
       <DirectoryOptInCard tenantId={api.tenantId} initialListed={api.directoryListed} />
       <Card title="Draft preview" description="The real Guest App with your current draft. Mobile layout below; the live app switches to a two-column layout on wide screens.">
