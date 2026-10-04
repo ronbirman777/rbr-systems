@@ -69,6 +69,21 @@ const DIAL_CODES = {
   ZA: "+27", ZM: "+260", ZW: "+263",
 };
 
+/**
+ * Supported exceptions: entries that are NOT officially assigned ISO
+ * 3166-1 alpha-2 codes but that the product deliberately supports.
+ *
+ * XK is the user-assigned code the EU, IMF, SWIFT and most platforms use
+ * for Kosovo. CLDR does carry a name for it, so the display name is
+ * generated like every other entry - but ISO 3166-1 has never officially
+ * assigned XK, which is why it lives here instead of in DIAL_CODES. The
+ * ISO set therefore stays exactly the ISO set, and nothing can describe
+ * the dataset as a 250-country ISO list.
+ *
+ * `name` below is only a fallback for a runtime whose CLDR lacks XK.
+ */
+const SUPPORTED_EXCEPTIONS = [{ code: "XK", name: "Kosovo", dialCode: "+383" }];
+
 const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
 
 const problems = [];
@@ -78,14 +93,32 @@ for (const [code, dial] of Object.entries(DIAL_CODES)) {
   const name = displayNames.of(code);
   if (!name || name === code) problems.push(`${code}: not recognised by CLDR`);
 }
+for (const entry of SUPPORTED_EXCEPTIONS) {
+  if (!/^[A-Z]{2}$/.test(entry.code)) problems.push(`${entry.code}: not an alpha-2 code`);
+  if (!/^\+\d{1,4}$/.test(entry.dialCode)) problems.push(`${entry.code}: malformed calling code`);
+  if (DIAL_CODES[entry.code]) problems.push(`${entry.code}: is an ISO code, not an exception`);
+}
+
 if (problems.length) {
   console.error("Country data is invalid:\n  " + problems.join("\n  "));
   process.exit(1);
 }
 
-const rows = Object.keys(DIAL_CODES)
-  .map((code) => ({ code, name: displayNames.of(code), dialCode: DIAL_CODES[code] }))
-  .sort((a, b) => a.name.localeCompare(b.name, "en"));
+const isoRows = Object.keys(DIAL_CODES).map((code) => ({
+  code,
+  name: displayNames.of(code),
+  dialCode: DIAL_CODES[code],
+  iso: true,
+}));
+const rows = [
+  ...isoRows,
+  // Prefer CLDR's name when this runtime has one, so an exception reads
+  // exactly like every other entry; fall back to the literal above.
+  ...SUPPORTED_EXCEPTIONS.map((e) => {
+    const cldr = displayNames.of(e.code);
+    return { ...e, name: cldr && cldr !== e.code ? cldr : e.name, iso: false };
+  }),
+].sort((a, b) => a.name.localeCompare(b.name, "en"));
 
 const file = `/**
  * ISO 3166-1 alpha-2 country/territory data - the single dataset every
@@ -103,11 +136,15 @@ const file = `/**
  * source; \`code\` is what gets stored, never the name, so translating a
  * label never migrates data.
  *
- * Coverage: all ${rows.length} officially assigned ISO 3166-1 alpha-2 codes.
+ * Coverage: ${isoRows.length} officially assigned ISO 3166-1 alpha-2 entries,
+ * plus ${SUPPORTED_EXCEPTIONS.length} explicitly documented supported exception
+ * (Kosovo, XK). XK is user-assigned, NOT ISO-assigned - \`isoAssigned\`
+ * marks the difference so no caller can mistake the total for an ISO count.
  * Deliberately excluded: CLDR non-ISO groupings (EU, EZ, UN, QO, XA, XB,
  * ZZ), exceptional reservations (AC, CP, DG, EA, IC, TA, UK) and withdrawn
  * historical codes (AN, BU, CS, DD, SU, YU, ZR and similar). XK (Kosovo)
- * is excluded too: it is user-assigned, not ISO-assigned.
+ * is NOT excluded: it is carried as a supported exception, flagged with
+ * isoAssigned: false.
  *
  * Dial codes are ITU-T E.164 COUNTRY calling codes only.
  */
@@ -119,11 +156,13 @@ export type Country = {
   /** ITU-T E.164 country calling code, "+" prefixed. Not unique - every
    * NANP territory shares "+1" - so never use it as a country identifier. */
   dialCode: string;
+  /** False only for a documented supported exception (today: Kosovo). */
+  isoAssigned: boolean;
 };
 
 /** Sorted by English name, which is the order the picker renders. */
 export const COUNTRIES: readonly Country[] = [
-${rows.map((r) => `  { code: ${JSON.stringify(r.code)}, name: ${JSON.stringify(r.name)}, dialCode: ${JSON.stringify(r.dialCode)} },`).join("\n")}
+${rows.map((r) => `  { code: ${JSON.stringify(r.code)}, name: ${JSON.stringify(r.name)}, dialCode: ${JSON.stringify(r.dialCode)}, isoAssigned: ${r.iso} },`).join("\n")}
 ] as const;
 `;
 
@@ -133,8 +172,8 @@ if (process.argv.includes("--check")) {
     console.error("src/lib/countries/data.ts is stale - run: node scripts/generate-countries.mjs");
     process.exit(1);
   }
-  console.log(`country data up to date (${rows.length} entries)`);
+  console.log(`country data up to date (${isoRows.length} ISO + ${SUPPORTED_EXCEPTIONS.length} exception)`);
 } else {
   writeFileSync(OUT, file);
-  console.log(`wrote ${rows.length} countries to ${OUT}`);
+  console.log(`wrote ${rows.length} entries (${isoRows.length} ISO + ${SUPPORTED_EXCEPTIONS.length} supported exception) to ${OUT}`);
 }

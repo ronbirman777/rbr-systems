@@ -71,6 +71,15 @@ describe("international input identifies its own country", () => {
     expect(parsePhone("+35385123456")!.country).toBe("IE");
   });
 
+  it("treats Kosovo's +383 as an ordinary calling code", () => {
+    // The ISO-assignment caveat is a dataset concern; phone handling must
+    // not special-case it.
+    expect(toE164("44123456", { defaultCountry: "XK" })).toBe("+38344123456");
+    const parsed = parsePhone("+383 44 123 456")!;
+    expect(parsed.callingCode).toBe("383");
+    expect(parsed.country).toBe("XK");
+  });
+
   it("rejects an unassigned calling code", () => {
     expect(toE164("+999123456789")).toBeNull();
   });

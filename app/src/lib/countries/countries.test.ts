@@ -3,8 +3,26 @@ import { COUNTRIES, findCountry, foldForSearch, isSupportedCountry, normalizeCou
 import { parseSpaceSettings, spaceSettingsSchema, defaultSpaceSettings } from "@/lib/spaceSettings";
 
 describe("the shared country dataset", () => {
-  it("covers the officially assigned ISO 3166-1 alpha-2 set", () => {
-    expect(COUNTRIES).toHaveLength(249);
+  it("is 249 officially assigned ISO entries plus one documented exception", () => {
+    // Deliberately asserted as two numbers, never as "250 ISO countries":
+    // Kosovo is a supported exception, not an ISO assignment.
+    const iso = COUNTRIES.filter((c) => c.isoAssigned);
+    const exceptions = COUNTRIES.filter((c) => !c.isoAssigned);
+    expect(iso).toHaveLength(249);
+    expect(exceptions.map((c) => c.code)).toEqual(["XK"]);
+    expect(COUNTRIES).toHaveLength(250);
+  });
+
+  it("carries Kosovo as a supported, explicitly non-ISO exception", () => {
+    // XK is user-assigned (EU/IMF/SWIFT use it); ISO 3166-1 has never
+    // assigned it. It is selectable and dialable, but flagged.
+    const xk = findCountry("XK")!;
+    expect(xk).toMatchObject({ code: "XK", name: "Kosovo", dialCode: "+383", isoAssigned: false });
+    expect(isSupportedCountry("XK")).toBe(true);
+  });
+
+  it("flags every other entry as ISO assigned", () => {
+    expect(COUNTRIES.filter((c) => !c.isoAssigned && c.code !== "XK")).toEqual([]);
   });
 
   it("has no synthetic or placeholder entries", () => {
@@ -13,6 +31,8 @@ describe("the shared country dataset", () => {
     expect(COUNTRIES.some((c) => c.code === "XX")).toBe(false);
     expect(isSupportedCountry("XX")).toBe(false);
     expect(COUNTRIES.some((c) => /other|not listed|unknown/i.test(c.name))).toBe(false);
+    // Kosovo is the ONLY non-ISO entry; no other synthetic value may creep in.
+    expect(COUNTRIES.filter((c) => !c.isoAssigned)).toHaveLength(1);
   });
 
   it("is well formed and unique by code", () => {
@@ -74,6 +94,20 @@ describe("country search", () => {
     expect(searchCountries("IL")[0].code).toBe("IL");
     expect(searchCountries("972")[0].code).toBe("IL");
     expect(searchCountries("+972")[0].code).toBe("IL");
+  });
+
+  it("finds Kosovo by name and by its +383 calling code", () => {
+    expect(searchCountries("kosovo")[0].code).toBe("XK");
+    expect(searchCountries("383")[0].code).toBe("XK");
+    expect(searchCountries("+383")[0].code).toBe("XK");
+  });
+
+  it("sorts Kosovo alphabetically among the ISO entries", () => {
+    const names = COUNTRIES.map((c) => c.name);
+    const i = names.indexOf("Kosovo");
+    expect(i).toBeGreaterThan(0);
+    expect(names[i - 1].localeCompare("Kosovo", "en")).toBeLessThan(0);
+    expect(names[i + 1].localeCompare("Kosovo", "en")).toBeGreaterThan(0);
   });
 
   it("is diacritic-insensitive, because keyboards usually are", () => {
