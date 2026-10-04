@@ -4,6 +4,7 @@ import {
   PREVIEW_COOKIE_NAME,
   PREVIEW_GATE_PATH,
   isPreviewGateEnabled,
+  isPublicGuestPath,
 } from "@/lib/preview-gate/config";
 import { sha256Hex, timingSafeEqual } from "@/lib/preview-gate/hash";
 import { classifyHostname, PRODUCTION_APEX } from "@/lib/hostname";
@@ -138,6 +139,13 @@ async function checkPreviewGate(
   const { search } = request.nextUrl;
   if (effectivePathname === PREVIEW_GATE_PATH) return null; // the gate page itself - never gate it, or /preview-access would redirect to itself
   if (PUBLIC_MARKETING_PATHS.has(effectivePathname)) return null; // empty as of Task 011A - see the comment on that constant; kept as a named, obvious extension point rather than removed outright
+  // A published Guest App is a public address its owner shares with
+  // students; it cannot sit behind an InnerDweS staff password. Evaluated
+  // on the EFFECTIVE path, so a guest subdomain whose root was just
+  // rewritten to /s/<slug> is exempt for exactly the same reason the
+  // direct /s/<slug> URL is - while app.innerdwes.com's root, rewritten
+  // to /space, is not. See isPublicGuestPath for the full boundary.
+  if (isPublicGuestPath(effectivePathname)) return null;
   // Task 011A: the previous opengraph-image exemption existed purely so
   // social crawlers could render a link preview for shared marketing
   // links - a marketing convenience, not a technical requirement for the
