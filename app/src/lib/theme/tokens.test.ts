@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { brandConfigSchema, BRAND_COLOR_PRESETS } from "./tokens";
+import { brandConfigSchema } from "./tokens";
+import { CANONICAL_BRAND_PRESETS } from "@/lib/brand/presets";
 
 const baseBrand = {
   name: "Test Retreat",
@@ -97,29 +98,17 @@ describe("brandConfigSchema - logoRef", () => {
   });
 });
 
-describe("BRAND_COLOR_PRESETS", () => {
-  it("has exactly the 8 approved presets", () => {
-    expect(BRAND_COLOR_PRESETS.map((c) => c.label)).toEqual(["Forest", "Sage", "Clay", "Ocean", "Dusk", "Ember", "Stone", "Moss"]);
-  });
-
-  it("every preset hex is a valid 6-digit hex accepted by the schema", () => {
-    for (const preset of BRAND_COLOR_PRESETS) {
-      const result = brandConfigSchema.safeParse({ ...baseBrand, customPrimary: preset.hex, customSecondary: preset.hex });
-      expect(result.success).toBe(true);
+describe("canonical brand presets vs the brand schema", () => {
+  it("every canonical colour role is a valid 6-digit hex accepted by the schema", () => {
+    for (const preset of CANONICAL_BRAND_PRESETS) {
+      const result = brandConfigSchema.safeParse({
+        ...baseBrand,
+        customPrimary: preset.primary,
+        customSecondary: preset.accent,
+        customNavigation: preset.navigation,
+        customText: preset.text,
+      });
+      expect(result.success, preset.label).toBe(true);
     }
-  });
-
-  it("matches the exact approved hex values", () => {
-    const byLabel = Object.fromEntries(BRAND_COLOR_PRESETS.map((c) => [c.label, c.hex]));
-    expect(byLabel).toEqual({
-      Forest: "#2D4A3E",
-      Sage: "#6B9478",
-      Clay: "#C4785A",
-      Ocean: "#3B6E8F",
-      Dusk: "#5C4A6B",
-      Ember: "#8F3B3B",
-      Stone: "#5C5249",
-      Moss: "#4A6B3B",
-    });
   });
 });

@@ -44,24 +44,6 @@ export const ATMOSPHERES = {
 export type AtmosphereKey = keyof typeof ATMOSPHERES;
 
 /**
- * Product Completion phase - the 8 curated presets offered for BOTH
- * Primary and Accent Color (same list, exactly as the Figma Make
- * BrandScreen source presents them - colorPresets). Purely a UI
- * convenience; either color also accepts any custom hex via
- * customPrimary/customSecondary, which these presets simply populate.
- */
-export const BRAND_COLOR_PRESETS = [
-  { label: "Forest", hex: "#2D4A3E" },
-  { label: "Sage", hex: "#6B9478" },
-  { label: "Clay", hex: "#C4785A" },
-  { label: "Ocean", hex: "#3B6E8F" },
-  { label: "Dusk", hex: "#5C4A6B" },
-  { label: "Ember", hex: "#8F3B3B" },
-  { label: "Stone", hex: "#5C5249" },
-  { label: "Moss", hex: "#4A6B3B" },
-] as const;
-
-/**
  * Time to Flow Visual Fidelity Phase 1 - the approved Guest App base
  * design system, extracted exactly from the Figma Make source of truth
  * (src/index.css's `@theme` block in the audited export). These are

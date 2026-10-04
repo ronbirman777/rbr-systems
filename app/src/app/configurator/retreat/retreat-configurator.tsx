@@ -25,7 +25,7 @@ import { useStudioDirtyState } from "./useStudioDirtyState";
 import { STUDIO_MODULE_SECTIONS, type StudioModuleSection, type StudioSectionEditorProps } from "./studioSection";
 import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
 import { BrandImageField } from "./brand-image-field";
-import { PALETTES, GUEST_BASE_PALETTE, BRAND_COLOR_PRESETS, type AtmosphereKey, type PaletteKey } from "@/lib/theme/tokens";
+import { PALETTES, GUEST_BASE_PALETTE, type AtmosphereKey, type PaletteKey } from "@/lib/theme/tokens";
 import { safeTextColor, meetsAA } from "@/lib/theme/contrast";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, StudioIntro, StudioEyebrowContext } from "./studio-ui";
 import { StudioTopBar } from "@/components/studio/studio-top-bar";
@@ -177,14 +177,18 @@ const STEP_LABELS: Record<Exclude<StepKey, "identity" | "brand" | "modules" | "p
 
 const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
+/** One swatch per canonical preset for a colour role. */
+function swatchesFor(role: "primary" | "accent" | "navigation" | "text") {
+  return getBrandPresets("retreat").map((p) => ({ label: p.label, hex: p[role] }));
+}
+
 /**
- * Product Completion phase - shared Primary/Accent color picker: the 8
- * curated presets (BRAND_COLOR_PRESETS) plus a free custom-hex input,
- * ported from the Figma Make source's BrandScreen (colorPresets +
- * "Custom hex" input). Both Primary and Accent render this exact same
- * control - only the bound value/onChange differ.
+ * Shared colour picker for every Brand role: swatches taken from the
+ * canonical presets (lib/brand/presets.ts - the one registry, no Flow-only
+ * palette) plus a free custom-hex input. Only the bound role, value and
+ * swatch list differ.
  */
-function ColorPicker({ label, hint, value, onChange }: { label: string; hint: string; value: string; onChange: (hex: string) => void }) {
+function ColorPicker({ label, hint, value, swatches, onChange }: { label: string; hint: string; value: string; swatches: readonly { label: string; hex: string }[]; onChange: (hex: string) => void }) {
   const [draft, setDraft] = useState(value);
   const [showError, setShowError] = useState(false);
   // Task 015 UX fix: typing "2D4A3E" (no leading #) is a common, obviously
@@ -217,10 +221,12 @@ function ColorPicker({ label, hint, value, onChange }: { label: string; hint: st
         {hint}
       </p>
       <div className="grid grid-cols-4 gap-2 mb-3">
-        {BRAND_COLOR_PRESETS.map((c) => (
+        {swatches.map((c) => (
           <button
-            key={c.hex}
+            key={`${c.label}-${c.hex}`}
             type="button"
+            title={c.label}
+            aria-label={`${c.label} ${c.hex}`}
             onClick={() => commit(c.hex)}
             className="flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all"
             style={{ background: value.toLowerCase() === c.hex.toLowerCase() ? `${GUEST_BASE_PALETTE.forest}14` : "transparent" }}
@@ -1938,6 +1944,7 @@ export function RetreatConfigurator({
             <ColorPicker
               key={`primary-${presetNonce}`}
               label="Primary Color"
+              swatches={swatchesFor("primary")}
               hint="Used for key actions, navigation highlights and immersive moments."
               value={effectivePrimary}
               onChange={(hex) => {
@@ -1948,6 +1955,7 @@ export function RetreatConfigurator({
             <ColorPicker
               key={`accent-${presetNonce}`}
               label="Accent Color"
+              swatches={swatchesFor("accent")}
               hint="Used for live indicators, tags and warm highlights."
               value={effectiveSecondary}
               onChange={(hex) => {
@@ -1958,6 +1966,7 @@ export function RetreatConfigurator({
             <ColorPicker
               key={`navigation-${presetNonce}`}
               label="Navigation / Tabs Color"
+              swatches={swatchesFor("navigation")}
               hint="Used for the bottom navigation's active tab, and other tab-like selections (e.g. Schedule's day picker)."
               value={effectiveNavigation}
               onChange={(hex) => {
@@ -1968,6 +1977,7 @@ export function RetreatConfigurator({
             <ColorPicker
               key={`text-${presetNonce}`}
               label="App Text Color"
+              swatches={swatchesFor("text")}
               hint="Used for headings, session titles and quote text."
               value={effectiveText}
               onChange={(hex) => {

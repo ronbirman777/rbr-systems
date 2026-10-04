@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { BRAND_PRESET_KEYS, CANONICAL_BRAND_PRESETS, findBrandPreset, getBrandPresets, matchBrandPreset, presetColorUpdate } from "./presets";
 import { IMAGE_SHAPES, imageShapeAspect, imageShapeRadius, isImageShape, shapeFromAtmosphereTreatment } from "./imageShape";
@@ -56,6 +58,17 @@ describe("canonical brand presets", () => {
   it("exposes no Heal-specific preset or UI hook", () => {
     expect(Object.keys(getBrandPresets("client_hub")[0]).sort()).toEqual(["accent", "key", "label", "navigation", "primary", "surface", "text"]);
     expect(CANONICAL_BRAND_PRESETS).toBe(getBrandPresets("client_hub"));
+  });
+});
+
+describe("no alternate Flow palette", () => {
+  it("Flow's configurator and the theme tokens carry no separate preset/swatch list", () => {
+    const flow = readFileSync(join(__dirname, "..", "..", "app", "configurator", "retreat", "retreat-configurator.tsx"), "utf8");
+    const tokens = readFileSync(join(__dirname, "..", "theme", "tokens.ts"), "utf8");
+    expect(flow).not.toContain("BRAND_COLOR_PRESETS");
+    expect(tokens).not.toContain("BRAND_COLOR_PRESETS");
+    for (const old of ['"Ocean"', '"Clay"', '"Dusk"', '"Ember"', '"Stone"']) expect(flow).not.toContain(old);
+    expect(flow).toContain('getBrandPresets("retreat")');
   });
 });
 
