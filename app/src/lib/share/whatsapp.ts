@@ -1,3 +1,5 @@
+import { whatsappDigits } from "@/lib/phone";
+
 /**
  * Product-agnostic WhatsApp link building, shared by every Space type
  * (Teach today; Flow/Heal as they adopt it). Time to Teach's own
@@ -10,14 +12,16 @@
  * why a prefilled message is safe to build on the guest's behalf.
  */
 
-/** Digits only, international format without "+", 8-15 digits (E.164). */
+/**
+ * Digits only, international format without "+", 8-15 digits.
+ *
+ * Parsing now lives in lib/phone (one definition for the whole codebase);
+ * this keeps the name every call site already imports. The accepted range
+ * is unchanged on purpose - Teach derives Contact-module visibility from
+ * whether this returns a value, so narrowing it would hide live modules.
+ */
 export function normalizeWhatsAppNumber(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  let digits = raw.replace(/[^\d+]/g, "");
-  if (digits.startsWith("+")) digits = digits.slice(1);
-  if (digits.startsWith("00")) digits = digits.slice(2);
-  digits = digits.replace(/\D/g, "");
-  return /^\d{8,15}$/.test(digits) ? digits : null;
+  return whatsappDigits(raw);
 }
 
 /**

@@ -6,6 +6,8 @@ import type { BrandConfig } from "@/lib/theme/tokens";
 import type { ArrivalInfo } from "@/lib/modules/arrival";
 import { PinIcon } from "./guest/icons";
 import type { CSSProperties } from "react";
+import { telUrl } from "@/lib/phone";
+import { whatsappUrl } from "@/lib/share/whatsapp";
 
 export type ArrivalScreenProps = {
   brand: BrandConfig;
@@ -32,7 +34,12 @@ const ACCORDION_SECTIONS: { key: keyof ArrivalInfo; label: string }[] = [
 export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
   const vars = deriveThemeVars(brand) as CSSProperties;
   const [open, setOpen] = useState<string | null>(null);
-  const hasContact = info.contactPhone || info.contactWhatsapp;
+  // Links go through the shared builders (lib/phone, lib/share/whatsapp)
+  // rather than being assembled here: a stored value that cannot produce
+  // a working link now renders no button at all, instead of a dead one.
+  const callHref = telUrl(info.contactPhone);
+  const whatsappHref = whatsappUrl(info.contactWhatsapp);
+  const hasContact = callHref || whatsappHref;
   const hasStats = info.checkInTime || info.checkOutTime;
   const hasAddress = info.address || info.mapUrl;
   const visibleSections = ACCORDION_SECTIONS.filter((s) => info[s.key]);
@@ -136,9 +143,9 @@ export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
               </p>
             )}
             <div className="flex gap-2">
-              {info.contactPhone && (
+              {callHref && (
                 <a
-                  href={`tel:${info.contactPhone}`}
+                  href={callHref}
                   className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-2.5"
                   style={{ background: "var(--rbr-parchment-deep)" }}
                 >
@@ -154,9 +161,9 @@ export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
                   </span>
                 </a>
               )}
-              {info.contactWhatsapp && (
+              {whatsappHref && (
                 <a
-                  href={`https://wa.me/${info.contactWhatsapp.replace(/[^\d]/g, "")}`}
+                  href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-2.5"

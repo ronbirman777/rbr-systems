@@ -1,4 +1,5 @@
 import { normalizeWhatsAppNumber, whatsappUrl } from "@/lib/share/whatsapp";
+import { telUrl } from "@/lib/phone";
 import type {
   AvailabilityMetadata,
   ClassMetadata,
@@ -68,12 +69,11 @@ export function mailtoUrl(email: string | null | undefined, subject?: string | n
   return `mailto:${email.trim()}${params.length ? `?${params.join("&")}` : ""}`;
 }
 
-export function telUrl(raw: string | null | undefined): string | null {
-  const v = raw?.trim();
-  if (!v) return null;
-  const cleaned = v.replace(/[^\d+]/g, "");
-  return /^\+?\d{6,16}$/.test(cleaned) ? `tel:${cleaned}` : null;
-}
+/**
+ * Phone link building is product-agnostic and lives in lib/phone;
+ * re-exported here so Teach call sites keep their single import.
+ */
+export { telUrl };
 
 // ---------------------------------------------------------------------------
 // Message templates

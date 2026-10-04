@@ -5,7 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { friendlyAuthError } from "@/lib/supabase/authErrors";
 import { APP_URL } from "@/lib/site-url";
-import { COUNTRY_BY_CODE, isLikelyValidNationalNumber, formatPhone } from "@/lib/countries";
+import { isSupportedCountry } from "@/lib/countries";
+import { toE164 } from "@/lib/phone";
 import { deleteSpaceCompletely } from "@/app/configurator/retreat/lifecycleActions";
 
 /**
@@ -50,7 +51,7 @@ export async function signUp(
   const password = String(formData.get("password") ?? "");
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
   const country = String(formData.get("country") ?? "");
-  const dialCode = String(formData.get("dialCode") ?? "");
+  const phoneCountry = String(formData.get("phoneCountry") ?? "");
   const nationalNumber = String(formData.get("phoneNumber") ?? "").trim();
   const businessName = String(formData.get("businessName") ?? "").trim();
 
@@ -58,8 +59,14 @@ export async function signUp(
   if (password !== confirmPassword) {
     return { error: "Passwords don't match.", checkEmail: false, email: null };
   }
-  if (!COUNTRY_BY_CODE[country]) return { error: "Choose your country.", checkEmail: false, email: null };
-  if (!dialCode || !isLikelyValidNationalNumber(nationalNumber)) {
+  // Valid-only: an arbitrary typed/tampered country code is never saved.
+  if (!isSupportedCountry(country)) return { error: "Choose your country.", checkEmail: false, email: null };
+  // One canonical parser decides what a phone number is (lib/phone). The
+  // posted dialCode selects the phone country; the national part is
+  // parsed against it, so a trunk prefix or a pasted international number
+  // both resolve to the same E.164 value.
+  const phoneE164 = toE164(nationalNumber, { defaultCountry: isSupportedCountry(phoneCountry) ? phoneCountry : country });
+  if (!phoneE164) {
     return { error: "Enter a valid phone number.", checkEmail: false, email: null };
   }
 
@@ -77,7 +84,7 @@ export async function signUp(
       data: {
         full_name: fullName,
         country,
-        phone: formatPhone(dialCode, nationalNumber),
+        phone: phoneE164,
         business_name: businessName || null,
       },
     },

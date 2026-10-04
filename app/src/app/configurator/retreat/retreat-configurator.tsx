@@ -31,6 +31,7 @@ import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, Studi
 import { StudioTopBar } from "@/components/studio/studio-top-bar";
 import { saveStatusLabel, PREVIEW_DRAFT_LABEL, PREVIEW_DRAFT_CAPTION, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
 import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
+import { SpaceCountryCard } from "@/components/studio/space-country-card";
 import { getBrandPresets, matchBrandPreset, presetColorUpdate } from "@/lib/brand/presets";
 import { EmptyState } from "@/components/studio/empty-state";
 import { StatusPill } from "@/components/studio/status-pill";
@@ -1906,6 +1907,15 @@ export function RetreatConfigurator({
             </button>
           </form>
         )}
+
+        {/* Shared, product-neutral Space setting - the same component Teach
+            mounts. Outside the draft <form> because it saves itself through
+            the shared action rather than this product's draft payload. */}
+        {step === "identity" && tenantId ? (
+          <div className="max-w-xl mt-6">
+            <SpaceCountryCard tenantId={tenantId} />
+          </div>
+        ) : null}
 
         {step === "brand" && (
           <form action={draftAction} className="max-w-xl">

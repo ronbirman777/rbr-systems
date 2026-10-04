@@ -16,6 +16,7 @@ import { publishTeachSpace, saveTeachDirectoryListing } from "./actions";
 import { PublicLinkCard } from "@/components/studio/public-link-card";
 import { QrCodeCard } from "@/components/studio/qr-code-card";
 import { ShareCardPanel } from "@/components/studio/share-card-panel";
+import { SpaceCountryCard } from "@/components/studio/space-country-card";
 import { ClassWhatsAppQr } from "@/components/studio/class-whatsapp-qr";
 import { publicSpaceUrl, guestAppPath } from "@/lib/studio/publicLink";
 import {
@@ -385,6 +386,7 @@ export function IdentitySection({ api }: Props) {
   return (
     <>
       <SectionHeader eyebrow="My teaching space" title="Identity" intro="Your name, how you describe your teaching, and where guests find you." />
+      <SpaceCountryCard tenantId={api.tenantId} />
       <Card title="Who you are" description="Shown at the top of your Guest App Home and on About Me.">
         <Grid>
           <TextField label="My name" value={api.name} onChange={api.setName} maxLength={80} placeholder="Maya Levin" />

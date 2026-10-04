@@ -116,19 +116,48 @@ describe("Space Type Registry matches the database", () => {
 const norm = (sql: string) => sql.replace(/\s+/g, " ").trim();
 const TEACH_BLOCK = /if v_tenant\.product_type = 'teach' then[\s\S]*?end if;/i;
 const TEACH_CUSTOM_PAGES_GATE = /if 'customPages' = any\(v_enabled_modules\) and v_tenant\.product_type is distinct from 'teach' then/i;
+/** TASK 028A's addition: the product-neutral spaceSettings object. */
+const SPACE_SETTINGS_BLOCK = /v_modules := v_modules \|\| jsonb_build_object\(\s*'spaceSettings',[\s\S]*?\);/i;
 
 describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Phase 4A)", () => {
   const latest = latestFunctionDefinition(migrations, "publish_space")!;
   const base = extractFunctionBody(migrations.find((m) => m.name.startsWith("0025_"))!.sql, "publish_space")!;
+  // build_teach_payload() is still owned by 0028; 0031 redefines only
+  // publish_space(), so the Teach-payload assertions below keep reading
+  // the file that actually defines it.
+  const teachPayload = latestFunctionDefinition(migrations, "build_teach_payload")!;
 
-  it("the latest publish_space() and build_teach_payload() both come from the Teach foundation migration", () => {
-    expect(latest.file).toMatch(/^0028_/);
-    expect(latestFunctionDefinition(migrations, "build_teach_payload")!.file).toBe(latest.file);
+  it("build_teach_payload() still comes from the Teach foundation migration and nothing later redefines it", () => {
+    expect(teachPayload.file).toMatch(/^0028_/);
   });
 
-  it("the Retreat branch is byte-for-byte 0025's body once the Teach block is removed (moduleCovers, imagePosition, snapshot shape untouched)", () => {
+  it("publish_space() is last redefined by 0031, which adds the shared Space Settings object and nothing else", () => {
+    expect(latest.file).toMatch(/^0031_/);
+    expect(SPACE_SETTINGS_BLOCK.test(latest.body)).toBe(true);
+
+    // The 0031 body must equal 0028's body plus exactly that block - no
+    // other edit may ride along in a publish-contract migration.
+    const zero28 = extractFunctionBody(migrations.find((m) => m.name.startsWith("0028_"))!.sql, "publish_space")!;
+    expect(norm(latest.body.replace(SPACE_SETTINGS_BLOCK, ""))).toBe(norm(zero28));
+  });
+
+  it("the Space Settings block is product-neutral and adds only modules.spaceSettings", () => {
+    const block = SPACE_SETTINGS_BLOCK.exec(latest.body)![0];
+    // Unconditional on purpose: country/locale are not product specific.
+    expect(norm(block)).not.toMatch(/product_type/);
+    expect(norm(block)).toContain("'spaceSettings'");
+    expect(norm(block)).toContain("module_key = 'spaceSettings'");
+    // Absent row publishes '{}', so no Space needs a backfill.
+    expect(norm(block)).toContain("'{}'::jsonb");
+  });
+
+  it("the Retreat branch is byte-for-byte 0025's body once the Teach and Space Settings blocks are removed (moduleCovers, imagePosition, snapshot shape untouched)", () => {
     expect(TEACH_BLOCK.test(latest.body)).toBe(true);
-    expect(norm(latest.body.replace(TEACH_BLOCK, "").replace(TEACH_CUSTOM_PAGES_GATE, "if 'customPages' = any(v_enabled_modules) then"))).toBe(norm(base));
+    const retreatOnly = latest.body
+      .replace(TEACH_BLOCK, "")
+      .replace(SPACE_SETTINGS_BLOCK, "")
+      .replace(TEACH_CUSTOM_PAGES_GATE, "if 'customPages' = any(v_enabled_modules) then");
+    expect(norm(retreatOnly)).toBe(norm(base));
   });
 
   it("the only edit inside the Retreat branch is the customPages gate, which skips ONLY Teach (retreat and client_hub still emit it)", () => {
@@ -160,7 +189,7 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
   });
 
   describe("build_teach_payload()", () => {
-    const file = stripSqlComments(migrations.find((m) => m.name === latest.file)!.sql);
+    const file = stripSqlComments(migrations.find((m) => m.name === teachPayload.file)!.sql);
     const start = file.indexOf("create or replace function public.build_teach_payload");
     const sql = norm(file.slice(start, file.indexOf("create or replace function public.publish_space")));
 
@@ -196,13 +225,16 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     }
   });
 
-  it("migration chain: 0028 is the single Teach migration, 0029 the single Storage-immutability migration, 0030 the single uuid-safe media-policy fix, nothing after, main's 0019 untouched, no 0023 gap fill", () => {
+  it("migration chain: one migration per number, 0031 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
     const names = migrations.map((m) => m.name);
+    expect(names.filter((n) => n.startsWith("0028_"))).toEqual(["0028_teach_foundation.sql"]);
     expect(names.filter((n) => n.startsWith("0029_"))).toEqual(["0029_versioned_media_update_deny.sql"]);
     expect(names.filter((n) => n.startsWith("0030_"))).toEqual(["0030_tenant_media_policies_uuid_safe.sql"]);
-    expect(names.some((n) => /^00(3[1-9]|[4-9]\d)_/.test(n))).toBe(false);
+    expect(names.filter((n) => n.startsWith("0031_"))).toEqual(["0031_space_settings_publish.sql"]);
+    // Nothing beyond the current head, and historical numbers are never
+    // renumbered or back-filled.
+    expect(names.some((n) => /^00(3[2-9]|[4-9]\d)_/.test(n))).toBe(false);
     expect(names.filter((n) => n.startsWith("0019_"))).toEqual(["0019_signup_profile.sql"]);
     expect(names.some((n) => n.startsWith("0023_"))).toBe(false);
-    expect(names.filter((n) => n.startsWith("0028_"))).toHaveLength(1);
   });
 });
