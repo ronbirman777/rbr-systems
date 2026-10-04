@@ -9,6 +9,8 @@ import {
   TEACH_EDITABLE_ITEM_KEYS,
   TEACH_PRODUCT_TYPE,
   TEACH_SETTINGS_KEYS,
+  TEACH_DIRECTORY_KEY,
+  teachDirectorySchema,
   collectTeachMediaRefs,
   parseTeachItems,
   parseTeachSetting,
@@ -40,7 +42,7 @@ export default async function TeachStudioPage({
   const { supabase, tenant } = await loadStudioTenant(tenantId, TEACH_PRODUCT_TYPE);
   if (tenant.status === "archived") redirect("/space");
 
-  const [{ data: brand }, { data: settingsRows }, { data: itemRows }, { data: configRows }, { data: published }, entitlement] =
+  const [{ data: brand }, { data: settingsRows }, { data: itemRows }, { data: configRows }, { data: published }, entitlement, { data: directoryRow }] =
     await Promise.all([
       supabase
         .from("brand_configs")
@@ -58,6 +60,7 @@ export default async function TeachStudioPage({
       supabase.from("module_configs").select("module_key, enabled").eq("tenant_id", tenantId),
       supabase.from("published_spaces").select("published_at").eq("tenant_id", tenantId).maybeSingle(),
       getSpaceEntitlement(supabase, tenantId),
+      supabase.from("module_settings").select("data").eq("tenant_id", tenantId).eq("module_key", TEACH_DIRECTORY_KEY).maybeSingle(),
     ]);
 
   const settingsByKey = new Map((settingsRows ?? []).map((r) => [r.module_key as string, r.data]));
@@ -102,6 +105,7 @@ export default async function TeachStudioPage({
     items,
     enabledExplore: enabledExploreFrom((configRows ?? []).filter((r) => r.enabled).map((r) => r.module_key)),
     publishedAt: published?.published_at ?? null,
+    directoryListed: teachDirectorySchema.parse(directoryRow?.data ?? {}).listed,
     canPublish: availability.canPublish,
     accessLabel: availability.effectiveStatus,
     customPagesLimit: getCustomPagesLimit(entitlement),

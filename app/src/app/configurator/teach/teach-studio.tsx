@@ -56,6 +56,7 @@ export type TeachStudioInitial = {
   items: { [K in TeachEditableItemKey]: TeachItem<K>[] };
   enabledExplore: TeachExploreModule[];
   publishedAt: string | null;
+  directoryListed: boolean;
   canPublish: boolean;
   accessLabel: string;
   customPagesLimit: number;
@@ -159,6 +160,7 @@ export type StudioApi = {
   saving: SectionKey | null;
   customPagesLimit: number;
   publishedAt: string | null;
+  directoryListed: boolean;
   setPublishedAt: (v: string | null) => void;
   canPublish: boolean;
   accessLabel: string;
@@ -466,6 +468,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
     saving,
     customPagesLimit: initial.customPagesLimit,
     publishedAt,
+    directoryListed: initial.directoryListed,
     setPublishedAt,
     canPublish: initial.canPublish,
     accessLabel: initial.accessLabel,

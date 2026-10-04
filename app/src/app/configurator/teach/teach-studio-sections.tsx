@@ -12,7 +12,10 @@ import { MEDIA_BUCKET } from "@/lib/media/path";
 import { uploadAudioDraftObject } from "@/lib/teach/audioUpload";
 import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL, type SocialPlatform } from "@/lib/modules/socialLinks";
 import { checkSlugAvailability, reserveSlug } from "@/app/configurator/retreat/actions";
-import { publishTeachSpace } from "./actions";
+import { publishTeachSpace, saveTeachDirectoryListing } from "./actions";
+import { PublicLinkCard } from "@/components/studio/public-link-card";
+import { QrCodeCard } from "@/components/studio/qr-code-card";
+import { publicSpaceUrl, guestAppPath } from "@/lib/studio/publicLink";
 import {
   AUDIO_ALLOWED_TYPES,
   AVAILABILITY_METHODS,
@@ -1814,7 +1817,6 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
     { ok: noRegistration.length === 0, text: noRegistration.length === 0 ? "Every class has a registration method" : `${noRegistration.length} class(es) have no working registration method — no join button will show` },
   ];
   const blocked = checks.some((c) => c.blocking && !c.ok);
-  const liveHref = api.slug ? `/s/${api.slug}` : `/g/${api.tenantId}`;
 
   async function publish() {
     setBusy(true);
@@ -1852,11 +1854,6 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
           <StudioButton onClick={publish} disabled={busy || blocked}>
             {busy ? "Publishing…" : api.publishedAt ? "Republish" : "Publish now"}
           </StudioButton>
-          {api.publishedAt ? (
-            <a href={liveHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center min-h-10 px-4 rounded-full border border-[#192B21]/20 text-[12.5px] font-semibold text-[#192B21]">
-              Open live app ↗
-            </a>
-          ) : null}
         </div>
         {message ? (
           <p role={message.ok ? "status" : "alert"} className={`text-[13px] ${message.ok ? "text-[#3F6A4C]" : "text-[#8F3B3B]"}`}>
@@ -1865,9 +1862,56 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
         ) : null}
         <Hint>{api.publishedAt ? `Last published ${api.publishedAt.slice(0, 16).replace("T", " ")} UTC` : "Not published yet."}</Hint>
       </Card>
+      <Card title="Share your Guest App" description="Send guests this link or let them scan the QR code. It never contains an access token - it is simply your public Guest App address.">
+        <PublicLinkCard url={publicSpaceUrl(api.tenantId, api.slug)} openHref={guestAppPath(api.tenantId, api.slug)} published={Boolean(api.publishedAt)} />
+        <QrCodeCard tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} />
+      </Card>
+      <DirectoryOptInCard tenantId={api.tenantId} initialListed={api.directoryListed} />
       <Card title="Draft preview" description="The real Guest App with your current draft. Mobile layout below; the live app switches to a two-column layout on wide screens.">
         <div className="mx-auto w-full max-w-[380px] h-[720px] rounded-[36px] overflow-hidden border-[6px] border-[#D9D1C3]">{preview}</div>
       </Card>
     </>
+  );
+}
+
+/** Explicit opt-in (default OFF) for the future public Teachers directory / InnerDweS promotion. Saves on toggle; private to the owner. */
+export function DirectoryOptInCard({ tenantId, initialListed }: { tenantId: string; initialListed: boolean }) {
+  const [listed, setListed] = useState(initialListed);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function toggle() {
+    const next = !listed;
+    setBusy(true);
+    setError(null);
+    const res = await saveTeachDirectoryListing(tenantId, next);
+    setBusy(false);
+    if (res.error) setError(res.error);
+    else setListed(next);
+  }
+
+  return (
+    <Card title="List me on InnerDweS" description="Optional. Off unless you turn it on - we never list anyone automatically. If you opt in, you may be featured in the upcoming InnerDweS Teachers directory and on our website.">
+      <div className="flex items-center gap-3" data-testid="directory-opt-in">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={listed}
+          aria-label="List me on InnerDweS"
+          onClick={toggle}
+          disabled={busy}
+          className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${listed ? "bg-[#192B21]" : "bg-[#D9D1C3]"}`}
+        >
+          <span aria-hidden="true" className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${listed ? "translate-x-6" : "translate-x-1"}`} />
+        </button>
+        <span className="text-[13px] text-[#232926]">{listed ? "Yes, list me on InnerDweS" : "Not listed"}</span>
+      </div>
+      {error ? (
+        <p role="alert" className="text-[13px] text-[#8F3B3B]">
+          {error}
+        </p>
+      ) : null}
+      <Hint>You can change this at any time. Turning it on does not publish anything by itself.</Hint>
+    </Card>
   );
 }

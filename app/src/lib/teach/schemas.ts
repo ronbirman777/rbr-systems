@@ -46,6 +46,18 @@ export const TEACH_SETTINGS_KEYS = [
 ] as const;
 export type TeachSettingsKey = (typeof TEACH_SETTINGS_KEYS)[number];
 
+/**
+ * Private (never published) module_settings singleton: the teacher's explicit
+ * opt-in to be listed on InnerDweS (future Teachers directory / homepage
+ * promotion). Deliberately NOT in TEACH_SETTINGS_KEYS - build_teach_payload
+ * never copies it into the public snapshot, and the default is always OFF.
+ */
+export const TEACH_DIRECTORY_KEY = "teachDirectory" as const;
+export const teachDirectorySchema = z.object({
+  listed: z.boolean().catch(false).default(false),
+});
+export type TeachDirectory = z.infer<typeof teachDirectorySchema>;
+
 /** Explore modules a teacher can switch on (module_configs rows). */
 export const TEACH_EXPLORE_MODULES = ["teachReadings", "teachAudio", "teachContact", "customPages"] as const;
 export type TeachExploreModule = (typeof TEACH_EXPLORE_MODULES)[number];
