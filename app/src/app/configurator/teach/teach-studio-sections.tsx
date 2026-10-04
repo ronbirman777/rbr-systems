@@ -1884,10 +1884,13 @@ export function DirectoryOptInCard({ tenantId, initialListed }: { tenantId: stri
     const next = !listed;
     setBusy(true);
     setError(null);
+    setListed(next);
     const res = await saveTeachDirectoryListing(tenantId, next);
     setBusy(false);
-    if (res.error) setError(res.error);
-    else setListed(next);
+    if (res.error) {
+      setListed(!next);
+      setError(res.error);
+    }
   }
 
   return (
