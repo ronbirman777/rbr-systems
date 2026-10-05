@@ -47,6 +47,13 @@ export type FacilitatorsScreenProps = {
  * `facilitator` is free text, not a relation) - inventing a session list
  * here would be fabricated, not derived, data.
  */
+/**
+ * The Team card photo's box. Exported for the same reason as Explore's
+ * table: the prefetcher warms these portraits before the Team tab is
+ * pressed and must select the same render this screen will.
+ */
+export const FACILITATOR_PHOTO_SIZES = "(min-width: 640px) 390px, 100vw";
+
 export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCALE }: FacilitatorsScreenProps) {
   const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
@@ -93,7 +100,7 @@ export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCAL
                   src={f.imageUrl}
                   alt={f.name}
                   className="w-full h-full"
-                  sizes="(min-width: 640px) 390px, 100vw"
+                  sizes={FACILITATOR_PHOTO_SIZES}
                   style={{ objectPosition: objectPositionStyle(f.imagePosition, FACILITATOR_DEFAULT_POSITION) }}
                   fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                 />

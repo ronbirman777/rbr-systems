@@ -4,7 +4,10 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import { TodayScreen } from "./today-screen";
 import { ScheduleScreen } from "./schedule-screen";
 import { FacilitatorsScreen } from "./facilitators-screen";
-import { ExploreScreen } from "./guest/explore-screen";
+import { ExploreScreen, EXPLORE_COVER_SIZES, EXPLORE_CUSTOM_PAGE_SIZES } from "./guest/explore-screen";
+import { FACILITATOR_PHOTO_SIZES } from "./facilitators-screen";
+import { MediaPrefetch } from "./shared/media-prefetch";
+import type { MediaPrefetchItem } from "@/lib/media/prefetch";
 import { TodayIcon, ScheduleIcon, TeamIcon, ExploreIcon } from "./guest/icons";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
@@ -151,6 +154,48 @@ const GUEST_TABS: TabDef[] = [
 
 
 /**
+ * The media on the tabs the visitor is NOT looking at, in the order the
+ * bottom nav offers them - so the tab they are most likely to press next
+ * is warmed first, and the prefetcher's cap falls on the least likely.
+ *
+ * Only images that will actually be rendered are listed: a module the
+ * organizer has not enabled contributes nothing even if a stale cover
+ * survives in the snapshot. Each entry carries the SAME `sizes` its
+ * screen will use, imported from that screen rather than retyped here,
+ * because a mismatch would warm the wrong render and cost two
+ * downloads instead of one.
+ *
+ * Deliberately omitted: Schedule, which has no images, and the Explore
+ * SUB-screens (Meals, Treatments, Facilities, each item's own photo).
+ * Those are two presses deep, so warming them would be speculation on
+ * speculation - the kind of "preload the whole media library" the brief
+ * rules out.
+ */
+export function guestPrefetchItems(props: GuestAppProps, activeTab: TabKey): MediaPrefetchItem[] {
+  const { enabledModules } = props;
+  const items: MediaPrefetchItem[] = [];
+
+  if (activeTab !== "facilitators" && enabledModules.includes("facilitators")) {
+    for (const f of props.facilitators) items.push({ src: f.imageUrl, sizes: FACILITATOR_PHOTO_SIZES });
+  }
+
+  if (activeTab !== "explore") {
+    for (const [moduleKey, sizes] of Object.entries(EXPLORE_COVER_SIZES)) {
+      if (!enabledModules.includes(moduleKey as OptionalModuleKey)) continue;
+      const cover = props.moduleCoverImages?.[moduleKey];
+      if (cover?.imageUrl) items.push({ src: cover.imageUrl, sizes });
+    }
+    if (enabledModules.includes("customPages")) {
+      for (const page of props.customPages ?? []) {
+        items.push({ src: page.imageUrl, sizes: EXPLORE_CUSTOM_PAGE_SIZES });
+      }
+    }
+  }
+
+  return items;
+}
+
+/**
  * One fixed InnerDweS-controlled shell. The organizer's enabled_modules
  * decides which of the 4 tabs exist (Today is mandatory); everything
  * about how each tab looks, and how navigation itself behaves, is ours.
@@ -191,6 +236,11 @@ export function GuestApp(props: GuestAppProps) {
       className="relative w-full h-full flex flex-col overflow-hidden"
     >
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{current.render(props, setActive)}</div>
+
+      {/* Step 4 of the loading ladder - renders nothing, and starts only
+          once this screen has finished loading and the main thread is
+          idle, so it can never delay the hero above. */}
+      <MediaPrefetch items={guestPrefetchItems(props, active)} />
 
       {visibleTabs.length > 1 && (
         <div

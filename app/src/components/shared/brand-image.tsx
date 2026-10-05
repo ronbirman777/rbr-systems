@@ -1,7 +1,8 @@
 /* eslint-disable @next/next/no-img-element -- guest media is served through /api/media, which 307s to a short-lived signed URL; next/image cannot be pointed at it (see the 028D findings). */
 import type { CSSProperties } from "react";
+import { preload } from "react-dom";
 import { focalPointToObjectPosition, type FocalPoint } from "@/lib/media/focalPoint";
-import { MEDIA_WIDTHS } from "@/lib/media/cachePolicy";
+import { mediaSrcSet } from "@/lib/media/cachePolicy";
 
 /**
  * The shared image presentation primitive for published Guest surfaces.
@@ -89,9 +90,31 @@ export function BrandImage({
   // given rather than by constructing one: /api/media validates `w`
   // against its own allowlist and ignores anything else, so this can
   // only ever ask for a render the server already agreed to produce.
-  const srcSet = sizes && src.startsWith("/api/media/")
-    ? MEDIA_WIDTHS.map((w) => `${src}${src.includes("?") ? "&" : "?"}w=${w} ${w}w`).join(", ")
-    : undefined;
+  // Shared with the background prefetcher so both select from the same
+  // candidate set - see mediaSrcSet's own note.
+  const srcSet = mediaSrcSet(src, sizes);
+
+  // Tell the document head about the LCP image, not just the <img>.
+  //
+  // The hero is already server-rendered with loading=eager, so the
+  // preload scanner does find it - but only after parsing down to it,
+  // behind the stylesheet and whatever markup precedes it. Hoisting the
+  // hint into <head> measured 310ms off the hero's paint on a Slow 4G
+  // phone, for both products (CP4 section 8).
+  //
+  // It lives HERE, rather than at each call site, for the same reason
+  // mediaSrcSet does: a hint whose candidate set differs by one
+  // character from the <img>'s is a second download, not a faster first
+  // one. Same component, same srcSet, same sizes, so they cannot
+  // disagree. React hoists and de-duplicates it, so repeated renders and
+  // two call sites sharing one image still produce one hint.
+  if (priority) {
+    preload(src, {
+      as: "image",
+      fetchPriority: "high",
+      ...(srcSet ? { imageSrcSet: srcSet, imageSizes: sizes } : null),
+    });
+  }
 
   return (
     <img

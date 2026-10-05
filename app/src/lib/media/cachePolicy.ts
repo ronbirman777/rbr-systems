@@ -7,12 +7,22 @@ import type { GuestAccessMode } from "@/lib/guestAccess/mode";
  *
  * These two numbers are a pair and must not be set independently: a
  * cached redirect that outlives its signed URL sends the guest to a
- * Storage 403. The signed TTL is therefore comfortably longer than the
- * cache window, so a redirect served at the very end of its cache life
- * still resolves.
+ * Storage 403, so the TTL has to exceed the cache window plus the time a
+ * slow client takes to follow the redirect. 120 seconds of slack is
+ * ample for that.
+ *
+ * The TTL is kept only as long as that arithmetic requires, and no
+ * longer, because it IS the residual exposure window: an already-issued
+ * signed URL cannot be revoked. If a Space that was public at issue time
+ * later lapses or gains an access code, a URL handed out just before
+ * keeps working until it expires. That window was 60 seconds before CP4
+ * and is 7 minutes for this one case - versioned, published, and public
+ * at the moment of issue, i.e. bytes the organizer had already published
+ * to anyone with the link. Draft objects, legacy paths and code-protected
+ * Spaces all keep the 60-second default below.
  */
 export const PUBLISHED_MEDIA_CACHE_SECONDS = 300; // 5 minutes
-export const PUBLISHED_MEDIA_SIGNED_TTL_SECONDS = 900; // 15 minutes
+export const PUBLISHED_MEDIA_SIGNED_TTL_SECONDS = 420; // 7 minutes: the cache window + 2 minutes of slack
 
 /** The conservative default: no caching, shortest possible signed URL. */
 export const DEFAULT_SIGNED_TTL_SECONDS = 60;
@@ -89,9 +99,16 @@ export function mediaCacheDecision(opts: {
  * cache entries (or unbounded Storage transform work) from one path, and
  * the set stays small enough that a CDN actually accumulates hits.
  *
- * The ladder covers a 320px card at 1x through a 430px hero at 3x.
+ * The ladder spans the real boxes in both Guest Apps, from a 36px nav
+ * avatar at 3x (108px, so the 160 rung) up to a 430px hero at 3x. The
+ * two small rungs are not decoration: before CP4 gave the thumbnails a
+ * `sizes`, a 36px avatar and a 48px certificate were each downloading
+ * the organizer's full-resolution original, and without a rung below
+ * 320 they would still be asking for roughly ten times the pixels they
+ * can display - possibly MORE than the original, for a small source
+ * image.
  */
-export const MEDIA_WIDTHS = [320, 480, 640, 960, 1280, 1600] as const;
+export const MEDIA_WIDTHS = [96, 160, 320, 480, 640, 960, 1280, 1600] as const;
 export type MediaWidth = (typeof MEDIA_WIDTHS)[number];
 
 /** The requested width, or null when absent or not on the allowlist. */
@@ -99,4 +116,27 @@ export function parseMediaWidth(raw: string | null): MediaWidth | null {
   if (!raw) return null;
   const n = Number(raw);
   return (MEDIA_WIDTHS as readonly number[]).includes(n) ? (n as MediaWidth) : null;
+}
+
+/**
+ * The width-aware candidate list for a media URL, or undefined when
+ * there is nothing to choose between.
+ *
+ * This lives here, rather than inside BrandImage, because two callers
+ * have to agree on it EXACTLY: the <img> that will eventually display
+ * the image, and the background prefetcher that warms it ahead of time
+ * (see lib/media/prefetch.ts). If the two built different candidate
+ * lists the browser would select from different sets, the prefetch would
+ * warm a URL the <img> never asks for, and the result would be two
+ * downloads instead of one - the "duplicate requests" CP4 is meant to
+ * remove. One function, both callers, no drift.
+ *
+ * It only ever parameterises a URL it was given; `w` is validated server
+ * side against MEDIA_WIDTHS, so an off-ladder value cannot be smuggled
+ * through here.
+ */
+export function mediaSrcSet(src: string, sizes?: string): string | undefined {
+  if (!sizes || !src.startsWith("/api/media/")) return undefined;
+  const sep = src.includes("?") ? "&" : "?";
+  return MEDIA_WIDTHS.map((w) => `${src}${sep}w=${w} ${w}w`).join(", ");
 }

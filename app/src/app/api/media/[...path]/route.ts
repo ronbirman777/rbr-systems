@@ -5,10 +5,10 @@ import { createClient } from "@/lib/supabase/server";
 import {
   MEDIA_BUCKET,
   collectMediaRefs,
+  isDraftMediaPath,
   isWellFormedMediaPath,
-  parseVersionedMediaPath,
 } from "@/lib/media/path";
-import { AUDIO_EXTENSIONS, parseAudioDraftRef } from "@/lib/media/audio";
+import { parseAudioDraftRef } from "@/lib/media/audio";
 import { isReferencedDraftAudio } from "@/lib/media/draftAuthorization";
 import { resolveGuestAccessDetailed } from "@/lib/guestAccess/effectiveAccess";
 import { publishedIdentityImageRefs } from "@/lib/guestAccess/publishedIdentity";
@@ -84,8 +84,19 @@ export async function GET(
 
   const publishedRefs = collectMediaRefs(space.modules);
   if (!publishedRefs.has(objectPath)) return notFound();
-  const versioned = parseVersionedMediaPath(objectPath);
-  if (versioned && AUDIO_EXTENSIONS.has(versioned.ext) && versioned.kind !== "published") return notFound();
+
+  // A guest is served PUBLISHED objects only, whatever the snapshot
+  // claims. publish_space() derives every published ref from its draft
+  // sibling, so a `draft.*` path in a snapshot is impossible today - but
+  // membership in the snapshot is the authorization here, and a snapshot
+  // is written by SQL, so this does not rely on that staying impossible.
+  // Audio already had this guard; CP4's audit found images did not, and
+  // the asymmetry was the only thing standing between a malformed
+  // snapshot and a draft image being served.
+  //
+  // Draft audio for a signed-in member returned above, before this, so
+  // nothing legitimate is caught here.
+  if (isDraftMediaPath(objectPath)) return notFound();
 
   let access;
   try {

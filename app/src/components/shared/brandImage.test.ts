@@ -66,3 +66,37 @@ describe("BrandImage preserves what the rollout must not change", () => {
     expect(out).not.toContain("<img");
   });
 });
+
+describe("BrandImage LCP preload hint", () => {
+  // renderToStaticMarkup does not hoist, so the hint appears inline
+  // here; under the streaming renderer Next actually uses it lands at
+  // the top of <head>, which is the point of it (verified in 028D's own
+  // measurement, and the reason the hint is worth 310ms).
+  it("hints only for the LCP candidate", () => {
+    expect(html(createElement(BrandImage, { src: SRC, alt: "", sizes: "100vw" }))).not.toContain('rel="preload"');
+  });
+
+  it("hints with the same candidate set the <img> carries, and no href", () => {
+    const out = html(createElement(BrandImage, { src: SRC, alt: "", priority: true, sizes: "100vw" }));
+    expect(out).toContain('rel="preload"');
+    expect(out).toContain('as="image"');
+    expect(out).toContain('fetchPriority="high"');
+    expect(out).toContain('imageSizes="100vw"');
+    for (const w of MEDIA_WIDTHS) expect(out, String(w)).toContain(`?w=${w} ${w}w`);
+    // An href next to imageSrcSet would make the browser fetch a second,
+    // unused candidate - the opposite of what the hint is for.
+    const link = out.slice(out.indexOf("<link"), out.indexOf(">", out.indexOf("<link")));
+    expect(link).not.toContain("href=");
+  });
+
+  it("hints by href when the caller declared no box", () => {
+    const out = html(createElement(BrandImage, { src: SRC, alt: "", priority: true }));
+    const link = out.slice(out.indexOf("<link"), out.indexOf(">", out.indexOf("<link")));
+    expect(link).toContain(`href="${SRC}"`);
+    expect(link).not.toContain("imageSrcSet");
+  });
+
+  it("never hints for a surface that has no image", () => {
+    expect(html(createElement(BrandImage, { src: null, alt: "", priority: true }))).not.toContain("preload");
+  });
+});

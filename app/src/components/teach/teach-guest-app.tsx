@@ -6,6 +6,7 @@ import { formatShortDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime"
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import { getDailyQuoteFrom } from "@/lib/content/dailyQuotes";
+import type { FocalPoint } from "@/lib/media/focalPoint";
 import type { TeachGuestData } from "@/lib/teach/guestData";
 import type { TeachExploreModule, TeachItem } from "@/lib/teach/schemas";
 import { exploreModuleStatus } from "@/lib/teach/moduleVisibility";
@@ -23,6 +24,9 @@ import {
 } from "@/lib/teach/schedule";
 import { TeachIcon, type TeachIconName } from "./teach-icons";
 import { TeachImage } from "./teach-image";
+import { TEACH_SIZES } from "./teach-media-sizes";
+import { MediaPrefetch } from "@/components/shared/media-prefetch";
+import type { MediaPrefetchItem } from "@/lib/media/prefetch";
 import { TeachClassCard, TeachAvailabilityCard } from "./teach-class-card";
 import {
   AudioListScreen,
@@ -31,7 +35,6 @@ import {
   CustomPageScreen,
   ReadingDetailScreen,
   ReadingsScreen,
-  coverStyle,
 } from "./teach-library";
 import { Chip, DailyQuoteBlock, DisplayHeading, EmptyState, Eyebrow, OrganicShapes, PillButton, PillLink, SectionHeader } from "./teach-ui";
 
@@ -94,6 +97,53 @@ function dayOptionLabel(dateIso: string, count: number, mode: "classes" | "priva
 
 function exploreTitle(data: TeachGuestData, key: "teachReadings" | "teachAudio" | "teachContact", fallback: string) {
   return data.settings.teachExplore.cards[key]?.title ?? fallback;
+}
+
+/**
+ * The media on the tabs the visitor is NOT looking at, in bottom-nav
+ * order, so the most likely next press is warmed first.
+ *
+ * Each entry carries the `sizes` its own screen will use, imported from
+ * that screen rather than retyped, so the warmed render is the one the
+ * <img> later asks for. Teach's Explore covers only became predictable
+ * enough for this when they stopped being CSS background-images - see
+ * ExploreCard.
+ *
+ * Deliberately omitted: the About gallery and certificate thumbnails,
+ * and the Readings/Audio libraries behind the Explore cards. They are
+ * below the fold of a tab nobody has opened, or a second press deep;
+ * spending a phone's data on them is what "do not preload the entire
+ * media library at startup" rules out.
+ */
+export function teachPrefetchItems(
+  data: TeachGuestData,
+  tab: Tab,
+  url: (ref: string | null | undefined) => string | null
+): MediaPrefetchItem[] {
+  const items: MediaPrefetchItem[] = [];
+
+  if (tab !== "about" && data.settings.teachAbout.showTab) {
+    const about = data.settings.teachAbout;
+    items.push({
+      src: url(about.profile.imageRef) ?? url(data.heroImageRef),
+      sizes: ABOUT_PORTRAIT_SIZES,
+    });
+  }
+
+  if (tab !== "explore") {
+    const cards = data.settings.teachExplore.cards;
+    for (const key of ["teachReadings", "teachAudio", "teachContact"] as const) {
+      if (exploreModuleStatus(data, key) !== "visible") continue;
+      items.push({ src: url(cards[key]?.imageRef ?? null), sizes: EXPLORE_CARD_SIZES });
+    }
+    if (exploreModuleStatus(data, "customPages") === "visible") {
+      for (const page of data.customPages) {
+        items.push({ src: url(page.imageRef), sizes: EXPLORE_CARD_SIZES });
+      }
+    }
+  }
+
+  return items;
 }
 
 export function TeachGuestApp({
@@ -184,6 +234,10 @@ export function TeachGuestApp({
       data-testid="teach-guest-app"
     >
       <style>{TEACH_CSS}</style>
+      {/* Step 4 of the loading ladder - renders nothing, and waits for
+          this screen's own load and an idle main thread first, so it can
+          never push the hero back. */}
+      <MediaPrefetch items={teachPrefetchItems(data, tab, url)} />
       <DesktopTopNav data={data} tabs={tabs} tab={tab} onTab={goTab} url={url} />
       <div ref={scrollRef} className={`relative flex-1 overflow-x-clip ${embedded ? "overflow-y-auto" : ""}`}>
         {style.organicShapes && !page ? <OrganicShapes /> : null}
@@ -256,7 +310,7 @@ function DesktopTopNav({ data, tabs, tab, onTab, url }: { data: TeachGuestData; 
   return (
     <header className="hidden @min-[40rem]:flex sticky top-0 z-20 items-center justify-between gap-4 px-6 @4xl:px-12 py-3 @4xl:py-4" style={{ background: "rgb(253 250 244 / 0.95)", borderBottom: "1px solid var(--tt-line)", backdropFilter: "blur(10px)" }}>
       <button type="button" onClick={() => onTab("home")} className="flex items-center gap-3">
-        <TeachImage src={url(data.settings.teachAbout.profile.imageRef) ?? url(data.heroImageRef)} focal={data.settings.teachAbout.profile.imagePosition ?? data.settings.teachProfile.heroImagePosition} alt="" fallbackLabel={data.teacherName} className="w-9 h-9 rounded-full" />
+        <TeachImage src={url(data.settings.teachAbout.profile.imageRef) ?? url(data.heroImageRef)} focal={data.settings.teachAbout.profile.imagePosition ?? data.settings.teachProfile.heroImagePosition} alt="" fallbackLabel={data.teacherName} sizes={TEACH_SIZES.navAvatar} className="w-9 h-9 rounded-full" />
         <span className="text-[19px] @4xl:text-[22px] truncate" style={{ fontFamily: "var(--tt-font-display)" }}>
           {data.teacherName}
         </span>
@@ -498,7 +552,7 @@ function HomeScreen({
               <div className="grid grid-cols-2 gap-2.5 @min-[40rem]:gap-4">
                 {latestReading ? (
                   <button type="button" onClick={() => open({ kind: "reading", id: latestReading.id })} className="tt-reveal text-start overflow-hidden flex flex-col" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
-                    <TeachImage {...cardImage(data, "teachReadings", latestReading)} alt="" fallbackLabel={latestReading.title} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
+                    <TeachImage {...cardImage(data, "teachReadings", latestReading)} alt="" fallbackLabel={latestReading.title} sizes={TEACH_SIZES.homeMoreCard} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
                     <span className="p-3 @min-[40rem]:p-4 flex flex-col gap-1">
                       <Eyebrow tone="primary">{t("teach", "reading")}</Eyebrow>
                       <span dir="auto" className="text-[15px] @min-[40rem]:text-[18px] leading-tight line-clamp-2" style={{ fontFamily: "var(--tt-font-display)" }}>
@@ -509,7 +563,7 @@ function HomeScreen({
                 ) : null}
                 {latestAudio ? (
                   <button type="button" onClick={() => open({ kind: "track", id: latestAudio.id })} className="tt-reveal text-start overflow-hidden flex flex-col" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
-                    <TeachImage {...cardImage(data, "teachAudio", latestAudio)} alt="" fallbackLabel={latestAudio.title} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
+                    <TeachImage {...cardImage(data, "teachAudio", latestAudio)} alt="" fallbackLabel={latestAudio.title} sizes={TEACH_SIZES.homeMoreCard} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
                     <span className="p-3 @min-[40rem]:p-4 flex flex-col gap-1">
                       <Eyebrow tone="primary">{t("teach", "exploreAudio")}</Eyebrow>
                       <span dir="auto" className="text-[15px] @min-[40rem]:text-[18px] leading-tight line-clamp-2" style={{ fontFamily: "var(--tt-font-display)" }}>
@@ -814,6 +868,12 @@ function ScheduleAgenda({
 // About Me
 // ---------------------------------------------------------------------------
 
+/**
+ * The About portrait's box, named so the prefetcher asks for the same
+ * render this screen will (see EXPLORE_CARD_SIZES for why that matters).
+ */
+export const ABOUT_PORTRAIT_SIZES = "(min-width: 896px) 210px, 150px";
+
 function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | null) => string | null }) {
   const a = data.settings.teachAbout;
   const { t } = createTranslator(data.locale);
@@ -835,7 +895,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
       <header
         className="flex flex-col items-center text-center gap-3.5 px-6 pt-3 @4xl:sticky @4xl:top-24 @4xl:px-6 @4xl:py-8"
       >
-        <TeachImage priority sizes="(min-width: 896px) 210px, 150px" src={photo} focal={focal} alt={data.teacherName} fallbackLabel={data.teacherName} className="w-[150px] h-[150px] @4xl:w-[210px] @4xl:h-[210px] rounded-full" style={{ border: "5px solid var(--tt-surface)", boxShadow: "0 18px 40px -22px rgba(36,59,50,.5)" }} />
+        <TeachImage priority sizes={ABOUT_PORTRAIT_SIZES} src={photo} focal={focal} alt={data.teacherName} fallbackLabel={data.teacherName} className="w-[150px] h-[150px] @4xl:w-[210px] @4xl:h-[210px] rounded-full" style={{ border: "5px solid var(--tt-surface)", boxShadow: "0 18px 40px -22px rgba(36,59,50,.5)" }} />
         <div className="flex flex-col gap-1">
           <DisplayHeading as="h1" size={32}>
             {data.teacherName}
@@ -904,6 +964,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
                   src={url(g.imageRef)}
                   focal={g.metadata.imagePosition}
                   alt={g.title || t("teach", "galleryPhoto", { index: i + 1 })}
+                  sizes={TEACH_SIZES.gallery}
                   className={`w-full ${i % 3 === 0 ? "h-[220px] @4xl:h-[300px]" : "h-[140px] @4xl:h-[200px]"}`}
                   style={{ borderRadius: "var(--tt-radius-image)" }}
                 />
@@ -920,7 +981,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
               {data.certificates.map((c) => (
                 <li key={c.id} className="flex items-center gap-3 p-3.5" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
                   {c.imageRef && url(c.imageRef) ? (
-                    <TeachImage src={url(c.imageRef)} focal={c.metadata.imagePosition} alt="" className="w-12 h-12 shrink-0" style={{ borderRadius: "calc(var(--tt-radius-image) - 4px)" }} />
+                    <TeachImage src={url(c.imageRef)} focal={c.metadata.imagePosition} alt="" sizes={TEACH_SIZES.certificate} className="w-12 h-12 shrink-0" style={{ borderRadius: "calc(var(--tt-radius-image) - 4px)" }} />
                   ) : (
                     <span className="w-11 h-11 rounded-full flex items-center justify-center shrink-0" style={{ background: "var(--rbr-secondary-soft)", color: "var(--rbr-secondary-foreground)" }}>
                       <TeachIcon name="award" size={19} />
@@ -955,6 +1016,23 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
 // Explore
 // ---------------------------------------------------------------------------
 
+/**
+ * The Explore tiles' box, as a `sizes` the prefetcher can also read.
+ *
+ * Exported for exactly one reason: lib/media/prefetch.ts warms these
+ * covers before the Explore tab is pressed, and it has to select from
+ * the same candidate set this card will, or the warmed render is the
+ * wrong one and the visitor pays twice. One constant, both readers.
+ *
+ * The grid itself is sized by CONTAINER queries (one column, then two at
+ * @xl, then three at @4xl), which `sizes` - a viewport media query -
+ * cannot express exactly; these are the viewport widths those container
+ * widths correspond to in the published layout. An imperfect match only
+ * costs a slightly larger render than strictly needed, never a wrong or
+ * duplicated one.
+ */
+export const EXPLORE_CARD_SIZES = "(min-width: 896px) 33vw, (min-width: 576px) 50vw, 100vw";
+
 function ExploreCard({
   title,
   subtitle,
@@ -970,7 +1048,7 @@ function ExploreCard({
   subtitle: string | null;
   icon: TeachIconName;
   image: string | null;
-  focal: Parameters<typeof coverStyle>[1];
+  focal: FocalPoint | null;
   fallback: string;
   onClick: () => void;
   tall?: boolean;
@@ -982,8 +1060,27 @@ function ExploreCard({
       type="button"
       onClick={onClick}
       className={`tt-reveal relative overflow-hidden text-start w-full ${tall ? "h-[200px]" : "h-[170px]"} @min-[40rem]:h-[220px] @4xl:h-[300px] ${feature ? "@4xl:col-span-2" : ""}`}
-      style={{ borderRadius: "calc(var(--tt-radius-card) + 4px)", ...coverStyle(image, focal, fallback) }}
+      style={{ borderRadius: "calc(var(--tt-radius-card) + 4px)" }}
     >
+      {/* 028D: these four cards were the last Guest media still painted
+          as a CSS background-image. A background cannot carry a srcset,
+          so each card was pulling the organizer's full-resolution
+          original - on a phone, a ~1600px file into a ~180px tile. Now
+          they go through the same primitive as everything else, which
+          also makes them predictable enough to warm ahead of a tab
+          press (see EXPLORE_CARD_SIZES). The wrapping span owns the
+          positioning so the fallback surface and the image land
+          identically. */}
+      <span aria-hidden="true" className="absolute inset-0">
+        <TeachImage
+          src={image}
+          focal={focal}
+          alt=""
+          sizes={EXPLORE_CARD_SIZES}
+          fallback={fallback}
+          className="w-full h-full"
+        />
+      </span>
       <span aria-hidden="true" className="absolute inset-0" style={{ background: image ? "linear-gradient(180deg, transparent 35%, rgb(20 30 25 / calc(var(--tt-overlay) + 0.3)))" : "transparent" }} />
       <span className="absolute top-4 end-4 w-9 h-9 rounded-full flex items-center justify-center text-white" style={{ background: "rgb(255 255 255 / 0.22)" }}>
         <TeachIcon name={icon} size={17} />

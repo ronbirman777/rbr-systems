@@ -66,6 +66,28 @@ const SIZES = "(min-width: 640px) 390px, 100vw";
 /** Explore tiles sit two to a row. */
 const TILE_SIZES = "(min-width: 640px) 195px, 50vw";
 
+/**
+ * Which `sizes` each module's cover is requested at, by card shape:
+ * full-width EntryCards for the three catalogue modules, half-width
+ * SolidTiles for the rest.
+ *
+ * Exported so the background prefetcher (lib/media/prefetch.ts) warms
+ * the same candidate this screen will ask for. If the two disagreed the
+ * visitor would download two renders of one cover, which is the exact
+ * waste CP4 is removing - hence one table, read by both.
+ */
+export const EXPLORE_COVER_SIZES: Record<string, string> = {
+  meals: SIZES,
+  treatments: SIZES,
+  facilities: SIZES,
+  arrivalInfo: TILE_SIZES,
+  faq: TILE_SIZES,
+  stayConnected: TILE_SIZES,
+};
+
+/** Custom pages render as SolidTiles alongside the fixed modules. */
+export const EXPLORE_CUSTOM_PAGE_SIZES = TILE_SIZES;
+
 export function ExploreScreen({
   brand,
   enabledModules,

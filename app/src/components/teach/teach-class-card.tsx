@@ -10,6 +10,7 @@ import { recurrenceSummary, validRule } from "@/lib/teach/recurrenceText";
 import { TeachIcon, type TeachIconName } from "./teach-icons";
 import { TeachImage } from "./teach-image";
 import { DisplayHeading, Eyebrow, PillLink } from "./teach-ui";
+import { TEACH_SIZES } from "./teach-media-sizes";
 
 const VENUE_ICON: Record<string, TeachIconName> = {
   website: "globe",
@@ -106,6 +107,7 @@ export function TeachClassCard({
           focal={m.imagePosition}
           alt=""
           fallbackLabel={item.title}
+          sizes={TEACH_SIZES.classCardThumb}
           className="w-[76px] h-[90px] shrink-0"
           style={{ borderRadius: "var(--tt-radius-image)" }}
         />
