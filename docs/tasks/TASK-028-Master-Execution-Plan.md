@@ -173,6 +173,25 @@ Run repository-prescribed typecheck, lint, build, focused meaningful tests and t
 
 Before Staging: name frontend deployment, backend project, Storage resources and environment origins; verify none point to Production; confirm safe test accounts and migration order. Build with the appropriate isolated public origin. Test the actual deployed SHA, not a different local build. Retest affected coverage after fixes. Any main movement is reconciled on the feature branch and checked before final approval.
 
+## 10a. Release sequencing — REQUIRED ORDER (recorded at CP3, owner-directed)
+
+TASK 028 has a hard Production deployment dependency. The application code
+selects `brand_configs.custom_surface`, and the Studio brand query fails for
+every tenant if that column is absent (the same coupling 0014/0015 already
+documented). The code must therefore never run against a pre-0032 schema.
+
+Production is at `0030` as of CP3. The required release order is:
+
+1. Apply `0031` to Production.
+2. Verify `0031` (publish_space emits `modules.spaceSettings`).
+3. Apply `0032` to Production.
+4. Verify `0032` (`brand_configs.custom_surface` exists; theme emits `customSurface`).
+5. Only then deploy the TASK 028 application code.
+
+Deploying the code before step 4 breaks the Flow and Teach Studio brand step
+in Production. Neither migration may be applied to Production before the
+CP7 release gate; Staging is at `0032` and is the only environment rehearsed.
+
 ## 11. Release gates and Billing protection
 
 ### Hard blockers

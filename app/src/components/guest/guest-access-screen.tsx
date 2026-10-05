@@ -106,7 +106,7 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
             <div className="w-full h-full" style={{ background: "linear-gradient(135deg, var(--rbr-primary), var(--rbr-forest-mid))" }} />
           )}
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.2), rgba(0,0,0,0.7))" }} />
-          <div className="absolute top-0 left-0 right-0 px-6 pt-4 flex items-center gap-2">
+          <div className="absolute top-0 start-0 end-0 px-6 pt-4 flex items-center gap-2">
             {logoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logoUrl} alt="" className="h-6 w-auto max-w-[88px] object-contain shrink-0" />
@@ -115,7 +115,7 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
               {name}
             </span>
           </div>
-          <div className="absolute bottom-0 left-0 right-0 px-6 pb-5">
+          <div className="absolute bottom-0 start-0 end-0 px-6 pb-5">
             <p className="text-white/70 text-[10px] tracking-[0.2em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)" }}>
               {copy.title}
             </p>

@@ -115,7 +115,7 @@ export function Chip({ children, active = false, onClick }: { children: ReactNod
 
 export function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="inline-flex items-center gap-1 min-h-11 pr-3 text-[13px] font-semibold" style={{ color: "var(--rbr-primary)" }}>
+    <button type="button" onClick={onClick} className="inline-flex items-center gap-1 min-h-11 pe-3 text-[13px] font-semibold" style={{ color: "var(--rbr-primary)" }}>
       <TeachIcon name="chevronLeft" size={20} strokeWidth={2} />
       {label}
     </button>
@@ -173,7 +173,7 @@ export function DailyQuoteBlock({ quote, style, attribution }: { quote: DailyQuo
   }
   if (style.quoteStyle === "line") {
     return (
-      <figure className="pl-4 text-left" style={{ borderLeft: "2px solid var(--rbr-secondary)" }}>
+      <figure className="ps-4 text-start" style={{ borderLeft: "2px solid var(--rbr-secondary)" }}>
         {text}
         {label}
       </figure>
@@ -194,8 +194,8 @@ export function DailyQuoteBlock({ quote, style, attribution }: { quote: DailyQuo
 export function OrganicShapes() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[520px] overflow-hidden">
-      <div className="absolute -top-24 -right-20 w-72 h-72 rounded-full opacity-[0.35] blur-2xl" style={{ background: "var(--rbr-secondary-soft)" }} />
-      <div className="absolute top-40 -left-24 w-64 h-64 rounded-full opacity-[0.3] blur-2xl" style={{ background: "var(--rbr-primary-soft)" }} />
+      <div className="absolute -top-24 -end-20 w-72 h-72 rounded-full opacity-[0.35] blur-2xl" style={{ background: "var(--rbr-secondary-soft)" }} />
+      <div className="absolute top-40 -start-24 w-64 h-64 rounded-full opacity-[0.3] blur-2xl" style={{ background: "var(--rbr-primary-soft)" }} />
     </div>
   );
 }

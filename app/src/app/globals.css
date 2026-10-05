@@ -105,6 +105,19 @@ body {
  * still slide. Elements that opt into `truncate` (white-space: nowrap)
  * are unaffected - nowrap wins.
  */
+/*
+ * RTL icon mirroring, restricted to icons that MEAN a direction.
+ *
+ * A back arrow in Hebrew points right, because "back" is rightwards
+ * there. A play triangle does not - it means "play", not "rightwards",
+ * and mirroring it produces a rewind button. The allowlist that decides
+ * which is which lives in lib/i18n/direction.ts; components tag the
+ * directional ones with .rtl-mirror and this flips only those.
+ */
+[dir="rtl"] .rtl-mirror {
+  transform: scaleX(-1);
+}
+
 .guest-viewport {
   max-width: 100%;
 }

@@ -37,16 +37,23 @@ function inline(text: string, keyBase: string): ReactNode[] {
   return out;
 }
 
+/**
+ * Renders text the ORGANIZER wrote, so it carries dir="auto": the browser
+ * takes direction from the text's own first strong character rather than
+ * from the app. A Hebrew biography stays right-to-left inside an English
+ * Space, and an English class description stays left-to-right inside a
+ * Hebrew one. Inheriting the app direction would mangle both.
+ */
 export function TeachRichText({ text, className = "" }: { text: string | null | undefined; className?: string }) {
   if (!text?.trim()) return null;
   const blocks = text.replace(/\r\n/g, "\n").split(/\n{2,}/);
   return (
-    <div className={`flex flex-col gap-4 ${className}`}>
+    <div dir="auto" className={`flex flex-col gap-4 ${className}`}>
       {blocks.map((block, bi) => {
         const lines = block.split("\n").filter((l) => l.trim());
         if (lines.length > 0 && lines.every((l) => /^\s*[-•]\s+/.test(l))) {
           return (
-            <ul key={bi} className="flex flex-col gap-2 pl-1">
+            <ul key={bi} className="flex flex-col gap-2 ps-1">
               {lines.map((l, li) => (
                 <li key={li} className="flex gap-3">
                   <span aria-hidden="true" className="mt-[0.6em] w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--rbr-secondary)" }} />
@@ -60,7 +67,7 @@ export function TeachRichText({ text, className = "" }: { text: string | null | 
           return (
             <blockquote
               key={bi}
-              className="pl-4 text-[1.2em] leading-snug italic"
+              className="ps-4 text-[1.2em] leading-snug italic"
               style={{ borderLeft: "2px solid var(--rbr-secondary)", fontFamily: "var(--tt-font-display)", color: "var(--rbr-text)" }}
             >
               {inline(lines.map((l) => l.replace(/^\s*>\s?/, "")).join(" "), `${bi}`)}

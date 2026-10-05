@@ -1,6 +1,8 @@
 "use client";
 
 import { cardImage } from "@/lib/teach/cardImage";
+import { createTranslator, directionOf } from "@/lib/i18n";
+import { iconTransform } from "@/lib/i18n/direction";
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import { getDailyQuoteFrom } from "@/lib/content/dailyQuotes";
@@ -43,11 +45,12 @@ type Page =
   | { kind: "contact" }
   | { kind: "page"; id: string };
 
-const TABS: { key: Tab; label: string; icon: TeachIconName }[] = [
-  { key: "home", label: "Home", icon: "home" },
-  { key: "schedule", label: "Schedule", icon: "calendar" },
-  { key: "about", label: "About Me", icon: "user" },
-  { key: "explore", label: "Explore", icon: "compass" },
+/** `labelKey` resolves through the Space locale at render time. */
+const TABS: { key: Tab; labelKey: "navHome" | "navSchedule" | "navAbout" | "navExplore"; icon: TeachIconName }[] = [
+  { key: "home", labelKey: "navHome", icon: "home" },
+  { key: "schedule", labelKey: "navSchedule", icon: "calendar" },
+  { key: "about", labelKey: "navAbout", icon: "user" },
+  { key: "explore", labelKey: "navExplore", icon: "compass" },
 ];
 
 const SOCIAL_ICON: Record<string, TeachIconName> = {
@@ -117,6 +120,7 @@ export function TeachGuestApp({
     [data.brand, style]
   );
 
+  const { t, dir } = createTranslator(data.locale);
   const tabs = visibleTabs(data);
   // A hidden About tab can't stay selected (e.g. the Studio preview was on it when the teacher turned it off).
   const tab = tabs.some((t) => t.key === selectedTab) ? selectedTab : "home";
@@ -124,11 +128,11 @@ export function TeachGuestApp({
   const url = (ref: string | null | undefined) => (ref ? (data.mediaUrls[ref] ?? null) : null);
 
   let body: ReactNode;
-  if (page?.kind === "readings") body = <ReadingsScreen data={data} onBack={back} onOpen={(id) => open({ kind: "reading", id })} title={exploreTitle(data, "teachReadings", "My Readings")} />;
+  if (page?.kind === "readings") body = <ReadingsScreen data={data} onBack={back} onOpen={(id) => open({ kind: "reading", id })} title={exploreTitle(data, "teachReadings", t("teach", "exploreReadings"))} />;
   else if (page?.kind === "reading") {
     const item = data.readings.find((r) => r.id === page.id);
     body = item ? <ReadingDetailScreen data={data} item={item} onBack={back} /> : null;
-  } else if (page?.kind === "audio") body = <AudioListScreen data={data} onBack={back} onOpen={(id) => open({ kind: "track", id })} title={exploreTitle(data, "teachAudio", "My Audio")} />;
+  } else if (page?.kind === "audio") body = <AudioListScreen data={data} onBack={back} onOpen={(id) => open({ kind: "track", id })} title={exploreTitle(data, "teachAudio", t("teach", "exploreAudio"))} />;
   else if (page?.kind === "track") {
     const item = data.audio.find((a) => a.id === page.id);
     body = item ? <AudioPlayerScreen key={item.id} data={data} item={item} onBack={back} /> : null;
@@ -144,6 +148,8 @@ export function TeachGuestApp({
   return (
     <div
       ref={rootRef}
+      lang={data.locale}
+      dir={dir}
       className={`tt-root guest-viewport ${TEACH_FONT_VARIABLES} @container relative flex flex-col ${embedded ? "h-full" : "min-h-dvh"}`}
       style={{
         ...vars,
@@ -165,20 +171,20 @@ export function TeachGuestApp({
         className="@min-[40rem]:hidden sticky bottom-0 z-20 flex justify-around px-2 pt-2 pb-[max(env(safe-area-inset-bottom),14px)]"
         style={{ background: "rgb(253 250 244 / 0.96)", borderTop: "1px solid var(--tt-line)", backdropFilter: "blur(10px)" }}
       >
-        {tabs.map((t) => {
-          const active = t.key === tab;
+        {tabs.map((item) => {
+          const active = item.key === tab;
           return (
             <button
-              key={t.key}
+              key={item.key}
               type="button"
-              onClick={() => goTab(t.key)}
+              onClick={() => goTab(item.key)}
               aria-current={active ? "page" : undefined}
               className="flex flex-col items-center gap-1 min-w-[64px] min-h-11 pt-1"
               style={{ color: active ? "var(--rbr-navigation)" : "var(--rbr-mist)" }}
             >
-              <TeachIcon name={t.icon} size={22} strokeWidth={active ? 1.9 : 1.5} />
+              <TeachIcon name={item.icon} size={22} strokeWidth={active ? 1.9 : 1.5} />
               <span className="text-[10.5px]" style={{ fontWeight: active ? 600 : 500 }}>
-                {t.label}
+                {t("teach", item.labelKey)}
               </span>
               <span aria-hidden="true" className="w-4 h-0.5 rounded-full" style={{ background: active ? "var(--rbr-navigation)" : "transparent" }} />
             </button>
@@ -221,6 +227,7 @@ export function visibleTabs(data: TeachGuestData) {
 }
 
 function DesktopTopNav({ data, tabs, tab, onTab, url }: { data: TeachGuestData; tabs: typeof TABS; tab: Tab; onTab: (t: Tab) => void; url: (r: string | null) => string | null }) {
+  const { t } = createTranslator(data.locale);
   const contact = contactEntries(data.settings.teachContact);
   const primary = contact.find((e) => e.method === data.settings.teachContact.primary) ?? contact[0] ?? null;
   return (
@@ -232,10 +239,10 @@ function DesktopTopNav({ data, tabs, tab, onTab, url }: { data: TeachGuestData; 
         </span>
       </button>
       <nav aria-label="Main" className="flex items-center gap-5 @4xl:gap-7 shrink-0">
-        {tabs.map((t) => (
-          <button key={t.key} type="button" onClick={() => onTab(t.key)} aria-current={t.key === tab ? "page" : undefined} className="flex flex-col items-center gap-1 text-[14px] min-h-11 justify-center" style={{ color: t.key === tab ? "var(--rbr-navigation)" : "var(--rbr-text-muted)", fontWeight: t.key === tab ? 600 : 500 }}>
-            {t.label}
-            <span className="w-4 h-0.5 rounded-full" style={{ background: t.key === tab ? "var(--rbr-navigation)" : "transparent" }} />
+        {tabs.map((item) => (
+          <button key={item.key} type="button" onClick={() => onTab(item.key)} aria-current={item.key === tab ? "page" : undefined} className="flex flex-col items-center gap-1 text-[14px] min-h-11 justify-center" style={{ color: item.key === tab ? "var(--rbr-navigation)" : "var(--rbr-text-muted)", fontWeight: item.key === tab ? 600 : 500 }}>
+            {t("teach", item.labelKey)}
+            <span className="w-4 h-0.5 rounded-full" style={{ background: item.key === tab ? "var(--rbr-navigation)" : "transparent" }} />
           </button>
         ))}
         {primary ? (
@@ -273,7 +280,7 @@ function Hero({
   const src = url(data.heroImageRef);
   const fullbleed = layout === "fullbleed";
   const identity = (light: boolean) => (
-    <div className={`flex flex-col gap-1.5 @min-[40rem]:gap-2 ${fullbleed ? "" : "items-center text-center @min-[40rem]:items-start @min-[40rem]:text-left"}`}>
+    <div className={`flex flex-col gap-1.5 @min-[40rem]:gap-2 ${fullbleed ? "" : "items-center text-center @min-[40rem]:items-start @min-[40rem]:text-start"}`}>
       {p.greeting ? (
         <p className="text-[13px] @min-[40rem]:text-[15px] italic" style={{ color: light ? "rgba(255,255,255,.9)" : "var(--rbr-text-muted)", fontFamily: "var(--tt-font-display)" }}>
           {p.greeting}
@@ -311,7 +318,7 @@ function Hero({
       <div className="relative h-[360px] @min-[40rem]:h-[460px] @4xl:h-[560px] overflow-hidden -mt-2 @min-[40rem]:mt-0 @min-[40rem]:mx-6 @4xl:mx-10 @min-[40rem]:rounded-[var(--tt-radius-card)]">
         <TeachImage src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className="absolute inset-0 w-full h-full" />
         <div aria-hidden="true" className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgb(20 30 25 / calc(var(--tt-overlay) * .4)) 0%, rgb(20 30 25 / calc(var(--tt-overlay) + .3)) 100%)" }} />
-        <div className="absolute left-6 right-6 bottom-6 @min-[40rem]:left-10 @min-[40rem]:right-10 @min-[40rem]:bottom-10 @4xl:left-14 @4xl:bottom-14 @4xl:max-w-[640px]">{identity(true)}</div>
+        <div className="absolute start-6 end-6 bottom-6 @min-[40rem]:start-10 @min-[40rem]:end-10 @min-[40rem]:bottom-10 @4xl:start-14 @4xl:bottom-14 @4xl:max-w-[640px]">{identity(true)}</div>
       </div>
     );
   }
@@ -434,11 +441,11 @@ function HomeScreen({
       {showPrivate || showLibrary ? (
         <div className={`flex flex-col gap-[var(--tt-section-gap)] @min-[40rem]:gap-12 @4xl:grid @4xl:gap-10 @4xl:items-start ${showPrivate && showLibrary ? "@4xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]" : ""}`}>
           {showPrivate ? (
-            <section className={`${pad} @4xl:pr-0 @4xl:flex @4xl:flex-col @4xl:gap-4`}>
+            <section className={`${pad} @4xl:pe-0 @4xl:flex @4xl:flex-col @4xl:gap-4`}>
               <div className="hidden @4xl:block">
                 <SectionHeader title="One-to-one" />
               </div>
-              <button type="button" onClick={() => goTab("schedule")} className="tt-reveal w-full text-left flex items-center gap-3.5 p-4 @min-[40rem]:p-6" style={{ background: "var(--rbr-primary-soft)", borderRadius: "var(--tt-radius-card)" }}>
+              <button type="button" onClick={() => goTab("schedule")} className="tt-reveal w-full text-start flex items-center gap-3.5 p-4 @min-[40rem]:p-6" style={{ background: "var(--rbr-primary-soft)", borderRadius: "var(--tt-radius-card)" }}>
                 <span className="flex-1 flex flex-col gap-1">
                   <Eyebrow tone="primary">One-to-one</Eyebrow>
                   <DisplayHeading as="h2" size={18}>
@@ -459,11 +466,11 @@ function HomeScreen({
           ) : null}
 
           {showLibrary ? (
-            <section className={`flex flex-col gap-3 @min-[40rem]:gap-4 ${pad} ${showPrivate ? "@4xl:pl-0" : ""}`}>
+            <section className={`flex flex-col gap-3 @min-[40rem]:gap-4 ${pad} ${showPrivate ? "@4xl:ps-0" : ""}`}>
               <SectionHeader title={`From ${firstName}`} />
               <div className="grid grid-cols-2 gap-2.5 @min-[40rem]:gap-4">
                 {latestReading ? (
-                  <button type="button" onClick={() => open({ kind: "reading", id: latestReading.id })} className="tt-reveal text-left overflow-hidden flex flex-col" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
+                  <button type="button" onClick={() => open({ kind: "reading", id: latestReading.id })} className="tt-reveal text-start overflow-hidden flex flex-col" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
                     <TeachImage {...cardImage(data, "teachReadings", latestReading)} alt="" fallbackLabel={latestReading.title} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
                     <span className="p-3 @min-[40rem]:p-4 flex flex-col gap-1">
                       <Eyebrow tone="primary">Reading</Eyebrow>
@@ -474,7 +481,7 @@ function HomeScreen({
                   </button>
                 ) : null}
                 {latestAudio ? (
-                  <button type="button" onClick={() => open({ kind: "track", id: latestAudio.id })} className="tt-reveal text-left overflow-hidden flex flex-col" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
+                  <button type="button" onClick={() => open({ kind: "track", id: latestAudio.id })} className="tt-reveal text-start overflow-hidden flex flex-col" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
                     <TeachImage {...cardImage(data, "teachAudio", latestAudio)} alt="" fallbackLabel={latestAudio.title} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
                     <span className="p-3 @min-[40rem]:p-4 flex flex-col gap-1">
                       <Eyebrow tone="primary">Listen</Eyebrow>
@@ -694,7 +701,7 @@ function ScheduleAgenda({
                   key={d.date}
                   type="button"
                   onClick={() => jump(d.date)}
-                  className="flex items-center justify-between gap-3 min-h-11 px-3 text-[13.5px] text-left"
+                  className="flex items-center justify-between gap-3 min-h-11 px-3 text-[13.5px] text-start"
                   style={{ borderBottom: "1px solid var(--tt-line)", color: "var(--rbr-text)" }}
                 >
                   <span className="font-medium">
@@ -820,7 +827,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
         {a.about ? (
           <section className="px-6 @4xl:px-0 flex flex-col gap-2.5">
             <SectionHeader title="About me" />
-            <p className="text-[14.5px] @4xl:text-[16px] leading-[1.65] @4xl:leading-[1.75] whitespace-pre-line @4xl:max-w-[68ch]" style={{ color: "var(--rbr-text-muted)" }}>
+            <p dir="auto" className="text-[14.5px] @4xl:text-[16px] leading-[1.65] @4xl:leading-[1.75] whitespace-pre-line @4xl:max-w-[68ch]" style={{ color: "var(--rbr-text-muted)" }}>
               {a.about}
             </p>
           </section>
@@ -924,14 +931,14 @@ function ExploreCard({
     <button
       type="button"
       onClick={onClick}
-      className={`tt-reveal relative overflow-hidden text-left w-full ${tall ? "h-[200px]" : "h-[170px]"} @min-[40rem]:h-[220px] @4xl:h-[300px] ${feature ? "@4xl:col-span-2" : ""}`}
+      className={`tt-reveal relative overflow-hidden text-start w-full ${tall ? "h-[200px]" : "h-[170px]"} @min-[40rem]:h-[220px] @4xl:h-[300px] ${feature ? "@4xl:col-span-2" : ""}`}
       style={{ borderRadius: "calc(var(--tt-radius-card) + 4px)", ...coverStyle(image, focal, fallback) }}
     >
       <span aria-hidden="true" className="absolute inset-0" style={{ background: image ? "linear-gradient(180deg, transparent 35%, rgb(20 30 25 / calc(var(--tt-overlay) + 0.3)))" : "transparent" }} />
-      <span className="absolute top-4 right-4 w-9 h-9 rounded-full flex items-center justify-center text-white" style={{ background: "rgb(255 255 255 / 0.22)" }}>
+      <span className="absolute top-4 end-4 w-9 h-9 rounded-full flex items-center justify-center text-white" style={{ background: "rgb(255 255 255 / 0.22)" }}>
         <TeachIcon name={icon} size={17} />
       </span>
-      <span className="absolute left-5 right-5 bottom-4 @4xl:left-7 @4xl:right-7 @4xl:bottom-6 flex flex-col gap-1 [--tt-tile-title:24px] @4xl:[--tt-tile-title:30px]">
+      <span className="absolute start-5 end-5 bottom-4 @4xl:start-7 @4xl:end-7 @4xl:bottom-6 flex flex-col gap-1 [--tt-tile-title:24px] @4xl:[--tt-tile-title:30px]">
         {subtitle ? <Eyebrow tone="light">{subtitle}</Eyebrow> : null}
         <span className="text-white leading-tight" style={{ fontFamily: "var(--tt-font-display)", fontSize: "calc(var(--tt-tile-title) * var(--tt-display-scale, 1))" }}>
           {title}
@@ -942,21 +949,24 @@ function ExploreCard({
 }
 
 function ExploreScreen({ data, url, open }: { data: TeachGuestData; url: (r: string | null) => string | null; open: (p: Page) => void }) {
+  // A card title the teacher typed is user content and is never
+  // translated; only the FALLBACK label is.
+  const { t } = createTranslator(data.locale);
   const cards = data.settings.teachExplore.cards;
   const on = (k: TeachExploreModule) => exploreModuleStatus(data, k) === "visible";
   const tiles: ReactNode[] = [];
   const fb = (c: string | null | undefined, v: string) => c ?? v;
   if (on("teachReadings")) {
     const c = cards.teachReadings;
-    tiles.push(<ExploreCard key="r" tall feature title={c?.title ?? "My Readings"} subtitle={c?.subtitle ?? "Reflections & articles"} icon="book" image={url(c?.imageRef ?? null)} focal={c?.imagePosition ?? null} fallback={fb(c?.fallbackColor, "var(--rbr-primary)")} onClick={() => open({ kind: "readings" })} />);
+    tiles.push(<ExploreCard key="r" tall feature title={c?.title ?? t("teach", "exploreReadings")} subtitle={c?.subtitle ?? t("teach", "readingsEyebrow")} icon="book" image={url(c?.imageRef ?? null)} focal={c?.imagePosition ?? null} fallback={fb(c?.fallbackColor, "var(--rbr-primary)")} onClick={() => open({ kind: "readings" })} />);
   }
   if (on("teachAudio")) {
     const c = cards.teachAudio;
-    tiles.push(<ExploreCard key="a" tall title={c?.title ?? "My Audio"} subtitle={c?.subtitle ?? "Practices to listen to"} icon="headphones" image={url(c?.imageRef ?? null)} focal={c?.imagePosition ?? null} fallback={fb(c?.fallbackColor, "var(--rbr-primary-dark)")} onClick={() => open({ kind: "audio" })} />);
+    tiles.push(<ExploreCard key="a" tall title={c?.title ?? t("teach", "exploreAudio")} subtitle={c?.subtitle ?? t("teach", "audioEyebrow")} icon="headphones" image={url(c?.imageRef ?? null)} focal={c?.imagePosition ?? null} fallback={fb(c?.fallbackColor, "var(--rbr-primary-dark)")} onClick={() => open({ kind: "audio" })} />);
   }
   if (on("teachContact")) {
     const c = cards.teachContact;
-    tiles.push(<ExploreCard key="c" title={c?.title ?? "Contact"} subtitle={c?.subtitle ?? "How to reach me"} icon="chat" image={url(c?.imageRef ?? null)} focal={c?.imagePosition ?? null} fallback={fb(c?.fallbackColor, "var(--rbr-secondary-dark)")} onClick={() => open({ kind: "contact" })} />);
+    tiles.push(<ExploreCard key="c" title={c?.title ?? t("teach", "contactCardTitle")} subtitle={c?.subtitle ?? t("teach", "contactCardSubtitle")} icon="chat" image={url(c?.imageRef ?? null)} focal={c?.imagePosition ?? null} fallback={fb(c?.fallbackColor, "var(--rbr-secondary-dark)")} onClick={() => open({ kind: "contact" })} />);
   }
   if (on("customPages")) {
     for (const p of data.customPages) {
@@ -966,12 +976,12 @@ function ExploreScreen({ data, url, open }: { data: TeachGuestData; url: (r: str
   return (
     <div className="flex flex-col gap-4 @min-[40rem]:gap-6 px-4 @min-[40rem]:px-6 @4xl:px-10">
       <header className="px-2 @min-[40rem]:px-0 flex flex-col gap-1">
-        <Eyebrow>{`More from ${data.teacherName.split(" ")[0] || data.teacherName}`}</Eyebrow>
+        <Eyebrow>{t("teach", "moreFrom", { name: data.teacherName.split(" ")[0] || data.teacherName })}</Eyebrow>
         <DisplayHeading as="h1" className="[--tt-h1:32px] @min-[40rem]:[--tt-h1:42px] @4xl:[--tt-h1:46px]" style={{ fontSize: "calc(var(--tt-h1) * var(--tt-display-scale, 1))" }}>
-          Explore
+          {t("teach", "exploreHeading")}
         </DisplayHeading>
       </header>
-      {tiles.length > 0 ? <div className="grid gap-3 @xl:grid-cols-2 @min-[40rem]:gap-4 @4xl:grid-cols-3 @4xl:gap-5">{tiles}</div> : <EmptyState icon="compass" title="More coming soon" body="Readings, audio and pages will appear here." />}
+      {tiles.length > 0 ? <div className="grid gap-3 @xl:grid-cols-2 @min-[40rem]:gap-4 @4xl:grid-cols-3 @4xl:gap-5">{tiles}</div> : <EmptyState icon="compass" title={t("teach", "exploreEmpty")} body={t("teach", "exploreEmptyBody")} />}
     </div>
   );
 }

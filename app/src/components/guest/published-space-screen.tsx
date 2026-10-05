@@ -18,6 +18,7 @@ import { parseImagePosition, type ImagePosition } from "@/lib/modules/imagePosit
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
 import { todayInTimezone, currentTimeInTimezone, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { publicMediaUrl } from "@/lib/media/path";
+import { directionOf, resolveLocale } from "@/lib/i18n";
 
 /**
  * Exactly the columns either guest lookup (by tenant id at /g/[tenantId],
@@ -41,6 +42,13 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
   const themeParsed = publishedThemeSchema.safeParse(space.theme);
   const theme = themeParsed.success ? themeParsed.data : DEFAULT_PUBLISHED_THEME;
   const modules = (space.modules ?? {}) as Record<string, unknown>;
+  // System language, read only from the published snapshot (0031's
+  // modules.spaceSettings). Never a private draft read, never the
+  // visitor's device language. Absent resolves to English, which is how
+  // every Space published before this renders.
+  const spaceSettings = (modules.spaceSettings ?? {}) as { locale?: unknown };
+  const locale = resolveLocale(spaceSettings.locale);
+  const dir = directionOf(locale);
 
   function withImage<T extends { imageRef: string | null }>(items: T[]): (T & { imageUrl: string | null })[] {
     return items.map((item) => ({ ...item, imageUrl: item.imageRef ? publicMediaUrl(item.imageRef) : null }));
@@ -133,6 +141,8 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
   return (
     <main
       style={{ ...vars, background: "var(--rbr-parchment-deep)" }}
+      lang={locale}
+      dir={dir}
       className="guest-viewport flex-1 flex items-center justify-center sm:p-6 p-0"
     >
       <div

@@ -317,7 +317,7 @@ function EntryCard({
         </h2>
       </div>
       {showChevron && (
-        <div className="absolute right-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center bg-white/15">
+        <div className="absolute end-5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center bg-white/15">
           <ChevronRightIcon className="text-white" />
         </div>
       )}
@@ -360,7 +360,7 @@ function SolidTile({
 }) {
   const v = TONE_VARS[tone];
   return (
-    <button type="button" onClick={onClick} className="rounded-3xl h-[140px] relative overflow-hidden text-left">
+    <button type="button" onClick={onClick} className="rounded-3xl h-[140px] relative overflow-hidden text-start">
       {imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img

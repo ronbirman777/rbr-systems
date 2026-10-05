@@ -12,6 +12,7 @@ import {
   type TeachSettings,
 } from "./schemas";
 import { expandClassesForWindow, guestWindow } from "./recurrence";
+import { resolveLocale, type Locale } from "@/lib/i18n";
 
 /**
  * Everything the Time to Teach Guest App renders. Built from the published
@@ -25,6 +26,14 @@ import { expandClassesForWindow, guestWindow } from "./recurrence";
  */
 export type TeachGuestData = {
   teacherName: string;
+  /**
+   * The Space's system language, read ONLY from the published snapshot
+   * (modules.spaceSettings, published by migration 0031). A guest never
+   * triggers a private module_settings read, and a device language never
+   * overrides it. Absent/unknown resolves to English, which is exactly
+   * how every Space published before this renders.
+   */
+  locale: Locale;
   timezone: string;
   todayIso: string;
   nowTime: string;
@@ -93,9 +102,12 @@ export function parsePublishedTeachSpace(space: PublishedTeachRow): TeachGuestDa
   const heroImageRef = brandMedia.success ? (brandMedia.data.hero?.imageRef ?? null) : null;
 
   const timezone = space.timezone || DEFAULT_TIMEZONE;
+  const spaceSettings = (modules.spaceSettings ?? {}) as { locale?: unknown };
+  const locale = resolveLocale(spaceSettings.locale);
 
   const data: Omit<TeachGuestData, "mediaUrls"> = {
     teacherName: space.name,
+    locale,
     timezone,
     todayIso: todayInTimezone(timezone),
     nowTime: currentTimeInTimezone(timezone),

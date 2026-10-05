@@ -61,7 +61,7 @@ export function ReadingsScreen({ data, onBack, onOpen, title }: { data: TeachGue
         <EmptyState icon="book" title="Nothing to read yet" body="New reflections will appear here." />
       ) : (
         <>
-          <button type="button" onClick={() => onOpen(featured.id)} className="tt-reveal text-left overflow-hidden @4xl:grid @4xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
+          <button type="button" onClick={() => onOpen(featured.id)} className="tt-reveal text-start overflow-hidden @4xl:grid @4xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
             <TeachImage {...cardImage(data, "teachReadings", featured)} alt="" fallbackLabel={featured.title} className="w-full h-[200px] @min-[40rem]:h-[280px] @4xl:h-full @4xl:min-h-[360px]" />
             <span className="flex flex-col gap-1.5 p-4 @min-[40rem]:p-6 @4xl:p-10 @4xl:justify-center @4xl:gap-3">
               <Eyebrow tone="primary">
@@ -80,7 +80,7 @@ export function ReadingsScreen({ data, onBack, onOpen, title }: { data: TeachGue
           <ul className="flex flex-col gap-2.5 @min-[40rem]:grid @min-[40rem]:grid-cols-2 @min-[40rem]:gap-4 @4xl:grid-cols-3 @4xl:gap-5">
             {rest.map((r) => (
               <li key={r.id}>
-                <button type="button" onClick={() => onOpen(r.id)} className="tt-reveal w-full h-full text-left flex items-center gap-3 p-2.5 @4xl:flex-col @4xl:items-stretch @4xl:gap-0 @4xl:p-0 @4xl:overflow-hidden" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
+                <button type="button" onClick={() => onOpen(r.id)} className="tt-reveal w-full h-full text-start flex items-center gap-3 p-2.5 @4xl:flex-col @4xl:items-stretch @4xl:gap-0 @4xl:p-0 @4xl:overflow-hidden" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
                   <TeachImage {...cardImage(data, "teachReadings", r)} alt="" fallbackLabel={r.title} className="w-[78px] h-[78px] @4xl:w-full @4xl:h-[180px] @4xl:!rounded-none shrink-0" style={{ borderRadius: "var(--tt-radius-image)" }} />
                   <span className="flex-1 min-w-0 flex flex-col gap-1 @4xl:p-4 @4xl:gap-1.5">
                     {r.metadata.category ? <Eyebrow tone="primary">{r.metadata.category}</Eyebrow> : null}
@@ -109,7 +109,7 @@ export function ReadingDetailScreen({ data, item, onBack }: { data: TeachGuestDa
     <article className="flex flex-col pb-8">
       <div className="relative @4xl:mx-10 @4xl:overflow-hidden @4xl:rounded-[var(--tt-radius-card)]">
         <TeachImage {...cardImage(data, "teachReadings", item)} alt="" fallbackLabel={item.title} className="w-full h-[260px] @min-[40rem]:h-[360px] @4xl:h-[460px]" />
-        <div className="absolute top-3 left-3 @4xl:top-5 @4xl:left-5">
+        <div className="absolute top-3 start-3 @4xl:top-5 @4xl:start-5">
           <button type="button" onClick={onBack} aria-label="Back to My Readings" className="w-11 h-11 rounded-full flex items-center justify-center shadow" style={{ background: "var(--tt-surface)", color: "var(--rbr-text)" }}>
             <TeachIcon name="chevronLeft" size={20} strokeWidth={2} />
           </button>
@@ -184,23 +184,23 @@ export function AudioListScreen({ data, onBack, onOpen, title }: { data: TeachGu
         <EmptyState icon="headphones" title="No audio yet" body="Guided practices will appear here." />
       ) : (
         <>
-          <button type="button" onClick={() => onOpen(featured.id)} className="tt-reveal relative overflow-hidden text-left h-[190px] @min-[40rem]:h-[260px] @4xl:h-[360px]" style={{ borderRadius: "var(--tt-radius-card)" }}>
+          <button type="button" onClick={() => onOpen(featured.id)} className="tt-reveal relative overflow-hidden text-start h-[190px] @min-[40rem]:h-[260px] @4xl:h-[360px]" style={{ borderRadius: "var(--tt-radius-card)" }}>
             <TeachImage {...cardImage(data, "teachAudio", featured)} alt="" fallbackLabel={featured.title} className="absolute inset-0 w-full h-full" />
             <span aria-hidden="true" className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 30%, rgb(20 30 25 / calc(var(--tt-overlay) + 0.25)))" }} />
-            <span className="absolute left-4 bottom-4 right-20 @4xl:left-8 @4xl:bottom-8 @4xl:right-32 flex flex-col gap-1">
+            <span className="absolute start-4 bottom-4 end-20 @4xl:start-8 @4xl:bottom-8 @4xl:end-32 flex flex-col gap-1">
               <Eyebrow tone="light">{[featured.metadata.category, formatDuration(featured.metadata.durationSeconds)].filter(Boolean).join(" · ")}</Eyebrow>
               <span className="text-white text-[22px] @min-[40rem]:text-[28px] @4xl:text-[36px] leading-tight" style={{ fontFamily: "var(--tt-font-display)" }}>
                 {featured.title}
               </span>
             </span>
-            <span className="absolute right-4 bottom-4 w-12 h-12 @4xl:right-8 @4xl:bottom-8 @4xl:w-16 @4xl:h-16 rounded-full flex items-center justify-center" style={{ background: "var(--tt-surface)", color: "var(--rbr-primary)" }}>
+            <span className="absolute end-4 bottom-4 w-12 h-12 @4xl:end-8 @4xl:bottom-8 @4xl:w-16 @4xl:h-16 rounded-full flex items-center justify-center" style={{ background: "var(--tt-surface)", color: "var(--rbr-primary)" }}>
               <TeachIcon name="play" size={20} />
             </span>
           </button>
           <ul className="flex flex-col gap-2.5 @min-[40rem]:grid @min-[40rem]:grid-cols-2 @min-[40rem]:gap-4 @4xl:grid-cols-3">
             {rest.map((t) => (
               <li key={t.id}>
-                <button type="button" onClick={() => onOpen(t.id)} className="tt-reveal w-full text-left flex items-center gap-3 p-2.5" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
+                <button type="button" onClick={() => onOpen(t.id)} className="tt-reveal w-full text-start flex items-center gap-3 p-2.5" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
                   <TeachImage {...cardImage(data, "teachAudio", t)} alt="" fallbackLabel={t.title} className="w-16 h-16 shrink-0" style={{ borderRadius: "var(--tt-radius-image)" }} />
                   <span className="flex-1 min-w-0 flex flex-col gap-0.5">
                     {t.metadata.category ? <Eyebrow tone="primary">{t.metadata.category}</Eyebrow> : null}
@@ -272,7 +272,7 @@ export function AudioPlayerScreen({ data, item, onBack }: { data: TeachGuestData
           style={{ borderRadius: "calc(var(--tt-radius-card) + 4px)", boxShadow: "0 24px 50px -24px rgba(36,59,50,.45)" }}
         />
         <div className="w-full flex flex-col items-center gap-5 @4xl:items-start">
-          <div className="text-center @4xl:text-left flex flex-col gap-1.5">
+          <div className="text-center @4xl:text-start flex flex-col gap-1.5">
             {item.metadata.category ? <Eyebrow tone="primary">{item.metadata.category}</Eyebrow> : null}
             <DisplayHeading as="h1" className="[--tt-h1:27px] @4xl:[--tt-h1:40px]" style={{ fontSize: "calc(var(--tt-h1) * var(--tt-display-scale, 1))" }}>
               {item.title}
@@ -390,7 +390,7 @@ export function ContactScreen({ data, onBack, backLabel }: { data: TeachGuestDat
     <div className="flex flex-col pb-10">
       <div className="relative">
         {cover ? <TeachImage src={cover} focal={c.cover.imagePosition} alt="" className="w-full h-[210px]" /> : <div className="h-16" />}
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 start-3">
           <button type="button" onClick={onBack} aria-label={`Back to ${backLabel}`} className="w-11 h-11 rounded-full flex items-center justify-center shadow" style={{ background: "var(--tt-surface)", color: "var(--rbr-text)" }}>
             <TeachIcon name="chevronLeft" size={20} strokeWidth={2} />
           </button>
@@ -488,7 +488,7 @@ export function CustomPageScreen({ data, page, onBack }: { data: TeachGuestData;
         ) : (
           <div className="h-[140px]" style={{ background: page.metadata.fallbackColor ?? "var(--rbr-primary-soft)" }} />
         )}
-        <div className="absolute top-3 left-3">
+        <div className="absolute top-3 start-3">
           <button type="button" onClick={onBack} aria-label="Back to Explore" className="w-11 h-11 rounded-full flex items-center justify-center shadow" style={{ background: "var(--tt-surface)", color: "var(--rbr-text)" }}>
             <TeachIcon name="chevronLeft" size={20} strokeWidth={2} />
           </button>

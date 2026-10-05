@@ -9,6 +9,7 @@ import { TeachGuestApp } from "@/components/teach/teach-guest-app";
 import { resolveListUpdate, resolvePatch, type ListUpdate, type Patch } from "./studioStateUpdates";
 import { todayInTimezone, currentTimeInTimezone } from "@/lib/timezone";
 import type { TeachGuestData } from "@/lib/teach/guestData";
+import type { Locale } from "@/lib/i18n";
 import { expandClassesForWindow, guestWindow } from "@/lib/teach/recurrence";
 import type {
   EditableTeachItem,
@@ -57,6 +58,7 @@ export type TeachStudioInitial = {
   enabledExplore: TeachExploreModule[];
   publishedAt: string | null;
   directoryListed: boolean;
+  locale: Locale;
   canPublish: boolean;
   accessLabel: string;
   customPagesLimit: number;
@@ -483,6 +485,9 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
     if (!mounted) return null;
     return {
       teacherName: name || "Your name",
+      // Preview renders in the Space's own language, so an organizer sees
+      // what their guests will see rather than always English.
+      locale: initial.locale,
       timezone,
       todayIso: todayInTimezone(timezone),
       nowTime: currentTimeInTimezone(timezone),

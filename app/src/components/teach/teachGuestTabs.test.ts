@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/teach/fonts", () => ({ TEACH_FONT_VARIABLES: "" }));
 
 import { parsePublishedTeachSpace, type TeachGuestData } from "@/lib/teach/guestData";
+import { translate } from "@/lib/i18n";
 import { TeachGuestApp, visibleTabs } from "./teach-guest-app";
 
 function guest(teachAbout?: Record<string, unknown>): TeachGuestData {
@@ -17,7 +18,9 @@ function guest(teachAbout?: Record<string, unknown>): TeachGuestData {
   });
 }
 
-const labels = (d: TeachGuestData) => visibleTabs(d).map((t) => t.label);
+// Tabs now carry a translation key rather than baked English; the label
+// is resolved through the Space locale at render time.
+const labels = (d: TeachGuestData) => visibleTabs(d).map((t) => translate("en", "teach", t.labelKey));
 
 describe("Guest App navigation: About Me tab", () => {
   it("is visible by default, even for a brand-new space with no About content at all", () => {

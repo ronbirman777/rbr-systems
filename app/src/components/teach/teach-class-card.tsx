@@ -89,7 +89,7 @@ export function TeachClassCard({
         onClick={onToggle}
         aria-expanded={expanded}
         aria-controls={regionId}
-        className="w-full flex items-center gap-3.5 p-3 text-left"
+        className="w-full flex items-center gap-3.5 p-3 text-start"
       >
         <TeachImage
           src={imageUrl}

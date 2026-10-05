@@ -17,6 +17,7 @@ import { PublicLinkCard } from "@/components/studio/public-link-card";
 import { QrCodeCard } from "@/components/studio/qr-code-card";
 import { ShareCardPanel } from "@/components/studio/share-card-panel";
 import { SpaceCountryCard } from "@/components/studio/space-country-card";
+import { SpaceLanguageCard } from "@/components/studio/space-language-card";
 import { BrandContrastFeedback } from "@/components/studio/brand-contrast-feedback";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { ClassWhatsAppQr } from "@/components/studio/class-whatsapp-qr";
@@ -389,6 +390,7 @@ export function IdentitySection({ api }: Props) {
     <>
       <SectionHeader eyebrow="My teaching space" title="Identity" intro="Your name, how you describe your teaching, and where guests find you." />
       <SpaceCountryCard tenantId={api.tenantId} />
+      <SpaceLanguageCard tenantId={api.tenantId} />
       <Card title="Who you are" description="Shown at the top of your Guest App Home and on About Me.">
         <Grid>
           <TextField label="My name" value={api.name} onChange={api.setName} maxLength={80} placeholder="Maya Levin" />

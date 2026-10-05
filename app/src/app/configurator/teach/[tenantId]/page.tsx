@@ -1,4 +1,6 @@
 import { redirect } from "next/navigation";
+import { SPACE_SETTINGS_KEY, parseSpaceSettings } from "@/lib/spaceSettings";
+import { DEFAULT_LOCALE } from "@/lib/i18n";
 import { loadStudioTenant } from "@/lib/configurator/studioTenant";
 import { MEDIA_BUCKET } from "@/lib/media/path";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
@@ -42,7 +44,7 @@ export default async function TeachStudioPage({
   const { supabase, tenant } = await loadStudioTenant(tenantId, TEACH_PRODUCT_TYPE);
   if (tenant.status === "archived") redirect("/space");
 
-  const [{ data: brand }, { data: settingsRows }, { data: itemRows }, { data: configRows }, { data: published }, entitlement, { data: directoryRow }] =
+  const [{ data: brand }, { data: settingsRows }, { data: itemRows }, { data: configRows }, { data: published }, entitlement, { data: directoryRow }, { data: spaceSettingsRow }] =
     await Promise.all([
       supabase
         .from("brand_configs")
@@ -61,6 +63,9 @@ export default async function TeachStudioPage({
       supabase.from("published_spaces").select("published_at").eq("tenant_id", tenantId).maybeSingle(),
       getSpaceEntitlement(supabase, tenantId),
       supabase.from("module_settings").select("data").eq("tenant_id", tenantId).eq("module_key", TEACH_DIRECTORY_KEY).maybeSingle(),
+      // Space Settings (shared, product-neutral): the Studio preview must
+      // render in the Space's own language, not always English.
+      supabase.from("module_settings").select("data").eq("tenant_id", tenantId).eq("module_key", SPACE_SETTINGS_KEY).maybeSingle(),
     ]);
 
   const settingsByKey = new Map((settingsRows ?? []).map((r) => [r.module_key as string, r.data]));
@@ -106,6 +111,7 @@ export default async function TeachStudioPage({
     enabledExplore: enabledExploreFrom((configRows ?? []).filter((r) => r.enabled).map((r) => r.module_key)),
     publishedAt: published?.published_at ?? null,
     directoryListed: teachDirectorySchema.parse(directoryRow?.data ?? {}).listed,
+    locale: parseSpaceSettings(spaceSettingsRow?.data).locale ?? DEFAULT_LOCALE,
     canPublish: availability.canPublish,
     accessLabel: availability.effectiveStatus,
     customPagesLimit: getCustomPagesLimit(entitlement),

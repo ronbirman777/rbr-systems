@@ -32,6 +32,7 @@ import { StudioTopBar } from "@/components/studio/studio-top-bar";
 import { saveStatusLabel, PREVIEW_DRAFT_LABEL, PREVIEW_DRAFT_CAPTION, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
 import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
 import { SpaceCountryCard } from "@/components/studio/space-country-card";
+import { SpaceLanguageCard } from "@/components/studio/space-language-card";
 import { BrandContrastFeedback } from "@/components/studio/brand-contrast-feedback";
 import { getBrandPresets, matchBrandPreset, presetColorUpdate } from "@/lib/brand/presets";
 import { EmptyState } from "@/components/studio/empty-state";
@@ -1919,8 +1920,9 @@ export function RetreatConfigurator({
             mounts. Outside the draft <form> because it saves itself through
             the shared action rather than this product's draft payload. */}
         {step === "identity" && tenantId ? (
-          <div className="max-w-xl mt-6">
+          <div className="max-w-xl mt-6 flex flex-col gap-4">
             <SpaceCountryCard tenantId={tenantId} />
+            <SpaceLanguageCard tenantId={tenantId} />
           </div>
         ) : null}
 
