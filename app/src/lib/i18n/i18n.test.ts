@@ -107,6 +107,11 @@ describe("translation and fallback", () => {
       "flow.mealBrunch",
       // File format names, not words - the same in every language.
       "studio.imageFormats",
+      // The canvas Share Card deliberately falls back to English for
+      // Hebrew - see shareCardLocale() in shareCard.ts, and the test
+      // below that pins this as intentional rather than forgotten.
+      "flow.cardKicker",
+      "flow.cardScanLabel",
       // A sample postal address, shown as a placeholder. It is an
       // address, not prose, so it reads the same in every locale.
       "flow.addressPlaceholder",
@@ -230,6 +235,28 @@ describe("the Guest App reads locale from published data only", () => {
     expect(html("he")).toContain("בית");
     expect(html("de")).toContain("Start");
     expect(html()).toContain("Home");
+  });
+});
+
+describe("the canvas Share Card's Hebrew fallback is deliberate", () => {
+  it("draws German, and English for Hebrew", () => {
+    // The card is drawn with DM Serif Display / DM Sans, which have no
+    // Hebrew coverage, and its letter-spacing routine advances
+    // left-to-right one glyph at a time. Hebrew would render as tofu or
+    // reversed, so the two labels drawn INTO the card fall back to
+    // English. If someone adds a Hebrew-capable face and a
+    // direction-aware text routine, this test is what tells them to
+    // translate these two keys.
+    expect(translate("de", "flow", "cardKicker")).toBe("DEIN RETREAT-BEGLEITER");
+    expect(translate("he", "flow", "cardKicker")).toBe(translate("en", "flow", "cardKicker"));
+    expect(translate("he", "flow", "cardScanLabel")).toBe(translate("en", "flow", "cardScanLabel"));
+  });
+
+  it("still translates the Share Card's surrounding Studio UI into Hebrew", () => {
+    // The limitation is the canvas only. Everything around it is Hebrew.
+    for (const key of ["shareYourSpace", "shareCardPreview", "shareCardBody"] as const) {
+      expect(translate("he", "studio", key)).not.toBe(translate("en", "studio", key));
+    }
   });
 });
 
