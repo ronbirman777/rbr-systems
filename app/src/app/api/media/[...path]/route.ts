@@ -121,14 +121,18 @@ export async function GET(
   // may be cached publicly. An absent mode fails closed.
   const decision = mediaCacheDecision({ objectPath, accessMode: access.mode ?? "code" });
   const width = parseMediaWidth(new URL(request.url).searchParams.get("w"));
-  return signAndRedirect(objectPath, decision.signedTtlSeconds, decision.cacheControl, width);
+  return signAndRedirect(objectPath, decision.signedTtlSeconds, decision.cacheControl, width, decision.vary);
 }
 
 async function signAndRedirect(
   objectPath: string,
   ttlSeconds: number = DEFAULT_SIGNED_TTL_SECONDS,
   cacheControl: string = NO_STORE["Cache-Control"],
-  width: number | null = null
+  width: number | null = null,
+  // Defaults to declaring the cookie dependency, so the one caller that
+  // does not go through mediaCacheDecision - draft audio, which is
+  // authorized by the member's own session - keeps it.
+  vary: string | null = "Cookie"
 ) {
   const admin = createAdminClient();
 
@@ -151,7 +155,7 @@ async function signAndRedirect(
       : await admin.storage.from(MEDIA_BUCKET).createSignedUrl(objectPath, ttlSeconds);
     if (error || !signed) continue;
     return NextResponse.redirect(signed.signedUrl, {
-      headers: { "Cache-Control": cacheControl, Vary: "Cookie" },
+      headers: { "Cache-Control": cacheControl, ...(vary ? { Vary: vary } : null) },
     });
   }
   return notFound();

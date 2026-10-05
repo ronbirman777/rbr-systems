@@ -467,9 +467,41 @@ describe("CP4 security regression: the new delivery options cannot widen access"
     // The only token in the response is Supabase's own object-scoped
     // signature in Location, which is the mechanism, not a leak.
     expect(await res.text()).not.toContain("token");
-    // A cacheable response must still tell shared caches that the
-    // answer depended on the request's cookie.
-    expect(res.headers.get("vary")).toBe("Cookie");
+    // And it does NOT announce a cookie dependency it does not have:
+    // nothing on the public path reads a cookie, so a shared cache must
+    // not be told to keep a variant per visitor.
+    expect(res.headers.get("vary")).toBeNull();
+  });
+
+  it("varies on Cookie exactly where the cookie decides the answer", async () => {
+    snapshot = { modules: { meals: [{ imageRef: V }] } };
+
+    // Public: no cookie was read, so no Vary.
+    accessMode = "public";
+    expect((await call(V.split("/"))).headers.get("vary")).toBeNull();
+
+    // Code-protected, visitor holds a valid cookie: the cookie decided
+    // this, and the response is private to them.
+    vi.clearAllMocks();
+    mockAccess.mockResolvedValue("granted");
+    mockSign.mockResolvedValue({ data: { signedUrl: "http://storage/sign/x?token=t" }, error: null });
+    accessMode = "code";
+    const gated = await call(V.split("/"));
+    expect(gated.headers.get("vary")).toBe("Cookie");
+    expect(gated.headers.get("cache-control")).toBe("private, no-store");
+
+    // The code screen's own hero, served without a cookie: still gated
+    // on the Space's access state, still never publicly cacheable.
+    // Needs the default snapshot back - publishedIdentityImageRefs reads
+    // brand.hero from it, and the one set above has only meals.
+    vi.clearAllMocks();
+    snapshot = { modules };
+    mockAccess.mockResolvedValue("code-required");
+    mockSign.mockResolvedValue({ data: { signedUrl: "http://storage/sign/x?token=t" }, error: null });
+    accessMode = "code";
+    const hero = await call(P.hero.split("/"));
+    expect(hero.headers.get("vary")).toBe("Cookie");
+    expect(hero.headers.get("cache-control")).toBe("private, no-store");
   });
 
   it("a denial says nothing about why, and is itself never cacheable", async () => {

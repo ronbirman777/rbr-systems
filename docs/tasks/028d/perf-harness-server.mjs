@@ -77,6 +77,9 @@ const server = createServer(async (req, res) => {
       res.writeHead(302, {
         Location: `/storage/${objectPath}?token=${randomUUID()}`,
         "Cache-Control": "private, no-store",
+        // An uncacheable response still declares the dependency, which
+        // is what the real route does for every no-store branch.
+        Vary: "Cookie",
       });
       return res.end();
     }
@@ -86,6 +89,9 @@ const server = createServer(async (req, res) => {
     // A width on the allowlist is forwarded as a Storage render request.
     await sleep(SIGN_MS);
     const q = w && ALLOWED_WIDTHS.has(Number(w)) ? `?v=1&w=${w}` : "?v=1";
+    // No Vary: nothing on the public path reads a cookie, so the real
+    // route does not claim a cookie dependency it does not have - and a
+    // shared cache must not keep one variant per visitor.
     res.writeHead(302, {
       Location: `/storage/${objectPath}${q}`,
       "Cache-Control": "public, max-age=300, immutable",

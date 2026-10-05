@@ -30,6 +30,33 @@ export const DEFAULT_SIGNED_TTL_SECONDS = 60;
 export type MediaCacheDecision = {
   cacheControl: string;
   signedTtlSeconds: number;
+  /**
+   * The `Vary` header to send, or null for none.
+   *
+   * Not a constant, because it is a factual claim about THIS response and
+   * the two cases differ. Walk the route for a public Space: the
+   * published_spaces lookup, the snapshot-membership check,
+   * isSpacePubliclyAvailable and getGuestAccessMode all take only a
+   * tenant id, and resolveGuestAccessDetailed's cookie check sits behind
+   * `mode === "code" &&`, so for a public Space it is never called. No
+   * cookie is read, and the answer is a pure function of (tenant,
+   * object, width). Announcing `Vary: Cookie` there is simply false, and
+   * it costs something: a shared cache has to keep a separate variant
+   * per distinct Cookie header, which for a Space reached from the open
+   * web means approximately one variant per visitor - i.e. the public
+   * caching CP4 just added would never accumulate a hit.
+   *
+   * Everywhere else the cookie genuinely decides the outcome - the
+   * code-entry gate reads the guest cookie, draft audio reads the
+   * member's session - so those responses keep it. They are `no-store`
+   * anyway, so it changes no cache behaviour; it states the dependency
+   * correctly to any intermediary that looks.
+   *
+   * This cannot widen access: it only tells caches how to key a response
+   * the route had already decided to serve, and the public case it
+   * applies to is one where every visitor is entitled to the same bytes.
+   */
+  vary: string | null;
   /** Why this decision was reached - surfaced in tests and debugging. */
   reason: string;
 };
@@ -37,6 +64,7 @@ export type MediaCacheDecision = {
 const NO_STORE: Omit<MediaCacheDecision, "reason"> = {
   cacheControl: "private, no-store",
   signedTtlSeconds: DEFAULT_SIGNED_TTL_SECONDS,
+  vary: "Cookie",
 };
 
 /**
@@ -89,6 +117,9 @@ export function mediaCacheDecision(opts: {
   return {
     cacheControl: `public, max-age=${PUBLISHED_MEDIA_CACHE_SECONDS}, immutable`,
     signedTtlSeconds: PUBLISHED_MEDIA_SIGNED_TTL_SECONDS,
+    // No cookie was read to produce this, so none is varied on. See the
+    // `vary` field's own note for why that matters here.
+    vary: null,
     reason: "versioned published object in a public Space: immutable, so the URL is its own version",
   };
 }
