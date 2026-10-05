@@ -2,6 +2,7 @@ import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { CANONICAL_BRAND_PRESETS, findBrandPreset, type BrandPreset } from "@/lib/brand/presets";
 import type { TEACH_LEGACY_PRESET_KEYS, TeachStyle } from "./schemas";
 
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
 /**
  * Time to Teach's controlled visual layer. Colours still flow through the
  * shared theme engine (brand_configs.custom_primary/custom_secondary ->
@@ -100,4 +101,25 @@ export function textureBackground(texture: TeachStyle["texture"]): string | unde
     return "repeating-linear-gradient(0deg, rgba(90,75,60,.035) 0 1px, transparent 1px 3px), repeating-linear-gradient(90deg, rgba(90,75,60,.03) 0 1px, transparent 1px 4px)";
   }
   return undefined;
+}
+
+/**
+ * The Look & feel option names, in the Space's language.
+ *
+ * The *_LABEL records above stay English: they are the canonical,
+ * code-facing names used in comments and tests. This is the display
+ * path, and the Studio renders from here.
+ */
+export function styleLabels(locale: Locale = DEFAULT_LOCALE) {
+  const t = (key: Parameters<typeof translate<"teach">>[2]) => translate(locale, "teach", key);
+  return {
+    typography: { classic: t("typoClassic"), editorial: t("typoEditorial"), serene: t("typoSerene"), modern: t("typoModern") },
+    corners: { soft: t("cornersSoft"), rounded: t("cornersRounded"), minimal: t("cornersMinimal") },
+    hero: { arch: t("heroArch"), circle: t("heroCircle"), fullbleed: t("heroFullbleed") },
+    quote: { editorial: t("quoteEditorial"), card: t("quoteCard"), line: t("quoteLine") },
+    overlay: { none: t("overlayNone"), soft: t("overlaySoft"), rich: t("overlayRich") },
+    spacing: { compact: t("spacingCompact"), balanced: t("spacingBalanced"), airy: t("spacingAiry") },
+    texture: { none: t("textureNone"), grain: t("textureGrain"), linen: t("textureLinen") },
+    dividers: { none: t("dividerNone"), breath: t("dividerBreath"), wave: t("dividerWave"), leaf: t("dividerLeaf") },
+  };
 }

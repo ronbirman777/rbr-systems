@@ -110,6 +110,27 @@ describe("translation and fallback", () => {
       // A sample postal address, shown as a placeholder. It is an
       // address, not prose, so it reads the same in every locale.
       "flow.addressPlaceholder",
+      // "Yoga Alliance RYT-500" is a certifying body's own name.
+      "teach.issuerPlaceholder",
+      // German uses these as-is: the design vocabulary "Editorial",
+      // "Modern" and "Minimal", the practice names "Meditation",
+      // "Yoga Nidra" and "Mantra", and "Details (optional)", which is
+      // written identically.
+      "teach.typoEditorial",
+      "teach.typoModern",
+      "teach.cornersMinimal",
+      "teach.catMeditationR",
+      "teach.catYogaNidra",
+      "teach.catMantra",
+      "teach.detailsOptional",
+      // Example values that are proper nouns, so they do not translate:
+      // a person's name, a studio's name, and a class name German
+      // studios themselves write in English.
+      "teach.myNamePlaceholder",
+      "teach.maya",
+      "teach.locationNamePlaceholder",
+      "teach.classLocationPlaceholder",
+      "teach.classTitlePlaceholder",
       // A type specimen: German reads Latin script, so "Aa" is correct
       // there. Hebrew gets "אא" because the swatch exists to show what
       // the chosen text colour looks like in the reader's own script.

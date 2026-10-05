@@ -63,22 +63,23 @@ import {
   TYPOGRAPHY_LABEL,
 } from "@/lib/teach/style";
 import {
-  CONTACT_METHOD_LABEL,
-  DEFAULT_CLASS_WHATSAPP_TEMPLATE,
-  DEFAULT_PRIVATE_WHATSAPP_TEMPLATE,
-  REGISTRATION_METHOD_LABEL,
   TEMPLATE_VARIABLES,
   buildRegistrationCta,
   classTemplateValues,
-  formatShortDate,
+  contactMethodLabel,
+  defaultClassWhatsappTemplate,
+  defaultPrivateWhatsappTemplate,
+  registrationMethodLabel,
   renderTemplate,
 } from "@/lib/teach/links";
 import { EXPLORE_MODULE_EMPTY_HINT, exploreModuleStatus } from "@/lib/teach/moduleVisibility";
-import { WEEKDAY_LABELS, describeAvailability, formatDuration, sortClasses } from "@/lib/teach/schedule";
+import { weekdayLabels, describeAvailability, formatDuration, sortClasses } from "@/lib/teach/schedule";
 import { getBrandPresets, presetColorUpdate } from "@/lib/brand/presets";
 import type { StudioApi, SectionKey } from "./teach-studio";
 import { audioAttached, audioDetached, imageRemoved, imageUploaded, moveItemById, patchExploreCard, patchItemById, patchSlot, type Patch } from "./studioStateUpdates";
 import { SectionHeader } from "@/components/studio/section-header";
+import { createTranslator, type Locale } from "@/lib/i18n";
+import { formatShortDateLocalized } from "@/lib/i18n/datetime";
 import {
   Card,
   ColorField,
@@ -101,6 +102,7 @@ type Props = { api: StudioApi };
 // ---------------------------------------------------------------------------
 
 function SaveBar({ api, section }: { api: StudioApi; section: SectionKey }) {
+  const { t } = createTranslator(api.locale);
   const dirty = api.isDirty(section);
   return (
     <div className="sticky bottom-3 z-10 flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-white/95 backdrop-blur border border-[#E2DACD] shadow-md">
@@ -108,7 +110,7 @@ function SaveBar({ api, section }: { api: StudioApi; section: SectionKey }) {
         {api.saving === section ? "Saving…" : dirty ? "You have unsaved changes" : "Everything here is saved"}
       </span>
       <StudioButton onClick={() => api.save(section)} disabled={!dirty || api.saving !== null}>
-        Save changes
+        {t("studio", "saveChanges")}
       </StudioButton>
     </div>
   );
@@ -147,6 +149,7 @@ function ItemList<K extends TeachEditableItemKey>({
   order?: (items: EditableTeachItem<K>[]) => EditableTeachItem<K>[];
   max?: number;
 }) {
+  const { t } = createTranslator(api.locale);
   const items = api.items[moduleKey] as EditableTeachItem<K>[];
   const shown = order ? order(items) : items;
   const [open, setOpen] = useState<string | null>(null);
@@ -203,10 +206,10 @@ function ItemList<K extends TeachEditableItemKey>({
               </button>
               {reorder && !order ? (
                 <span className="flex">
-                  <button type="button" onClick={() => move(item.id, -1)} aria-label="Move up" className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5" disabled={index === 0}>
+                  <button type="button" onClick={() => move(item.id, -1)} aria-label={t("studio", "moveUp")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5" disabled={index === 0}>
                     ↑
                   </button>
-                  <button type="button" onClick={() => move(item.id, 1)} aria-label="Move down" className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5" disabled={index === items.length - 1}>
+                  <button type="button" onClick={() => move(item.id, 1)} aria-label={t("studio", "moveDown")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5" disabled={index === items.length - 1}>
                     ↓
                   </button>
                 </span>
@@ -339,6 +342,7 @@ function Grid({ children, cols = 2 }: { children: ReactNode; cols?: 2 | 3 }) {
 // ---------------------------------------------------------------------------
 
 export function IdentitySection({ api }: Props) {
+  const { t } = createTranslator(api.locale);
   const profile = api.settings.teachProfile;
   const di = api.settings.dailyInspiration;
   const timezones = useMemo(() => timezoneOptions(api.timezone), [api.timezone]);
@@ -388,25 +392,25 @@ export function IdentitySection({ api }: Props) {
 
   return (
     <>
-      <SectionHeader eyebrow="My teaching space" title="Identity" intro="Your name, how you describe your teaching, and where guests find you." />
+      <SectionHeader eyebrow={t("teach", "identityEyebrow")} title={t("teach", "sectionIdentity")} intro={t("teach", "identityBody")} />
       <SpaceCountryCard tenantId={api.tenantId} />
       <SpaceLanguageCard tenantId={api.tenantId} />
-      <Card title="Who you are" description="Shown at the top of your Guest App Home and on About Me.">
+      <Card title={t("teach", "whoYouAre")} description={t("teach", "whoYouAreBody")}>
         <Grid>
-          <TextField label="My name" value={api.name} onChange={api.setName} maxLength={80} placeholder="Maya Levin" />
+          <TextField label={t("teach", "myName")} value={api.name} onChange={api.setName} maxLength={80} placeholder={t("teach", "myNamePlaceholder")} />
           <TextField
-            label="Teacher type"
+            label={t("teach", "teacherType")}
             value={str(profile.teacherType)}
             onChange={(v) => api.updateSetting("teachProfile", { teacherType: nul(v) }, "identity")}
             maxLength={80}
-            placeholder="Yoga & Breathwork Teacher"
-            hint="Free text — e.g. Yoga Teacher, Sound Healer, Pilates Teacher, Coach."
+            placeholder={t("teach", "teacherTypePlaceholder")}
+            hint={t("teach", "teacherTypeHint")}
           />
         </Grid>
         <Grid>
-          <SelectField label="Time zone" value={timezoneSelectValue(api.timezone)} onChange={api.setTimezone} options={timezones.map((t) => ({ value: t, label: t }))} hint="“Today” uses this time zone, and new classes start in it. Existing classes keep their own time zone." />
+          <SelectField label={t("teach", "timeZone")} value={timezoneSelectValue(api.timezone)} onChange={api.setTimezone} options={timezones.map((t) => ({ value: t, label: t }))} hint={t("teach", "timeZoneHint")} />
           <div>
-            <Label htmlFor="tt-slug">Guest address</Label>
+            <Label htmlFor="tt-slug">{t("flow", "guestAddress")}</Label>
             <div className="flex gap-2">
               <div className="relative flex-1 min-w-0">
                 <input id="tt-slug" value={slugInput} onChange={(e) => setSlugInput(e.target.value)} placeholder="maya" className={`${INPUT} pr-32`} />
@@ -429,19 +433,19 @@ export function IdentitySection({ api }: Props) {
           </div>
         </Grid>
       </Card>
-      <Card title="Primary image" description="Your main hero photo. It crops beautifully into the arched window, portrait circle or full-bleed layouts — set the focal point so your face always stays in frame.">
+      <Card title={t("teach", "primaryImage")} description={t("teach", "primaryImageBody")}>
         <ImageField
-          label="Hero image"
+          label={t("teach", "heroImage")}
           imageUrl={api.mediaUrl(api.heroImageRef)}
           focal={profile.heroImagePosition}
           previewClassName="w-[150px] h-[190px] rounded-t-full rounded-b-2xl"
           onFocal={(f) => api.updateSetting("teachProfile", { heroImagePosition: f }, "identity")}
           onUpload={api.uploadHero}
           onRemove={api.removeHero}
-          hint="JPG, PNG or WebP up to 8 MB. Replacing the photo resets the focal point to center."
+          hint={t("teach", "heroImageFormats")}
         />
       </Card>
-      <Card title="Daily Inspiration" description="Short quotes or sentences. Guests see one each day on Home — the same one for everyone that day, rotating through your list.">
+      <Card title={t("teach", "dailyInspiration")} description={t("teach", "dailyInspirationBody")}>
         <ol className="flex flex-col gap-2">
           {quotes.map((q, i) => (
             <li key={i} className="flex items-center gap-2">
@@ -471,8 +475,8 @@ export function IdentitySection({ api }: Props) {
                 setQuoteDraft("");
               }
             }}
-            placeholder="Move slowly enough to hear what your body is saying."
-            aria-label="New quote"
+            placeholder={t("teach", "quotePlaceholder")}
+            aria-label={t("teach", "newQuote")}
             className={INPUT}
           />
           <StudioButton
@@ -483,14 +487,14 @@ export function IdentitySection({ api }: Props) {
               setQuoteDraft("");
             }}
           >
-            Add
+            {t("common", "add")}
           </StudioButton>
         </div>
         <Hint>{`${quotes.length} of ${DAILY_INSPIRATION_MAX_QUOTES} quotes · up to ${DAILY_INSPIRATION_MAX_LENGTH} characters each`}</Hint>
         <Toggle
           checked={di.useFallback}
           onChange={(v) => api.updateSetting("dailyInspiration", { useFallback: v }, "identity")}
-          label="Use the InnerDweS collection when my list is empty"
+          label={t("teach", "useInnerDwesQuotes")}
         />
       </Card>
       <SaveBar api={api} section="identity" />
@@ -503,6 +507,7 @@ export function IdentitySection({ api }: Props) {
 // ---------------------------------------------------------------------------
 
 export function BrandSection({ api }: Props) {
+  const { t } = createTranslator(api.locale);
   const style = api.settings.teachStyle;
   const set = (patch: Partial<typeof style>) => api.updateSetting("teachStyle", patch, "brand");
   const [advanced, setAdvanced] = useState(Boolean(api.colors.navigation || api.colors.text));
@@ -511,9 +516,9 @@ export function BrandSection({ api }: Props) {
   const opt = <T extends string>(keys: readonly T[], labels: Record<T, string>) => keys.map((k) => ({ value: k, label: labels[k] }));
   return (
     <>
-      <SectionHeader eyebrow="My teaching space" title="Brand" intro="Colours and a few carefully chosen style options. Every combination stays readable and works on phones and desktops." />
-      <Card title="Colour palette" description="Start from a preset or build your own. Presets are optional.">
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" role="radiogroup" aria-label="Palette presets" data-testid="brand-presets">
+      <SectionHeader eyebrow={t("teach", "identityEyebrow")} title={t("teach", "sectionBrand")} intro={t("teach", "brandBody")} />
+      <Card title={t("studio", "colourPalette")} description={t("teach", "palettePresetsBody")}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" role="radiogroup" aria-label={t("studio", "palettePresets")} data-testid="brand-presets">
           {presets.map((p) => {
             const selected = style.preset === p.key;
             return (
@@ -553,7 +558,7 @@ export function BrandSection({ api }: Props) {
               <span className="w-6 h-6 rounded-full" style={{ background: api.colors.primary }} />
               <span className="w-6 h-6 rounded-full" style={{ background: api.colors.accent }} />
             </span>
-            <span className="text-[13px] font-semibold text-[#192B21]">Custom colors</span>
+            <span className="text-[13px] font-semibold text-[#192B21]">{t("teach", "customColours")}</span>
           </button>
         </div>
         {/* Shared with Flow - the same component grades both products, so
@@ -567,7 +572,7 @@ export function BrandSection({ api }: Props) {
         />
         <Grid>
           <ColorField
-            label="Primary colour"
+            label={t("studio", "primaryColour")}
             value={api.colors.primary}
             checkWhiteText
             swatches={presets.map((p) => ({ label: p.label, hex: p.primary }))}
@@ -575,38 +580,38 @@ export function BrandSection({ api }: Props) {
               api.setColors({ ...api.colors, primary: hex });
               set({ preset: "custom" });
             }}
-            hint="Buttons, active navigation and highlights."
+            hint={t("teach", "primaryColourHelpTeach")}
           />
           <ColorField
-            label="Accent colour"
+            label={t("studio", "accentColour")}
             value={api.colors.accent}
             swatches={presets.map((p) => ({ label: p.label, hex: p.accent }))}
             onChange={(hex) => {
               api.setColors({ ...api.colors, accent: hex });
               set({ preset: "custom" });
             }}
-            hint="Dividers, soft backgrounds and details."
+            hint={t("teach", "accentColourHelpTeach")}
           />
         </Grid>
-        <ColorField label="Background tint" value={style.background ?? "#F5F0E8"} onChange={(hex) => set({ background: hex, preset: "custom" })} hint="The calm base behind everything. Keep it light." />
+        <ColorField label={t("studio", "backgroundTint")} value={style.background ?? "#F5F0E8"} onChange={(hex) => set({ background: hex, preset: "custom" })} hint={t("teach", "backgroundTintHelpTeach")} />
         <Toggle checked={advanced} onChange={(v) => {
           setAdvanced(v);
           if (!v) api.setColors({ ...api.colors, navigation: null, text: null });
-        }} label="Fine-tune navigation and text colours" description="Optional — by default both follow your primary colour." />
+        }} label={t("teach", "fineTuneColours")} description={t("teach", "fineTuneColoursBody")} />
         {advanced ? (
           <Grid>
-            <ColorField label="Navigation colour" value={api.colors.navigation ?? api.colors.primary} onChange={(hex) => {
+            <ColorField label={t("studio", "navigationColour")} value={api.colors.navigation ?? api.colors.primary} onChange={(hex) => {
               api.setColors({ ...api.colors, navigation: hex });
               set({ preset: "custom" });
             }} />
-            <ColorField label="Text colour" value={api.colors.text ?? api.colors.primary} onChange={(hex) => {
+            <ColorField label={t("studio", "textColour")} value={api.colors.text ?? api.colors.primary} onChange={(hex) => {
               api.setColors({ ...api.colors, text: hex });
               set({ preset: "custom" });
             }} />
           </Grid>
         ) : null}
       </Card>
-      <Card title="Look & feel" description="Controlled options — never a page builder. Each one is tuned to stay premium and readable.">
+      <Card title={t("studio", "lookAndFeel")} description={t("teach", "lookAndFeelBody")}>
         {(
           [
             ["Typography pairing", "typography", opt(TEACH_TYPOGRAPHY, TYPOGRAPHY_LABEL)],
@@ -629,7 +634,7 @@ export function BrandSection({ api }: Props) {
             />
           </div>
         ))}
-        <Toggle checked={style.organicShapes} onChange={(v) => set({ organicShapes: v })} label="Organic background shapes" description="Soft, blurred shapes behind the top of each page." />
+        <Toggle checked={style.organicShapes} onChange={(v) => set({ organicShapes: v })} label={t("teach", "organicShapes")} description={t("teach", "organicShapesBody")} />
       </Card>
       <SaveBar api={api} section="brand" />
     </>
@@ -641,24 +646,25 @@ export function BrandSection({ api }: Props) {
 // ---------------------------------------------------------------------------
 
 export function HomeSection({ api }: Props) {
+  const { t } = createTranslator(api.locale);
   const p = api.settings.teachProfile;
   const hs = p.homeSections;
   const setHs = (patch: Partial<typeof hs>) => api.updateSetting("teachProfile", { homeSections: { ...hs, ...patch } }, "home");
   return (
     <>
-      <SectionHeader eyebrow="My teaching space" title="Home" intro="The first thing guests see. It should answer: who you are, what you teach today and how to join." />
-      <Card title="Greeting" description="Optional lines around your name. Leave empty for none.">
+      <SectionHeader eyebrow={t("teach", "identityEyebrow")} title={t("teach", "navHome")} intro={t("teach", "homeBody")} />
+      <Card title={t("teach", "greeting")} description={t("teach", "greetingBody")}>
         <Grid>
-          <TextField label="Greeting" value={str(p.greeting)} onChange={(v) => api.updateSetting("teachProfile", { greeting: nul(v) }, "home")} maxLength={140} placeholder="Welcome — I’m glad you’re here." />
-          <TextField label="Location line" value={str(p.locationLine)} onChange={(v) => api.updateSetting("teachProfile", { locationLine: nul(v) }, "home")} maxLength={140} placeholder="Tel Aviv · classes in Hebrew & English" />
+          <TextField label={t("teach", "greeting")} value={str(p.greeting)} onChange={(v) => api.updateSetting("teachProfile", { greeting: nul(v) }, "home")} maxLength={140} placeholder={t("teach", "greetingPlaceholder")} />
+          <TextField label={t("teach", "locationLine")} value={str(p.locationLine)} onChange={(v) => api.updateSetting("teachProfile", { locationLine: nul(v) }, "home")} maxLength={140} placeholder={t("teach", "locationLinePlaceholder")} />
         </Grid>
       </Card>
-      <Card title="Home sections" description="Your hero (image, name, teacher type) is always first.">
-        <Toggle checked={hs.quote} onChange={(v) => setHs({ quote: v })} label="Daily Inspiration" description="One quote per day from your list." />
-        <Toggle checked={hs.today} onChange={(v) => setHs({ today: v })} label="Today’s classes" description="Expandable class cards; shows your next class when today is empty." />
-        <Toggle checked={hs.private} onChange={(v) => setHs({ private: v })} label="Private sessions this week" description="A teaser that opens Schedule → Private sessions." />
-        <Toggle checked={hs.library} onChange={(v) => setHs({ library: v })} label="From my library" description="Your latest reading and audio." />
-        <Toggle checked={hs.contact} onChange={(v) => setHs({ contact: v })} label="Contact shortcut" description="A single “Get in touch” button under your hero." />
+      <Card title={t("teach", "homeSections")} description={t("teach", "homeSectionsBody")}>
+        <Toggle checked={hs.quote} onChange={(v) => setHs({ quote: v })} label={t("teach", "dailyInspiration")} description={t("teach", "homeQuoteBody")} />
+        <Toggle checked={hs.today} onChange={(v) => setHs({ today: v })} label={t("teach", "todaysClasses")} description={t("teach", "homeTodayBody")} />
+        <Toggle checked={hs.private} onChange={(v) => setHs({ private: v })} label={t("teach", "privateThisWeek")} description={t("teach", "homePrivateBody")} />
+        <Toggle checked={hs.library} onChange={(v) => setHs({ library: v })} label={t("teach", "fromMyLibrary")} description={t("teach", "fromMyLibraryBody")} />
+        <Toggle checked={hs.contact} onChange={(v) => setHs({ contact: v })} label={t("teach", "contactShortcut")} description={t("teach", "contactShortcutBody")} />
       </Card>
       <SaveBar api={api} section="home" />
     </>
@@ -679,7 +685,8 @@ const REG_VALUE_LABEL: Record<RegistrationMethod, string> = {
   venueLink: "",
 };
 
-function TemplateEditor({ value, onChange, fallback, previewValues }: { value: string | null; onChange: (v: string | null) => void; fallback: string; previewValues: Parameters<typeof renderTemplate>[1] }) {
+function TemplateEditor({ value, onChange, fallback, previewValues, locale }: { value: string | null; onChange: (v: string | null) => void; fallback: string; previewValues: Parameters<typeof renderTemplate>[1]; locale: Locale }) {
+  const { t } = createTranslator(locale);
   const ref = useRef<HTMLTextAreaElement>(null);
   const current = value ?? fallback;
   const insert = (v: string) => {
@@ -692,9 +699,9 @@ function TemplateEditor({ value, onChange, fallback, previewValues }: { value: s
   };
   return (
     <div className="flex flex-col gap-2">
-      <Label htmlFor="tt-template">Message template</Label>
+      <Label htmlFor="tt-template">{t("teach", "messageTemplate")}</Label>
       <textarea id="tt-template" ref={ref} value={current} rows={3} maxLength={600} onChange={(e) => onChange(e.target.value)} className={`${INPUT} leading-relaxed`} />
-      <div className="flex flex-wrap gap-1.5" aria-label="Insert a variable">
+      <div className="flex flex-wrap gap-1.5" aria-label={t("teach", "insertVariable")}>
         {TEMPLATE_VARIABLES.map((v) => (
           <button key={v} type="button" onClick={() => insert(v)} className="px-2 min-h-8 rounded-md bg-[#F1E9DC] text-[11.5px] font-medium text-[#9A7B4F]">
             {`{{${v}}}`}
@@ -702,7 +709,7 @@ function TemplateEditor({ value, onChange, fallback, previewValues }: { value: s
         ))}
         {value !== null ? (
           <button type="button" onClick={() => onChange(null)} className="px-2 min-h-8 text-[11.5px] underline text-[#6F6C66]">
-            Use default
+            {t("teach", "useDefault")}
           </button>
         ) : null}
       </div>
@@ -734,6 +741,7 @@ const UNIT_OPTIONS: { value: RecurrenceFreq; label: string }[] = [
 const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMetadata; setM: (patch: Partial<ClassMetadata>) => void }) {
+  const { t } = createTranslator(api.locale);
   const rule = validRule(meta);
   const problem = recurrenceProblem(meta);
   const exceptions = validExceptions(meta);
@@ -786,32 +794,32 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
   return (
     <div className="flex flex-col gap-4 p-4 rounded-xl border border-[#E2DACD] bg-white" data-testid="recurrence-editor">
       <h3 className="text-[16px] text-[#192B21]" style={{ fontFamily: "var(--font-fraunces), serif" }}>
-        Repeat
+        {t("teach", "repeat")}
       </h3>
 
       {problem?.recurrence ? (
         <div className="flex flex-col gap-3 p-3 rounded-lg bg-[#F6E3E0] text-[#7A2E2E]" role="alert" data-testid="recurrence-repair">
-          <p className="text-[13px] font-semibold">This class’s repeat settings are damaged and need repair.</p>
+          <p className="text-[13px] font-semibold">{t("teach", "repeatDamaged")}</p>
           <p className="text-[12.5px]">
-            Until you repair them, this class is not shown to guests. Nothing has been changed — the saved settings are kept exactly as they are until you choose:
+            {t("teach", "repeatDamagedBody")}
           </p>
           <div className="flex flex-wrap gap-2">
             <StudioButton kind="outline" onClick={() => { setPreset("weekly"); setM({ recurrence: { freq: "weekly", interval: 1, byWeekday: [startWeekday], end: { type: "never" } } }); }}>
-              Set up the repeat again
+              {t("teach", "setUpRepeatAgain")}
             </StudioButton>
             <StudioButton kind="outline" onClick={() => { setPreset("none"); setM({ recurrence: null }); }}>
-              Make it a one-off class
+              {t("teach", "makeOneOff")}
             </StudioButton>
           </div>
         </div>
       ) : null}
       {problem?.exceptions ? (
         <div className="flex flex-col gap-3 p-3 rounded-lg bg-[#F6E3E0] text-[#7A2E2E]" role="alert" data-testid="recurrence-exceptions-repair">
-          <p className="text-[13px] font-semibold">This class’s changed and cancelled dates are damaged.</p>
-          <p className="text-[12.5px]">To avoid showing a date you cancelled, this repeating class is not shown to guests until you clear them. Re-cancel any dates afterwards.</p>
+          <p className="text-[13px] font-semibold">{t("teach", "exceptionsDamaged")}</p>
+          <p className="text-[12.5px]">{t("teach", "exceptionsDamagedBody")}</p>
           <div>
             <StudioButton kind="outline" onClick={() => setM({ exceptions: {} })}>
-              Clear the damaged date changes
+              {t("teach", "clearDamagedDates")}
             </StudioButton>
           </div>
         </div>
@@ -819,11 +827,11 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
 
       {!problem?.recurrence ? (
         <Grid>
-          <SelectField label="Repeat" value={preset} onChange={choosePreset} options={REPEAT_OPTIONS} />
+          <SelectField label={t("teach", "repeat")} value={preset} onChange={choosePreset} options={REPEAT_OPTIONS} />
           {rule && preset === "custom" ? (
             <div className="grid grid-cols-[96px_1fr] gap-2 items-end">
               <TextField
-                label="Repeat every"
+                label={t("teach", "repeatEvery")}
                 inputMode="numeric"
                 value={String(rule.interval)}
                 onChange={(v) => {
@@ -832,7 +840,7 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
                 }}
               />
               <SelectField
-                label="Unit"
+                label={t("teach", "unit")}
                 value={rule.freq}
                 onChange={(f) => setRule({ freq: f, byWeekday: f === "weekly" ? (rule.byWeekday.length ? rule.byWeekday : [startWeekday]) : [] })}
                 options={UNIT_OPTIONS}
@@ -844,8 +852,8 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
 
       {rule?.freq === "weekly" ? (
         <div className="flex flex-col gap-1.5">
-          <Label>Repeat on</Label>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Repeat on">
+          <Label>{t("teach", "repeatOn")}</Label>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("teach", "repeatOn")}>
             {WEEKDAY_SHORT.map((label, d) => {
               const on = (rule.byWeekday.length ? rule.byWeekday : [startWeekday]).includes(d);
               return (
@@ -866,8 +874,8 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
 
       {rule ? (
         <div className="flex flex-col gap-2">
-          <Label>Ends</Label>
-          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Ends">
+          <Label>{t("teach", "ends")}</Label>
+          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("teach", "ends")}>
             {(
               [
                 ["never", "Never"],
@@ -889,13 +897,13 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
           </div>
           {rule.end.type === "until" ? (
             <div className="max-w-[240px]">
-              <TextField label="Last date" type="date" value={rule.end.until} onChange={(v) => v && setRule({ end: { type: "until", until: v } })} />
+              <TextField label={t("teach", "lastDate")} type="date" value={rule.end.until} onChange={(v) => v && setRule({ end: { type: "until", until: v } })} />
             </div>
           ) : null}
           {rule.end.type === "count" ? (
             <div className="max-w-[240px]">
               <TextField
-                label="Number of classes"
+                label={t("teach", "numberOfClasses")}
                 inputMode="numeric"
                 value={String(rule.end.count)}
                 onChange={(v) => {
@@ -913,10 +921,11 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
           <p className="text-[13px] font-semibold px-3 py-2 rounded-lg bg-[#EAF1EA] text-[#3F6A4C]" data-testid="recurrence-summary">
             {recurrenceSummary(rule, meta.startDate)}
           </p>
-          <Hint>Every class in this series uses the same time, place, price and registration details. The first class is on or after the start date above.</Hint>
+          <Hint>{t("teach", "seriesNote")}</Hint>
 
           {conflicts.map((c) => (
             <DstConflictRow
+              locale={api.locale}
               key={`${c.originalDate}-${c.field}`}
               conflict={c}
               timeZone={tz}
@@ -933,7 +942,7 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
           ))}
 
           <div className="flex flex-col gap-1.5" data-testid="recurrence-upcoming">
-            <Label>Upcoming dates</Label>
+            <Label>{t("teach", "upcomingDates")}</Label>
             <ul className="flex flex-col divide-y divide-[#EFE8DC] rounded-lg border border-[#E2DACD]">
               {upcoming.map((d) => {
                 const ex = exceptions[d];
@@ -946,19 +955,19 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
                   <li key={d} className="flex items-center justify-between gap-3 px-3 min-h-11">
                     <span className="text-[13px] flex flex-wrap items-center gap-x-2 min-w-0">
                       <span className={`whitespace-nowrap ${cancelled ? "line-through text-[#8C8A84]" : "text-[#192B21]"}`}>
-                        {formatShortDate(shownDate)} · {shownTime}
+                        {formatShortDateLocalized(shownDate, api.locale)} · {shownTime}
                       </span>
-                      {cancelled ? <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8F3B3B]">Cancelled</span> : null}
-                      {changed ? <span className="text-[11px] font-semibold uppercase tracking-wider text-[#3F6A4C]">Changed</span> : null}
-                      {blocked ? <span className="text-[11px] font-semibold uppercase tracking-wider text-[#7A5418]">Needs attention</span> : null}
+                      {cancelled ? <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8F3B3B]">{t("teach", "statusCancelled")}</span> : null}
+                      {changed ? <span className="text-[11px] font-semibold uppercase tracking-wider text-[#3F6A4C]">{t("teach", "statusChanged")}</span> : null}
+                      {blocked ? <span className="text-[11px] font-semibold uppercase tracking-wider text-[#7A5418]">{t("teach", "needsAttention")}</span> : null}
                     </span>
                     {problem?.exceptions ? null : cancelled || changed ? (
-                      <button type="button" onClick={() => setException(d, null)} className="shrink-0 text-[12px] font-semibold min-h-9 px-2 text-[#8F3B3B]" aria-label={`Restore the class on ${formatShortDate(d)}`}>
-                        Restore
+                      <button type="button" onClick={() => setException(d, null)} className="shrink-0 text-[12px] font-semibold min-h-9 px-2 text-[#8F3B3B]" aria-label={t("teach", "restoreClassOn", { date: formatShortDateLocalized(d, api.locale) })}>
+                        {t("teach", "restore")}
                       </button>
                     ) : (
-                      <button type="button" onClick={() => setException(d, { cancelled: true })} className="shrink-0 text-[12px] font-semibold min-h-9 px-2 text-[#8F3B3B]" aria-label={`Cancel the class on ${formatShortDate(d)}`}>
-                        Cancel
+                      <button type="button" onClick={() => setException(d, { cancelled: true })} className="shrink-0 text-[12px] font-semibold min-h-9 px-2 text-[#8F3B3B]" aria-label={t("teach", "cancelClassOn", { date: formatShortDateLocalized(d, api.locale) })}>
+                        {t("common", "cancel")}
                       </button>
                     )}
                   </li>
@@ -976,6 +985,7 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
 /** One occurrence whose local time doesn't exist (DST gap): never auto-moved; the teacher moves or cancels it. */
 function DstConflictRow({
   conflict,
+  locale,
   timeZone,
   meta,
   moving,
@@ -985,6 +995,7 @@ function DstConflictRow({
   editable,
 }: {
   conflict: DstConflict;
+  locale: Locale;
   timeZone: string;
   meta: ClassMetadata;
   moving: boolean;
@@ -993,6 +1004,7 @@ function DstConflictRow({
   onApply: (startTime: string, endTime: string | null) => void;
   editable: boolean;
 }) {
+  const { t } = createTranslator(locale);
   const ex = validExceptions(meta)[conflict.originalDate];
   const [start, setStart] = useState(ex?.startTime ?? meta.startTime);
   const [end, setEnd] = useState(ex?.endTime ?? meta.endTime ?? "");
@@ -1001,7 +1013,7 @@ function DstConflictRow({
     const date = ex?.startDate ?? conflict.originalDate;
     const s = resolveLocalTime(date, start, timeZone);
     const e = end ? resolveLocalTime(date, end, timeZone) : null;
-    if (!s.ok || (e && !e.ok)) return setError(`That time doesn’t exist on ${formatShortDate(date)} in ${timeZone} either — please pick another.`);
+    if (!s.ok || (e && !e.ok)) return setError(`That time doesn’t exist on ${formatShortDateLocalized(date, locale)} in ${timeZone} either — please pick another.`);
     if (e && e.ok && s.ok && e.instant <= s.instant) return setError("The class must end after it starts.");
     setError(null);
     onApply(start, end || null);
@@ -1010,7 +1022,7 @@ function DstConflictRow({
     <div className="flex flex-col gap-2 px-3 py-2.5 rounded-lg bg-[#FBF1DC] text-[#5E3F0E]" role="status" data-testid="recurrence-dst-conflict">
       <p className="text-[12.5px]">
         <strong>
-          {formatShortDate(conflict.date)} {conflict.date.slice(0, 4)} · {conflict.time}
+          {formatShortDateLocalized(conflict.date, locale)} {conflict.date.slice(0, 4)} · {conflict.time}
         </strong>{" "}
         doesn’t exist in {timeZone} — the clocks go forward that night{conflict.field === "end" ? " (this is the class’s end time)" : ""}. This date isn’t shown to guests until you move or cancel it.
       </p>
@@ -1020,20 +1032,20 @@ function DstConflictRow({
             {moving ? "Close" : "Move this date…"}
           </StudioButton>
           <StudioButton kind="outline" onClick={onCancel}>
-            Cancel this date
+            {t("teach", "cancelThisDate")}
           </StudioButton>
         </div>
       ) : null}
       {moving ? (
         <div className="flex flex-wrap items-end gap-2">
           <div className="w-[150px]">
-            <TextField label="New start time" type="time" value={start} onChange={(v) => v && setStart(v)} />
+            <TextField label={t("teach", "newStartTime")} type="time" value={start} onChange={(v) => v && setStart(v)} />
           </div>
           <div className="w-[150px]">
-            <TextField label="New end time" type="time" value={end} onChange={setEnd} />
+            <TextField label={t("teach", "newEndTime")} type="time" value={end} onChange={setEnd} />
           </div>
           <StudioButton kind="primary" onClick={apply}>
-            Apply to this date only
+            {t("teach", "applyToThisDateOnly")}
           </StudioButton>
           {error ? (
             <p className="w-full text-[12px] text-[#8F3B3B]" role="alert">
@@ -1047,16 +1059,16 @@ function DstConflictRow({
 }
 
 /** Studio class-list line; flags damaged repeat data and unresolved DST-gap dates. */
-function classListSummary(m: ClassMetadata, subtitle: string | null, todayIso: string, tz: string): string {
+function classListSummary(m: ClassMetadata, subtitle: string | null, todayIso: string, tz: string, locale: Locale): string {
   const time = `${m.startTime}${m.endTime ? `–${m.endTime}` : ""}${subtitle ? ` · ${subtitle}` : ""}`;
   const problem = recurrenceProblem(m);
   if (problem) return `⚠ Repeat settings need repair · ${time}`;
   const rule = validRule(m);
-  if (!rule) return `${formatShortDate(m.startDate)} · ${time}`;
+  if (!rule) return `${formatShortDateLocalized(m.startDate, locale)} · ${time}`;
   const from = m.startDate > todayIso ? m.startDate : todayIso;
   const n = new Set(dstConflicts(m, from, addDaysIso(from, 366), tz).map((c) => c.originalDate)).size;
   const attention = n ? ` · ⚠ ${n === 1 ? "1 date needs" : `${n} dates need`} attention` : "";
-  return `${recurrenceSummary(rule, m.startDate, { withEnd: false })} · ${time}${attention}`;
+  return `${recurrenceSummary(rule, m.startDate, { withEnd: false, locale })} · ${time}${attention}`;
 }
 
 function addDaysIso(dateIso: string, days: number): string {
@@ -1066,6 +1078,7 @@ function addDaysIso(dateIso: string, days: number): string {
 }
 
 function ClassEditor({ api, item, update, index }: { api: StudioApi; item: EditableTeachItem<"teachClasses">; update: (p: Patch<EditableTeachItem<"teachClasses">>) => void; index: number }) {
+  const { t } = createTranslator(api.locale);
   const m = item.metadata;
   const setM = (patch: Partial<typeof m>) => update((cur) => ({ metadata: { ...cur.metadata, ...patch } }));
   const reg = m.registration;
@@ -1084,20 +1097,20 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
   return (
     <>
       <Grid>
-        <TextField label="Title" value={item.title} onChange={(v) => update({ title: v })} maxLength={160} placeholder="Morning Slow Flow" />
-        <TextField label="Class type" value={str(item.subtitle)} onChange={(v) => update({ subtitle: nul(v) })} maxLength={80} placeholder="Vinyasa · All levels" hint="Free text." />
+        <TextField label={t("common", "title")} value={item.title} onChange={(v) => update({ title: v })} maxLength={160} placeholder={t("teach", "classTitlePlaceholder")} />
+        <TextField label={t("teach", "classType")} value={str(item.subtitle)} onChange={(v) => update({ subtitle: nul(v) })} maxLength={80} placeholder={t("teach", "classTypePlaceholder")} hint={t("teach", "freeText")} />
       </Grid>
-      <TextArea label="Description" value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={3} />
-      <ItemImage api={api} moduleKey="teachClasses" section="schedule" item={item} index={index} update={update} label="Class image · shown on the Home class card" previewClassName="w-[96px] h-[112px] rounded-xl" />
+      <TextArea label={t("common", "description")} value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={3} />
+      <ItemImage api={api} moduleKey="teachClasses" section="schedule" item={item} index={index} update={update} label={t("teach", "classImageHint")} previewClassName="w-[96px] h-[112px] rounded-xl" />
       <Grid cols={3}>
-        <TextField label="Start date" type="date" value={m.startDate} onChange={(v) => v && setM({ startDate: v })} />
-        <TextField label="Start time" type="time" value={m.startTime} onChange={(v) => v && setM({ startTime: v })} />
-        <TextField label="End time" type="time" value={str(m.endTime)} onChange={(v) => setM({ endTime: v || null })} />
+        <TextField label={t("teach", "startDate")} type="date" value={m.startDate} onChange={(v) => v && setM({ startDate: v })} />
+        <TextField label={t("common", "startTime")} type="time" value={m.startTime} onChange={(v) => v && setM({ startTime: v })} />
+        <TextField label={t("common", "endTime")} type="time" value={str(m.endTime)} onChange={(v) => setM({ endTime: v || null })} />
       </Grid>
       <Grid>
-        <TextField label="End date (multi-day only)" type="date" value={str(m.endDate)} onChange={(v) => setM({ endDate: v || null })} hint="Leave empty for a single-day class." />
+        <TextField label={t("teach", "endDateMultiDay")} type="date" value={str(m.endDate)} onChange={(v) => setM({ endDate: v || null })} hint={t("teach", "endDateHint")} />
         <SelectField
-          label="Time zone"
+          label={t("teach", "timeZone")}
           value={timezoneSelectValue(m.timezone ?? api.timezone)}
           onChange={(v) => setM({ timezone: v })}
           options={timezones.map((t) => ({ value: t, label: t }))}
@@ -1116,10 +1129,10 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
       ))}
       <RecurrenceEditor api={api} meta={m} setM={setM} />
       <Grid cols={3}>
-        <TextField label="Location" value={str(m.location)} onChange={(v) => setM({ location: nul(v) })} placeholder="Olive Tree Studio · Tel Aviv" />
-        <TextField label="Price" value={str(m.price)} onChange={(v) => setM({ price: nul(v) })} placeholder="₪65 · 5-class card ₪280" />
+        <TextField label={t("common", "location")} value={str(m.location)} onChange={(v) => setM({ location: nul(v) })} placeholder={t("teach", "classLocationPlaceholder")} />
+        <TextField label={t("teach", "price")} value={str(m.price)} onChange={(v) => setM({ price: nul(v) })} placeholder={t("teach", "classPricePlaceholder")} />
         <TextField
-          label="Max participants"
+          label={t("teach", "maxParticipantsLabel")}
           inputMode="numeric"
           value={m.maxParticipants ? String(m.maxParticipants) : ""}
           onChange={(v) => {
@@ -1128,18 +1141,18 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
           }}
         />
       </Grid>
-      <TextArea label="How to get there" value={str(m.howToGetThere)} onChange={(v) => setM({ howToGetThere: nul(v) })} rows={2} />
+      <TextArea label={t("teach", "howToGetThere")} value={str(m.howToGetThere)} onChange={(v) => setM({ howToGetThere: nul(v) })} rows={2} />
       <div className="flex flex-col gap-4 p-4 rounded-xl border border-[#E2DACD] bg-white">
         <h3 className="text-[16px] text-[#192B21]" style={{ fontFamily: "var(--font-fraunces), serif" }}>
-          Registration
+          {t("teach", "registration")}
         </h3>
-        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Registration method">
+        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("teach", "registrationMethod")}>
           <button type="button" role="radio" aria-checked={reg.method === null} onClick={() => setReg({ method: null })} className={`px-3 min-h-9 rounded-full text-[12px] font-semibold ${reg.method === null ? "bg-[#192B21] text-white" : "border border-[#E2DACD] text-[#192B21]"}`}>
-            None
+            {t("common", "none")}
           </button>
           {REGISTRATION_METHODS.map((k) => (
             <button key={k} type="button" role="radio" aria-checked={reg.method === k} onClick={() => setReg({ method: k })} className={`px-3 min-h-9 rounded-full text-[12px] font-semibold ${reg.method === k ? "bg-[#192B21] text-white" : "border border-[#E2DACD] text-[#192B21]"}`}>
-              {REGISTRATION_METHOD_LABEL[k]}
+              {registrationMethodLabel(api.locale)[k]}
             </button>
           ))}
         </div>
@@ -1153,15 +1166,16 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
               placeholder={reg.method === "whatsapp" ? "+972 50 000 0000" : ""}
               hint={reg.method === "whatsapp" ? "International format with country code." : undefined}
             />
-            <TextField label="Button label (optional)" value={str(reg.buttonLabel)} onChange={(v) => setReg({ buttonLabel: nul(v) })} maxLength={60} placeholder={cta?.label ?? ""} />
+            <TextField label={t("teach", "buttonLabelOptional")} value={str(reg.buttonLabel)} onChange={(v) => setReg({ buttonLabel: nul(v) })} maxLength={60} placeholder={cta?.label ?? ""} />
           </Grid>
         ) : null}
-        {reg.method === "venueLink" ? <Hint>Uses the host venue’s booking URL (or website) from the venue details below.</Hint> : null}
+        {reg.method === "venueLink" ? <Hint>{t("teach", "usesVenueBookingUrl")}</Hint> : null}
         {reg.method === "whatsapp" || reg.method === "email" ? (
           <TemplateEditor
+            locale={api.locale}
             value={reg.whatsappTemplate}
             onChange={(v) => setReg({ whatsappTemplate: v })}
-            fallback={DEFAULT_CLASS_WHATSAPP_TEMPLATE}
+            fallback={defaultClassWhatsappTemplate(api.locale)}
             previewValues={classTemplateValues(api.name || "Your name", item.title || "Class", m)}
           />
         ) : null}
@@ -1171,28 +1185,28 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
             <p className="text-[12px] text-[#3F6A4C]">✓ Guests will see “{cta.label}”.</p>
           ) : (
             <p className="text-[12px] text-[#A8643C]" role="alert">
-              This method isn’t complete yet — guests won’t see a join button until it is.
+              {t("teach", "methodIncomplete")}
             </p>
           )
         ) : null}
-        <TextArea label="How to register (shown to guests)" value={str(m.howToRegister)} onChange={(v) => setM({ howToRegister: nul(v) })} rows={2} placeholder="Message me on WhatsApp to save your mat — I reply within a few hours." />
+        <TextArea label={t("teach", "howToRegisterShown")} value={str(m.howToRegister)} onChange={(v) => setM({ howToRegister: nul(v) })} rows={2} placeholder={t("teach", "howToRegisterPlaceholder")} />
       </div>
       <div className="flex flex-col gap-4 p-4 rounded-xl border border-[#E2DACD] bg-white">
-        <Toggle checked={venue.enabled} onChange={(v) => setVenue({ enabled: v })} label="Hosted by a studio or venue" description="Only the fields you fill in are shown to guests." />
+        <Toggle checked={venue.enabled} onChange={(v) => setVenue({ enabled: v })} label={t("teach", "hostedByVenue")} description={t("teach", "hostedByVenueBody")} />
         {venue.enabled ? (
           <>
             <Grid>
-              <TextField label="Venue name" value={str(venue.name)} onChange={(v) => setVenue({ name: nul(v) })} />
-              <TextField label="Website" value={str(venue.website)} onChange={(v) => setVenue({ website: nul(v) })} inputMode="url" />
+              <TextField label={t("teach", "venueName")} value={str(venue.name)} onChange={(v) => setVenue({ name: nul(v) })} />
+              <TextField label={t("common", "website")} value={str(venue.website)} onChange={(v) => setVenue({ website: nul(v) })} inputMode="url" />
             </Grid>
             <Grid>
               <TextField label="Instagram" value={str(venue.instagram)} onChange={(v) => setVenue({ instagram: nul(v) })} />
               <TextField label="Facebook" value={str(venue.facebook)} onChange={(v) => setVenue({ facebook: nul(v) })} inputMode="url" />
             </Grid>
             <Grid cols={3}>
-              <TextField label="Email" value={str(venue.email)} onChange={(v) => setVenue({ email: nul(v) })} inputMode="email" />
-              <TextField label="Booking URL" value={str(venue.bookingUrl)} onChange={(v) => setVenue({ bookingUrl: nul(v) })} inputMode="url" />
-              <TextField label="Map / location URL" value={str(venue.mapUrl)} onChange={(v) => setVenue({ mapUrl: nul(v) })} inputMode="url" />
+              <TextField label={t("common", "email")} value={str(venue.email)} onChange={(v) => setVenue({ email: nul(v) })} inputMode="email" />
+              <TextField label={t("teach", "bookingUrl")} value={str(venue.bookingUrl)} onChange={(v) => setVenue({ bookingUrl: nul(v) })} inputMode="url" />
+              <TextField label={t("teach", "mapUrl")} value={str(venue.mapUrl)} onChange={(v) => setVenue({ mapUrl: nul(v) })} inputMode="url" />
             </Grid>
           </>
         ) : null}
@@ -1205,37 +1219,38 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
             api.setItems("teachClasses", [...api.items.teachClasses, copy], "schedule");
           }}
         >
-          Duplicate class
+          {t("teach", "duplicateClass")}
         </StudioButton>
-        <Hint>The copy starts without an image.</Hint>
+        <Hint>{t("teach", "duplicateNoImage")}</Hint>
       </div>
     </>
   );
 }
 
-function AvailabilityEditor({ item, update }: { item: EditableTeachItem<"teachAvailability">; update: (p: Patch<EditableTeachItem<"teachAvailability">>) => void }) {
+function AvailabilityEditor({ item, update, locale }: { item: EditableTeachItem<"teachAvailability">; update: (p: Patch<EditableTeachItem<"teachAvailability">>) => void; locale: Locale }) {
+  const { t } = createTranslator(locale);
   const m = item.metadata;
   const setM = (patch: Partial<typeof m>) => update((cur) => ({ metadata: { ...cur.metadata, ...patch } }));
   const toggleMethod = (k: (typeof AVAILABILITY_METHODS)[number]) => setM({ methods: m.methods.includes(k) ? m.methods.filter((x) => x !== k) : [...m.methods, k] });
   return (
     <>
-      <Toggle checked={m.enabled} onChange={(v) => setM({ enabled: v })} label="Visible to guests" />
+      <Toggle checked={m.enabled} onChange={(v) => setM({ enabled: v })} label={t("studio", "visibleToGuests")} />
       <Grid>
-        <TextField label="Label" value={item.title} onChange={(v) => update({ title: v })} placeholder="Available for private session" maxLength={120} />
-        <SelectField label="Repeats" value={m.repeat} onChange={(v) => setM({ repeat: v })} options={[{ value: "weekly", label: "Every week" }, { value: "once", label: "One date only" }]} />
+        <TextField label={t("common", "label")} value={item.title} onChange={(v) => update({ title: v })} placeholder={t("teach", "availableForPrivate")} maxLength={120} />
+        <SelectField label={t("teach", "repeats")} value={m.repeat} onChange={(v) => setM({ repeat: v })} options={[{ value: "weekly", label: "Every week" }, { value: "once", label: "One date only" }]} />
       </Grid>
       <Grid cols={3}>
         {m.repeat === "weekly" ? (
-          <SelectField label="Day" value={String(m.weekday ?? 2)} onChange={(v) => setM({ weekday: Number(v) })} options={WEEKDAY_LABELS.map((d, i) => ({ value: String(i), label: d }))} />
+          <SelectField label={t("teach", "day")} value={String(m.weekday ?? 2)} onChange={(v) => setM({ weekday: Number(v) })} options={weekdayLabels(locale).map((d, i) => ({ value: String(i), label: d }))} />
         ) : (
-          <TextField label="Date" type="date" value={str(m.date)} onChange={(v) => setM({ date: v || null })} />
+          <TextField label={t("common", "date")} type="date" value={str(m.date)} onChange={(v) => setM({ date: v || null })} />
         )}
-        <TextField label="From" type="time" value={m.from} onChange={(v) => v && setM({ from: v })} />
-        <TextField label="To" type="time" value={m.to} onChange={(v) => v && setM({ to: v })} />
+        <TextField label={t("teach", "fromLabel")} type="time" value={m.from} onChange={(v) => v && setM({ from: v })} />
+        <TextField label={t("teach", "toLabel")} type="time" value={m.to} onChange={(v) => v && setM({ to: v })} />
       </Grid>
-      <TextArea label="Note for guests" value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={2} placeholder="One-to-one yoga, breathwork or a home-practice plan. At my studio or online." />
+      <TextArea label={t("teach", "noteForGuests")} value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={2} placeholder={t("teach", "noteForGuestsPlaceholder")} />
       <div className="flex flex-col gap-2">
-        <Label>How guests reach you</Label>
+        <Label>{t("teach", "howGuestsReachYou")}</Label>
         <div className="flex flex-wrap gap-1.5">
           {AVAILABILITY_METHODS.map((k) => (
             <button key={k} type="button" aria-pressed={m.methods.includes(k)} onClick={() => toggleMethod(k)} className={`px-3 min-h-9 rounded-full text-[12px] font-semibold ${m.methods.includes(k) ? "bg-[#192B21] text-white" : "border border-[#E2DACD] text-[#192B21]"}`}>
@@ -1243,15 +1258,16 @@ function AvailabilityEditor({ item, update }: { item: EditableTeachItem<"teachAv
             </button>
           ))}
         </div>
-        <Hint>WhatsApp and email use your details from How to Contact Me — set them once, reused everywhere.</Hint>
+        <Hint>{t("teach", "sharedContactNote")}</Hint>
       </div>
-      {m.methods.includes("bookingLink") ? <TextField label="Booking link" value={str(m.bookingUrl)} onChange={(v) => setM({ bookingUrl: nul(v) })} inputMode="url" hint="Leave empty to use the booking URL from How to Contact Me." /> : null}
+      {m.methods.includes("bookingLink") ? <TextField label={t("teach", "bookingLink")} value={str(m.bookingUrl)} onChange={(v) => setM({ bookingUrl: nul(v) })} inputMode="url" hint={t("teach", "leaveEmptyForContactBooking")} /> : null}
       {m.methods.includes("whatsapp") ? (
         <TemplateEditor
+          locale={locale}
           value={m.whatsappTemplate}
           onChange={(v) => setM({ whatsappTemplate: v })}
-          fallback={DEFAULT_PRIVATE_WHATSAPP_TEMPLATE}
-          previewValues={{ teacher_name: "Maya", date: formatShortDate(m.date ?? new Date().toISOString().slice(0, 10)), start_time: m.from, end_time: m.to }}
+          fallback={defaultPrivateWhatsappTemplate(locale)}
+          previewValues={{ teacher_name: "Maya", date: formatShortDateLocalized(m.date ?? new Date().toISOString().slice(0, 10), locale), start_time: m.from, end_time: m.to }}
         />
       ) : null}
     </>
@@ -1259,6 +1275,7 @@ function AvailabilityEditor({ item, update }: { item: EditableTeachItem<"teachAv
 }
 
 export function ScheduleSection({ api }: Props) {
+  const { t } = createTranslator(api.locale);
   const [mode, setMode] = useState<"classes" | "private">("classes");
   const classes = api.items.teachClasses;
   const otherZoneClasses = classes.filter((c) => (c.metadata.timezone ?? api.timezone) !== api.timezone).length;
@@ -1270,10 +1287,10 @@ export function ScheduleSection({ api }: Props) {
     );
   return (
     <>
-      <SectionHeader eyebrow="Teaching" title="Schedule" intro="Group classes and private availability. Guests always find Schedule in the bottom navigation, and the two are clearly separated." />
-      <Segmented label="Schedule type" value={mode} onChange={setMode} options={[{ value: "classes", label: "Classes" }, { value: "private", label: "Private availability" }]} />
+      <SectionHeader eyebrow={t("teach", "teaching")} title={t("teach", "navSchedule")} intro={t("teach", "scheduleBody")} />
+      <Segmented label={t("teach", "scheduleType")} value={mode} onChange={setMode} options={[{ value: "classes", label: "Classes" }, { value: "private", label: "Private availability" }]} />
       {mode === "classes" ? (
-        <Card title="Classes" description={`Listed by date and time in ${api.timezone}.`}>
+        <Card title={t("teach", "classesTab")} description={`Listed by date and time in ${api.timezone}.`}>
           {otherZoneClasses > 0 ? (
             <div className="flex flex-wrap items-center gap-3 px-3 py-2.5 rounded-lg bg-[#F4EFE6]" data-testid="apply-zone-to-classes">
               <p className="text-[12.5px] text-[#4A4843] flex-1 min-w-[200px]">
@@ -1288,27 +1305,27 @@ export function ScheduleSection({ api }: Props) {
             api={api}
             moduleKey="teachClasses"
             section="schedule"
-            addLabel="Add class"
-            emptyText="No classes yet — add your first one."
+            addLabel={t("teach", "addClass")}
+            emptyText={t("teach", "noClassesYet")}
             order={(items) => sortClasses(items)}
             summary={(c) => ({
               title: c.title,
-              sub: classListSummary(c.metadata, c.subtitle, api.todayIso, c.metadata.timezone ?? api.timezone),
+              sub: classListSummary(c.metadata, c.subtitle, api.todayIso, c.metadata.timezone ?? api.timezone, api.locale),
               thumb: api.mediaUrl(c.imageRef),
             })}
             editor={(item, update, index) => <ClassEditor api={api} item={item} update={update} index={index} />}
           />
         </Card>
       ) : (
-        <Card title="Private availability" description="Publish time windows when you’re open for one-to-one sessions. Not a booking engine — guests contact you the way you choose.">
+        <Card title={t("teach", "privateAvailability")} description={t("teach", "availabilityBody")}>
           <ItemList
             api={api}
             moduleKey="teachAvailability"
             section="schedule"
-            addLabel="Add time window"
-            emptyText="No private windows yet."
+            addLabel={t("teach", "addTimeWindow")}
+            emptyText={t("teach", "noWindowsYet")}
             summary={(a) => ({ title: a.title || "Available for private session", sub: `${describeAvailability(a.metadata)}${a.metadata.enabled ? "" : " · hidden"}` })}
-            editor={(item, update) => <AvailabilityEditor item={item} update={update} />}
+            editor={(item, update) => <AvailabilityEditor item={item} update={update} locale={api.locale} />}
           />
         </Card>
       )}
@@ -1322,6 +1339,7 @@ export function ScheduleSection({ api }: Props) {
 // ---------------------------------------------------------------------------
 
 export function AboutSection({ api }: Props) {
+  const { t } = createTranslator(api.locale);
   const a = api.settings.teachAbout;
   const set = (patch: Partial<typeof a>) => api.updateSetting("teachAbout", patch, "about");
   const [stylesText, setStylesText] = useState(a.styles.join(", "));
@@ -1332,83 +1350,83 @@ export function AboutSection({ api }: Props) {
   };
   return (
     <>
-      <SectionHeader eyebrow="Teaching" title="About Me" intro="Your story, told well. Everything is optional — empty fields never appear to guests." />
-      <Card title="About Me tab" description="The About Me tab in your app's navigation.">
-        <Toggle checked={a.showTab} onChange={(v) => set({ showTab: v })} label={a.showTab ? "Shown in navigation" : "Hidden from navigation"} description="On by default. Turn it off if you'd rather not have an About Me page; your details are kept." />
+      <SectionHeader eyebrow={t("teach", "teaching")} title={t("teach", "navAbout")} intro={t("teach", "aboutMeBody")} />
+      <Card title={t("teach", "aboutMeTab")} description={t("teach", "aboutMeTabBody")}>
+        <Toggle checked={a.showTab} onChange={(v) => set({ showTab: v })} label={a.showTab ? "Shown in navigation" : "Hidden from navigation"} description={t("teach", "aboutMeToggleHint")} />
       </Card>
-      <Card title="Profile" description="Shown at the top of About Me, under your name.">
-        <SettingsImage api={api} settingsKey="teachAbout" slot="profile" value={a.profile} onChange={(v) => api.updateSetting("teachAbout", (latest) => patchSlot(latest, "profile", v), "about")} label="Profile image · circle crop" previewClassName="w-[120px] h-[120px] rounded-full" />
+      <Card title={t("teach", "profile")} description={t("teach", "profileBody")}>
+        <SettingsImage api={api} settingsKey="teachAbout" slot="profile" value={a.profile} onChange={(v) => api.updateSetting("teachAbout", (latest) => patchSlot(latest, "profile", v), "about")} label={t("teach", "profileImageHint")} previewClassName="w-[120px] h-[120px] rounded-full" />
         <Grid>
           <TextField
-            label="Teaching since (year)"
+            label={t("teach", "teachingSinceYear")}
             inputMode="numeric"
             value={a.teachingSince ? String(a.teachingSince) : ""}
             onChange={(v) => {
               const n = parseInt(v.replace(/\D/g, "").slice(0, 4), 10);
               set({ teachingSince: Number.isFinite(n) && n >= 1940 && n <= 2100 ? n : null });
             }}
-            hint="Guests see “Teaching since 2014 · 11 years”."
+            hint={t("teach", "teachingSinceExample")}
           />
           <TextField
-            label="Styles I teach"
+            label={t("teach", "stylesITeach")}
             value={stylesText}
             onChange={(v) => {
               setStylesText(v);
               set({ styles: v.split(",").map((s) => s.trim()).filter(Boolean).slice(0, 20) });
             }}
-            hint="Comma-separated, e.g. Vinyasa, Yin, Pranayama."
+            hint={t("teach", "stylesCommaHint")}
           />
         </Grid>
       </Card>
-      <Card title="Your story" description="Guests see your philosophy first, as a highlighted quote, then your story.">
-        <TextArea label="Teaching philosophy" value={str(a.philosophy)} onChange={(v) => set({ philosophy: nul(v) })} rows={2} maxLength={700} />
-        <TextArea label="About me" value={str(a.about)} onChange={(v) => set({ about: nul(v) })} rows={5} maxLength={4000} />
+      <Card title={t("teach", "yourStory")} description={t("teach", "yourStoryBody")}>
+        <TextArea label={t("teach", "teachingPhilosophy")} value={str(a.philosophy)} onChange={(v) => set({ philosophy: nul(v) })} rows={2} maxLength={700} />
+        <TextArea label={t("teach", "aboutMe")} value={str(a.about)} onChange={(v) => set({ about: nul(v) })} rows={5} maxLength={4000} />
       </Card>
-      <Card title="Social & direct links" description="Shown as icons under your name. Uses the shared InnerDweS social links.">
+      <Card title={t("teach", "socialAndDirectLinks")} description={t("teach", "socialLinksBody")}>
         <Grid>
           {SOCIAL_PLATFORMS.map((p) => (
             <TextField key={p} label={SOCIAL_PLATFORM_LABEL[p]} value={linkFor(p)} onChange={(v) => setLink(p, v)} inputMode="url" placeholder="https://" />
           ))}
-          <TextField label="WhatsApp" value={str(a.whatsapp)} onChange={(v) => set({ whatsapp: nul(v) })} inputMode="tel" placeholder="+972 50 000 0000" />
-          <TextField label="Email" value={str(a.email)} onChange={(v) => set({ email: nul(v) })} inputMode="email" />
+          <TextField label={t("flow", "whatsapp")} value={str(a.whatsapp)} onChange={(v) => set({ whatsapp: nul(v) })} inputMode="tel" placeholder="+972 50 000 0000" />
+          <TextField label={t("common", "email")} value={str(a.email)} onChange={(v) => set({ email: nul(v) })} inputMode="email" />
         </Grid>
       </Card>
-      <Card title="Gallery" description="Photos of your classes and practice. Each keeps its own focal point.">
+      <Card title={t("common", "gallery")} description={t("teach", "galleryBody")}>
         <ItemList
           api={api}
           moduleKey="teachGallery"
           section="about"
-          addLabel="Add photo"
-          emptyText="No photos yet."
+          addLabel={t("teach", "addPhoto")}
+          emptyText={t("teach", "noPhotosYet")}
           max={12}
           summary={(g) => ({ title: g.title || "Photo", sub: g.imageRef ? "Image set" : "No image yet", thumb: api.mediaUrl(g.imageRef) })}
           editor={(item, update, index) => (
             <>
-              <ItemImage api={api} moduleKey="teachGallery" section="about" item={item} index={index} update={update} label="Photo" />
-              <TextField label="Caption (optional, used as alt text)" value={item.title} onChange={(v) => update({ title: v })} maxLength={120} />
+              <ItemImage api={api} moduleKey="teachGallery" section="about" item={item} index={index} update={update} label={t("common", "photo")} />
+              <TextField label={t("teach", "captionAltText")} value={item.title} onChange={(v) => update({ title: v })} maxLength={120} />
             </>
           )}
         />
       </Card>
-      <Card title="Training, qualifications & certificates" description="Shown as clean cards. Optionally attach an image of the certificate.">
+      <Card title={t("teach", "trainingAndCerts")} description={t("teach", "certsBody")}>
         <ItemList
           api={api}
           moduleKey="teachCertificates"
           section="about"
-          addLabel="Add certificate"
-          emptyText="No certificates yet."
+          addLabel={t("teach", "addCertificate")}
+          emptyText={t("teach", "noCertificatesYet")}
           summary={(c) => ({ title: c.title, sub: [c.subtitle, c.metadata.year].filter(Boolean).join(" · ") })}
           editor={(item, update, index) => (
             <>
               <Grid>
-                <TextField label="Title" value={item.title} onChange={(v) => update({ title: v })} placeholder="500-hr Advanced Yoga Teacher Training" />
-                <TextField label="Issuer" value={str(item.subtitle)} onChange={(v) => update({ subtitle: nul(v) })} placeholder="Yoga Alliance RYT-500" />
+                <TextField label={t("common", "title")} value={item.title} onChange={(v) => update({ title: v })} placeholder={t("teach", "certTitlePlaceholder")} />
+                <TextField label={t("teach", "issuer")} value={str(item.subtitle)} onChange={(v) => update({ subtitle: nul(v) })} placeholder={t("teach", "issuerPlaceholder")} />
               </Grid>
               <Grid>
-                <TextField label="Year" value={str(item.metadata.year)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, year: nul(v) } }))} maxLength={12} />
-                <TextField label="Details (optional)" value={str(item.description)} onChange={(v) => update({ description: nul(v) })} placeholder="120 hours · Rishikesh" />
+                <TextField label={t("teach", "year")} value={str(item.metadata.year)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, year: nul(v) } }))} maxLength={12} />
+                <TextField label={t("teach", "detailsOptional")} value={str(item.description)} onChange={(v) => update({ description: nul(v) })} placeholder={t("teach", "certDetailsPlaceholder")} />
               </Grid>
-              <ItemImage api={api} moduleKey="teachCertificates" section="about" item={item} index={index} update={update} label="Certificate image (optional)" />
+              <ItemImage api={api} moduleKey="teachCertificates" section="about" item={item} index={index} update={update} label={t("teach", "certImageOptional")} />
             </>
           )}
         />
@@ -1432,6 +1450,7 @@ const MODULE_INFO: Record<TeachExploreModule, { label: string; desc: string; def
 const FALLBACK_SWATCHES = ["#5B7A6E", "#2D4A3E", "#7E6A57", "#A9553A", "#6A4C6B", "#2F5D7C"];
 
 export function ModulesSection({ api }: Props) {
+  const { t } = createTranslator(api.locale);
   const cards = api.settings.teachExplore.cards;
   const setCard = (k: "teachReadings" | "teachAudio" | "teachContact", patch: Partial<ExploreCard>) => {
     // Computed from the latest teachExplore slice so a late upload only changes this card's image fields.
@@ -1446,7 +1465,7 @@ export function ModulesSection({ api }: Props) {
   };
   return (
     <>
-      <SectionHeader eyebrow="Explore library" title="Modules" intro="A curated library for teachers. Turn modules on, and give each Explore card a title and an optional cover image. Changes show in the preview straight away; guests see them after you publish." />
+      <SectionHeader eyebrow={t("teach", "exploreLibrary")} title={t("studio", "navModules")} intro={t("teach", "modulesBody")} />
       {(Object.keys(MODULE_INFO) as TeachExploreModule[]).map((k) => {
         const on = api.enabledExplore.includes(k);
         const info = MODULE_INFO[k];
@@ -1458,8 +1477,8 @@ export function ModulesSection({ api }: Props) {
             {on && k !== "customPages" ? (
               <>
                 <Grid>
-                  <TextField label="Card title" value={str(card?.title)} onChange={(v) => setCard(k, { title: nul(v) })} placeholder={info.defaultTitle} maxLength={60} />
-                  <TextField label="Subtitle (optional)" value={str(card?.subtitle)} onChange={(v) => setCard(k, { subtitle: nul(v) })} placeholder={info.defaultSubtitle} maxLength={90} />
+                  <TextField label={t("teach", "cardTitle")} value={str(card?.title)} onChange={(v) => setCard(k, { title: nul(v) })} placeholder={info.defaultTitle} maxLength={60} />
+                  <TextField label={t("teach", "subtitleOptional")} value={str(card?.subtitle)} onChange={(v) => setCard(k, { subtitle: nul(v) })} placeholder={info.defaultSubtitle} maxLength={90} />
                 </Grid>
                 <SettingsImage
                   api={api}
@@ -1467,23 +1486,23 @@ export function ModulesSection({ api }: Props) {
                   slot={k}
                   value={{ imageRef: card?.imageRef ?? null, imagePosition: card?.imagePosition ?? null }}
                   onChange={(v) => setCard(k, v)}
-                  label="Card cover image"
+                  label={t("teach", "cardCoverImage")}
                   previewClassName="w-[180px] h-[110px] rounded-xl"
                 />
                 <div className="flex flex-col gap-2">
-                  <Label>Fallback colour (used when there’s no cover image)</Label>
+                  <Label>{t("teach", "fallbackColourNoCover")}</Label>
                   <div className="flex flex-wrap gap-2">
                     {FALLBACK_SWATCHES.map((h) => (
                       <button key={h} type="button" aria-label={`Fallback ${h}`} aria-pressed={card?.fallbackColor === h} onClick={() => setCard(k, { fallbackColor: h })} className="w-8 h-8 rounded-full" style={{ background: h, outline: card?.fallbackColor === h ? "2px solid #192B21" : "none", outlineOffset: 2 }} />
                     ))}
                     <button type="button" onClick={() => setCard(k, { fallbackColor: null })} className="text-[12px] underline text-[#6F6C66] min-h-8">
-                      Theme default
+                      {t("teach", "themeDefault")}
                     </button>
                   </div>
                 </div>
               </>
             ) : null}
-            {on && k === "customPages" ? <Hint>Edit pages, their covers and fallback colours in Custom Pages.</Hint> : null}
+            {on && k === "customPages" ? <Hint>{t("teach", "editPagesInCustomPages")}</Hint> : null}
           </Card>
         );
       })}
@@ -1496,14 +1515,23 @@ export function ModulesSection({ api }: Props) {
 // My Readings
 // ---------------------------------------------------------------------------
 
-const READING_CATEGORIES = ["Yoga Philosophy", "Meditation", "Personal Reflections", "Breathwork", "Mindfulness", "Teaching", "Movement"];
-const AUDIO_CATEGORIES = ["Guided Meditation", "Breathwork", "Yoga Nidra", "Morning Practice", "Sleep", "Mantra", "Talks"];
+/**
+ * Category SUGGESTIONS, offered in the Space's language.
+ *
+ * Unlike Flow's fixed session categories, these are a datalist the
+ * teacher may accept or overtype - whatever they choose becomes their own
+ * content, so offering it in their language is right, and nothing here is
+ * matched against a stored value.
+ */
+const READING_CATEGORY_KEYS = ["catYogaPhilosophy", "catMeditationR", "catPersonalReflections", "catBreathworkR", "catMindfulness", "teaching", "catMovement"] as const;
+const AUDIO_CATEGORY_KEYS = ["catGuidedMeditation", "catBreathworkR", "catYogaNidra", "catMorningPractice", "catSleep", "catMantra", "catTalks"] as const;
 
-function CategoryField({ value, onChange, options, id }: { value: string | null; onChange: (v: string | null) => void; options: string[]; id: string }) {
+function CategoryField({ value, onChange, options, id, locale }: { value: string | null; onChange: (v: string | null) => void; options: readonly string[]; id: string; locale: Locale }) {
+  const { t } = createTranslator(locale);
   return (
     <div>
-      <Label htmlFor={id}>Category</Label>
-      <input id={id} list={`${id}-list`} value={str(value)} onChange={(e) => onChange(nul(e.target.value))} maxLength={60} className={INPUT} placeholder="Choose or type your own" />
+      <Label htmlFor={id}>{t("common", "category")}</Label>
+      <input id={id} list={`${id}-list`} value={str(value)} onChange={(e) => onChange(nul(e.target.value))} maxLength={60} className={INPUT} placeholder={t("teach", "chooseOrTypeOwn")} />
       <datalist id={`${id}-list`}>
         {options.map((o) => (
           <option key={o} value={o} />
@@ -1514,31 +1542,32 @@ function CategoryField({ value, onChange, options, id }: { value: string | null;
 }
 
 export function ReadingsSection({ api }: Props) {
+  const { t } = createTranslator(api.locale);
   return (
     <>
-      <SectionHeader eyebrow="Explore library" title="My Readings" intro="An editorial library for your writing and the articles you want to share. Not a CMS — just what a teacher needs." />
+      <SectionHeader eyebrow={t("teach", "exploreLibrary")} title={t("teach", "exploreReadings")} intro={t("teach", "readingsBody")} />
       {!api.enabledExplore.includes("teachReadings") ? <ModuleOffNotice api={api} /> : null}
-      <Card title="Readings" description="Newest first for guests. Use the arrows to pin a reading higher.">
+      <Card title={t("teach", "readings")} description={t("teach", "readingsOrderHint")}>
         <ItemList
           api={api}
           moduleKey="teachReadings"
           section="readings"
-          addLabel="Add reading"
-          emptyText="No readings yet."
-          summary={(r) => ({ title: r.title, sub: [r.metadata.category, r.metadata.date ? formatShortDate(r.metadata.date) : null, r.externalLink ? "external link" : null].filter(Boolean).join(" · "), thumb: api.mediaUrl(r.imageRef) })}
+          addLabel={t("teach", "addReading")}
+          emptyText={t("teach", "noReadingsYet")}
+          summary={(r) => ({ title: r.title, sub: [r.metadata.category, r.metadata.date ? formatShortDateLocalized(r.metadata.date, api.locale) : null, r.externalLink ? "external link" : null].filter(Boolean).join(" · "), thumb: api.mediaUrl(r.imageRef) })}
           editor={(item, update, index) => (
             <>
               <Grid>
-                <TextField label="Title" value={item.title} onChange={(v) => update({ title: v })} maxLength={160} />
-                <CategoryField id={`cat-${item.id}`} value={item.metadata.category} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, category: v } }))} options={READING_CATEGORIES} />
+                <TextField label={t("common", "title")} value={item.title} onChange={(v) => update({ title: v })} maxLength={160} />
+                <CategoryField locale={api.locale} id={`cat-${item.id}`} value={item.metadata.category} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, category: v } }))} options={READING_CATEGORY_KEYS.map((k) => t("teach", k))} />
               </Grid>
-              <ItemImage api={api} moduleKey="teachReadings" section="readings" item={item} index={index} update={update} label="Primary image" previewClassName="w-[160px] h-[100px] rounded-xl" />
-              <TextArea label="Short excerpt" value={str(item.metadata.excerpt)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, excerpt: nul(v) } }))} rows={2} maxLength={500} />
-              <TextArea label="Body" value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={8} hint="Blank line = new paragraph. Also: - lists, > quotes, **bold**, *italic*, [link](https://…)." />
+              <ItemImage api={api} moduleKey="teachReadings" section="readings" item={item} index={index} update={update} label={t("teach", "primaryImage")} previewClassName="w-[160px] h-[100px] rounded-xl" />
+              <TextArea label={t("teach", "shortExcerpt")} value={str(item.metadata.excerpt)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, excerpt: nul(v) } }))} rows={2} maxLength={500} />
+              <TextArea label={t("teach", "body")} value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={8} hint={t("teach", "markdownHint")} />
               <Grid cols={3}>
-                <TextField label="Author" value={str(item.metadata.author)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, author: nul(v) } }))} placeholder={api.name} />
-                <TextField label="Date" type="date" value={str(item.metadata.date)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, date: v || null } }))} />
-                <TextField label="External article URL" value={str(item.externalLink)} onChange={(v) => update({ externalLink: nul(v) })} inputMode="url" hint="Optional — adds “Read the full article ↗”." />
+                <TextField label={t("teach", "author")} value={str(item.metadata.author)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, author: nul(v) } }))} placeholder={api.name} />
+                <TextField label={t("common", "date")} type="date" value={str(item.metadata.date)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, date: v || null } }))} />
+                <TextField label={t("teach", "externalArticleUrl")} value={str(item.externalLink)} onChange={(v) => update({ externalLink: nul(v) })} inputMode="url" hint={t("teach", "externalArticleHint")} />
               </Grid>
             </>
           )}
@@ -1550,11 +1579,12 @@ export function ReadingsSection({ api }: Props) {
 }
 
 function ModuleOffNotice({ api }: Props) {
+  const { t } = createTranslator(api.locale);
   return (
     <p className="text-[12.5px] px-4 py-3 rounded-xl bg-[#F6E9DF] text-[#8A5230]">
       This module is currently hidden from guests.{" "}
       <button type="button" className="underline font-semibold" onClick={() => api.goTo("modules")}>
-        Turn it on in Modules
+        {t("teach", "turnOnInModules")}
       </button>
       .
     </p>
@@ -1581,6 +1611,7 @@ function detectDuration(file: File): Promise<number | null> {
 }
 
 function AudioFileField({ api, item, update, index }: { api: StudioApi; item: EditableTeachItem<"teachAudio">; update: (p: Patch<EditableTeachItem<"teachAudio">>) => void; index: number }) {
+  const { t } = createTranslator(api.locale);
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -1624,7 +1655,7 @@ function AudioFileField({ api, item, update, index }: { api: StudioApi; item: Ed
 
   return (
     <div className="flex flex-col gap-2 p-4 rounded-xl border border-[#E2DACD] bg-white">
-      <Label>Audio file</Label>
+      <Label>{t("teach", "audioFile")}</Label>
       {ref ? (
         <div className="flex flex-col gap-2">
           <p className="text-[13px] text-[#192B21]">
@@ -1633,7 +1664,7 @@ function AudioFileField({ api, item, update, index }: { api: StudioApi; item: Ed
           {src ? <audio controls preload="none" src={src} className="w-full" /> : null}
         </div>
       ) : (
-        <p className="text-[12.5px] text-[#8C8A84]">No audio uploaded yet.</p>
+        <p className="text-[12.5px] text-[#8C8A84]">{t("teach", "noAudioUploadedYet")}</p>
       )}
       <div className="flex gap-2">
         <StudioButton kind="outline" onClick={() => inputRef.current?.click()} disabled={busy !== null}>
@@ -1651,18 +1682,18 @@ function AudioFileField({ api, item, update, index }: { api: StudioApi; item: Ed
               else update(audioDetached<EditableTeachItem<"teachAudio">>());
             }}
           >
-            Remove
+            {t("common", "remove")}
           </StudioButton>
         ) : null}
       </div>
-      <Hint>MP3, M4A, AAC, WAV or OGG · up to 100 MB. Duration is detected automatically.</Hint>
+      <Hint>{t("teach", "audioFormats")}</Hint>
       {error ? <p className="text-[12px] text-[#8F3B3B]" role="alert">{error}</p> : null}
       <input
         ref={inputRef}
         type="file"
         accept={Object.keys(AUDIO_ALLOWED_TYPES).join(",")}
-        className="hidden"
-        aria-label="Audio file"
+        className={t("teach", "availHidden")}
+        aria-label={t("teach", "audioFile")}
         onChange={(e) => {
           const f = e.target.files?.[0];
           e.target.value = "";
@@ -1674,28 +1705,29 @@ function AudioFileField({ api, item, update, index }: { api: StudioApi; item: Ed
 }
 
 export function AudioSection({ api }: Props) {
+  const { t } = createTranslator(api.locale);
   return (
     <>
-      <SectionHeader eyebrow="Explore library" title="My Audio" intro="Upload practices guests can play right inside your app. No playlists, downloads or favourites in this version — just a calm, simple player." />
+      <SectionHeader eyebrow={t("teach", "exploreLibrary")} title={t("teach", "exploreAudio")} intro={t("teach", "audioBody")} />
       {!api.enabledExplore.includes("teachAudio") ? <ModuleOffNotice api={api} /> : null}
-      <Card title="Audio library">
+      <Card title={t("teach", "audioLibrary")}>
         <ItemList
           api={api}
           moduleKey="teachAudio"
           section="audio"
-          addLabel="Add audio"
-          emptyText="No audio yet."
+          addLabel={t("teach", "addAudio")}
+          emptyText={t("teach", "noAudioYetStudio")}
           summary={(t) => ({ title: t.title, sub: [t.metadata.category, formatDuration(t.metadata.durationSeconds), t.metadata.audioRef ? null : "no file yet"].filter(Boolean).join(" · "), thumb: api.mediaUrl(t.imageRef) })}
           editor={(item, update, index) => (
             <>
               <Grid>
-                <TextField label="Title" value={item.title} onChange={(v) => update({ title: v })} maxLength={160} />
-                <CategoryField id={`acat-${item.id}`} value={item.metadata.category} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, category: v } }))} options={AUDIO_CATEGORIES} />
+                <TextField label={t("common", "title")} value={item.title} onChange={(v) => update({ title: v })} maxLength={160} />
+                <CategoryField locale={api.locale} id={`acat-${item.id}`} value={item.metadata.category} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, category: v } }))} options={AUDIO_CATEGORY_KEYS.map((k) => t("teach", k))} />
               </Grid>
               <AudioFileField api={api} item={item} update={update} index={index} />
-              <ItemImage api={api} moduleKey="teachAudio" section="audio" item={item} index={index} update={update} label="Cover image" previewClassName="w-[110px] h-[110px] rounded-xl" />
-              <TextArea label="Description" value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={3} maxLength={2000} />
-              <TextArea label="Teacher note (optional)" value={str(item.metadata.teacherNote)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, teacherNote: nul(v) } }))} rows={2} maxLength={800} />
+              <ItemImage api={api} moduleKey="teachAudio" section="audio" item={item} index={index} update={update} label={t("studio", "coverImage")} previewClassName="w-[110px] h-[110px] rounded-xl" />
+              <TextArea label={t("common", "description")} value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={3} maxLength={2000} />
+              <TextArea label={t("teach", "teacherNoteOptional")} value={str(item.metadata.teacherNote)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, teacherNote: nul(v) } }))} rows={2} maxLength={800} />
             </>
           )}
         />
@@ -1721,6 +1753,7 @@ const CONTACT_PLACEHOLDER: Record<ContactMethod, string> = {
 };
 
 export function ContactSection({ api }: Props) {
+  const { t } = createTranslator(api.locale);
   const c = api.settings.teachContact;
   const set = (patch: Partial<typeof c>) => api.updateSetting("teachContact", patch, "contact");
   const setMethod = (k: ContactMethod, v: string) => {
@@ -1731,39 +1764,39 @@ export function ContactSection({ api }: Props) {
   const toggle = (k: ContactMethod, on: boolean) => set({ enabled: on ? [...c.enabled, k] : c.enabled.filter((x) => x !== k) });
   return (
     <>
-      <SectionHeader eyebrow="Explore library" title="How to Contact Me" intro="A polished contact destination — not a raw list of links. Your WhatsApp and email here are also used by private availability." />
+      <SectionHeader eyebrow={t("teach", "exploreLibrary")} title={t("teach", "howToContactMeTitle")} intro={t("teach", "contactSectionBody")} />
       {!api.enabledExplore.includes("teachContact") ? <ModuleOffNotice api={api} /> : null}
-      <Card title="Contact methods" description="Only filled-in, switched-on methods appear to guests.">
+      <Card title={t("teach", "contactMethods")} description={t("teach", "contactMethodsBody")}>
         {CONTACT_METHODS.map((k) => (
           <div key={k} className="grid sm:grid-cols-[1fr_auto] gap-2 items-end">
-            <TextField label={CONTACT_METHOD_LABEL[k]} value={str(c.methods[k])} onChange={(v) => setMethod(k, v)} placeholder={CONTACT_PLACEHOLDER[k]} inputMode={k === "email" ? "email" : k === "whatsapp" || k === "phone" ? "tel" : "url"} />
-            <Toggle checked={c.enabled.includes(k)} onChange={(v) => toggle(k, v)} label="Show" />
+            <TextField label={contactMethodLabel(api.locale)[k]} value={str(c.methods[k])} onChange={(v) => setMethod(k, v)} placeholder={CONTACT_PLACEHOLDER[k]} inputMode={k === "email" ? "email" : k === "whatsapp" || k === "phone" ? "tel" : "url"} />
+            <Toggle checked={c.enabled.includes(k)} onChange={(v) => toggle(k, v)} label={t("common", "show")} />
           </div>
         ))}
         <Grid>
           <SelectField
-            label="Primary button"
+            label={t("teach", "primaryButton")}
             value={(c.primary ?? "") as ContactMethod | ""}
             onChange={(v) => set({ primary: (v || null) as ContactMethod | null })}
-            options={[{ value: "" as const, label: "None" }, ...CONTACT_METHODS.map((k) => ({ value: k, label: CONTACT_METHOD_LABEL[k] }))]}
+            options={[{ value: "" as const, label: "None" }, ...CONTACT_METHODS.map((k) => ({ value: k, label: contactMethodLabel(api.locale)[k] }))]}
           />
-          <TextField label="Button label" value={str(c.buttonLabel)} onChange={(v) => set({ buttonLabel: nul(v) })} placeholder="Message me on WhatsApp" maxLength={60} />
+          <TextField label={t("teach", "buttonLabel")} value={str(c.buttonLabel)} onChange={(v) => set({ buttonLabel: nul(v) })} placeholder={t("teach", "contactButtonPlaceholder")} maxLength={60} />
         </Grid>
       </Card>
-      <Card title="Location" description="Optional. A calm address card that opens your map link.">
+      <Card title={t("common", "location")} description={t("teach", "addressCardHint")}>
         <Grid>
-          <TextField label="Location name" value={str(c.locationName)} onChange={(v) => set({ locationName: nul(v) })} placeholder="Olive Tree Studio" />
-          <TextField label="Map / location URL" value={str(c.mapUrl)} onChange={(v) => set({ mapUrl: nul(v) })} inputMode="url" />
+          <TextField label={t("teach", "locationName")} value={str(c.locationName)} onChange={(v) => set({ locationName: nul(v) })} placeholder={t("teach", "locationNamePlaceholder")} />
+          <TextField label={t("teach", "mapUrl")} value={str(c.mapUrl)} onChange={(v) => set({ mapUrl: nul(v) })} inputMode="url" />
         </Grid>
-        <TextField label="Studio address" value={str(c.address)} onChange={(v) => set({ address: nul(v) })} />
+        <TextField label={t("teach", "studioAddress")} value={str(c.address)} onChange={(v) => set({ address: nul(v) })} />
       </Card>
-      <Card title="Page presentation">
+      <Card title={t("teach", "pagePresentation")}>
         <Grid>
-          <TextField label="Title" value={str(c.title)} onChange={(v) => set({ title: nul(v) })} placeholder="Let’s connect" maxLength={80} />
-          <TextField label="Intro" value={str(c.intro)} onChange={(v) => set({ intro: nul(v) })} maxLength={500} />
+          <TextField label={t("common", "title")} value={str(c.title)} onChange={(v) => set({ title: nul(v) })} placeholder={t("teach", "letsConnect")} maxLength={80} />
+          <TextField label={t("teach", "intro")} value={str(c.intro)} onChange={(v) => set({ intro: nul(v) })} maxLength={500} />
         </Grid>
-        <SettingsImage api={api} settingsKey="teachContact" slot="cover" value={c.cover} onChange={(v) => api.updateSetting("teachContact", (latest) => patchSlot(latest, "cover", v), "contact")} label="Cover image (optional)" previewClassName="w-[180px] h-[100px] rounded-xl" />
-        <Hint>Contact form: not included in this version — InnerDweS has no shared form/email delivery system yet.</Hint>
+        <SettingsImage api={api} settingsKey="teachContact" slot="cover" value={c.cover} onChange={(v) => api.updateSetting("teachContact", (latest) => patchSlot(latest, "cover", v), "contact")} label={t("teach", "coverImageOptional")} previewClassName="w-[180px] h-[100px] rounded-xl" />
+        <Hint>{t("teach", "noContactFormNote")}</Hint>
       </Card>
       <SaveBar api={api} section="contact" />
     </>
@@ -1775,39 +1808,40 @@ export function ContactSection({ api }: Props) {
 // ---------------------------------------------------------------------------
 
 export function CustomPagesSection({ api }: Props) {
+  const { t } = createTranslator(api.locale);
   return (
     <>
-      <SectionHeader eyebrow="Explore library" title="Custom Pages" intro="Anything else guests should know — workshops, retreats, policies. Uses the shared InnerDweS Custom Pages module." />
+      <SectionHeader eyebrow={t("teach", "exploreLibrary")} title={t("teach", "customPagesTitle")} intro={t("teach", "customPagesSectionBody")} />
       {!api.enabledExplore.includes("customPages") ? <ModuleOffNotice api={api} /> : null}
-      <Card title="Pages">
+      <Card title={t("teach", "pages")}>
         <ItemList
           api={api}
           moduleKey="customPages"
           section="pages"
-          addLabel="Add page"
-          emptyText="No pages yet."
+          addLabel={t("teach", "addPage")}
+          emptyText={t("teach", "noPagesYet")}
           max={api.customPagesLimit}
           summary={(p) => ({ title: p.title, sub: `${p.subtitle ?? "Custom page"}${p.metadata.enabled ? "" : " · hidden"}`, thumb: api.mediaUrl(p.imageRef) })}
           editor={(item, update, index) => (
             <>
-              <Toggle checked={item.metadata.enabled} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, enabled: v } }))} label="Visible to guests" />
+              <Toggle checked={item.metadata.enabled} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, enabled: v } }))} label={t("studio", "visibleToGuests")} />
               <Grid>
-                <TextField label="Title" value={item.title} onChange={(v) => update({ title: v })} maxLength={160} />
-                <TextField label="Eyebrow / subtitle (optional)" value={str(item.subtitle)} onChange={(v) => update({ subtitle: nul(v) })} maxLength={90} />
+                <TextField label={t("common", "title")} value={item.title} onChange={(v) => update({ title: v })} maxLength={160} />
+                <TextField label={t("teach", "eyebrowOptional")} value={str(item.subtitle)} onChange={(v) => update({ subtitle: nul(v) })} maxLength={90} />
               </Grid>
-              <ItemImage api={api} moduleKey="customPages" section="pages" item={item} index={index} update={update} label="Cover image" previewClassName="w-[180px] h-[110px] rounded-xl" />
+              <ItemImage api={api} moduleKey="customPages" section="pages" item={item} index={index} update={update} label={t("studio", "coverImage")} previewClassName="w-[180px] h-[110px] rounded-xl" />
               <div className="flex flex-col gap-2">
-                <Label>Fallback colour (card without image)</Label>
+                <Label>{t("teach", "fallbackColourCard")}</Label>
                 <div className="flex flex-wrap gap-2">
                   {FALLBACK_SWATCHES.map((h) => (
                     <button key={h} type="button" aria-label={`Fallback ${h}`} aria-pressed={item.metadata.fallbackColor === h} onClick={() => update((cur) => ({ metadata: { ...cur.metadata, fallbackColor: h } }))} className="w-8 h-8 rounded-full" style={{ background: h, outline: item.metadata.fallbackColor === h ? "2px solid #192B21" : "none", outlineOffset: 2 }} />
                   ))}
                 </div>
               </div>
-              <TextArea label="Content" value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={8} hint="Blank line = new paragraph. Also: - lists, > quotes, **bold**, *italic*, [link](https://…). No raw HTML." />
+              <TextArea label={t("common", "content")} value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={8} hint={t("teach", "markdownHintNoHtml")} />
               <Grid>
-                <TextField label="Button label (optional)" value={str(item.metadata.buttonLabel)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, buttonLabel: nul(v) } }))} maxLength={60} />
-                <TextField label="Button link" value={str(item.metadata.buttonUrl)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, buttonUrl: nul(v) } }))} inputMode="url" />
+                <TextField label={t("teach", "buttonLabelOptional")} value={str(item.metadata.buttonLabel)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, buttonLabel: nul(v) } }))} maxLength={60} />
+                <TextField label={t("teach", "buttonLink")} value={str(item.metadata.buttonUrl)} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, buttonUrl: nul(v) } }))} inputMode="url" />
               </Grid>
             </>
           )}
@@ -1823,6 +1857,7 @@ export function CustomPagesSection({ api }: Props) {
 // ---------------------------------------------------------------------------
 
 export function PublishSection({ api, preview }: Props & { preview: ReactNode }) {
+  const { t } = createTranslator(api.locale);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const noRegistration = api.items.teachClasses.filter((c) => !buildRegistrationCta(api.name, c.title, c.metadata));
@@ -1856,8 +1891,8 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
 
   return (
     <>
-      <SectionHeader eyebrow="Publishing" title="Preview & Publish" intro="Publishing uses the same shared InnerDweS snapshot, media and guest-access rules as every Space. Guests only ever see what you publish." />
-      <Card title="Ready to publish?">
+      <SectionHeader eyebrow={t("teach", "publishingEyebrow")} title={t("teach", "previewAndPublish")} intro={t("teach", "publishBody")} />
+      <Card title={t("studio", "readyToPublish")}>
         <ul className="flex flex-col gap-2">
           {checks.map((c) => (
             <li key={c.text} className="flex items-start gap-2.5 text-[13px]">
@@ -1880,7 +1915,7 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
         ) : null}
         <Hint>{api.publishedAt ? `Last published ${api.publishedAt.slice(0, 16).replace("T", " ")} UTC` : "Not published yet."}</Hint>
       </Card>
-      <Card title="Share your Guest App" description="Send guests this link or let them scan the QR code. It never contains an access token - it is simply your public Guest App address.">
+      <Card title={t("teach", "shareYourGuestApp")} description={t("teach", "shareGuestAppBody")}>
         <PublicLinkCard
           url={publicSpaceUrl(api.tenantId, api.slug)}
           openHref={guestAppPath(api.tenantId, api.slug)}
@@ -1891,8 +1926,8 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
         <QrCodeCard tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} />
         <ShareCardPanel tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} />
       </Card>
-      <DirectoryOptInCard tenantId={api.tenantId} initialListed={api.directoryListed} />
-      <Card title="Draft preview" description="The real Guest App with your current draft. Mobile layout below; the live app switches to a two-column layout on wide screens.">
+      <DirectoryOptInCard tenantId={api.tenantId} initialListed={api.directoryListed} locale={api.locale} />
+      <Card title={t("teach", "draftPreview")} description={t("teach", "draftPreviewBody")}>
         <div className="mx-auto w-full max-w-[380px] h-[720px] rounded-[36px] overflow-hidden border-[6px] border-[#D9D1C3]">{preview}</div>
       </Card>
     </>
@@ -1900,7 +1935,8 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
 }
 
 /** Explicit opt-in (default OFF) for the future public Teachers directory / InnerDweS promotion. Saves on toggle; private to the owner. */
-export function DirectoryOptInCard({ tenantId, initialListed }: { tenantId: string; initialListed: boolean }) {
+export function DirectoryOptInCard({ tenantId, initialListed, locale }: { tenantId: string; initialListed: boolean; locale: Locale }) {
+  const { t } = createTranslator(locale);
   const [listed, setListed] = useState(initialListed);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1919,13 +1955,13 @@ export function DirectoryOptInCard({ tenantId, initialListed }: { tenantId: stri
   }
 
   return (
-    <Card title="List me on InnerDweS" description="Optional. Off unless you turn it on - we never list anyone automatically. If you opt in, you may be featured in the upcoming InnerDweS Teachers directory and on our website.">
+    <Card title={t("teach", "listMeOnInnerDwes")} description={t("teach", "directoryBody")}>
       <div className="flex items-center gap-3" data-testid="directory-opt-in">
         <button
           type="button"
           role="switch"
           aria-checked={listed}
-          aria-label="List me on InnerDweS"
+          aria-label={t("teach", "listMeOnInnerDwes")}
           onClick={toggle}
           disabled={busy}
           className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${listed ? "bg-[#192B21]" : "bg-[#D9D1C3]"}`}
@@ -1939,7 +1975,7 @@ export function DirectoryOptInCard({ tenantId, initialListed }: { tenantId: stri
           {error}
         </p>
       ) : null}
-      <Hint>You can change this at any time. Turning it on does not publish anything by itself.</Hint>
+      <Hint>{t("teach", "directoryChangeAnytime")}</Hint>
     </Card>
   );
 }

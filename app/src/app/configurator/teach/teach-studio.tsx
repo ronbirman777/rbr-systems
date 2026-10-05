@@ -127,6 +127,9 @@ type ItemsState = { [K in TeachEditableItemKey]: EditableTeachItem<K>[] };
 /** Everything a section editor needs - passed as one object. */
 export type StudioApi = {
   tenantId: string;
+  /** The Space's system language. On the API rather than threaded through
+   * every section, because every section renders its own labels. */
+  locale: Locale;
   todayIso: string;
   name: string;
   setName: (v: string) => void;
@@ -418,6 +421,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
 
   const api: StudioApi = {
     tenantId,
+    locale: initial.locale,
     todayIso: mounted ? todayInTimezone(timezone) : new Date().toISOString().slice(0, 10),
     name,
     setName: (v) => {
@@ -516,7 +520,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
       enabledExplore,
       mediaUrls,
     };
-  }, [mounted, name, timezone, colors, heroImageRef, settings, items, enabledExplore, mediaUrls]);
+  }, [mounted, name, timezone, colors, heroImageRef, settings, items, enabledExplore, mediaUrls, initial.locale]);
 
   const sectionProps = { api };
   let content: React.ReactNode;
