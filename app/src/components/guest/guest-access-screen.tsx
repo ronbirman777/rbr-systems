@@ -7,6 +7,7 @@ import { verifyGuestCode } from "@/lib/guestAccess/verifyAction";
 import { verifyGuestCodeInitialState, type VerifyGuestCodeState } from "@/lib/guestAccess/verifyActionState";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { BrandImage } from "@/components/shared/brand-image";
 export type GuestAccessScreenProps = {
   tenantId: string;
   name: string;
@@ -103,17 +104,25 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
             or gradient fallback + directional overlay), so this screen
             reads as belonging to the retreat, not as a generic gate. */}
         <div className="relative h-[220px] shrink-0">
-          {heroImageUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={heroImageUrl} alt="" className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full" style={{ background: "linear-gradient(135deg, var(--rbr-primary), var(--rbr-forest-mid))" }} />
-          )}
+          {/* The gate's own hero is this screen's LCP element. It is the
+              first thing a guest of a code-protected Space ever sees, so
+              it loads eagerly - and at a width suited to the device
+              rather than as a full-resolution original. */}
+          <BrandImage
+            priority
+            sizes="(min-width: 640px) 390px, 100vw"
+            src={heroImageUrl}
+            alt=""
+            className="w-full h-full"
+            fallback="linear-gradient(135deg, var(--rbr-primary), var(--rbr-forest-mid))"
+          />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.2), rgba(0,0,0,0.7))" }} />
           <div className="absolute top-0 start-0 end-0 px-6 pt-4 flex items-center gap-2">
             {logoUrl && (
+              /* A small logo with object-contain: BrandImage is a
+                 cover/focal-point primitive and would crop it. */
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="" className="h-6 w-auto max-w-[88px] object-contain shrink-0" />
+              <img src={logoUrl} alt="" loading="eager" fetchPriority="high" className="h-6 w-auto max-w-[88px] object-contain shrink-0" />
             )}
             <span className="text-white/60 text-[10px] tracking-[0.22em] font-medium uppercase" style={{ fontFamily: "var(--rbr-font-ui)" }}>
               {name}

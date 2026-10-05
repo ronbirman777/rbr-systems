@@ -5,6 +5,7 @@ import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
 import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { BrandImage } from "@/components/shared/brand-image";
 export type MealsScreenProps = {
   brand: BrandConfig;
   meals: DisplayMeal[];
@@ -30,6 +31,9 @@ export type MealsScreenProps = {
  * description, location, and dietary tags, apart from legitimate content
  * differences.
  */
+/** This product renders inside a fixed 390px device frame from `sm` up. */
+const SIZES = "(min-width: 640px) 390px, 100vw";
+
 export function MealsScreen({ brand, meals, locale = DEFAULT_LOCALE }: MealsScreenProps) {
   const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
@@ -62,12 +66,13 @@ export function MealsScreen({ brand, meals, locale = DEFAULT_LOCALE }: MealsScre
           >
             <div className="relative h-[160px]">
               {meal.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <BrandImage
                   src={meal.imageUrl}
                   alt={meal.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full"
+                  sizes={SIZES}
                   style={{ objectPosition: objectPositionStyle(meal.imagePosition) }}
+                  fallback="var(--rbr-sand)"
                 />
               ) : (
                 <div className="w-full h-full" style={{ background: "var(--rbr-sand)" }} />

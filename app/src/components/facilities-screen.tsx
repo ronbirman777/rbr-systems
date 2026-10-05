@@ -6,6 +6,7 @@ import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { BrandImage } from "@/components/shared/brand-image";
 export type FacilitiesScreenProps = {
   brand: BrandConfig;
   facilities: DisplayFacility[];
@@ -20,6 +21,9 @@ export type FacilitiesScreenProps = {
  * generalized the same way as MealsScreen (first item featured, not a
  * fixed 4-item layout).
  */
+/** This product renders inside a fixed 390px device frame from `sm` up. */
+const SIZES = "(min-width: 640px) 390px, 100vw";
+
 export function FacilitiesScreen({ brand, facilities, locale = DEFAULT_LOCALE }: FacilitiesScreenProps) {
   const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
@@ -50,12 +54,13 @@ export function FacilitiesScreen({ brand, facilities, locale = DEFAULT_LOCALE }:
           >
             <div className={`relative ${i === 0 ? "h-[220px]" : "h-[160px]"}`}>
               {f.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <BrandImage
                   src={f.imageUrl}
                   alt={f.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full"
+                  sizes={SIZES}
                   style={{ objectPosition: objectPositionStyle(f.imagePosition) }}
+                  fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                 />
               ) : (
                 <div className="w-full h-full" style={{ background: `linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))` }} />

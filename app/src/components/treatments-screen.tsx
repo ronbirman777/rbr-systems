@@ -9,6 +9,7 @@ import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { BrandImage } from "@/components/shared/brand-image";
 export type TreatmentsScreenProps = {
   brand: BrandConfig;
   treatments: DisplayTreatment[];
@@ -24,6 +25,9 @@ export type TreatmentsScreenProps = {
  * model exactly (bookingInfo is informational free text; there is no
  * booking engine here, none was ever asked for).
  */
+/** This product renders inside a fixed 390px device frame from `sm` up. */
+const SIZES = "(min-width: 640px) 390px, 100vw";
+
 export function TreatmentsScreen({ brand, treatments, locale = DEFAULT_LOCALE }: TreatmentsScreenProps) {
   const { t: tr } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
@@ -58,12 +62,13 @@ export function TreatmentsScreen({ brand, treatments, locale = DEFAULT_LOCALE }:
             >
               <div className="relative h-[200px]">
                 {t.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <BrandImage
                     src={t.imageUrl}
                     alt={t.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full"
+                    sizes={SIZES}
                     style={{ objectPosition: objectPositionStyle(t.imagePosition) }}
+                    fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                   />
                 ) : (
                   <div className="w-full h-full" style={{ background: `linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))` }} />

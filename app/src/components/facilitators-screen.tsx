@@ -93,6 +93,7 @@ export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCAL
                   src={f.imageUrl}
                   alt={f.name}
                   className="w-full h-full"
+                  sizes="(min-width: 640px) 390px, 100vw"
                   style={{ objectPosition: objectPositionStyle(f.imagePosition, FACILITATOR_DEFAULT_POSITION) }}
                   fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                 />

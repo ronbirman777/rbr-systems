@@ -23,6 +23,7 @@ import { ChevronLeftIcon, ChevronRightIcon, PinIcon, QuestionIcon, PagesIcon, We
 import type { CSSProperties, ReactElement } from "react";
 
 import { createTranslator, splitEmphasis, translate, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { BrandImage } from "@/components/shared/brand-image";
 export type ExploreScreenProps = {
   brand: BrandConfig;
   enabledModules: OptionalModuleKey[];
@@ -60,6 +61,11 @@ type Tone = "primary" | "accent";
  * photo - modules with no photographed items yet fall back to a plain
  * gradient tile rather than fabricating imagery.
  */
+/** This product renders inside a fixed 390px device frame from `sm` up. */
+const SIZES = "(min-width: 640px) 390px, 100vw";
+/** Explore tiles sit two to a row. */
+const TILE_SIZES = "(min-width: 640px) 195px, 50vw";
+
 export function ExploreScreen({
   brand,
   enabledModules,
@@ -291,23 +297,20 @@ function EntryCard({
   const v = TONE_VARS[tone];
   return (
     <button type="button" onClick={onClick} className={`w-full rounded-3xl overflow-hidden relative ${heightClass}`}>
-      {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imageUrl}
-          alt=""
-          className="w-full h-full object-cover"
-          style={{ objectPosition: objectPositionStyle(imagePosition ?? null) }}
-        />
-      ) : (
-        // Brand-tinted (Primary or Accent, alternating - see `tone`), but
-        // always blended toward the fixed near-black forest neutral
-        // (--rbr-{primary|secondary}-dark) so this card's fixed-white
-        // title/eyebrow text (below) stays legible even when the
-        // organizer's raw color is very light - not reliant on the
-        // gradient overlay alone the way a real photo's overlay is.
-        <div className="w-full h-full" style={{ background: `linear-gradient(160deg, ${v.color}, ${v.dark})` }} />
-      )}
+      {/* Brand-tinted fallback (Primary or Accent, alternating - see
+          `tone`), always blended toward the fixed near-black forest
+          neutral (--rbr-{primary|secondary}-dark) so this card's
+          fixed-white title/eyebrow text stays legible even when the
+          organizer's raw colour is very light - not reliant on the
+          gradient overlay alone the way a real photo's overlay is. */}
+      <BrandImage
+        src={imageUrl}
+        alt=""
+        className="w-full h-full"
+        sizes={SIZES}
+        style={{ objectPosition: objectPositionStyle(imagePosition ?? null) }}
+        fallback={`linear-gradient(160deg, ${v.color}, ${v.dark})`}
+      />
       <div
         className="absolute inset-0"
         style={{ background: `linear-gradient(to top, color-mix(in srgb, ${v.dark} 85%, transparent), color-mix(in srgb, ${v.dark} 15%, transparent) 60%, transparent)` }}
@@ -368,17 +371,14 @@ function SolidTile({
   const v = TONE_VARS[tone];
   return (
     <button type="button" onClick={onClick} className="rounded-3xl h-[140px] relative overflow-hidden text-start">
-      {imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={imageUrl}
-          alt=""
-          className="w-full h-full object-cover"
-          style={{ objectPosition: objectPositionStyle(imagePosition ?? null) }}
-        />
-      ) : (
-        <div className="w-full h-full" style={{ background: v.color }} />
-      )}
+      <BrandImage
+        src={imageUrl}
+        alt=""
+        className="w-full h-full"
+        sizes={TILE_SIZES}
+        style={{ objectPosition: objectPositionStyle(imagePosition ?? null) }}
+        fallback={v.color}
+      />
       {imageUrl && (
         <div
           className="absolute inset-0"

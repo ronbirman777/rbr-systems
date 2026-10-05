@@ -103,9 +103,9 @@ export function TodayScreen({
         />
         <div className="absolute top-0 left-0 right-0 px-6 pt-3 flex items-center gap-2">
           {logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- a small
-            // logo with object-contain; BrandImage is a cover/focal-point
-            // primitive and would crop it.
+            /* A small logo with object-contain: BrandImage is a
+               cover/focal-point primitive and would crop it. */
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={logoUrl} alt="" loading="eager" fetchPriority="high" className="h-6 w-auto max-w-[88px] object-contain shrink-0" />
           )}
           <span className="text-white/60 text-[10px] tracking-[0.22em] font-medium uppercase" style={{ fontFamily: "var(--rbr-font-ui)" }}>
