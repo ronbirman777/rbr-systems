@@ -138,15 +138,26 @@ async function signAndRedirect(
 
   // A width-limited render instead of the full-resolution original: the
   // difference between a multi-hundred-KB hero and a card-sized fetch on
-  // a phone. Width only, never width+height, so the organizer's focal
-  // point still decides what is in frame. A project without Storage
-  // transformations falls back to the plain object rather than failing -
-  // the same two-step the Share Card pipeline already uses.
-  // When no width is asked for, call createSignedUrl with exactly the two
-  // arguments it has always had - the un-transformed request is byte-for-byte
-  // the same call it was before CP4.
-  const attempts: ({ transform: { width: number } } | undefined)[] = width
-    ? [{ transform: { width } }, undefined]
+  // a phone.
+  //
+  // `resize: "contain"` is load-bearing, not a default being restated.
+  // Supabase's default is "cover", and with a width but no height it
+  // takes the height from the SOURCE - so asking a 1200x800 original for
+  // width 320 returns a 320x800 CENTRE CROP, a narrow vertical slice of
+  // the organizer's photo, not the same picture made smaller. Verified
+  // against real Staging objects on the deployed Preview: the response
+  // matched a centre crop to within 0.06 mean pixel difference while
+  // differing from a proportional downscale by 8.11. "contain" fits the
+  // whole image inside the box instead, which is what every call site
+  // here means by a width.
+  //
+  // A project without Storage transformations falls back to the plain
+  // object rather than failing - the same two-step the Share Card
+  // pipeline already uses. When no width is asked for, createSignedUrl is
+  // called with exactly the two arguments it has always had, so the
+  // un-transformed request is byte-for-byte the call it was before CP4.
+  const attempts: ({ transform: { width: number; resize: "contain" } } | undefined)[] = width
+    ? [{ transform: { width, resize: "contain" } }, undefined]
     : [undefined];
 
   for (const options of attempts) {

@@ -142,7 +142,7 @@ describe("GET /api/media - published snapshot AND current guest access", () => {
     accessMode = "public";
 
     await call(V.split("/"), "w=640");
-    expect(mockSign).toHaveBeenCalledWith(V, 420, { transform: { width: 640 } });
+    expect(mockSign).toHaveBeenCalledWith(V, 420, { transform: { width: 640, resize: "contain" } });
 
     // Off-ladder, absurd and non-numeric widths all fall back to the
     // untransformed object rather than minting a new cache entry.
@@ -151,6 +151,21 @@ describe("GET /api/media - published snapshot AND current guest access", () => {
       await call(V.split("/"), bad);
       expect(mockSign, bad).toHaveBeenCalledWith(V, 420);
     }
+  });
+
+  it("asks Storage to CONTAIN the image in the width, never to crop it to it", async () => {
+    // Supabase's default resize mode is "cover", and with a width but no
+    // height it takes the height from the source - which returns a narrow
+    // centre crop rather than the same picture made smaller. Verified on
+    // Staging before this was fixed. The mode is therefore explicit, and
+    // pinned here so a future edit cannot quietly drop it.
+    const V = `${TENANT}/meals/a/up-A/published.webp`;
+    snapshot = { modules: { meals: [{ imageRef: V }] } };
+    accessMode = "public";
+    await call(V.split("/"), "w=480");
+    const [, , options] = mockSign.mock.calls[0];
+    expect(options).toEqual({ transform: { width: 480, resize: "contain" } });
+    expect(options.transform).not.toHaveProperty("height");
   });
 
   it("falls back to the plain object when Storage cannot render a transform", async () => {
@@ -528,7 +543,7 @@ describe("CP4 security regression: the new delivery options cannot widen access"
       mockSign.mockResolvedValue({ data: { signedUrl: "http://storage/sign/x?token=t" }, error: null });
       const res = await call(V.split("/"), `w=${w}`);
       expect(res.status, String(w)).toBe(307);
-      expect(mockSign, String(w)).toHaveBeenCalledWith(V, 420, { transform: { width: w } });
+      expect(mockSign, String(w)).toHaveBeenCalledWith(V, 420, { transform: { width: w, resize: "contain" } });
     }
     // Anything off the ladder is ignored rather than forwarded, so one
     // path cannot mint unbounded distinct renders or cache entries.
