@@ -21,7 +21,8 @@ import {
 } from "./index";
 import { validateAdditionalLinks } from "@/app/configurator/retreat/featuredValidation";
 import { DIRECTIONAL_ICONS, iconTransform, isDirectionalIcon } from "./direction";
-import { formatLongDateLocalized, formatNumberLocalized, formatShortDateLocalized, formatTimeLocalized } from "./datetime";
+import { formatLongDateLocalized, formatNumberLocalized, formatShortDateLocalized, formatTimeLocalized, shortWeekdayName } from "./datetime";
+import { recurrenceSummary } from "@/lib/teach/recurrenceText";
 import { formatShortDate } from "@/lib/teach/links";
 import { localeFromPublishedModules, parseSpaceSettings } from "@/lib/spaceSettings";
 import { guestAccessCopy } from "@/lib/spaceTypes/guestAccessCopy";
@@ -398,6 +399,26 @@ describe("date and time localization is presentation only", () => {
   it("rejects a malformed time rather than guessing", () => {
     expect(formatTimeLocalized("99:99", "en")).toBe("99:99");
     expect(formatTimeLocalized("abc", "he")).toBe("abc");
+  });
+
+  it("writes Hebrew weekdays the way Hebrew writes them", () => {
+    // ICU returns "יום א׳" for the short weekday - the word "day" is
+    // already inside it - so a carrier phrase meaning "on days ..." would
+    // otherwise say "day" twice.
+    expect(shortWeekdayName(0, "he")).toBe("א׳");
+    expect(shortWeekdayName(6, "he")).toBe("שבת");
+    expect(shortWeekdayName(0, "en")).toBe("Sun");
+    expect(shortWeekdayName(3, "de")).toBe("Mi");
+  });
+
+  it("assembles a recurrence that reads naturally in each language", () => {
+    const rule = { freq: "weekly", interval: 2, byWeekday: [0, 3], end: { type: "until", until: "2027-12-31" } } as never;
+    // English is byte-identical to what the Studio showed before CP3.
+    expect(recurrenceSummary(rule, "2026-10-05")).toBe("Every 2 weeks on Sun, Wed · Until 31 Dec 2027");
+    // Hebrew uses its DUAL ("שבועיים", not "2 שבועות") and does not
+    // repeat the word "day".
+    expect(recurrenceSummary(rule, "2026-10-05", { locale: "he" })).toBe("כל שבועיים בימים א׳, ד׳ · עד 31 בדצמ׳ 2027");
+    expect(recurrenceSummary(rule, "2026-10-05", { locale: "de" })).toBe("Alle 2 Wochen am So, Mi · Bis 31. Dez. 2027");
   });
 
   it("formats numbers for the locale", () => {

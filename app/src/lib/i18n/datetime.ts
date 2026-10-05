@@ -116,12 +116,21 @@ function referenceDay(weekdayIndex: number): Date {
   return new Date(Date.UTC(2024, 0, 7 + weekdayIndex, 12));
 }
 
-/** "Sun" / "א׳" / "So" - index 0 = Sunday, matching weekdayOfDate(). */
+/**
+ * "Sun" / "א׳" / "So" - index 0 = Sunday, matching weekdayOfDate().
+ *
+ * ICU's Hebrew short weekday is "יום א׳" - it carries the word "day"
+ * inside it. Left alone, a carrier phrase like "on days {days}" produces
+ * "בימים יום א׳, יום ד׳", which says "day" twice. Israelis write
+ * "בימים א׳, ד׳", so the prefix is dropped here, once, rather than at
+ * each call site.
+ */
 export function shortWeekdayName(weekdayIndex: number, locale: Locale): string {
   if (locale === "en") return SHORT_WEEKDAYS_EN[weekdayIndex];
-  return new Intl.DateTimeFormat(LOCALE_TAG[locale], { weekday: "short", timeZone: "UTC" }).format(
+  const name = new Intl.DateTimeFormat(LOCALE_TAG[locale], { weekday: "short", timeZone: "UTC" }).format(
     referenceDay(weekdayIndex)
   );
+  return locale === "he" ? name.replace(/^יום\s+/, "") : name;
 }
 
 /** "Sunday" / "ראשון" / "Sonntag" - index 0 = Sunday. */
