@@ -143,10 +143,16 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
       style={{ ...vars, background: "var(--rbr-parchment-deep)" }}
       lang={locale}
       dir={dir}
-      className="guest-viewport flex-1 flex items-center justify-center sm:p-6 p-0"
+      className="guest-viewport flex-1 flex items-center justify-center sm:p-6 p-0 min-h-dvh"
     >
+      {/* On a phone the shell is exactly the VISIBLE viewport (dvh), not
+          the large one: with `h-full` the frame was as tall as the
+          viewport with the browser toolbars hidden, so whenever they were
+          showing the bottom navigation sat below the fold - the "nav
+          floats mid-screen" report. From `sm` up it is the fixed device
+          frame it has always been. */}
       <div
-        className="relative flex flex-col overflow-hidden sm:rounded-[44px] w-full sm:w-[390px] sm:h-[780px] h-full"
+        className="relative flex flex-col overflow-hidden sm:rounded-[44px] w-full h-dvh sm:w-[390px] sm:h-[780px]"
         style={{ background: "var(--rbr-background)", boxShadow: "0 40px 100px rgba(45,74,62,0.2), 0 10px 30px rgba(45,74,62,0.1)" }}
       >
         <GuestApp

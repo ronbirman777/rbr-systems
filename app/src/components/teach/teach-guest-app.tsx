@@ -175,6 +175,11 @@ export function TeachGuestApp({
         backgroundImage: textureBackground(style.texture),
         color: "var(--rbr-text)",
         fontFamily: "var(--tt-font-body)",
+        // The page now extends under the notch (viewport-fit=cover), so
+        // the top inset has to come back as padding or the hero and the
+        // desktop nav would sit beneath it. Zero on every screen without
+        // one, and zero inside the Studio's preview frame.
+        ...(embedded ? null : { paddingTop: "env(safe-area-inset-top)" }),
       }}
       data-testid="teach-guest-app"
     >

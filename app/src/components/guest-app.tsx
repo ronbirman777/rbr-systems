@@ -149,44 +149,6 @@ const GUEST_TABS: TabDef[] = [
   },
 ];
 
-function StatusBar() {
-  return (
-    <div className="flex-shrink-0 h-11 flex items-center justify-between px-7">
-      <span
-        style={{ color: "var(--rbr-forest)", fontFamily: "var(--rbr-font-ui)" }}
-        className="text-[13px] font-semibold tracking-tight"
-      >
-        9:41
-      </span>
-      <div className="flex items-center gap-1.5">
-        <svg className="w-4 h-3" viewBox="0 0 17 12" fill="var(--rbr-forest)">
-          <rect x="0" y="4" width="3" height="8" rx="0.5" opacity="0.25" />
-          <rect x="4.5" y="2.5" width="3" height="9.5" rx="0.5" opacity="0.5" />
-          <rect x="9" y="1" width="3" height="11" rx="0.5" opacity="0.75" />
-          <rect x="13.5" y="0" width="3" height="12" rx="0.5" />
-        </svg>
-        <svg className="w-4 h-3" viewBox="0 0 20 14" fill="none" stroke="var(--rbr-forest)" strokeWidth="1.5">
-          <path d="M1 5C4.5 2 8.5 0.5 10 0.5C11.5 0.5 15.5 2 19 5" strokeLinecap="round" />
-          <path d="M3.5 7.5C6.2 5 8.5 4 10 4C11.5 4 13.8 5 16.5 7.5" strokeLinecap="round" />
-          <path d="M6.5 10C8 8.5 9.2 7.8 10 7.8C10.8 7.8 12 8.5 13.5 10" strokeLinecap="round" />
-          <circle cx="10" cy="12.5" r="1" fill="var(--rbr-forest)" stroke="none" />
-        </svg>
-        <div className="flex items-center">
-          <div
-            className="w-[22px] h-[11px] rounded-[2.5px] p-px"
-            style={{ border: "1px solid color-mix(in srgb, var(--rbr-forest) 60%, transparent)" }}
-          >
-            <div className="w-[16px] h-full rounded-[1.5px]" style={{ background: "var(--rbr-forest)" }} />
-          </div>
-          <div
-            className="w-[2px] h-[5px] rounded-r-sm ml-px"
-            style={{ background: "color-mix(in srgb, var(--rbr-forest) 50%, transparent)" }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /**
  * One fixed InnerDweS-controlled shell. The organizer's enabled_modules
@@ -217,11 +179,17 @@ export function GuestApp(props: GuestAppProps) {
 
   return (
     <div
-      style={{ ...vars, background: "var(--rbr-background)" }}
+      style={{
+        ...vars,
+        background: "var(--rbr-background)",
+        // The real inset, not a drawn status bar. On a device with a
+        // notch this keeps content clear of it; inside the Studio's
+        // preview frame, and on any screen without one, it is 0 and the
+        // layout is unchanged.
+        paddingTop: "env(safe-area-inset-top)",
+      }}
       className="relative w-full h-full flex flex-col overflow-hidden"
     >
-      <StatusBar />
-
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{current.render(props, setActive)}</div>
 
       {visibleTabs.length > 1 && (
@@ -261,7 +229,10 @@ export function GuestApp(props: GuestAppProps) {
               );
             })}
           </div>
-          <div className="h-4" />
+          {/* The home-indicator gap, measured rather than assumed: a
+              floor of 16px keeps the tab row off the very edge on a
+              device that reports no inset at all. */}
+          <div style={{ height: "max(env(safe-area-inset-bottom), 16px)" }} />
         </div>
       )}
     </div>
