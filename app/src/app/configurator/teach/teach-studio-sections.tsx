@@ -17,6 +17,8 @@ import { PublicLinkCard } from "@/components/studio/public-link-card";
 import { QrCodeCard } from "@/components/studio/qr-code-card";
 import { ShareCardPanel } from "@/components/studio/share-card-panel";
 import { SpaceCountryCard } from "@/components/studio/space-country-card";
+import { BrandContrastFeedback } from "@/components/studio/brand-contrast-feedback";
+import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { ClassWhatsAppQr } from "@/components/studio/class-whatsapp-qr";
 import { publicSpaceUrl, guestAppPath } from "@/lib/studio/publicLink";
 import {
@@ -552,6 +554,15 @@ export function BrandSection({ api }: Props) {
             <span className="text-[13px] font-semibold text-[#192B21]">Custom colors</span>
           </button>
         </div>
+        {/* Shared with Flow - the same component grades both products, so
+            "is this readable" has one answer across InnerDweS. */}
+        <BrandContrastFeedback
+          primary={api.colors.primary}
+          accent={api.colors.accent}
+          navigation={api.colors.navigation ?? api.colors.primary}
+          text={api.colors.text ?? api.colors.primary}
+          surface={style.background ?? GUEST_BASE_PALETTE.parchment}
+        />
         <Grid>
           <ColorField
             label="Primary colour"

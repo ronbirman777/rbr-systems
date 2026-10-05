@@ -120,6 +120,18 @@ export const brandConfigSchema = z.object({
    * back to the resolved primary when unset. Persists via
    * brand_configs.custom_text (migration 0015). */
   customText: hexColorSchema,
+  /** Shared Brand model, 028B - Surface/Tint: the page ground the Guest
+   * App paints behind everything, and the fifth role every canonical
+   * preset already defines (see lib/brand/presets.ts).
+   *
+   * Optional and nullable on purpose. Time to Teach already persists a
+   * surface (module_settings.teachStyle.background) and feeds it through
+   * here; Time to Flow has no column for one yet, passes nothing, and
+   * therefore resolves to exactly the fixed GUEST_BASE_PALETTE ground it
+   * has always used. So adopting the shared role changes no existing
+   * Space's rendering, and giving Flow its own control later is a
+   * storage decision, not a rendering one. */
+  customSurface: hexColorSchema.optional(),
   atmosphere: z.enum(["calm-organic", "warm-earthy", "clean-minimal"]),
   imageStyle: z.enum(["rounded", "square"]).optional(),
 });

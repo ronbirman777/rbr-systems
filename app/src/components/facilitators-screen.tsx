@@ -8,6 +8,7 @@ import { SocialIcon } from "./guest/social-icon";
 import { SOCIAL_PLATFORM_LABEL } from "@/lib/modules/socialLinks";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
+import { BrandImage } from "@/components/shared/brand-image";
 
 /** Facilitators' own established default - the exact numeric equivalent
  * of the CSS keyword "center top" (50% 0%) this replaces, preserved
@@ -78,20 +79,18 @@ export function FacilitatorsScreen({ brand, facilitators }: FacilitatorsScreenPr
               }}
             >
               <div className="relative h-[300px]" style={{ background: "var(--rbr-parchment-deep)" }}>
-                {f.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={f.imageUrl}
-                    alt={f.name}
-                    className="w-full h-full object-cover"
-                    style={{ objectPosition: objectPositionStyle(f.imagePosition, FACILITATOR_DEFAULT_POSITION) }}
-                  />
-                ) : (
-                  <div
-                    className="w-full h-full"
-                    style={{ background: `linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))` }}
-                  />
-                )}
+                {/* 028B: Flow's first adopter of the shared image primitive.
+                    Same crop and same default focal point as before - the
+                    object-position string is still produced by this
+                    product's own objectPositionStyle, so no published
+                    image moves. */}
+                <BrandImage
+                  src={f.imageUrl}
+                  alt={f.name}
+                  className="w-full h-full"
+                  style={{ objectPosition: objectPositionStyle(f.imagePosition, FACILITATOR_DEFAULT_POSITION) }}
+                  fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
+                />
                 <div
                   className="absolute inset-0"
                   style={{ background: "linear-gradient(to top, color-mix(in srgb, var(--rbr-primary-dark) 75%, transparent), color-mix(in srgb, var(--rbr-primary-dark) 10%, transparent) 60%, transparent)" }}

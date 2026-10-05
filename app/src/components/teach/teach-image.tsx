@@ -1,12 +1,14 @@
-/* eslint-disable @next/next/no-img-element */
 import type { CSSProperties } from "react";
-import { focalPointToObjectPosition, type FocalPoint } from "@/lib/media/focalPoint";
+import type { FocalPoint } from "@/lib/media/focalPoint";
+import { BrandImage } from "@/components/shared/brand-image";
 
 /**
- * Every Time to Teach cover/crop image renders through this: object-fit
- * cover + the shared focal point as object-position, so the teacher's chosen
- * subject stays in frame at every aspect ratio. With no image it renders an
- * intentional fallback surface (never a broken image).
+ * Time to Teach's cover/crop image. The presentation behaviour now lives
+ * in the shared BrandImage primitive (028B) so Flow can render media the
+ * same way; this stays as the Teach-facing name every call site already
+ * imports, and as the place a Teach-only default would go if one is ever
+ * needed. Behaviour is unchanged for every existing call site: same
+ * object-fit cover, same focal point, same branded fallback.
  */
 export function TeachImage({
   src,
@@ -16,6 +18,7 @@ export function TeachImage({
   style,
   fallback,
   fallbackLabel,
+  priority,
 }: {
   src: string | null | undefined;
   focal?: FocalPoint | null;
@@ -26,35 +29,19 @@ export function TeachImage({
   fallback?: string;
   /** Optional large initial shown on the fallback surface. */
   fallbackLabel?: string | null;
+  /** True only for an above-the-fold LCP candidate. */
+  priority?: boolean;
 }) {
-  if (!src) {
-    return (
-      <div
-        role={alt ? "img" : undefined}
-        aria-label={alt || undefined}
-        className={`relative overflow-hidden flex items-center justify-center ${className}`}
-        style={{ background: fallback ?? "linear-gradient(150deg, var(--rbr-primary-soft), var(--rbr-secondary-soft))", ...style }}
-      >
-        {fallbackLabel ? (
-          <span
-            aria-hidden="true"
-            style={{ fontFamily: "var(--tt-font-display)", color: "var(--rbr-primary)", opacity: 0.55 }}
-            className="text-3xl"
-          >
-            {fallbackLabel.slice(0, 1).toUpperCase()}
-          </span>
-        ) : null}
-      </div>
-    );
-  }
   return (
-    <img
+    <BrandImage
       src={src}
+      focal={focal}
       alt={alt}
-      loading="lazy"
-      decoding="async"
-      className={`object-cover tt-fade-in ${className}`}
-      style={{ objectPosition: focalPointToObjectPosition(focal), ...style }}
+      className={className}
+      style={style}
+      fallback={fallback}
+      fallbackLabel={fallbackLabel}
+      priority={priority}
     />
   );
 }

@@ -32,6 +32,7 @@ import { StudioTopBar } from "@/components/studio/studio-top-bar";
 import { saveStatusLabel, PREVIEW_DRAFT_LABEL, PREVIEW_DRAFT_CAPTION, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
 import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
 import { SpaceCountryCard } from "@/components/studio/space-country-card";
+import { BrandContrastFeedback } from "@/components/studio/brand-contrast-feedback";
 import { getBrandPresets, matchBrandPreset, presetColorUpdate } from "@/lib/brand/presets";
 import { EmptyState } from "@/components/studio/empty-state";
 import { StatusPill } from "@/components/studio/status-pill";
@@ -2039,6 +2040,18 @@ export function RetreatConfigurator({
               </div>
               <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: readabilityPasses ? GUEST_BASE_PALETTE.sage : GUEST_BASE_PALETTE.clay }} />
             </div>
+
+            {/* Shared with Teach: one grading implementation for both
+                products, covering every brand role rather than Primary
+                alone. The product-specific notes below stay as-is. */}
+            <BrandContrastFeedback
+              className="mt-3"
+              primary={effectivePrimary}
+              accent={effectiveSecondary}
+              navigation={effectiveNavigation}
+              text={effectiveText}
+              surface={GUEST_BASE_PALETTE.parchment}
+            />
 
             {!textReadabilityPasses && (
               <div

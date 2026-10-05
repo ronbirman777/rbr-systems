@@ -36,7 +36,11 @@ export function deriveThemeVars(config: BrandConfig): Record<string, string> {
   const primary = config.customPrimary ?? palette.primary;
   const secondary = config.customSecondary ?? palette.secondary;
   const onPrimary = safeTextColor(primary);
-  const background = GUEST_BASE_PALETTE.parchment;
+  // 028B shared Brand model: Surface/Tint is a real role, resolved with
+  // the same explicit -> preset -> legacy precedence as every other
+  // colour. A product that persists no surface (Flow today) resolves to
+  // the fixed Guest base ground, so its rendering is unchanged.
+  const background = config.customSurface ?? GUEST_BASE_PALETTE.parchment;
 
   // Brand-derived semantic tokens (Final Product Polish, brand color
   // propagation phase) - the ONLY two colors an organizer actually
@@ -121,8 +125,15 @@ export function deriveThemeVars(config: BrandConfig): Record<string, string> {
     "--rbr-text-muted": textMuted,
     "--rbr-text-on-primary-soft": textOnPrimarySoft,
     "--rbr-background": background,
-    "--rbr-surface":
-      atmosphere.surfaceWarmth === "crisp" ? GUEST_BASE_PALETTE.cream : GUEST_BASE_PALETTE.parchmentDeep,
+    // The raised surface (cards, sheets) sits a step off the ground. With
+    // a custom ground it is derived from that ground so the two stay
+    // related; without one it keeps the exact atmosphere-driven constants
+    // it has always used.
+    "--rbr-surface": config.customSurface
+      ? mixHex(config.customSurface, atmosphere.surfaceWarmth === "crisp" ? "#FFFFFF" : GUEST_BASE_PALETTE.parchmentDeep, 0.5)
+      : atmosphere.surfaceWarmth === "crisp"
+        ? GUEST_BASE_PALETTE.cream
+        : GUEST_BASE_PALETTE.parchmentDeep,
     "--rbr-radius-sm": `${8 * atmosphere.radiusScale}px`,
     "--rbr-radius-md": `${16 * atmosphere.radiusScale}px`,
     "--rbr-radius-lg": `${24 * atmosphere.radiusScale}px`,
