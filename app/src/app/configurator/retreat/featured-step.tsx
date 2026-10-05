@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { StudioHeading, StudioIntro, StudioLabel, STUDIO_INPUT_CLASS } from "./studio-ui";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import {
   submitFeaturedListing,
   type FeaturedSubmission,
@@ -14,6 +15,8 @@ export type FeaturedStepProps = {
   name: string;
   spaceImageUrl: string | null;
   initialSubmission: FeaturedSubmission;
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
 const STATUS_COPY: Record<FeaturedSubmission["status"], { label: string; dotClass: string }> = {
@@ -33,7 +36,8 @@ type LinkDraft = { label: string; url: string };
  * asking the organizer to retype them - only genuinely new fields
  * (description/location/website/instagram/links) are collected here.
  */
-export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission }: FeaturedStepProps) {
+export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission, locale = DEFAULT_LOCALE }: FeaturedStepProps) {
+  const { t } = createTranslator(locale);
   const [submission, setSubmission] = useState(initialSubmission);
   const [description, setDescription] = useState(initialSubmission.description ?? "");
   const [location, setLocation] = useState(initialSubmission.location ?? "");
@@ -66,7 +70,7 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission 
 
   return (
     <div className="max-w-2xl">
-      <StudioHeading>Featured on InnerDweS</StudioHeading>
+      <StudioHeading>{t("studio", "featuredOnInnerDwes")}</StudioHeading>
       <StudioIntro>
         I&apos;d like my retreat to be featured on InnerDweS. This is a submission for review - it does not
         automatically publish your retreat to a public directory. InnerDweS reviews every submission before it
@@ -95,13 +99,12 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission 
 
       {submission.hasApprovedSnapshot && submission.status === "submitted" && (
         <p className="text-[12px] leading-relaxed mb-5 rounded-xl px-3 py-2.5" style={{ background: `${GUEST_BASE_PALETTE.sage}22`, color: GUEST_BASE_PALETTE.forest }}>
-          Your previously approved listing stays live on InnerDweS while this revision is pending review. It won&apos;t
-          be replaced until the new version is approved.
+          {t("flow", "featuredPendingBody")}
         </p>
       )}
       {submission.status === "rejected" && (
         <p className="text-[12px] leading-relaxed mb-5 rounded-xl px-3 py-2.5" style={{ background: `${GUEST_BASE_PALETTE.sand}40`, color: GUEST_BASE_PALETTE.dusk }}>
-          This submission wasn&apos;t approved. You can update the details below and submit again.
+          {t("flow", "featuredRejectedBody")}
         </p>
       )}
 
@@ -118,7 +121,7 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission 
               onChange={(e) => setDescription(e.target.value.slice(0, 1000))}
               rows={4}
               maxLength={1000}
-              placeholder="What makes your retreat worth featuring?"
+              placeholder={t("flow", "featuredDescriptionPlaceholder")}
               className={`${STUDIO_INPUT_CLASS} resize-none`}
             />
             <p className="text-[10px] mt-1" style={{ color: GUEST_BASE_PALETTE.mist }}>
@@ -132,7 +135,7 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission 
               name="location"
               value={location}
               onChange={(e) => setLocation(e.target.value.slice(0, 200))}
-              placeholder="e.g. Ubud, Bali"
+              placeholder={t("flow", "featuredLocationPlaceholder")}
               className={STUDIO_INPUT_CLASS}
             />
           </div>
@@ -154,20 +157,20 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission 
               name="instagram"
               value={instagram}
               onChange={(e) => setInstagram(e.target.value)}
-              placeholder="@yourretreat or a profile link"
+              placeholder={t("flow", "instagramPlaceholder")}
               className={STUDIO_INPUT_CLASS}
             />
           </div>
 
           <div>
-            <StudioLabel>Additional links (up to 6)</StudioLabel>
+            <StudioLabel>{t("flow", "additionalLinks")}</StudioLabel>
             <div className="space-y-2">
               {links.map((link, i) => (
                 <div key={i} className="flex gap-2">
                   <input
                     value={link.label}
                     onChange={(e) => updateLink(i, { label: e.target.value.slice(0, 60) })}
-                    placeholder="Label"
+                    placeholder={t("common", "label")}
                     className={`${STUDIO_INPUT_CLASS} w-28 shrink-0`}
                   />
                   <input
@@ -181,7 +184,7 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission 
                     onClick={() => removeLink(i)}
                     className="shrink-0 text-[11px] px-2"
                     style={{ color: GUEST_BASE_PALETTE.mist }}
-                    aria-label={`Remove link ${i + 1}`}
+                    aria-label={t("flow", "removeLinkN", { index: i + 1 })}
                   >
                     Remove
                   </button>
@@ -212,7 +215,7 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission 
           disabled={pending}
           className="mt-6 rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
         >
-          {pending ? "Submitting…" : hasBeenReviewed ? "Resubmit for review" : "Submit for review"}
+          {pending ? t("flow", "submitting") : hasBeenReviewed ? t("flow", "resubmitForReview") : t("flow", "submitForReview")}
         </button>
       </form>
     </div>

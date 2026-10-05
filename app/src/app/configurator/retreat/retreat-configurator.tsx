@@ -1149,6 +1149,7 @@ export function RetreatConfigurator({
   function persistModuleCoverPosition(moduleKey: string, position: ImagePosition) {
     if (!tenantId) return;
     const formData = new FormData();
+    formData.set("locale", initialLocale);
     formData.set("tenantId", tenantId);
     formData.set("moduleKey", moduleKey);
     formData.set("position", JSON.stringify(position));
@@ -1193,6 +1194,7 @@ export function RetreatConfigurator({
 
   async function handleSaveSchedule() {
     const formData = new FormData();
+    formData.set("locale", initialLocale);
     formData.set("tenantId", tenantId ?? "");
     formData.set("items", JSON.stringify(schedule));
     const ids = schedule.map((s) => s.id);
@@ -1211,6 +1213,7 @@ export function RetreatConfigurator({
 
   async function handleSaveFacilitators() {
     const formData = new FormData();
+    formData.set("locale", initialLocale);
     formData.set("tenantId", tenantId ?? "");
     // socialLinks/specialties MUST be included here - this is the client
     // half of the metadata round-trip fix. Leaving them out would make
@@ -1276,6 +1279,7 @@ export function RetreatConfigurator({
 
   async function handleCheckSlug() {
     const formData = new FormData();
+    formData.set("locale", initialLocale);
     formData.set("slug", slugInput);
     setSlugCheckPending(true);
     const result = await checkSlugAvailability(slugCheckInitialState, formData);
@@ -1285,6 +1289,7 @@ export function RetreatConfigurator({
 
   async function handleReserveSlug() {
     const formData = new FormData();
+    formData.set("locale", initialLocale);
     formData.set("tenantId", tenantId ?? "");
     formData.set("name", name);
     formData.set("timezone", timezone);
@@ -1357,6 +1362,7 @@ export function RetreatConfigurator({
 
     if (dirty.dirtySections.has("identityAndBrand")) {
       const fd = new FormData();
+      fd.set("locale", initialLocale);
       fd.set("tenantId", tenantId ?? "");
       fd.set("name", name);
       fd.set("timezone", timezone);
@@ -1373,6 +1379,7 @@ export function RetreatConfigurator({
 
     if (dirty.dirtySections.has("modules")) {
       const fd = new FormData();
+      fd.set("locale", initialLocale);
       fd.set("tenantId", tenantId ?? "");
       IMPLEMENTED_OPTIONAL_MODULES.forEach((key) => fd.set(`module_${key}`, enabledModules.has(key) ? "on" : "off"));
       const result = await saveModules(modulesInitialState, fd);
@@ -1915,6 +1922,7 @@ export function RetreatConfigurator({
             {tenantId ? (
               <div className="max-w-[200px]">
                 <BrandImageField
+                  locale={initialLocale}
                   tenantId={tenantId}
                   kind="logo"
                   label={t("studio", "uploadLogo")}
@@ -1939,6 +1947,7 @@ export function RetreatConfigurator({
             </p>
             {tenantId ? (
               <BrandImageField
+                locale={initialLocale}
                 tenantId={tenantId}
                 kind="space"
                 label={t("studio", "uploadSpaceImage")}
@@ -2081,6 +2090,7 @@ export function RetreatConfigurator({
             </p>
             {tenantId ? (
               <BrandImageField
+                locale={initialLocale}
                 tenantId={tenantId}
                 kind="hero"
                 label={t("studio", "uploadHeroPhoto")}
@@ -2615,6 +2625,7 @@ export function RetreatConfigurator({
 
         {step === "share" && tenantId && (
           <ShareSpaceStep
+            locale={initialLocale}
             tenantId={tenantId}
             name={name}
             slug={currentSlug}
@@ -2630,6 +2641,7 @@ export function RetreatConfigurator({
 
         {step === "featured" && tenantId && (
           <FeaturedStep
+            locale={initialLocale}
             tenantId={tenantId}
             name={name}
             spaceImageUrl={spaceImageUrl}
@@ -2706,6 +2718,7 @@ export function RetreatConfigurator({
       </div>
 
       <UnsavedChangesDialog
+        locale={initialLocale}
         open={pendingNavigation !== null}
         onSaveAndContinue={async () => {
           const succeeded = await saveAllDirtySections();

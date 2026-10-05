@@ -101,6 +101,14 @@ export const de: Dictionary = {
     question: "Frage",
     answer: "Antwort",
     savingNow: "Wird gespeichert…",
+    generate: "Erzeugen",
+    replace: "Ersetzen",
+    uploading: "Wird hochgeladen…",
+    removing: "Wird entfernt…",
+    live: "Live",
+    share: "Teilen",
+    preparing: "Wird vorbereitet…",
+    saveImage: "Bild speichern",
   },
 
   teach: {
@@ -570,6 +578,25 @@ export const de: Dictionary = {
     // ---- Studio: Stay Connected step ----
     stayConnectedStepBody: "Füge die Plattformen hinzu, auf denen deine Gäste dich finden. Es werden nur Links mit URL angezeigt.",
     noLinksYet: "Noch keine Links.",
+
+    // ---- Studio: Featured on InnerDweS ----
+    featuredPendingBody: "Dein zuvor genehmigter Eintrag bleibt auf InnerDweS live, während diese Überarbeitung geprüft wird. Er wird erst ersetzt, wenn die neue Version genehmigt ist.",
+    featuredRejectedBody: "Diese Einreichung wurde nicht genehmigt. Du kannst die Angaben unten aktualisieren und erneut einreichen.",
+    featuredDescriptionPlaceholder: "Was macht dein Retreat besonders vorzeigbar?",
+    featuredLocationPlaceholder: "z. B. Ubud, Bali",
+    instagramPlaceholder: "@deinretreat oder ein Profil-Link",
+    additionalLinks: "Weitere Links (bis zu 6)",
+    removeLinkN: "Link {index} entfernen",
+    submitForReview: "Zur Prüfung einreichen",
+    resubmitForReview: "Erneut zur Prüfung einreichen",
+    submitting: "Wird eingereicht…",
+    tooManyLinks: "Du kannst bis zu 6 weitere Links hinzufügen.",
+    linkNeedsLabel: "Jeder Link braucht eine kurze Bezeichnung (bis 60 Zeichen).",
+    linkNeedsHttp: "Die URL jedes Links muss mit http:// oder https:// beginnen.",
+    openingYourSpace: "Dein Space wird geöffnet…",
+    manageSpace: "Space verwalten",
+    scanToOpen: "Scannen, um die Retreat-App zu öffnen",
+    untitledRetreat: "Retreat ohne Titel",
   },
   studio: {
     // Shell and navigation
@@ -679,6 +706,112 @@ export const de: Dictionary = {
     photoLandscape2to1: "Empfohlen: Querformat, etwa 2:1.",
     photoThumbAndBanner: "Dieses Foto erscheint je nach Position als kleines quadratisches Vorschaubild und als breites Banner - halte das Motiv mittig.",
     photoVariableHeight: "Dieses Foto wird je nach Position in etwas unterschiedlichen Höhen angezeigt - halte das Motiv mittig und vermeide enge Zuschnitte an den Rändern.",
+
+    // Unsaved-changes dialog
+    unsavedTitle: "Du hast nicht gespeicherte Änderungen",
+    unsavedBody: "Dein Entwurf ist noch nicht gespeichert. Was möchtest du tun?",
+    leaveWithoutSaving: "Ohne Speichern verlassen",
+
+    // Guest Access panel
+    guestAccess: "Gäste-Zugang",
+    guestAccessBody: "Wähle, wer deine Guest App über den Link oben öffnen kann.",
+    requireCode: "Einen 6-stelligen Code verlangen",
+    noCodeNeeded: "Deine Gäste öffnen die App nur mit dem Link - kein Code nötig.",
+    codeIsSet: "Ein Code ist gesetzt. Er wird nicht in einer Form gespeichert, die wir dir noch einmal zeigen können - erzeuge einen neuen, wenn deine Gäste ihn brauchen.",
+    newCodePlaceholder: "Neuer 6-stelliger Code",
+    codePlaceholder: "6-stelliger Code",
+    changeCode: "Code ändern",
+    enableCode: "Code aktivieren",
+    disableCode: "Code deaktivieren - Space wieder öffentlich machen",
+    disabling: "Wird deaktiviert…",
+    copyCode: "Code kopieren",
+    copiedExclaim: "Kopiert!",
+    yourAccessCode: "Dein Zugangscode - kopiere ihn jetzt, er wird nicht noch einmal angezeigt:",
+    chooseOrGenerateCode: "Wähle einen 6-stelligen Code oder erzeuge einen.",
+
+    // Share Your Space
+    shareStepBody: "Alles, was du brauchst, um deine Retreat-App an Gäste zu senden - an einem Ort.",
+    renderingPreview: "Vorschau wird erstellt…",
+    shareCardPreview: "Vorschau der Share-Karte",
+    shareCardBody: "Eine fertige, gebrandete Einladungskarte für Gäste - Name deines Retreats, Logo und ein großer scanbarer QR-Code, direkt zum Senden.",
+    shareCardFailed: "Die Share-Karte konnte nicht erzeugt werden. Versuch es erneut.",
+    shareFailed: "Die Share-Karte konnte nicht geteilt werden. Versuch es erneut.",
+    publishBeforeSharing: "Veröffentliche deinen Space, bevor du diese Karte teilst - der QR-Code funktioniert für Gäste erst dann.",
+    notPubliclyAvailableShare: "Dieser Space ist derzeit nicht öffentlich verfügbar - die Karte zu teilen wäre irreführend. Prüfe deinen kommerziellen Zugang.",
+    statusPublishedBody: "Deine Gäste können die App über diesen Link schon jetzt öffnen.",
+    statusDraftBody: "Veröffentliche deinen Space zuerst - bis dahin funktioniert der Link für Gäste nicht.",
+    statusInactiveBody: "Dieser Space wurde veröffentlicht, ist aber derzeit nicht öffentlich verfügbar. Prüfe deinen kommerziellen Zugang.",
+
+    // Brand image guidance
+    heroImageHint: "Empfohlen: Querformat, etwa 7:5 (z. B. 1600×1140px) - wird in voller Breite hinter der Begrüßung auf „Heute“ gezeigt.",
+    spaceImageHint: "Empfohlen: Querformat, etwa 3:2 - wird auf der Karte dieses Space unter Meine Spaces gezeigt.",
+    logoImageHint: "Empfohlen: quadratisches Zeichen, transparentes PNG - erscheint dezent neben dem Namen deines Retreats auf „Heute“.",
+
+    // ---- Server Action results ----
+    // Defensive guards that should not normally surface, but are
+    // returned as `{ error }` and rendered, so they are translated too.
+    missingSpace: "Space fehlt.",
+    missingItem: "Element fehlt.",
+    missingItemId: "Element-ID fehlt.",
+    missingSpaceOrItem: "Space oder Element fehlt.",
+    missingSpaceOrModule: "Space oder Modul fehlt.",
+    missingSpaceOrImageType: "Space oder Bildtyp fehlt.",
+    unknownSection: "Unbekannter Abschnitt.",
+    unknownImageSlot: "Unbekannter Bildplatz.",
+    spaceNotFound: "Space nicht gefunden.",
+
+    // Validation
+    pleaseAddName: "Bitte gib deinen Namen an.",
+    pleaseCheckDetails: "Bitte prüfe deine Angaben.",
+    someBrandDetailsInvalid: "Einige Marken-Angaben waren nicht gültig.",
+    someArrivalDetailsInvalid: "Einige Ankunfts-Angaben waren nicht gültig.",
+    coloursMustBeHex: "Farben müssen 6-stellige Hex-Werte sein, z. B. #5B7A6E.",
+    timezoneNotRecognised: "Diese Zeitzone ist nicht bekannt.",
+    addressNotValid: "Diese Adresse ist nicht gültig.",
+    addressJustTaken: "Diese Adresse wurde gerade belegt - versuch eine andere.",
+    focalPointNotValid: "Dieser Fokuspunkt war nicht gültig.",
+    couldNotReadArrival: "Die Ankunftsinfos konnten nicht gelesen werden.",
+    couldNotReadAdditionalLinks: "Deine weiteren Links konnten nicht gelesen werden.",
+    couldNotCreateSpace: "Dein Space konnte nicht erstellt werden.",
+
+    // Media
+    unsupportedAudio: "Bitte lade eine MP3-, M4A-, AAC-, WAV- oder OGG-Audiodatei hoch.",
+    audioTooLarge: "Audiodateien müssen kleiner als {limit} MB sein.",
+    audioRefInvalid: "Eine Audio-Referenz war nicht gültig.",
+    audioRefInvalidReupload: "Eine Audio-Referenz war nicht gültig - bitte lade die Datei erneut hoch.",
+    imageRefInvalidReupload: "Eine Bild-Referenz war nicht gültig - bitte lade das Bild erneut hoch.",
+    uploadDidNotFinish: "Der Upload wurde nicht abgeschlossen - bitte versuch es erneut.",
+    uploadedPreviewFailed: "Hochgeladen, aber die Vorschau ist fehlgeschlagen.",
+    couldNotPublishMedia: "Deine Medien konnten nicht veröffentlicht werden.",
+    couldNotPublishMediaWhy: "Deine Medien konnten nicht veröffentlicht werden - {reason}",
+    couldNotPublishPhotos: "Deine Fotos konnten nicht veröffentlicht werden.",
+    couldNotPublishPhotosWhy: "Deine Fotos konnten nicht veröffentlicht werden - {reason}",
+
+    // Publishing and commercial access
+    cannotPublishFromHere: "Dieser Space kann von hier nicht veröffentlicht werden.",
+    needsActiveAccess: "Dieser Space braucht aktiven Zugang, bevor er veröffentlicht werden kann.",
+    needsCommercialAccess: "Dieser Space braucht aktiven kommerziellen Zugang, bevor er veröffentlicht werden kann.",
+    noSlotsLeft: "Du hast alle verfügbaren Space-Plätze belegt. Füge einen Platz hinzu oder ersetze einen bestehenden Space, um fortzufahren.",
+    pageLimitReached: "Du hast das Limit von {limit} Seiten erreicht. Entferne eine Seite, bevor du eine neue hinzufügst.",
+    pageLimitPlan: "Dein Tarif erlaubt bis zu {limit} eigene Seiten.",
+
+    // Space lifecycle
+    archiveFailed: "Dieser Space konnte nicht archiviert werden. Bitte versuch es erneut.",
+    deleteFailed: "Dieser Space konnte nicht gelöscht werden. Bitte versuch es erneut.",
+    replaceFailed: "Dieser Space konnte nicht ersetzt werden. Bitte versuch es erneut.",
+    restoreFailed: "Dieser Space konnte nicht wiederhergestellt werden. Bitte versuch es erneut.",
+    confirmNameToDelete: "Gib den aktuellen Namen des Space genau ein, um das Löschen zu bestätigen.",
+    confirmNameToReplace: "Gib den aktuellen Namen des Space genau ein, um das Ersetzen zu bestätigen.",
+    noSlotToRestoreInto: "Du hast derzeit keinen freien Space-Platz, um das wiederherzustellen.",
+
+    // Environment gates (a missing migration, not a user mistake)
+    featuredUnavailable: "„Auf InnerDweS vorgestellt“ ist in dieser Umgebung noch nicht verfügbar.",
+    guestAccessUnavailable: "Gäste-Zugang ist in dieser Umgebung noch nicht verfügbar.",
+    codeMustBe6Digits: "Der Code muss genau 6 Ziffern haben.",
+    descriptionTooLong: "Die Beschreibung ist zu lang (max. 1000 Zeichen).",
+    locationTooLong: "Der Ort ist zu lang (max. 200 Zeichen).",
+    instagramInvalid: "Instagram sollte ein Profil-Link oder Handle sein (z. B. @deinretreat).",
+    websiteMustBeHttp: "Die Website muss ein vollständiger Link sein, der mit http:// oder https:// beginnt.",
   },
 
 };

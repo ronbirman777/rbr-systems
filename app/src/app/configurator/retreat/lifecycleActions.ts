@@ -6,6 +6,7 @@ import { getSpaceType } from "@/lib/spaceTypes/registry";
 import { revalidatePath } from "next/cache";
 import { removeAllTenantMedia, TenantMediaCleanupError } from "@/lib/media/tenantCleanup";
 
+import { localeFromFormData, studioMessages } from "@/lib/i18n";
 /** Same "hint" contract as saveDraft's isSlotLimitError (actions.ts) -
  * enforce_space_slot_capacity()/restore_space() in
  * 0017_space_management_slots.sql both RAISE ... USING HINT =
@@ -71,17 +72,18 @@ export async function archiveSpace(
   _prevState: LifecycleActionState,
   formData: FormData
 ): Promise<LifecycleActionState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in." };
+  if (!user) return { error: t("notLoggedIn") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   const { error } = await supabase.rpc("archive_space", { p_tenant_id: tenantId });
-  if (error) return { error: "Couldn't archive this Space. Please try again." };
+  if (error) return { error: t("archiveFailed") };
 
   revalidatePath("/space");
   return { error: null, success: true };
@@ -91,24 +93,25 @@ export async function restoreSpace(
   _prevState: LifecycleActionState,
   formData: FormData
 ): Promise<LifecycleActionState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in." };
+  if (!user) return { error: t("notLoggedIn") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   const { error } = await supabase.rpc("restore_space", { p_tenant_id: tenantId });
   if (error) {
     if (isSlotLimitError(error)) {
       return {
-        error: "You don't have an available Space slot to restore this into right now.",
+        error: t("noSlotToRestoreInto"),
         slotLimitReached: true,
       };
     }
-    return { error: "Couldn't restore this Space. Please try again." };
+    return { error: t("restoreFailed") };
   }
 
   revalidatePath("/space");
@@ -119,17 +122,18 @@ export async function replaceSpace(
   _prevState: LifecycleActionState,
   formData: FormData
 ): Promise<LifecycleActionState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in." };
+  if (!user) return { error: t("notLoggedIn") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const newName = String(formData.get("newName") ?? "").trim();
   const confirmName = String(formData.get("confirmName") ?? "").trim();
   const expectedName = String(formData.get("expectedName") ?? "").trim();
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   // Strong confirmation for a destructive action (Task 011): the caller
   // must retype the EXISTING Space's exact current name before its
@@ -138,7 +142,7 @@ export async function replaceSpace(
   // thing to a delete this task ships (see the lifecycle review's
   // Decision B rationale for why Archive alone cannot free a slot).
   if (!expectedName || confirmName !== expectedName) {
-    return { error: "Type the Space's current name exactly to confirm replacing it." };
+    return { error: t("confirmNameToReplace") };
   }
 
   // The replacement name comes from the Space's own type (DB product_type ->
@@ -150,7 +154,7 @@ export async function replaceSpace(
   // copies), so no product-specific media assumption is made here.
   const { data: tenant } = await supabase.from("tenants").select("product_type").eq("id", tenantId).maybeSingle();
   const spaceType = getSpaceType(tenant?.product_type);
-  if (!spaceType) return { error: "Couldn't replace this Space. Please try again." };
+  if (!spaceType) return { error: t("replaceFailed") };
 
   // TASK 024: Replace keeps the tenant identity (same id, slot, membership,
   // entitlement) and only resets its database content, so the old
@@ -162,13 +166,13 @@ export async function replaceSpace(
   // already gone) and re-running Replace completes it; that window is the
   // one documented cost of choosing "never reset first".
   const media = await removeSpaceMediaAsOwner(supabase, user.id, tenantId);
-  if (!media.ok) return { error: "Couldn't replace this Space. Please try again." };
+  if (!media.ok) return { error: t("replaceFailed") };
 
   const { error } = await supabase.rpc("replace_space", {
     p_tenant_id: tenantId,
     p_new_name: newName || spaceType.copy.untitledName,
   });
-  if (error) return { error: "Couldn't replace this Space. Please try again." };
+  if (error) return { error: t("replaceFailed") };
 
   revalidatePath("/space");
   return { error: null, success: true };
@@ -258,23 +262,24 @@ export async function deleteSpace(
   _prevState: LifecycleActionState,
   formData: FormData
 ): Promise<LifecycleActionState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in." };
+  if (!user) return { error: t("notLoggedIn") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const confirmName = String(formData.get("confirmName") ?? "").trim();
   const expectedName = String(formData.get("expectedName") ?? "").trim();
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   if (!expectedName || confirmName !== expectedName) {
-    return { error: "Type the Space's current name exactly to confirm deleting it." };
+    return { error: t("confirmNameToDelete") };
   }
 
   const result = await deleteSpaceCompletely(supabase, user.id, tenantId);
-  if (!result.ok) return { error: "Couldn't delete this Space. Please try again." };
+  if (!result.ok) return { error: t("deleteFailed") };
 
   revalidatePath("/space");
   return { error: null, success: true };

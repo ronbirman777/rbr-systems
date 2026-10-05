@@ -15,8 +15,11 @@ import {
   recommendedLocales,
   resolveLocale,
   translate,
+  localeFromFormData,
+  studioMessages,
   untranslatedKeys,
 } from "./index";
+import { validateAdditionalLinks } from "@/app/configurator/retreat/featuredValidation";
 import { DIRECTIONAL_ICONS, iconTransform, isDirectionalIcon } from "./direction";
 import { formatLongDateLocalized, formatNumberLocalized, formatShortDateLocalized, formatTimeLocalized } from "./datetime";
 import { formatShortDate } from "@/lib/teach/links";
@@ -93,6 +96,7 @@ describe("translation and fallback", () => {
       "common.optional",
       "common.website",
       "common.pause",
+      "common.live",
       // German uses these English words as-is; translating them would be
       // less natural, not more: "Retreat", "Live", "Brunch" and the
       // hotel terms "Check-in"/"Check-out" are the everyday German forms.
@@ -247,6 +251,46 @@ describe("published locale is read from the snapshot only", () => {
     for (const bad of [null, undefined, {}, { spaceSettings: null }, { spaceSettings: { locale: "fr" } }, "nonsense"]) {
       expect(localeFromPublishedModules(bad), String(bad)).toBe("en");
     }
+  });
+});
+
+describe("Server Actions answer in the Space language", () => {
+  it("reads the locale a Studio form posted", () => {
+    const fd = new FormData();
+    fd.set("locale", "he");
+    expect(localeFromFormData(fd)).toBe("he");
+  });
+
+  it("falls back to English for a missing, stale or hand-edited value", () => {
+    // The posted locale only selects message text - it carries no
+    // authority - so anything unrecognised must resolve, never throw.
+    for (const bad of [undefined, "", "fr", "EN", "../../etc", "he;de"]) {
+      const fd = new FormData();
+      if (bad !== undefined) fd.set("locale", bad);
+      expect(localeFromFormData(fd), String(bad)).toBe("en");
+    }
+  });
+
+  it("returns a translated action message, not an English one", () => {
+    const he = studioMessages("he");
+    const de = studioMessages("de");
+    expect(he("notLoggedInToSave")).toBe("צריך להתחבר כדי לשמור.");
+    expect(de("notLoggedInToSave")).toBe("Du musst angemeldet sein, um zu speichern.");
+    // English stays exactly as the action previously returned it.
+    expect(studioMessages("en")("notLoggedInToSave")).toBe("You need to be logged in to save.");
+  });
+
+  it("interpolates a limit into a quota message in every language", () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(studioMessages(locale)("pageLimitReached", { limit: 8 }), locale).toContain("8");
+    }
+  });
+
+  it("validates Featured links in the Space language", () => {
+    const tooMany = Array.from({ length: 7 }, () => ({ label: "x", url: "https://a.test" }));
+    expect(validateAdditionalLinks(tooMany, "en")).toBe("You can add up to 6 additional links.");
+    expect(validateAdditionalLinks(tooMany, "he")).toBe("אפשר להוסיף עד 6 קישורים נוספים.");
+    expect(validateAdditionalLinks([], "de")).toBeNull();
   });
 });
 

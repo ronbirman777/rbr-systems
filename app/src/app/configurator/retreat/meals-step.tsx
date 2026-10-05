@@ -76,6 +76,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
 
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set(
       "items",

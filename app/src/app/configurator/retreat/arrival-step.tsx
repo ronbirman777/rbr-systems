@@ -71,6 +71,7 @@ export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDir
 
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set("data", JSON.stringify(info));
     setPending(true);

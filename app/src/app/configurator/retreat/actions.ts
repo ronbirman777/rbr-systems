@@ -36,6 +36,7 @@ import {
 import { copyDraftToPublished } from "@/lib/media/publish";
 import { cleanupStalePublishedMedia } from "@/lib/media/publishedCleanup";
 
+import { localeFromFormData, studioMessages, translate } from "@/lib/i18n";
 /**
  * Best-effort removal of DRAFT objects only (TASK 023). Studio operations
  * never touch `published.*` objects - the live snapshot may still
@@ -117,11 +118,12 @@ export async function saveDraft(
   prevState: SaveDraftState,
   formData: FormData
 ): Promise<SaveDraftState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in to save.", tenantId: null };
+  if (!user) return { error: t("notLoggedInToSave"), tenantId: null };
 
   let tenantId = String(formData.get("tenantId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -151,30 +153,30 @@ export async function saveDraft(
     imageStyle: "rounded",
   });
   if (!parsed.success) {
-    return { error: "Some brand details weren't valid.", tenantId };
+    return { error: t("someBrandDetailsInvalid"), tenantId };
   }
 
   if (!tenantId) {
     const { data: tenant, error: tenantError } = await supabase
       .from("tenants")
-      .insert({ name: name || "Untitled Retreat", product_type: "retreat", timezone })
+      .insert({ name: name || translate(localeFromFormData(formData), "flow", "untitledRetreat"), product_type: "retreat", timezone })
       .select("id")
       .single();
     if (tenantError || !tenant) {
       if (isSlotLimitError(tenantError)) {
         return {
-          error: "You've used all your available Space slots. Add a slot, or replace an existing Space, to continue.",
+          error: t("noSlotsLeft"),
           tenantId: null,
           slotLimitReached: true,
         };
       }
-      return { error: tenantError?.message ?? "Could not create your space.", tenantId: null };
+      return { error: tenantError?.message ?? t("couldNotCreateSpace"), tenantId: null };
     }
     tenantId = tenant.id;
   } else {
     await supabase
       .from("tenants")
-      .update({ name: name || "Untitled Retreat", timezone })
+      .update({ name: name || translate(localeFromFormData(formData), "flow", "untitledRetreat"), timezone })
       .eq("id", tenantId);
   }
 
@@ -227,14 +229,15 @@ export async function saveSchedule(
   _prevState: SaveScheduleState,
   formData: FormData
 ): Promise<SaveScheduleState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in to save." };
+  if (!user) return { error: t("notLoggedInToSave") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   const parsed = parseItemsWithIds(formData, publicScheduleItemSchema);
   if ("error" in parsed) return { error: parsed.error };
@@ -291,17 +294,18 @@ export async function createScheduleItemStub(
   _prevState: ScheduleItemStubState,
   formData: FormData
 ): Promise<ScheduleItemStubState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in." };
+  if (!user) return { error: t("notLoggedIn") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const itemId = String(formData.get("itemId") ?? "");
   const date = String(formData.get("date") ?? "");
   const startTime = String(formData.get("startTime") ?? "");
-  if (!tenantId || !itemId) return { error: "Missing space or item." };
+  if (!tenantId || !itemId) return { error: t("missingSpaceOrItem") };
 
   const { error } = await supabase.from("schedule_items").upsert(
     {
@@ -326,15 +330,16 @@ export async function deleteScheduleItem(
   _prevState: DeleteScheduleItemState,
   formData: FormData
 ): Promise<DeleteScheduleItemState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in." };
+  if (!user) return { error: t("notLoggedIn") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const itemId = String(formData.get("itemId") ?? "");
-  if (!tenantId || !itemId) return { error: "Missing space or item." };
+  if (!tenantId || !itemId) return { error: t("missingSpaceOrItem") };
 
   const { error } = await supabase.from("schedule_items").delete().eq("id", itemId).eq("tenant_id", tenantId);
   if (error) return { error: error.message };
@@ -352,14 +357,15 @@ export async function saveModules(
   _prevState: SaveModulesState,
   formData: FormData
 ): Promise<SaveModulesState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in to save." };
+  if (!user) return { error: t("notLoggedInToSave") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   const rows = IMPLEMENTED_OPTIONAL_MODULES.map((key) => ({
     tenant_id: tenantId,
@@ -481,19 +487,20 @@ function parseItemsWithIds<T>(
   formData: FormData,
   schema: z.ZodType<T>
 ): { data: (T & { id: string })[] } | { error: string } {
+  const t = studioMessages(localeFromFormData(formData));
   let raw: unknown;
   try {
     raw = JSON.parse(String(formData.get("items") ?? "[]"));
   } catch {
-    return { error: "Could not read the list." };
+    return { error: t("couldNotReadList") };
   }
-  if (!Array.isArray(raw)) return { error: "Could not read the list." };
+  if (!Array.isArray(raw)) return { error: t("couldNotReadList") };
 
   const parsed = z.array(schema).safeParse(raw);
-  if (!parsed.success) return { error: "Some details weren't valid." };
+  if (!parsed.success) return { error: t("someDetailsInvalid") };
 
   const ids = raw.map((r) => (r && typeof r === "object" && "id" in r ? String((r as { id: unknown }).id) : ""));
-  if (ids.some((id) => !id)) return { error: "Missing item id." };
+  if (ids.some((id) => !id)) return { error: t("missingItemId") };
 
   return { data: parsed.data.map((item, i) => ({ ...item, id: ids[i] })) };
 }
@@ -504,14 +511,15 @@ export async function saveFacilitators(
   _prevState: SaveFacilitatorsState,
   formData: FormData
 ): Promise<SaveFacilitatorsState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in to save." };
+  if (!user) return { error: t("notLoggedInToSave") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   const parsed = parseItemsWithIds(formData, facilitatorSchema);
   if ("error" in parsed) return { error: parsed.error };
@@ -540,14 +548,15 @@ export async function saveFacilitators(
 export type SaveMealsState = SaveModuleItemsState;
 
 export async function saveMeals(_prevState: SaveMealsState, formData: FormData): Promise<SaveMealsState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in to save." };
+  if (!user) return { error: t("notLoggedInToSave") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   const parsed = parseItemsWithIds(formData, mealSchema);
   if ("error" in parsed) return { error: parsed.error };
@@ -578,14 +587,15 @@ export async function saveTreatments(
   _prevState: SaveTreatmentsState,
   formData: FormData
 ): Promise<SaveTreatmentsState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in to save." };
+  if (!user) return { error: t("notLoggedInToSave") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   const parsed = parseItemsWithIds(formData, treatmentSchema);
   if ("error" in parsed) return { error: parsed.error };
@@ -615,14 +625,15 @@ export async function saveFacilities(
   _prevState: SaveFacilitiesState,
   formData: FormData
 ): Promise<SaveFacilitiesState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in to save." };
+  if (!user) return { error: t("notLoggedInToSave") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   const parsed = parseItemsWithIds(formData, facilitySchema);
   if ("error" in parsed) return { error: parsed.error };
@@ -653,14 +664,15 @@ export type SaveFaqState = SaveModuleItemsState;
  * specialties), never a hardcoded/partial object.
  */
 export async function saveFaq(_prevState: SaveFaqState, formData: FormData): Promise<SaveFaqState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in to save." };
+  if (!user) return { error: t("notLoggedInToSave") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   const parsed = parseItemsWithIds(formData, faqItemSchema);
   if ("error" in parsed) return { error: parsed.error };
@@ -686,14 +698,15 @@ export type SaveCustomPagesState = SaveModuleItemsState;
  * through uploadModuleItemPhoto/removeModuleItemPhoto exactly like every
  * other module_items photo. */
 export async function saveCustomPages(_prevState: SaveCustomPagesState, formData: FormData): Promise<SaveCustomPagesState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in to save." };
+  if (!user) return { error: t("notLoggedInToSave") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   const parsed = parseItemsWithIds(formData, customPageSchema);
   if ("error" in parsed) return { error: parsed.error };
@@ -705,7 +718,7 @@ export async function saveCustomPages(_prevState: SaveCustomPagesState, formData
   const entitlement = await getSpaceEntitlement(supabase, tenantId);
   const limit = getCustomPagesLimit(entitlement);
   if (parsed.data.length > limit) {
-    return { error: `You've reached the ${limit}-page limit. Remove a page before adding another.` };
+    return { error: t("pageLimitReached", { limit }) };
   }
 
   const rows = parsed.data.map((item, i) => ({
@@ -727,23 +740,24 @@ export async function saveStayConnected(
   _prevState: SaveStayConnectedState,
   formData: FormData
 ): Promise<SaveStayConnectedState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in to save." };
+  if (!user) return { error: t("notLoggedInToSave") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   let links: unknown;
   try {
     links = JSON.parse(String(formData.get("links") ?? "[]"));
   } catch {
-    return { error: "Could not read the links." };
+    return { error: t("couldNotReadLinks") };
   }
   const parsed = socialLinksSchema.safeParse(links);
-  if (!parsed.success) return { error: "Some links weren't valid." };
+  if (!parsed.success) return { error: t("someLinksInvalid") };
 
   const { error } = await supabase.from("module_settings").upsert(
     {
@@ -770,23 +784,24 @@ export async function saveArrivalInfo(
   _prevState: SaveArrivalInfoState,
   formData: FormData
 ): Promise<SaveArrivalInfoState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in to save." };
+  if (!user) return { error: t("notLoggedInToSave") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space." };
+  if (!tenantId) return { error: t("missingSpace") };
 
   let data: unknown;
   try {
     data = JSON.parse(String(formData.get("data") ?? "{}"));
   } catch {
-    return { error: "Could not read the arrival information." };
+    return { error: t("couldNotReadArrival") };
   }
   const parsed = arrivalInfoSchema.safeParse(data);
-  if (!parsed.success) return { error: "Some arrival details weren't valid." };
+  if (!parsed.success) return { error: t("someArrivalDetailsInvalid") };
 
   const { error } = await supabase.from("module_settings").upsert(
     {
@@ -837,11 +852,12 @@ export async function uploadModuleItemPhoto(
   _prevState: UploadModuleItemPhotoState,
   formData: FormData
 ): Promise<UploadModuleItemPhotoState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in.", imageRef: null, imageUrl: null };
+  if (!user) return { error: t("notLoggedIn"), imageRef: null, imageUrl: null };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const moduleKey = String(formData.get("moduleKey") ?? "");
@@ -853,16 +869,16 @@ export async function uploadModuleItemPhoto(
   const sortOrder = Number(formData.get("sortOrder") ?? 0);
   const file = formData.get("file");
   if (!tenantId || !moduleKey || !itemId) {
-    return { error: "Missing space or item.", imageRef: null, imageUrl: null };
+    return { error: t("missingSpaceOrItem"), imageRef: null, imageUrl: null };
   }
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "No file selected.", imageRef: null, imageUrl: null };
+    return { error: t("noFileSelected"), imageRef: null, imageUrl: null };
   }
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    return { error: "Please upload a JPG, PNG or WEBP image.", imageRef: null, imageUrl: null };
+    return { error: t("unsupportedImage"), imageRef: null, imageUrl: null };
   }
   if (!isFileSizeAllowed(file.size)) {
-    return { error: "Image must be under 8MB.", imageRef: null, imageUrl: null };
+    return { error: t("imageTooLarge"), imageRef: null, imageUrl: null };
   }
 
   // Every accepted upload is re-encoded here - downscaled to a sane
@@ -874,7 +890,7 @@ export async function uploadModuleItemPhoto(
   try {
     optimized = await optimizeUploadedImage(file);
   } catch {
-    return { error: "That image could not be processed. Try a different file.", imageRef: null, imageUrl: null };
+    return { error: t("imageNotProcessed"), imageRef: null, imageUrl: null };
   }
 
   // Every upload gets its own uploadId folder, so a replacement never
@@ -899,7 +915,7 @@ export async function uploadModuleItemPhoto(
     .from(MEDIA_BUCKET)
     .createSignedUrl(path, 3600);
   if (signError || !signed) {
-    return { error: signError?.message ?? "Uploaded, but preview failed.", imageRef: path, imageUrl: null };
+    return { error: signError?.message ?? t("uploadedPreviewFailed"), imageRef: path, imageUrl: null };
   }
 
   // Found during the media-storage-lifecycle audit: this upsert's error
@@ -939,11 +955,12 @@ export async function removeModuleItemPhoto(
   _prevState: RemoveModuleItemPhotoState,
   formData: FormData
 ): Promise<RemoveModuleItemPhotoState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in." };
+  if (!user) return { error: t("notLoggedIn") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const itemId = String(formData.get("itemId") ?? "");
@@ -1001,32 +1018,33 @@ export async function uploadModuleCoverPhoto(
   _prevState: UploadModuleCoverPhotoState,
   formData: FormData
 ): Promise<UploadModuleCoverPhotoState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in.", imageRef: null, imageUrl: null };
+  if (!user) return { error: t("notLoggedIn"), imageRef: null, imageUrl: null };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const moduleKey = String(formData.get("moduleKey") ?? "");
   const previousRef = String(formData.get("previousRef") ?? "") || null;
   const file = formData.get("file");
-  if (!tenantId || !moduleKey) return { error: "Missing space or module.", imageRef: null, imageUrl: null };
+  if (!tenantId || !moduleKey) return { error: t("missingSpaceOrModule"), imageRef: null, imageUrl: null };
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "No file selected.", imageRef: null, imageUrl: null };
+    return { error: t("noFileSelected"), imageRef: null, imageUrl: null };
   }
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    return { error: "Please upload a JPG, PNG or WEBP image.", imageRef: null, imageUrl: null };
+    return { error: t("unsupportedImage"), imageRef: null, imageUrl: null };
   }
   if (!isFileSizeAllowed(file.size)) {
-    return { error: "Image must be under 8MB.", imageRef: null, imageUrl: null };
+    return { error: t("imageTooLarge"), imageRef: null, imageUrl: null };
   }
 
   let optimized: Buffer;
   try {
     optimized = await optimizeUploadedImage(file);
   } catch {
-    return { error: "That image could not be processed. Try a different file.", imageRef: null, imageUrl: null };
+    return { error: t("imageNotProcessed"), imageRef: null, imageUrl: null };
   }
 
   const path = tenantMediaPath(tenantId, moduleKey, MODULE_COVER_ITEM_ID, OPTIMIZED_IMAGE_EXTENSION, newUploadId());
@@ -1048,7 +1066,7 @@ export async function uploadModuleCoverPhoto(
     .from(MEDIA_BUCKET)
     .createSignedUrl(path, 3600);
   if (signError || !signed) {
-    return { error: signError?.message ?? "Uploaded, but preview failed.", imageRef: path, imageUrl: null };
+    return { error: signError?.message ?? t("uploadedPreviewFailed"), imageRef: path, imageUrl: null };
   }
 
   // Upsert (not update) so a module the organizer hasn't explicitly
@@ -1082,11 +1100,12 @@ export async function removeModuleCoverPhoto(
   _prevState: RemoveModuleCoverPhotoState,
   formData: FormData
 ): Promise<RemoveModuleCoverPhotoState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in." };
+  if (!user) return { error: t("notLoggedIn") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const moduleKey = String(formData.get("moduleKey") ?? "");
@@ -1134,24 +1153,25 @@ export async function updateModuleCoverPosition(
   _prevState: UpdateModuleCoverPositionState,
   formData: FormData
 ): Promise<UpdateModuleCoverPositionState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in." };
+  if (!user) return { error: t("notLoggedIn") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const moduleKey = String(formData.get("moduleKey") ?? "");
-  if (!tenantId || !moduleKey) return { error: "Missing space or module." };
+  if (!tenantId || !moduleKey) return { error: t("missingSpaceOrModule") };
 
   let raw: unknown;
   try {
     raw = JSON.parse(String(formData.get("position") ?? "null"));
   } catch {
-    return { error: "Could not read the focus point." };
+    return { error: t("couldNotReadFocal") };
   }
   const parsed = imagePositionSchema.safeParse(raw);
-  if (!parsed.success) return { error: "That focus point wasn't valid." };
+  if (!parsed.success) return { error: t("focalPointNotValid") };
 
   const { error } = await supabase
     .from("module_configs")
@@ -1197,34 +1217,35 @@ export async function uploadBrandImage(
   _prevState: UploadBrandImageState,
   formData: FormData
 ): Promise<UploadBrandImageState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in.", imageRef: null, imageUrl: null };
+  if (!user) return { error: t("notLoggedIn"), imageRef: null, imageUrl: null };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const kind = String(formData.get("kind") ?? "") as BrandImageKind;
   const previousRef = String(formData.get("previousRef") ?? "") || null;
   const file = formData.get("file");
   if (!tenantId || !(kind in BRAND_IMAGE_COLUMN)) {
-    return { error: "Missing space or image type.", imageRef: null, imageUrl: null };
+    return { error: t("missingSpaceOrImageType"), imageRef: null, imageUrl: null };
   }
   if (!(file instanceof File) || file.size === 0) {
-    return { error: "No file selected.", imageRef: null, imageUrl: null };
+    return { error: t("noFileSelected"), imageRef: null, imageUrl: null };
   }
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    return { error: "Please upload a JPG, PNG or WEBP image.", imageRef: null, imageUrl: null };
+    return { error: t("unsupportedImage"), imageRef: null, imageUrl: null };
   }
   if (!isFileSizeAllowed(file.size)) {
-    return { error: "Image must be under 8MB.", imageRef: null, imageUrl: null };
+    return { error: t("imageTooLarge"), imageRef: null, imageUrl: null };
   }
 
   let optimized: Buffer;
   try {
     optimized = await optimizeUploadedImage(file);
   } catch {
-    return { error: "That image could not be processed. Try a different file.", imageRef: null, imageUrl: null };
+    return { error: t("imageNotProcessed"), imageRef: null, imageUrl: null };
   }
 
   const path = tenantMediaPath(tenantId, "brand", kind, OPTIMIZED_IMAGE_EXTENSION, newUploadId());
@@ -1245,7 +1266,7 @@ export async function uploadBrandImage(
 
   const { data: signed, error: signError } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600);
   if (signError || !signed) {
-    return { error: signError?.message ?? "Uploaded, but preview failed.", imageRef: path, imageUrl: null };
+    return { error: signError?.message ?? t("uploadedPreviewFailed"), imageRef: path, imageUrl: null };
   }
 
   const column = BRAND_IMAGE_COLUMN[kind];
@@ -1268,11 +1289,12 @@ export async function removeBrandImage(
   _prevState: RemoveBrandImageState,
   formData: FormData
 ): Promise<RemoveBrandImageState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in." };
+  if (!user) return { error: t("notLoggedIn") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const kind = String(formData.get("kind") ?? "") as BrandImageKind;
@@ -1307,17 +1329,18 @@ export async function createModuleItemStub(
   _prevState: ModuleItemStubState,
   formData: FormData
 ): Promise<ModuleItemStubState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in." };
+  if (!user) return { error: t("notLoggedIn") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const moduleKey = String(formData.get("moduleKey") ?? "");
   const itemId = String(formData.get("itemId") ?? "");
   const sortOrder = Number(formData.get("sortOrder") ?? 0);
-  if (!tenantId || !moduleKey || !itemId) return { error: "Missing space or item." };
+  if (!tenantId || !moduleKey || !itemId) return { error: t("missingSpaceOrItem") };
 
   // ON CONFLICT DO NOTHING (ignoreDuplicates), not DO UPDATE: this call's
   // only job is to guarantee the row exists, never to set its fields -
@@ -1359,15 +1382,16 @@ export async function deleteModuleItem(
   _prevState: DeleteModuleItemState,
   formData: FormData
 ): Promise<DeleteModuleItemState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in." };
+  if (!user) return { error: t("notLoggedIn") };
 
   const tenantId = String(formData.get("tenantId") ?? "");
   const itemId = String(formData.get("itemId") ?? "");
-  if (!tenantId || !itemId) return { error: "Missing space or item." };
+  if (!tenantId || !itemId) return { error: t("missingSpaceOrItem") };
 
   const { data: row } = await supabase
     .from("module_items")
@@ -1419,21 +1443,22 @@ export async function publishSpace(
   _prevState: PublishState,
   formData: FormData
 ): Promise<PublishState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in.", publishedAt: null };
+  if (!user) return { error: t("notLoggedIn"), publishedAt: null };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space.", publishedAt: null };
+  if (!tenantId) return { error: t("missingSpace"), publishedAt: null };
 
   // This action snapshots Retreat media only. A visible tenant of any other
   // product publishes through its own action (publishSpaceByType dispatches);
   // a tenant that is not visible falls through to the RPC, which rejects it.
   const { data: tenantRow } = await supabase.from("tenants").select("product_type").eq("id", tenantId).maybeSingle();
   if (tenantRow && tenantRow.product_type !== "retreat") {
-    return { error: "This Space can't be published from here.", publishedAt: null };
+    return { error: t("cannotPublishFromHere"), publishedAt: null };
   }
 
   // UX-only pre-check, fails fast before the media Storage work below -
@@ -1444,7 +1469,7 @@ export async function publishSpace(
   const availability = deriveCommercialAvailability(entitlement);
   if (!availability.canPublish) {
     return {
-      error: "This Space needs active commercial access before it can be published.",
+      error: t("needsCommercialAccess"),
       publishedAt: null,
     };
   }
@@ -1500,7 +1525,7 @@ export async function publishSpace(
     await Promise.all([...draftRefs].map((ref) => copyDraftToPublished(supabase, ref)));
   } catch (err) {
     return {
-      error: err instanceof Error ? `Could not publish your photos - ${err.message}` : "Could not publish your photos.",
+      error: err instanceof Error ? t("couldNotPublishPhotosWhy", { reason: err.message }) : t("couldNotPublishPhotos"),
       publishedAt: null,
     };
   }
@@ -1583,11 +1608,12 @@ export type ReserveSlugState = { error: string | null; slug: string | null; tena
  * not a server error.
  */
 export async function reserveSlug(_prevState: ReserveSlugState, formData: FormData): Promise<ReserveSlugState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in to save.", slug: null, tenantId: null };
+  if (!user) return { error: t("notLoggedInToSave"), slug: null, tenantId: null };
 
   let tenantId = String(formData.get("tenantId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -1595,21 +1621,21 @@ export async function reserveSlug(_prevState: ReserveSlugState, formData: FormDa
   const slug = normalizeSlug(String(formData.get("slug") ?? ""));
 
   if (slugFormatError(slug)) {
-    return { error: "That address isn't valid.", slug: null, tenantId: tenantId || null };
+    return { error: t("addressNotValid"), slug: null, tenantId: tenantId || null };
   }
   if (isReservedSlug(slug)) {
-    return { error: "That address is reserved.", slug: null, tenantId: tenantId || null };
+    return { error: t("addressReserved"), slug: null, tenantId: tenantId || null };
   }
 
   if (!tenantId) {
     const { data: tenant, error: tenantError } = await supabase
       .from("tenants")
-      .insert({ name: name || "Untitled Retreat", product_type: "retreat", timezone, slug })
+      .insert({ name: name || translate(localeFromFormData(formData), "flow", "untitledRetreat"), product_type: "retreat", timezone, slug })
       .select("id")
       .single();
     if (tenantError) {
       if (tenantError.code === "23505") {
-        return { error: "That address was just taken - try another.", slug: null, tenantId: null };
+        return { error: t("addressJustTaken"), slug: null, tenantId: null };
       }
       return { error: tenantError.message, slug: null, tenantId: null };
     }
@@ -1618,7 +1644,7 @@ export async function reserveSlug(_prevState: ReserveSlugState, formData: FormDa
     const { error: updateError } = await supabase.from("tenants").update({ slug }).eq("id", tenantId);
     if (updateError) {
       if (updateError.code === "23505") {
-        return { error: "That address was just taken - try another.", slug: null, tenantId };
+        return { error: t("addressJustTaken"), slug: null, tenantId };
       }
       return { error: updateError.message, slug: null, tenantId };
     }

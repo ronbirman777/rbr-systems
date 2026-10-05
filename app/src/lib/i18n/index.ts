@@ -120,3 +120,31 @@ export function splitEmphasis(carrier: string, emphasis: string): [string, strin
   if (i < 0) return [carrier, "", ""];
   return [carrier.slice(0, i), emphasis, carrier.slice(i + 4)];
 }
+
+/**
+ * The Space locale a Server Action should answer in.
+ *
+ * Studio forms post it alongside their payload, which keeps the action
+ * signatures (and `useActionState`) unchanged. It is read through
+ * `resolveLocale`, so an absent, stale or hand-edited value resolves to
+ * English rather than failing - and because it only ever selects which
+ * message text to return, it carries no authority. Authorization stays
+ * entirely with RLS and the action's own checks.
+ */
+export function localeFromFormData(formData: { get(name: string): unknown }): Locale {
+  return resolveLocale(formData.get("locale"));
+}
+
+/**
+ * A message function bound to one locale, for Server Actions.
+ *
+ * Studio actions return `{ error }` strings that the Studio renders
+ * directly, and they almost all draw on the shared `studio` namespace.
+ * Binding the locale once per action keeps each message site short
+ * enough to read: `t("missingSpace")` rather than repeating the locale
+ * and namespace on every line.
+ */
+export function studioMessages(locale: Locale) {
+  return (key: TranslationKey<"studio">, values?: TranslationValues): string =>
+    translate(locale, "studio", key, values);
+}

@@ -72,6 +72,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
 
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set(
       "items",

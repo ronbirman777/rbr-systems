@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type UnsavedChangesDialogProps = {
   open: boolean;
   /** Attempts to save every currently-dirty section. Returns true only
@@ -12,6 +13,8 @@ export type UnsavedChangesDialogProps = {
   onSaveAndContinue: () => Promise<boolean>;
   onLeaveWithoutSaving: () => void;
   onCancel: () => void;
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
 /**
@@ -19,7 +22,8 @@ export type UnsavedChangesDialogProps = {
  * other dialog in the codebase) - focus trap, Escape-to-cancel, backdrop
  * click closes, focus restored on close. Three actions instead of two.
  */
-export function UnsavedChangesDialog({ open, onSaveAndContinue, onLeaveWithoutSaving, onCancel }: UnsavedChangesDialogProps) {
+export function UnsavedChangesDialog({ open, onSaveAndContinue, onLeaveWithoutSaving, onCancel, locale = DEFAULT_LOCALE }: UnsavedChangesDialogProps) {
+  const { t } = createTranslator(locale);
   const dialogRef = useRef<HTMLDivElement>(null);
   const primaryButtonRef = useRef<HTMLButtonElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
@@ -103,14 +107,14 @@ export function UnsavedChangesDialog({ open, onSaveAndContinue, onLeaveWithoutSa
           className="text-[16px]"
           style={{ fontFamily: "var(--font-dm-serif-display), serif", color: GUEST_BASE_PALETTE.forest }}
         >
-          You have unsaved changes
+          {t("studio", "unsavedTitle")}
         </h2>
         <p id="unsaved-changes-body" className="mt-2 text-[13px] leading-relaxed" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-          Your draft hasn&apos;t been saved yet. What would you like to do?
+          {t("studio", "unsavedBody")}
         </p>
         {saveFailed && (
           <p className="mt-2 text-[12px]" role="alert" style={{ color: "#B23B3B" }}>
-            Couldn&apos;t save your changes. Please try again.
+            {t("studio", "saveFailed")}
           </p>
         )}
         <div className="mt-5 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
@@ -121,7 +125,7 @@ export function UnsavedChangesDialog({ open, onSaveAndContinue, onLeaveWithoutSa
             className="text-[13px] font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
             style={{ color: GUEST_BASE_PALETTE.mist }}
           >
-            Cancel
+            {t("common", "cancel")}
           </button>
           <button
             type="button"
@@ -130,7 +134,7 @@ export function UnsavedChangesDialog({ open, onSaveAndContinue, onLeaveWithoutSa
             className="text-[13px] font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
             style={{ color: "#B23B3B" }}
           >
-            Leave without saving
+            {t("studio", "leaveWithoutSaving")}
           </button>
           <button
             ref={primaryButtonRef}
@@ -140,7 +144,7 @@ export function UnsavedChangesDialog({ open, onSaveAndContinue, onLeaveWithoutSa
             className="text-[13px] font-medium px-4 py-2 rounded-xl transition-colors disabled:opacity-50"
             style={{ background: GUEST_BASE_PALETTE.forest, color: "white" }}
           >
-            {saving ? "Saving…" : "Save & Continue"}
+            {saving ? t("common", "savingNow") : t("studio", "saveAndContinue")}
           </button>
         </div>
       </div>

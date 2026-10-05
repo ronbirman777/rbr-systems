@@ -75,6 +75,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
 
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set(
       "items",

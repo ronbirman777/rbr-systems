@@ -62,6 +62,7 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
 
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set("links", JSON.stringify(links.filter((l) => l.url.trim().length > 0)));
     setPending(true);

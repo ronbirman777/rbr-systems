@@ -69,6 +69,7 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, on
 
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set("items", JSON.stringify(faq));
     const ids = faq.map((f) => f.id);

@@ -69,6 +69,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
 
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set(
       "items",

@@ -96,6 +96,14 @@ export const he: Dictionary = {
     question: "שאלה",
     answer: "תשובה",
     savingNow: "שומר…",
+    generate: "יצירה",
+    replace: "החלפה",
+    uploading: "מעלה…",
+    removing: "מסיר…",
+    live: "באוויר",
+    share: "שיתוף",
+    preparing: "מכין…",
+    saveImage: "שמירת התמונה",
   },
 
   teach: {
@@ -565,6 +573,25 @@ export const he: Dictionary = {
     // ---- Studio: Stay Connected step ----
     stayConnectedStepBody: "הוסיפו את הפלטפורמות שבהן האורחים יכולים למצוא אתכם. רק קישורים עם כתובת מוצגים.",
     noLinksYet: "עדיין אין קישורים.",
+
+    // ---- Studio: Featured on InnerDweS ----
+    featuredPendingBody: "הרישום שאושר קודם נשאר באוויר ב-InnerDweS בזמן שהגרסה הזו נבדקת. הוא יוחלף רק כשהגרסה החדשה תאושר.",
+    featuredRejectedBody: "ההגשה הזו לא אושרה. אפשר לעדכן את הפרטים למטה ולהגיש שוב.",
+    featuredDescriptionPlaceholder: "מה הופך את הריטריט שלכם לשווה הצגה?",
+    featuredLocationPlaceholder: "למשל: אובוד, באלי",
+    instagramPlaceholder: "@הריטריטשלכם או קישור לפרופיל",
+    additionalLinks: "קישורים נוספים (עד 6)",
+    removeLinkN: "הסרת קישור {index}",
+    submitForReview: "הגשה לבדיקה",
+    resubmitForReview: "הגשה חוזרת לבדיקה",
+    submitting: "שולח…",
+    tooManyLinks: "אפשר להוסיף עד 6 קישורים נוספים.",
+    linkNeedsLabel: "לכל קישור צריך תווית קצרה (עד 60 תווים).",
+    linkNeedsHttp: "הכתובת של כל קישור חייבת להתחיל ב-http:// או https://.",
+    openingYourSpace: "פותח את המרחב…",
+    manageSpace: "ניהול המרחב",
+    scanToOpen: "סרקו כדי לפתוח את אפליקציית הריטריט",
+    untitledRetreat: "ריטריט בלי שם",
   },
   studio: {
     // Shell and navigation
@@ -674,6 +701,112 @@ export const he: Dictionary = {
     photoLandscape2to1: "מומלץ: תמונה לרוחב, בערך 2:1.",
     photoThumbAndBanner: "התמונה מופיעה גם כתמונה ממוזערת מרובעת וגם כבאנר רחב, תלוי במקום - שמרו את הנושא במרכז.",
     photoVariableHeight: "התמונה מוצגת בגבהים שונים במקצת תלוי במקום - שמרו את הנושא במרכז והימנעו מחיתוך צמוד בקצוות.",
+
+    // Unsaved-changes dialog
+    unsavedTitle: "יש לכם שינויים שלא נשמרו",
+    unsavedBody: "הטיוטה עדיין לא נשמרה. מה תרצו לעשות?",
+    leaveWithoutSaving: "יציאה בלי לשמור",
+
+    // Guest Access panel
+    guestAccess: "גישת אורחים",
+    guestAccessBody: "בחרו מי יכול לפתוח את ה-Guest App עם הקישור שלמעלה.",
+    requireCode: "לדרוש קוד בן 6 ספרות",
+    noCodeNeeded: "האורחים יכולים לפתוח את האפליקציה עם הקישור בלבד - בלי קוד.",
+    codeIsSet: "מוגדר קוד. הוא לא נשמר בצורה שאפשר להציג שוב - צרו חדש אם האורחים צריכים אותו.",
+    newCodePlaceholder: "קוד חדש בן 6 ספרות",
+    codePlaceholder: "קוד בן 6 ספרות",
+    changeCode: "שינוי הקוד",
+    enableCode: "הפעלת קוד",
+    disableCode: "כיבוי הקוד - החזרת המרחב לציבורי",
+    disabling: "מכבה…",
+    copyCode: "העתקת הקוד",
+    copiedExclaim: "הועתק!",
+    yourAccessCode: "קוד הגישה שלכם - העתיקו אותו עכשיו, הוא לא יוצג שוב:",
+    chooseOrGenerateCode: "בחרו קוד בן 6 ספרות, או צרו אחד.",
+
+    // Share Your Space
+    shareStepBody: "כל מה שצריך כדי לשלוח את אפליקציית הריטריט לאורחים, במקום אחד.",
+    renderingPreview: "מכין תצוגה מקדימה…",
+    shareCardPreview: "תצוגה מקדימה של כרטיס השיתוף",
+    shareCardBody: "כרטיס הזמנה מעוצב ומוכן לאורחים - שם הריטריט, הלוגו וקוד QR גדול לסריקה, מוכן לשליחה.",
+    shareCardFailed: "לא ניתן ליצור את כרטיס השיתוף. נסו שוב.",
+    shareFailed: "לא ניתן לשתף את כרטיס השיתוף. נסו שוב.",
+    publishBeforeSharing: "פרסמו את המרחב לפני שיתוף הכרטיס - קוד ה-QR לא יעבוד לאורחים עד אז.",
+    notPubliclyAvailableShare: "המרחב לא זמין לציבור כרגע, ולכן שיתוף הכרטיס יהיה מטעה. בדקו את הגישה המסחרית.",
+    statusPublishedBody: "האורחים יכולים לפתוח את האפליקציה בקישור הזה עכשיו.",
+    statusDraftBody: "פרסמו קודם את המרחב - הקישור לא יעבוד לאורחים עד אז.",
+    statusInactiveBody: "המרחב פורסם, אבל לא זמין לציבור כרגע. בדקו את הגישה המסחרית.",
+
+    // Brand image guidance
+    heroImageHint: "מומלץ: תמונה לרוחב, בערך 7:5 (למשל 1600×1140px) - מוצגת ברוחב מלא מאחורי הברכה ב״היום״.",
+    spaceImageHint: "מומלץ: תמונה לרוחב, בערך 3:2 - מוצגת בכרטיס של המרחב במרחבים שלי.",
+    logoImageHint: "מומלץ: סמל מרובע, PNG שקוף - מוצג בעדינות ליד שם הריטריט ב״היום״.",
+
+    // ---- Server Action results ----
+    // Defensive guards that should not normally surface, but are
+    // returned as `{ error }` and rendered, so they are translated too.
+    missingSpace: "חסר מרחב.",
+    missingItem: "חסר פריט.",
+    missingItemId: "חסר מזהה פריט.",
+    missingSpaceOrItem: "חסר מרחב או פריט.",
+    missingSpaceOrModule: "חסר מרחב או מודול.",
+    missingSpaceOrImageType: "חסר מרחב או סוג תמונה.",
+    unknownSection: "מקטע לא מזוהה.",
+    unknownImageSlot: "מקום תמונה לא מזוהה.",
+    spaceNotFound: "המרחב לא נמצא.",
+
+    // Validation
+    pleaseAddName: "נא להוסיף את השם.",
+    pleaseCheckDetails: "נא לבדוק את הפרטים.",
+    someBrandDetailsInvalid: "חלק מפרטי המיתוג לא היו תקינים.",
+    someArrivalDetailsInvalid: "חלק מפרטי ההגעה לא היו תקינים.",
+    coloursMustBeHex: "הצבעים חייבים להיות קודי hex בני 6 ספרות, למשל #5B7A6E.",
+    timezoneNotRecognised: "אזור הזמן הזה לא מזוהה.",
+    addressNotValid: "הכתובת הזו לא תקינה.",
+    addressJustTaken: "הכתובת הזו נתפסה הרגע - נסו אחרת.",
+    focalPointNotValid: "נקודת המיקוד לא הייתה תקינה.",
+    couldNotReadArrival: "לא ניתן לקרוא את פרטי ההגעה.",
+    couldNotReadAdditionalLinks: "לא ניתן לקרוא את הקישורים הנוספים.",
+    couldNotCreateSpace: "לא ניתן ליצור את המרחב.",
+
+    // Media
+    unsupportedAudio: "נא להעלות קובץ אודיו מסוג MP3, M4A, AAC, WAV או OGG.",
+    audioTooLarge: "קובצי אודיו חייבים להיות קטנים מ-{limit}MB.",
+    audioRefInvalid: "הפניה לקובץ אודיו לא הייתה תקינה.",
+    audioRefInvalidReupload: "הפניה לקובץ אודיו לא הייתה תקינה - נא להעלות מחדש.",
+    imageRefInvalidReupload: "הפניה לתמונה לא הייתה תקינה - נא להעלות מחדש.",
+    uploadDidNotFinish: "ההעלאה לא הושלמה - נסו שוב.",
+    uploadedPreviewFailed: "הועלה, אבל התצוגה המקדימה נכשלה.",
+    couldNotPublishMedia: "לא ניתן לפרסם את המדיה.",
+    couldNotPublishMediaWhy: "לא ניתן לפרסם את המדיה - {reason}",
+    couldNotPublishPhotos: "לא ניתן לפרסם את התמונות.",
+    couldNotPublishPhotosWhy: "לא ניתן לפרסם את התמונות - {reason}",
+
+    // Publishing and commercial access
+    cannotPublishFromHere: "לא ניתן לפרסם את המרחב מכאן.",
+    needsActiveAccess: "המרחב צריך גישה פעילה לפני הפרסום.",
+    needsCommercialAccess: "המרחב צריך גישה מסחרית פעילה לפני הפרסום.",
+    noSlotsLeft: "השתמשתם בכל מקומות המרחב הזמינים. הוסיפו מקום, או החליפו מרחב קיים, כדי להמשיך.",
+    pageLimitReached: "הגעתם למגבלה של {limit} עמודים. הסירו עמוד לפני הוספת עמוד נוסף.",
+    pageLimitPlan: "התוכנית שלכם מאפשרת עד {limit} עמודים משלכם.",
+
+    // Space lifecycle
+    archiveFailed: "לא ניתן להעביר את המרחב לארכיון. נסו שוב.",
+    deleteFailed: "לא ניתן למחוק את המרחב. נסו שוב.",
+    replaceFailed: "לא ניתן להחליף את המרחב. נסו שוב.",
+    restoreFailed: "לא ניתן לשחזר את המרחב. נסו שוב.",
+    confirmNameToDelete: "הקלידו את שם המרחב הנוכחי במדויק כדי לאשר את המחיקה.",
+    confirmNameToReplace: "הקלידו את שם המרחב הנוכחי במדויק כדי לאשר את ההחלפה.",
+    noSlotToRestoreInto: "אין לכם כרגע מקום מרחב פנוי לשחזור.",
+
+    // Environment gates (a missing migration, not a user mistake)
+    featuredUnavailable: "ההצגה ב-InnerDweS עוד לא זמינה בסביבה הזו.",
+    guestAccessUnavailable: "גישת אורחים עוד לא זמינה בסביבה הזו.",
+    codeMustBe6Digits: "הקוד חייב להיות בן 6 ספרות בדיוק.",
+    descriptionTooLong: "התיאור ארוך מדי (עד 1000 תווים).",
+    locationTooLong: "המקום ארוך מדי (עד 200 תווים).",
+    instagramInvalid: "אינסטגרם צריך להיות קישור לפרופיל או שם משתמש (למשל @yourretreat).",
+    websiteMustBeHttp: "האתר חייב להיות קישור מלא שמתחיל ב-http:// או https://.",
   },
 
 };

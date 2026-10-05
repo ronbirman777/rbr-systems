@@ -96,6 +96,14 @@ export const en = {
     question: "Question",
     answer: "Answer",
     savingNow: "Saving…",
+    generate: "Generate",
+    replace: "Replace",
+    uploading: "Uploading…",
+    removing: "Removing…",
+    live: "Live",
+    share: "Share",
+    preparing: "Preparing…",
+    saveImage: "Save image",
   },
 
   teach: {
@@ -294,7 +302,7 @@ export const en = {
 
     // Today
     goodMorning: "Good morning.",
-    todaysIntention: "Today’s Intention",
+    todaysIntention: "Today's Intention",
     happeningNow: "Happening Now",
     live: "Live",
     upNext: "Up Next",
@@ -572,6 +580,25 @@ export const en = {
     // ---- Studio: Stay Connected step ----
     stayConnectedStepBody: "Add the platforms your guests can find you on. Only links with a URL are shown.",
     noLinksYet: "No links yet.",
+
+    // ---- Studio: Featured on InnerDweS ----
+    featuredPendingBody: "Your previously approved listing stays live on InnerDweS while this revision is pending review. It won’t be replaced until the new version is approved.",
+    featuredRejectedBody: "This submission wasn’t approved. You can update the details below and submit again.",
+    featuredDescriptionPlaceholder: "What makes your retreat worth featuring?",
+    featuredLocationPlaceholder: "e.g. Ubud, Bali",
+    instagramPlaceholder: "@yourretreat or a profile link",
+    additionalLinks: "Additional links (up to 6)",
+    removeLinkN: "Remove link {index}",
+    submitForReview: "Submit for review",
+    resubmitForReview: "Resubmit for review",
+    submitting: "Submitting…",
+    tooManyLinks: "You can add up to 6 additional links.",
+    linkNeedsLabel: "Each link needs a short label (up to 60 characters).",
+    linkNeedsHttp: "Each link's URL must start with http:// or https://.",
+    openingYourSpace: "Opening your space…",
+    manageSpace: "Manage Space",
+    scanToOpen: "Scan to open the retreat app",
+    untitledRetreat: "Untitled Retreat",
   },
   studio: {
     // Shell and navigation
@@ -646,8 +673,8 @@ export const en = {
     unsupportedImage: "Please upload a JPG, PNG or WEBP image.",
     noFileSelected: "No file selected.",
     imageNotProcessed: "That image could not be processed. Try a different file.",
-    someDetailsInvalid: "Some details weren’t valid.",
-    someLinksInvalid: "Some links weren’t valid.",
+    someDetailsInvalid: "Some details weren't valid.",
+    someLinksInvalid: "Some links weren't valid.",
 
     // Save actions. The section name is a parameter so there is one
     // key, not one per section ("Save Schedule", "Save Modules", ...).
@@ -658,12 +685,12 @@ export const en = {
     publishingNow: "Publishing…",
     republish: "Republish",
     notVisibleUntilPublish: "Nothing is visible to guests until you publish.",
-    notVisibleUntilRepublish: "Guests won’t see further edits until you republish.",
+    notVisibleUntilRepublish: "Guests won't see further edits until you republish.",
 
     // Guest App address availability
     checkAvailability: "Check availability",
     checking: "Checking…",
-    currentAddress: "This is your Space’s current address.",
+    currentAddress: "This is your Space's current address.",
     addressRules: "Use lowercase letters, numbers and hyphens only (3-63 characters).",
     addressReserved: "That address is reserved.",
     addressAvailable: "Available.",
@@ -681,6 +708,112 @@ export const en = {
     photoLandscape2to1: "Recommended: landscape photo, about 2:1.",
     photoThumbAndBanner: "This photo appears both as a small square thumbnail and a wide banner, depending on position - keep the subject centered.",
     photoVariableHeight: "This photo displays at slightly different heights depending on position - keep the subject centered and avoid tight crops at the edges.",
+
+    // Unsaved-changes dialog
+    unsavedTitle: "You have unsaved changes",
+    unsavedBody: "Your draft hasn’t been saved yet. What would you like to do?",
+    leaveWithoutSaving: "Leave without saving",
+
+    // Guest Access panel
+    guestAccess: "Guest Access",
+    guestAccessBody: "Choose who can open your Guest App with the link above.",
+    requireCode: "Require a 6-digit code",
+    noCodeNeeded: "Guests can open your app with just the link - no code required.",
+    codeIsSet: "A code is set. It isn’t stored in a form we can show you again - generate a new one if guests need it.",
+    newCodePlaceholder: "New 6-digit code",
+    codePlaceholder: "6-digit code",
+    changeCode: "Change code",
+    enableCode: "Enable code",
+    disableCode: "Disable code - make Space public again",
+    disabling: "Disabling…",
+    copyCode: "Copy code",
+    copiedExclaim: "Copied!",
+    yourAccessCode: "Your access code - copy it now, it won’t be shown again:",
+    chooseOrGenerateCode: "Choose a 6-digit code, or generate one.",
+
+    // Share Your Space
+    shareStepBody: "Everything you need to send your retreat app to guests, in one place.",
+    renderingPreview: "Rendering preview…",
+    shareCardPreview: "Share Card preview",
+    shareCardBody: "A finished, branded invitation card for guests - your retreat name, logo, and a large scannable QR code, ready to send directly.",
+    shareCardFailed: "Could not generate the Share Card. Try again.",
+    shareFailed: "Could not share the Share Card. Try again.",
+    publishBeforeSharing: "Publish your Space before sharing this card - the QR won't work for guests until then.",
+    notPubliclyAvailableShare: "This Space isn't currently publicly available, so sharing this card would be misleading. Check your commercial access.",
+    statusPublishedBody: "Guests can open your app at this link right now.",
+    statusDraftBody: "Publish your Space first - this link won't work for guests until then.",
+    statusInactiveBody: "This Space was published, but isn't currently publicly available. Check your commercial access.",
+
+    // Brand image guidance
+    heroImageHint: "Recommended: landscape photo, about 7:5 (e.g. 1600×1140px) - shown full-width behind the Today greeting.",
+    spaceImageHint: "Recommended: landscape photo, about 3:2 - shown on this Space's card in My Spaces.",
+    logoImageHint: "Recommended: square mark, transparent PNG - shown subtly next to your retreat name on Today.",
+
+    // ---- Server Action results ----
+    // Defensive guards that should not normally surface, but are
+    // returned as `{ error }` and rendered, so they are translated too.
+    missingSpace: "Missing space.",
+    missingItem: "Missing item.",
+    missingItemId: "Missing item id.",
+    missingSpaceOrItem: "Missing space or item.",
+    missingSpaceOrModule: "Missing space or module.",
+    missingSpaceOrImageType: "Missing space or image type.",
+    unknownSection: "Unknown section.",
+    unknownImageSlot: "Unknown image slot.",
+    spaceNotFound: "Space not found.",
+
+    // Validation
+    pleaseAddName: "Please add your name.",
+    pleaseCheckDetails: "Please check your details.",
+    someBrandDetailsInvalid: "Some brand details weren't valid.",
+    someArrivalDetailsInvalid: "Some arrival details weren't valid.",
+    coloursMustBeHex: "Colours must be 6-digit hex values like #5B7A6E.",
+    timezoneNotRecognised: "That time zone isn't recognised.",
+    addressNotValid: "That address isn't valid.",
+    addressJustTaken: "That address was just taken - try another.",
+    focalPointNotValid: "That focus point wasn't valid.",
+    couldNotReadArrival: "Could not read the arrival information.",
+    couldNotReadAdditionalLinks: "Could not read your additional links.",
+    couldNotCreateSpace: "Could not create your space.",
+
+    // Media
+    unsupportedAudio: "Please upload an MP3, M4A, AAC, WAV or OGG audio file.",
+    audioTooLarge: "Audio files must be under {limit}MB.",
+    audioRefInvalid: "An audio file reference wasn't valid.",
+    audioRefInvalidReupload: "An audio file reference wasn't valid - please re-upload it.",
+    imageRefInvalidReupload: "An image reference wasn't valid - please re-upload it.",
+    uploadDidNotFinish: "The upload didn't finish - please try again.",
+    uploadedPreviewFailed: "Uploaded, but preview failed.",
+    couldNotPublishMedia: "Could not publish your media.",
+    couldNotPublishMediaWhy: "Could not publish your media - {reason}",
+    couldNotPublishPhotos: "Could not publish your photos.",
+    couldNotPublishPhotosWhy: "Could not publish your photos - {reason}",
+
+    // Publishing and commercial access
+    cannotPublishFromHere: "This Space can't be published from here.",
+    needsActiveAccess: "This Space needs active access before it can be published.",
+    needsCommercialAccess: "This Space needs active commercial access before it can be published.",
+    noSlotsLeft: "You've used all your available Space slots. Add a slot, or replace an existing Space, to continue.",
+    pageLimitReached: "You’ve reached the {limit}-page limit. Remove a page before adding another.",
+    pageLimitPlan: "Your plan allows up to {limit} custom pages.",
+
+    // Space lifecycle
+    archiveFailed: "Couldn't archive this Space. Please try again.",
+    deleteFailed: "Couldn't delete this Space. Please try again.",
+    replaceFailed: "Couldn't replace this Space. Please try again.",
+    restoreFailed: "Couldn't restore this Space. Please try again.",
+    confirmNameToDelete: "Type the Space's current name exactly to confirm deleting it.",
+    confirmNameToReplace: "Type the Space's current name exactly to confirm replacing it.",
+    noSlotToRestoreInto: "You don't have an available Space slot to restore this into right now.",
+
+    // Environment gates (a missing migration, not a user mistake)
+    featuredUnavailable: "Featured on InnerDweS isn't available in this environment yet.",
+    guestAccessUnavailable: "Guest Access isn't available in this environment yet.",
+    codeMustBe6Digits: "The code must be exactly 6 digits.",
+    descriptionTooLong: "Description is too long (max 1000 characters).",
+    locationTooLong: "Location is too long (max 200 characters).",
+    instagramInvalid: "Instagram should be a profile link or handle (e.g. @yourretreat).",
+    websiteMustBeHttp: "Website must be a full link starting with http:// or https://.",
   },
 
 } as const;
