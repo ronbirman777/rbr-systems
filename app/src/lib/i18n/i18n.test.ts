@@ -101,6 +101,8 @@ describe("translation and fallback", () => {
       "flow.checkIn",
       "flow.checkOut",
       "flow.mealBrunch",
+      // File format names, not words - the same in every language.
+      "studio.imageFormats",
     ]);
     for (const locale of ["he", "de"] as const) {
       const unexpected = untranslatedKeys(locale).filter((k) => !allowed.has(k));
