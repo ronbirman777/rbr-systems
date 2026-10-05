@@ -48,6 +48,28 @@ export const en = {
     countryHelp: "Used to suggest a phone country and a language. It never changes what you have already saved.",
     recommended: "Recommended",
     allLanguages: "All languages",
+
+    // Shared nouns - every product reuses these
+    contact: "Contact",
+    gallery: "Gallery",
+    email: "Email",
+    phone: "Phone",
+    website: "Website",
+    map: "Map",
+    today: "Today",
+    every: "Every",
+    learnMore: "Learn more",
+    mainContent: "Main",
+    backTo: "Back to {label}",
+
+    // Audio player controls. Non-directional on purpose:
+    // "Play" is an action, not a direction, so it is never mirrored.
+    play: "Play",
+    pause: "Pause",
+    seek: "Seek",
+    skipBack15: "Back 15 seconds",
+    skipForward15: "Forward 15 seconds",
+    all: "All",
   },
 
   teach: {
@@ -95,6 +117,120 @@ export const en = {
     letsConnect: "Let’s connect",
     messageOn: "Message me on {method}",
     studioAddress: "Studio address",
+
+    // Class card facts and badges
+    price: "Price",
+    spots: "Spots",
+    maxParticipants: "Max {count}",
+    length: "Length",
+    minutes: "{count} min",
+    minutesRead: "{count} min read",
+    ended: "Ended",
+    untilDate: "until {date}",
+    classDetails: "{title} details",
+    howToRegister: "How to register",
+    howToGetThere: "How to get there",
+    directions: "Directions",
+    availableForPrivate: "Available for private session",
+
+    // Home and schedule
+    inspirationFrom: "Today’s inspiration · from {name}",
+    nextClassLine: "Next: {title} · {date} {time}",
+    newClassesSoon: "New classes coming soon",
+    oneToOne: "One-to-one",
+    privateThisWeek: "Private sessions this week",
+    groupClasses: "Group classes",
+    scheduleType: "Schedule type",
+    thisWeekWith: "This week with {name}",
+    nextTwoWeeksWith: "The next two weeks with {name}",
+    daysWithSessions: "Days with sessions",
+    noClassesTwoWeeks: "No classes in the next two weeks",
+    noPrivateThisDay: "No private windows this day",
+    noPrivateTwoWeeks: "No private windows in the next two weeks",
+
+    // About Me. Hebrew and German both avoid a first-person
+    // verb here, because the teacher's gender is unknown and a
+    // gendered verb would guess at it.
+    aboutMe: "About me",
+    teachingPhilosophy: "Teaching philosophy",
+    stylesITeach: "Styles I teach",
+    trainingCerts: "Training & certificates",
+    galleryPhoto: "Gallery photo {index}",
+    teacherFallback: "Teacher",
+
+    // Readings and audio
+    externalArticle: "External article",
+    alsoPublishedExternally: "Also published externally",
+    readFullArticle: "Read the full article",
+    audioUnavailable: "Audio not available",
+    audioLoadError: "Couldn’t load this audio — please try again.",
+    contactSoon: "Contact details coming soon",
+
+    // Registration calls to action. Platform names stay as
+    // they are - they are brands, not words.
+    bookYourSpot: "Book your spot",
+    joinViaWhatsapp: "Join via WhatsApp",
+    registerOnWebsite: "Register on website",
+    messageOnInstagram: "Message on Instagram",
+    registerOnFacebook: "Register on Facebook",
+    registerByEmail: "Register by email",
+    bookWithVenue: "Book with the venue",
+    bookWithNamed: "Book with {venue}",
+    book: "Book",
+    bookASession: "Book a session",
+    privateSession: "Private session",
+    externalBookingLink: "External booking link",
+    hostVenueLink: "Host venue link",
+
+    // Default message templates. These are system copy the
+    // organizer may overwrite in the Studio; the {{variables}} are
+    // substituted by renderTemplate and must survive translation.
+    classWhatsappTemplate: "Hi {{teacher_name}}, I'd like to join {{class_name}} on {{date}} at {{start_time}}. Could you please confirm availability?\n{{space_url}}",
+    privateWhatsappTemplate: "Hi {{teacher_name}}, I'd love a private session on {{date}} between {{start_time}} and {{end_time}}.",
+    reading: "Reading",
+    noteFrom: "A note from {name}",
+    yourTeacher: "your teacher",
+
+    // Recurrence, assembled rather than formatted. Hebrew has a
+    // dual form, so "every 2 weeks" is "כל שבועיים" and never
+    // "כל 2 שבועות" - hence the explicit two-* keys.
+    recurEveryDay: "every day",
+    recurEveryWeek: "every week",
+    recurEveryMonth: "every month",
+    recurEveryTwoDays: "every 2 days",
+    recurEveryTwoWeeks: "every 2 weeks",
+    recurEveryTwoMonths: "every 2 months",
+    recurEveryNDays: "every {count} days",
+    recurEveryNWeeks: "every {count} weeks",
+    recurEveryNMonths: "every {count} months",
+    recurOnDays: "on {days}",
+    recurOnDayOfMonth: "on the {day}",
+    recurNoEnd: "No end date",
+    recurUntil: "Until {date}",
+    recurOnce: "1 time",
+    recurTwice: "2 times",
+    recurNTimes: "{count} times",
+    repeatsSummary: "Repeats {summary}",
+
+    // Private availability windows
+    availEveryWeekday: "Every {weekday}",
+    availWeekly: "Weekly",
+    availOneOff: "One-off",
+    availHidden: "hidden",
+
+    // "Teaching since" avoids a conjugated verb: Hebrew and German
+    // would both have to guess the teacher's gender.
+    teachingSince: "Teaching since {year}",
+    teachingSinceYears: "Teaching since {year} · {years}",
+    yearOne: "1 year",
+    yearTwo: "2 years",
+    yearsN: "{count} years",
+    hostedAt: "Hosted at {venue}",
+    today: "TODAY",
+    classOne: "1 class",
+    classesN: "{count} classes",
+    windowOne: "1 window",
+    windowsN: "{count} windows",
   },
 
   flow: {

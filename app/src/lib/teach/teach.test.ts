@@ -11,7 +11,7 @@ import {
   venueLinks,
   whatsappUrl,
   formatShortDate,
-  DEFAULT_CLASS_WHATSAPP_TEMPLATE,
+  defaultClassWhatsappTemplate,
 } from "./links";
 import {
   addDays,
@@ -109,7 +109,7 @@ describe("links: WhatsApp", () => {
     const cta = buildRegistrationCta("Maya", c.title, c.metadata)!;
     expect(cta.label).toBe("Save my mat");
     expect(decodeURIComponent(cta.href.split("text=")[1])).toBe(
-      renderTemplate(DEFAULT_CLASS_WHATSAPP_TEMPLATE, {
+      renderTemplate(defaultClassWhatsappTemplate(), {
         teacher_name: "Maya",
         class_name: "Morning Slow Flow",
         date: "Tue 14 Oct",

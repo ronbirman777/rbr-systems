@@ -1,5 +1,7 @@
 import type { AvailabilityMetadata, ClassMetadata, TeachItem } from "./schemas";
 
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
+import { longWeekdayName } from "@/lib/i18n/datetime";
 /**
  * Pure date logic for the Teach schedule. Dates are calendar dates
  * ("YYYY-MM-DD") and times are wall-clock "HH:MM" in the Space's time zone;
@@ -20,7 +22,10 @@ export function weekdayOf(dateIso: string): number {
   return new Date(`${dateIso}T12:00:00Z`).getUTCDay();
 }
 
-export const WEEKDAY_LABELS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+/** Weekday names for pickers and day strips, index 0 = Sunday. */
+export function weekdayLabels(locale: Locale = DEFAULT_LOCALE): string[] {
+  return [0, 1, 2, 3, 4, 5, 6].map((i) => longWeekdayName(i, locale));
+}
 
 function classEndDate(meta: ClassMetadata): string {
   return meta.endDate && meta.endDate >= meta.startDate ? meta.endDate : meta.startDate;
@@ -119,14 +124,26 @@ export function buildScheduleDays(
 }
 
 /** Human description of a window, e.g. "Every Tuesday · 10:00 – 13:00". */
-export function describeAvailability(meta: AvailabilityMetadata): string {
+/**
+ * "Every Tuesday · 09:00 – 11:00".
+ *
+ * `withWhen: false` drops the recurring part for callers that already
+ * show the day; it replaces a `.replace("Every ", "")` at the call site,
+ * which only worked in English.
+ */
+export function describeAvailability(
+  meta: AvailabilityMetadata,
+  { locale = DEFAULT_LOCALE, withWhen = true }: { locale?: Locale; withWhen?: boolean } = {}
+): string {
+  const hours = `${meta.from} – ${meta.to}`;
+  if (!withWhen) return hours;
   const when =
     meta.repeat === "weekly"
       ? meta.weekday !== null
-        ? `Every ${WEEKDAY_LABELS[meta.weekday]}`
-        : "Weekly"
-      : meta.date ?? "One-off";
-  return `${when} · ${meta.from} – ${meta.to}`;
+        ? translate(locale, "teach", "availEveryWeekday", { weekday: longWeekdayName(meta.weekday, locale) })
+        : translate(locale, "teach", "availWeekly")
+      : meta.date ?? translate(locale, "teach", "availOneOff");
+  return `${when} · ${hours}`;
 }
 
 export function durationMinutes(meta: ClassMetadata): number | null {
@@ -146,10 +163,15 @@ export function formatDuration(totalSeconds: number | null | undefined): string 
   return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${m}:${String(sec).padStart(2, "0")}`;
 }
 
-/** "Teaching since 2014 · 11 years" */
-export function teachingSinceLabel(since: number | null, todayIso: string): string | null {
+/** "Teaching since 2014 · 11 years" and its localized equivalents. */
+export function teachingSinceLabel(since: number | null, todayIso: string, locale: Locale = DEFAULT_LOCALE): string | null {
   if (!since) return null;
   const years = Number(todayIso.slice(0, 4)) - since;
-  if (years <= 0) return `Teaching since ${since}`;
-  return `Teaching since ${since} · ${years} ${years === 1 ? "year" : "years"}`;
+  if (years <= 0) return translate(locale, "teach", "teachingSince", { year: since });
+  // 1 and 2 are separate keys for Hebrew's dual form ("שנתיים").
+  const key = years === 1 ? "yearOne" : years === 2 ? "yearTwo" : "yearsN";
+  return translate(locale, "teach", "teachingSinceYears", {
+    year: since,
+    years: translate(locale, "teach", key, { count: years }),
+  });
 }

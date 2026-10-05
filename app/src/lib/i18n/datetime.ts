@@ -26,6 +26,7 @@ import { LOCALE_TAG, type Locale } from "./locales";
 
 const SHORT_WEEKDAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const SHORT_MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const LONG_WEEKDAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 function parseIsoDate(dateIso: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateIso);
@@ -103,4 +104,73 @@ export function formatTimeLocalized(hhmm: string, locale: Locale): string {
 /** Locale-aware digits for counts and durations. */
 export function formatNumberLocalized(value: number, locale: Locale): string {
   return new Intl.NumberFormat(LOCALE_TAG[locale]).format(value);
+}
+
+// ---------------------------------------------------------------------------
+// Calendar names and parts, for text that is assembled rather than formatted
+// (recurrence summaries, weekday pickers, day strips).
+// ---------------------------------------------------------------------------
+
+/** A reference week in UTC. 2024-01-07 is a Sunday, so index 0 = Sunday. */
+function referenceDay(weekdayIndex: number): Date {
+  return new Date(Date.UTC(2024, 0, 7 + weekdayIndex, 12));
+}
+
+/** "Sun" / "א׳" / "So" - index 0 = Sunday, matching weekdayOfDate(). */
+export function shortWeekdayName(weekdayIndex: number, locale: Locale): string {
+  if (locale === "en") return SHORT_WEEKDAYS_EN[weekdayIndex];
+  return new Intl.DateTimeFormat(LOCALE_TAG[locale], { weekday: "short", timeZone: "UTC" }).format(
+    referenceDay(weekdayIndex)
+  );
+}
+
+/** "Sunday" / "ראשון" / "Sonntag" - index 0 = Sunday. */
+export function longWeekdayName(weekdayIndex: number, locale: Locale): string {
+  if (locale === "en") return LONG_WEEKDAYS_EN[weekdayIndex];
+  return new Intl.DateTimeFormat(LOCALE_TAG[locale], { weekday: "long", timeZone: "UTC" }).format(
+    referenceDay(weekdayIndex)
+  );
+}
+
+/**
+ * "31 Dec 2027" and its localized equivalents, for a recurrence end date.
+ * English keeps the exact output of recurrenceText's formatLongDate.
+ */
+export function formatDayMonthYearLocalized(dateIso: string, locale: Locale): string {
+  const d = parseIsoDate(dateIso);
+  if (!d) return dateIso;
+  if (locale === "en") {
+    return `${d.getUTCDate()} ${SHORT_MONTHS_EN[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  }
+  return new Intl.DateTimeFormat(LOCALE_TAG[locale], {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(d);
+}
+
+/**
+ * The day-of-month as it is written in an ordinal position: "5th", "5."
+ * (German), and a bare "5" in Hebrew, which has no written ordinal for
+ * dates - the carrier phrase supplies the sense instead.
+ */
+export function ordinalDayLocalized(day: number, locale: Locale): string {
+  if (locale === "de") return `${day}.`;
+  if (locale === "he") return String(day);
+  const mod100 = day % 100;
+  const suffix =
+    mod100 >= 11 && mod100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[day % 10] ?? "th";
+  return `${day}${suffix}`;
+}
+
+/**
+ * Uppercases the first letter for a string used at the start of a line.
+ *
+ * Assembled phrases are stored lowercase ("every week"), because most of
+ * their uses are mid-sentence ("Repeats every week"). Hebrew has no case,
+ * so this is a no-op there, which is why it is safe to apply blindly.
+ */
+export function capitalizeFirst(text: string): string {
+  return text.length === 0 ? text : text[0].toLocaleUpperCase() + text.slice(1);
 }

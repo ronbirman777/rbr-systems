@@ -48,6 +48,28 @@ export const he: Dictionary = {
     countryHelp: "משמשת להצעת קידומת טלפון ושפה. היא לעולם לא משנה את מה שכבר שמרתם.",
     recommended: "מומלץ",
     allLanguages: "כל השפות",
+
+    // Shared nouns - every product reuses these
+    contact: "יצירת קשר",
+    gallery: "גלריה",
+    email: "אימייל",
+    phone: "טלפון",
+    website: "אתר",
+    map: "מפה",
+    today: "היום",
+    every: "כל",
+    learnMore: "מידע נוסף",
+    mainContent: "תוכן ראשי",
+    backTo: "חזרה ל{label}",
+
+    // Audio player controls. Non-directional on purpose:
+    // "Play" is an action, not a direction, so it is never mirrored.
+    play: "הפעלה",
+    pause: "השהיה",
+    seek: "סרגל הזמן",
+    skipBack15: "אחורה 15 שניות",
+    skipForward15: "קדימה 15 שניות",
+    all: "הכול",
   },
 
   teach: {
@@ -90,6 +112,120 @@ export const he: Dictionary = {
     letsConnect: "בואו נתחבר",
     messageOn: "שלחו לי הודעה ב{method}",
     studioAddress: "כתובת הסטודיו",
+
+    // Class card facts and badges
+    price: "מחיר",
+    spots: "מקומות",
+    maxParticipants: "עד {count}",
+    length: "אורך",
+    minutes: "{count} דק׳",
+    minutesRead: "{count} דק׳ קריאה",
+    ended: "הסתיים",
+    untilDate: "עד {date}",
+    classDetails: "פרטי {title}",
+    howToRegister: "איך נרשמים",
+    howToGetThere: "איך מגיעים",
+    directions: "הוראות הגעה",
+    availableForPrivate: "פנוי לשיעור פרטי",
+
+    // Home and schedule
+    inspirationFrom: "ההשראה של היום · מאת {name}",
+    nextClassLine: "הבא: {title} · {date} {time}",
+    newClassesSoon: "שיעורים חדשים בקרוב",
+    oneToOne: "פרטי",
+    privateThisWeek: "שיעורים פרטיים השבוע",
+    groupClasses: "שיעורים קבוצתיים",
+    scheduleType: "סוג לוח השיעורים",
+    thisWeekWith: "השבוע עם {name}",
+    nextTwoWeeksWith: "שבועיים הקרובים עם {name}",
+    daysWithSessions: "ימים עם שיעורים",
+    noClassesTwoWeeks: "אין שיעורים בשבועיים הקרובים",
+    noPrivateThisDay: "אין חלונות פנויים ביום זה",
+    noPrivateTwoWeeks: "אין חלונות פנויים בשבועיים הקרובים",
+
+    // About Me. Hebrew and German both avoid a first-person
+    // verb here, because the teacher's gender is unknown and a
+    // gendered verb would guess at it.
+    aboutMe: "עליי",
+    teachingPhilosophy: "תפיסת ההוראה שלי",
+    stylesITeach: "הסגנונות שלי",
+    trainingCerts: "הכשרה ותעודות",
+    galleryPhoto: "תמונה {index} בגלריה",
+    teacherFallback: "מורה",
+
+    // Readings and audio
+    externalArticle: "מאמר חיצוני",
+    alsoPublishedExternally: "פורסם גם במקום אחר",
+    readFullArticle: "לקריאת המאמר המלא",
+    audioUnavailable: "האודיו אינו זמין",
+    audioLoadError: "לא ניתן לטעון את האודיו — נסו שוב.",
+    contactSoon: "פרטי הקשר יתווספו בקרוב",
+
+    // Registration calls to action. Platform names stay as
+    // they are - they are brands, not words.
+    bookYourSpot: "לשמירת מקום",
+    joinViaWhatsapp: "הרשמה בוואטסאפ",
+    registerOnWebsite: "הרשמה באתר",
+    messageOnInstagram: "הודעה באינסטגרם",
+    registerOnFacebook: "הרשמה בפייסבוק",
+    registerByEmail: "הרשמה באימייל",
+    bookWithVenue: "הרשמה דרך המקום",
+    bookWithNamed: "הרשמה דרך {venue}",
+    book: "הרשמה",
+    bookASession: "קביעת שיעור",
+    privateSession: "שיעור פרטי",
+    externalBookingLink: "קישור הרשמה חיצוני",
+    hostVenueLink: "קישור לאתר המקום",
+
+    // Default message templates. These are system copy the
+    // organizer may overwrite in the Studio; the {{variables}} are
+    // substituted by renderTemplate and must survive translation.
+    classWhatsappTemplate: "היי {{teacher_name}}, אשמח להצטרף ל{{class_name}} בתאריך {{date}} בשעה {{start_time}}. אפשר לאשר שיש מקום?\n{{space_url}}",
+    privateWhatsappTemplate: "היי {{teacher_name}}, אשמח לשיעור פרטי בתאריך {{date}} בין {{start_time}} ל{{end_time}}.",
+    reading: "קריאה",
+    noteFrom: "פתק מ{name}",
+    yourTeacher: "המורה שלך",
+
+    // Recurrence, assembled rather than formatted. Hebrew has a
+    // dual form, so "every 2 weeks" is "כל שבועיים" and never
+    // "כל 2 שבועות" - hence the explicit two-* keys.
+    recurEveryDay: "כל יום",
+    recurEveryWeek: "כל שבוע",
+    recurEveryMonth: "כל חודש",
+    recurEveryTwoDays: "כל יומיים",
+    recurEveryTwoWeeks: "כל שבועיים",
+    recurEveryTwoMonths: "כל חודשיים",
+    recurEveryNDays: "כל {count} ימים",
+    recurEveryNWeeks: "כל {count} שבועות",
+    recurEveryNMonths: "כל {count} חודשים",
+    recurOnDays: "בימים {days}",
+    recurOnDayOfMonth: "ב{day} בחודש",
+    recurNoEnd: "בלי תאריך סיום",
+    recurUntil: "עד {date}",
+    recurOnce: "פעם אחת",
+    recurTwice: "פעמיים",
+    recurNTimes: "{count} פעמים",
+    repeatsSummary: "חוזר {summary}",
+
+    // Private availability windows
+    availEveryWeekday: "כל יום {weekday}",
+    availWeekly: "כל שבוע",
+    availOneOff: "חד-פעמי",
+    availHidden: "מוסתר",
+
+    // "Teaching since" avoids a conjugated verb: Hebrew and German
+    // would both have to guess the teacher's gender.
+    teachingSince: "בהוראה מאז {year}",
+    teachingSinceYears: "בהוראה מאז {year} · {years}",
+    yearOne: "שנה",
+    yearTwo: "שנתיים",
+    yearsN: "{count} שנים",
+    hostedAt: "מתקיים ב{venue}",
+    today: "היום",
+    classOne: "שיעור אחד",
+    classesN: "{count} שיעורים",
+    windowOne: "חלון אחד",
+    windowsN: "{count} חלונות",
   },
 
   flow: {

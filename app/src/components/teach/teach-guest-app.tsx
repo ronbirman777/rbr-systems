@@ -1,8 +1,8 @@
 "use client";
 
 import { cardImage } from "@/lib/teach/cardImage";
-import { createTranslator, directionOf } from "@/lib/i18n";
-import { iconTransform } from "@/lib/i18n/direction";
+import { createTranslator, translate, type Locale } from "@/lib/i18n";
+import { formatShortDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime";
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import { getDailyQuoteFrom } from "@/lib/content/dailyQuotes";
@@ -20,7 +20,6 @@ import {
   isClassPast,
   nextUpcomingClass,
   teachingSinceLabel,
-  WEEKDAY_LABELS,
 } from "@/lib/teach/schedule";
 import { TeachIcon, type TeachIconName } from "./teach-icons";
 import { TeachImage } from "./teach-image";
@@ -74,6 +73,25 @@ const TEACH_CSS = `
 @media (prefers-reduced-motion: reduce){.tt-root .tt-reveal,.tt-root .tt-expand,.tt-root .tt-fade-in{animation:none}}
 `;
 
+/** "Next: Morning Flow · Wed 14 Oct 09:00" - one place, so the empty
+ * states on three screens cannot drift apart or half-translate. */
+function nextClassLine(next: TeachItem<"teachClasses">, locale: Locale): string {
+  return translate(locale, "teach", "nextClassLine", {
+    title: next.title,
+    date: formatShortDateLocalized(next.metadata.startDate, locale),
+    time: next.metadata.startTime,
+  });
+}
+
+/** "Wed 14 Oct, 2 classes" - the count is pluralized per language
+ * rather than by appending an "s" that only English has. */
+function dayOptionLabel(dateIso: string, count: number, mode: "classes" | "private", locale: Locale): string {
+  const date = formatShortDateLocalized(dateIso, locale);
+  if (!count) return date;
+  const key = mode === "classes" ? (count === 1 ? "classOne" : "classesN") : count === 1 ? "windowOne" : "windowsN";
+  return `${date}, ${translate(locale, "teach", key, { count })}`;
+}
+
 function exploreTitle(data: TeachGuestData, key: "teachReadings" | "teachAudio" | "teachContact", fallback: string) {
   return data.settings.teachExplore.cards[key]?.title ?? fallback;
 }
@@ -123,7 +141,7 @@ export function TeachGuestApp({
   const { t, dir } = createTranslator(data.locale);
   const tabs = visibleTabs(data);
   // A hidden About tab can't stay selected (e.g. the Studio preview was on it when the teacher turned it off).
-  const tab = tabs.some((t) => t.key === selectedTab) ? selectedTab : "home";
+  const tab = tabs.some((item) => item.key === selectedTab) ? selectedTab : "home";
 
   const url = (ref: string | null | undefined) => (ref ? (data.mediaUrls[ref] ?? null) : null);
 
@@ -136,7 +154,7 @@ export function TeachGuestApp({
   else if (page?.kind === "track") {
     const item = data.audio.find((a) => a.id === page.id);
     body = item ? <AudioPlayerScreen key={item.id} data={data} item={item} onBack={back} /> : null;
-  } else if (page?.kind === "contact") body = <ContactScreen data={data} onBack={back} backLabel={tab === "home" ? "Home" : "Explore"} />;
+  } else if (page?.kind === "contact") body = <ContactScreen data={data} onBack={back} backLabel={tab === "home" ? t("teach", "navHome") : t("teach", "navExplore")} />;
   else if (page?.kind === "page") {
     const item = data.customPages.find((p) => p.id === page.id);
     body = item ? <CustomPageScreen data={data} page={item} onBack={back} /> : null;
@@ -167,7 +185,7 @@ export function TeachGuestApp({
         <main className="relative w-full mx-auto @4xl:max-w-[1180px] pt-2 @min-[40rem]:pt-6 @4xl:pt-10 pb-6 @min-[40rem]:pb-16">{body}</main>
       </div>
       <nav
-        aria-label="Main"
+        aria-label={t("common", "mainContent")}
         className="@min-[40rem]:hidden sticky bottom-0 z-20 flex justify-around px-2 pt-2 pb-[max(env(safe-area-inset-bottom),14px)]"
         style={{ background: "rgb(253 250 244 / 0.96)", borderTop: "1px solid var(--tt-line)", backdropFilter: "blur(10px)" }}
       >
@@ -238,7 +256,7 @@ function DesktopTopNav({ data, tabs, tab, onTab, url }: { data: TeachGuestData; 
           {data.teacherName}
         </span>
       </button>
-      <nav aria-label="Main" className="flex items-center gap-5 @4xl:gap-7 shrink-0">
+      <nav aria-label={t("common", "mainContent")} className="flex items-center gap-5 @4xl:gap-7 shrink-0">
         {tabs.map((item) => (
           <button key={item.key} type="button" onClick={() => onTab(item.key)} aria-current={item.key === tab ? "page" : undefined} className="flex flex-col items-center gap-1 text-[14px] min-h-11 justify-center" style={{ color: item.key === tab ? "var(--rbr-navigation)" : "var(--rbr-text-muted)", fontWeight: item.key === tab ? 600 : 500 }}>
             {t("teach", item.labelKey)}
@@ -247,7 +265,7 @@ function DesktopTopNav({ data, tabs, tab, onTab, url }: { data: TeachGuestData; 
         ))}
         {primary ? (
           <PillLink href={primary.href} className="!min-h-10 !px-4">
-            Contact
+            {t("common", "contact")}
           </PillLink>
         ) : null}
       </nav>
@@ -276,6 +294,7 @@ function Hero({
   onContact: (() => void) | null;
 }) {
   const p = data.settings.teachProfile;
+  const { t } = createTranslator(data.locale);
   const layout = data.settings.teachStyle.heroLayout;
   const src = url(data.heroImageRef);
   const fullbleed = layout === "fullbleed";
@@ -303,11 +322,11 @@ function Hero({
           phone they stay where they were (bottom nav + "Get in touch"). */}
       <div className="hidden @min-[40rem]:flex flex-wrap gap-3 mt-4">
         <PillButton onClick={onSchedule} icon="calendar" className="!w-auto !px-6">
-          See the schedule
+          {t("teach", "seeTheSchedule")}
         </PillButton>
         {onContact ? (
           <PillButton onClick={onContact} kind={light ? "light" : "soft"} icon="chat" className="!w-auto !px-6">
-            Get in touch
+            {t("teach", "getInTouch")}
           </PillButton>
         ) : null}
       </div>
@@ -356,6 +375,7 @@ function HomeScreen({
   goTab: (t: Tab) => void;
 }) {
   const s = data.settings;
+  const { t } = createTranslator(data.locale);
   const sections = s.teachProfile.homeSections;
   const quote = sections.quote ? getDailyQuoteFrom(data.todayIso, s.dailyInspiration.quotes, s.dailyInspiration.useFallback, s.dailyInspiration.quotes.length ? "" : null) : null;
   const today = classesOn(data.classes, data.todayIso, data.timezone);
@@ -393,7 +413,7 @@ function HomeScreen({
       <Hero data={data} url={url} onSchedule={() => goTab("schedule")} onContact={sections.contact && contactOn ? () => open({ kind: "contact" }) : null} />
       {quote ? (
         <div className="px-8 @min-[40rem]:px-10 w-full @min-[40rem]:max-w-[640px] @4xl:max-w-[760px] mx-auto">
-          <DailyQuoteBlock quote={quote} style={s.teachStyle} attribution={`Today’s inspiration · from ${firstName}`} />
+          <DailyQuoteBlock quote={quote} style={s.teachStyle} attribution={t("teach", "inspirationFrom", { name: firstName })} />
         </div>
       ) : null}
       {sections.contact && contactOn ? (
@@ -407,7 +427,7 @@ function HomeScreen({
       {sections.today ? (
         <section aria-labelledby="tt-today" className={`flex flex-col gap-3 @min-[40rem]:gap-4 ${pad}`}>
           <div id="tt-today">
-            <SectionHeader title="Today’s classes" action={formatShortDate(data.todayIso)} />
+            <SectionHeader title={t("teach", "todaysClasses")} action={formatShortDateLocalized(data.todayIso, data.locale)} />
           </div>
           {today.length > 0 ? (
             <div className="grid gap-3 @min-[40rem]:grid-cols-2 @4xl:grid-cols-3 @min-[40rem]:gap-4 items-start" data-testid="home-today-grid">
@@ -421,16 +441,17 @@ function HomeScreen({
                   onToggle={() => setExpanded((e) => (e === c.id ? null : c.id))}
                   past={isClassPast(c.metadata, data.todayIso, data.nowTime, data.nowInstant)}
                   timezoneLabel={c.metadata.timezone && c.metadata.timezone !== data.timezone ? c.metadata.timezone : null}
+                  locale={data.locale}
                 />
               ))}
             </div>
           ) : (
             <EmptyState
-              title="No classes today"
-              body={next ? `Next: ${next.title} · ${formatShortDate(next.metadata.startDate)} ${next.metadata.startTime}` : "New classes coming soon."}
+              title={t("teach", "noClassesToday")}
+              body={next ? nextClassLine(next, data.locale) : t("teach", "exploreEmpty")}
               action={
                 <PillButton kind="soft" icon="calendar" onClick={() => goTab("schedule")}>
-                  See full schedule
+                  {t("teach", "seeFullSchedule")}
                 </PillButton>
               }
             />
@@ -443,18 +464,18 @@ function HomeScreen({
           {showPrivate ? (
             <section className={`${pad} @4xl:pe-0 @4xl:flex @4xl:flex-col @4xl:gap-4`}>
               <div className="hidden @4xl:block">
-                <SectionHeader title="One-to-one" />
+                <SectionHeader title={t("teach", "oneToOne")} />
               </div>
               <button type="button" onClick={() => goTab("schedule")} className="tt-reveal w-full text-start flex items-center gap-3.5 p-4 @min-[40rem]:p-6" style={{ background: "var(--rbr-primary-soft)", borderRadius: "var(--tt-radius-card)" }}>
                 <span className="flex-1 flex flex-col gap-1">
-                  <Eyebrow tone="primary">One-to-one</Eyebrow>
+                  <Eyebrow tone="primary">{t("teach", "oneToOne")}</Eyebrow>
                   <DisplayHeading as="h2" size={18}>
-                    Private sessions this week
+                    {t("teach", "privateThisWeek")}
                   </DisplayHeading>
                   <span className="text-[12.5px]" style={{ color: "var(--rbr-text-muted)" }}>
                     {weekWindows
                       .slice(0, 3)
-                      .map((w) => describeAvailability(w.metadata).replace("Every ", ""))
+                      .map((w) => describeAvailability(w.metadata, { locale: data.locale, withWhen: false }))
                       .join(" · ")}
                   </span>
                 </span>
@@ -467,13 +488,13 @@ function HomeScreen({
 
           {showLibrary ? (
             <section className={`flex flex-col gap-3 @min-[40rem]:gap-4 ${pad} ${showPrivate ? "@4xl:ps-0" : ""}`}>
-              <SectionHeader title={`From ${firstName}`} />
+              <SectionHeader title={t("teach", "moreFrom", { name: firstName })} />
               <div className="grid grid-cols-2 gap-2.5 @min-[40rem]:gap-4">
                 {latestReading ? (
                   <button type="button" onClick={() => open({ kind: "reading", id: latestReading.id })} className="tt-reveal text-start overflow-hidden flex flex-col" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
                     <TeachImage {...cardImage(data, "teachReadings", latestReading)} alt="" fallbackLabel={latestReading.title} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
                     <span className="p-3 @min-[40rem]:p-4 flex flex-col gap-1">
-                      <Eyebrow tone="primary">Reading</Eyebrow>
+                      <Eyebrow tone="primary">{t("teach", "reading")}</Eyebrow>
                       <span className="text-[15px] @min-[40rem]:text-[18px] leading-tight line-clamp-2" style={{ fontFamily: "var(--tt-font-display)" }}>
                         {latestReading.title}
                       </span>
@@ -484,7 +505,7 @@ function HomeScreen({
                   <button type="button" onClick={() => open({ kind: "track", id: latestAudio.id })} className="tt-reveal text-start overflow-hidden flex flex-col" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
                     <TeachImage {...cardImage(data, "teachAudio", latestAudio)} alt="" fallbackLabel={latestAudio.title} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
                     <span className="p-3 @min-[40rem]:p-4 flex flex-col gap-1">
-                      <Eyebrow tone="primary">Listen</Eyebrow>
+                      <Eyebrow tone="primary">{t("teach", "exploreAudio")}</Eyebrow>
                       <span className="text-[15px] @min-[40rem]:text-[18px] leading-tight line-clamp-2" style={{ fontFamily: "var(--tt-font-display)" }}>
                         {latestAudio.title}
                       </span>
@@ -506,13 +527,24 @@ function HomeScreen({
 
 const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-function ScheduleModeTabs({ mode, onMode, className = "" }: { mode: "classes" | "private"; onMode: (m: "classes" | "private") => void; className?: string }) {
+function ScheduleModeTabs({
+  mode,
+  onMode,
+  locale,
+  className = "",
+}: {
+  mode: "classes" | "private";
+  onMode: (m: "classes" | "private") => void;
+  locale: Locale;
+  className?: string;
+}) {
+  const { t } = createTranslator(locale);
   return (
-    <div role="tablist" aria-label="Schedule type" className={`grid grid-cols-2 p-1 ${className}`} style={{ background: "rgb(0 0 0 / 0.05)", borderRadius: "var(--tt-radius-pill)" }}>
+    <div role="tablist" aria-label={t("teach", "scheduleType")} className={`grid grid-cols-2 p-1 ${className}`} style={{ background: "rgb(0 0 0 / 0.05)", borderRadius: "var(--tt-radius-pill)" }}>
       {(
         [
-          ["classes", "Group classes"],
-          ["private", "Private sessions"],
+          ["classes", t("teach", "groupClasses")],
+          ["private", t("teach", "privateSessions")],
         ] as const
       ).map(([k, label]) => (
         <button
@@ -553,6 +585,7 @@ function ScheduleScreen({ data, desktop }: { data: TeachGuestData; desktop: bool
       return n;
     });
   const hasPrivate = data.availability.length > 0;
+  const { t } = createTranslator(data.locale);
   const onMode = (k: "classes" | "private") => {
     setMode(k);
     setSelected(null);
@@ -567,6 +600,7 @@ function ScheduleScreen({ data, desktop }: { data: TeachGuestData; desktop: bool
       onToggle={() => toggle(c.id)}
       past={isClassPast(c.metadata, data.todayIso, data.nowTime, data.nowInstant)}
       timezoneLabel={c.metadata.timezone && c.metadata.timezone !== data.timezone ? c.metadata.timezone : null}
+      locale={data.locale}
     />
   );
   const firstName = data.teacherName.split(" ")[0] || data.teacherName;
@@ -581,25 +615,25 @@ function ScheduleScreen({ data, desktop }: { data: TeachGuestData; desktop: bool
     <div className="flex flex-col gap-4 @min-[40rem]:gap-6">
       <header className="px-5 @min-[40rem]:px-6 flex flex-col gap-3 @min-[40rem]:flex-row @min-[40rem]:items-end @min-[40rem]:justify-between @min-[40rem]:gap-6">
         <div className="flex flex-col gap-1">
-          <Eyebrow>{`This week with ${firstName}`}</Eyebrow>
+          <Eyebrow>{t("teach", "thisWeekWith", { name: firstName })}</Eyebrow>
           <DisplayHeading as="h1" className="[--tt-h1:32px] @min-[40rem]:[--tt-h1:42px]" style={{ fontSize: "calc(var(--tt-h1) * var(--tt-display-scale, 1))" }}>
-            Schedule
+            {t("teach", "navSchedule")}
           </DisplayHeading>
         </div>
-        {hasPrivate ? <ScheduleModeTabs mode={mode} onMode={onMode} className="@min-[40rem]:w-[360px] @min-[40rem]:shrink-0" /> : null}
+        {hasPrivate ? <ScheduleModeTabs mode={mode} onMode={onMode} locale={data.locale} className="@min-[40rem]:w-[360px] @min-[40rem]:shrink-0" /> : null}
       </header>
-      <div className="flex gap-2 overflow-x-auto no-scrollbar px-5 @min-[40rem]:px-6" role="listbox" aria-label="Choose a day">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar px-5 @min-[40rem]:px-6" role="listbox" aria-label={t("teach", "chooseDay")}>
         {days.map((d) => {
           const active = d.date === date;
           const count = mode === "classes" ? d.classCount : d.availabilityCount;
-          const wd = WEEKDAY_LABELS[new Date(`${d.date}T12:00:00Z`).getUTCDay()].slice(0, 3).toUpperCase();
+          const wd = shortWeekdayName(new Date(`${d.date}T12:00:00Z`).getUTCDay(), data.locale).toUpperCase();
           return (
             <button
               key={d.date}
               type="button"
               role="option"
               aria-selected={active}
-              aria-label={`${formatShortDate(d.date)}${count ? `, ${count} ${mode === "classes" ? "classes" : "windows"}` : ""}`}
+              aria-label={dayOptionLabel(d.date, count, mode, data.locale)}
               onClick={() => setSelected(d.date)}
               className="shrink-0 w-[52px] @min-[40rem]:w-[56px] py-2 @min-[40rem]:py-2.5 flex flex-col items-center gap-0.5"
               style={{
@@ -631,19 +665,23 @@ function ScheduleScreen({ data, desktop }: { data: TeachGuestData; desktop: bool
           ) : (
             <EmptyState
               icon="calendar"
-              title={data.classes.length ? "No classes on this day" : "New classes coming soon"}
-              body={next ? `Next: ${next.title} · ${formatShortDate(next.metadata.startDate)} ${next.metadata.startTime}` : undefined}
+              title={data.classes.length ? t("teach", "noClassesOnDay") : t("teach", "newClassesSoon")}
+              body={next ? nextClassLine(next, data.locale) : undefined}
               action={next ? <PillButton kind="soft" onClick={() => setSelected(next.metadata.startDate)}>Go to {formatShortDate(next.metadata.startDate)}</PillButton> : undefined}
             />
           )
         ) : windows.length > 0 ? (
           <div className="grid gap-3 @min-[40rem]:grid-cols-2 @min-[40rem]:gap-4 items-start">
             {windows.map((w) => (
-              <TeachAvailabilityCard key={w.id} item={w} dateIso={date} teacherName={data.teacherName} contact={data.settings.teachContact} />
+              <TeachAvailabilityCard key={w.id} item={w} dateIso={date} teacherName={data.teacherName} contact={data.settings.teachContact} locale={data.locale} />
             ))}
           </div>
         ) : (
-          <EmptyState icon="user" title="No private windows this day" body={data.availability.map((w) => describeAvailability(w.metadata)).slice(0, 3).join(" · ")} />
+          <EmptyState
+            icon="user"
+            title={t("teach", "noPrivateThisDay")}
+            body={data.availability.map((w) => describeAvailability(w.metadata, { locale: data.locale })).slice(0, 3).join(" · ")}
+          />
         )}
       </section>
     </div>
@@ -679,6 +717,7 @@ function ScheduleAgenda({
     .filter((d) => d.classes.length + d.windows.length > 0);
   const lastDay = days[days.length - 1]?.date ?? data.todayIso;
   const next = mode === "classes" && agenda.length === 0 ? nextUpcomingClass(data.classes, lastDay, data.timezone) : null;
+  const { t } = createTranslator(data.locale);
   const anchor = (date: string) => `tt-day-${date}`;
   const jump = (date: string) => document.getElementById(anchor(date))?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -686,14 +725,14 @@ function ScheduleAgenda({
     <div className="grid grid-cols-[280px_minmax(0,1fr)] gap-14 px-10" data-testid="schedule-agenda">
       <aside className="sticky top-24 self-start flex flex-col gap-6">
         <div className="flex flex-col gap-1.5">
-          <Eyebrow>{`The next two weeks with ${firstName}`}</Eyebrow>
+          <Eyebrow>{t("teach", "nextTwoWeeksWith", { name: firstName })}</Eyebrow>
           <DisplayHeading as="h1" size={46}>
-            Schedule
+            {t("teach", "navSchedule")}
           </DisplayHeading>
         </div>
-        {onMode ? <ScheduleModeTabs mode={mode} onMode={onMode} /> : null}
+        {onMode ? <ScheduleModeTabs mode={mode} onMode={onMode} locale={data.locale} /> : null}
         {agenda.length > 0 ? (
-          <nav aria-label="Days with sessions" className="flex flex-col">
+          <nav aria-label={t("teach", "daysWithSessions")} className="flex flex-col">
             {agenda.map((d) => {
               const n = mode === "classes" ? d.classes.length : d.windows.length;
               return (
@@ -705,7 +744,7 @@ function ScheduleAgenda({
                   style={{ borderBottom: "1px solid var(--tt-line)", color: "var(--rbr-text)" }}
                 >
                   <span className="font-medium">
-                    {d.date === data.todayIso ? "Today · " : ""}
+                    {d.date === data.todayIso ? `${t("common", "today")} · ` : ""}
                     {formatShortDate(d.date)}
                   </span>
                   <span className="text-[12px]" style={{ color: "var(--rbr-text-muted)" }}>
@@ -725,11 +764,15 @@ function ScheduleAgenda({
           mode === "classes" ? (
             <EmptyState
               icon="calendar"
-              title={data.classes.length ? "No classes in the next two weeks" : "New classes coming soon"}
-              body={next ? `Next: ${next.title} · ${formatShortDate(next.metadata.startDate)} ${next.metadata.startTime}` : undefined}
+              title={data.classes.length ? t("teach", "noClassesTwoWeeks") : t("teach", "newClassesSoon")}
+              body={next ? nextClassLine(next, data.locale) : undefined}
             />
           ) : (
-            <EmptyState icon="user" title="No private windows in the next two weeks" body={data.availability.map((w) => describeAvailability(w.metadata)).slice(0, 3).join(" · ")} />
+            <EmptyState
+              icon="user"
+              title={t("teach", "noPrivateTwoWeeks")}
+              body={data.availability.map((w) => describeAvailability(w.metadata, { locale: data.locale })).slice(0, 3).join(" · ")}
+            />
           )
         ) : (
           agenda.map((d) => {
@@ -738,7 +781,7 @@ function ScheduleAgenda({
               <section key={d.date} id={anchor(d.date)} aria-label={formatShortDate(d.date)} className="grid grid-cols-[96px_minmax(0,1fr)] gap-8 scroll-mt-28">
                 <div className="sticky top-24 self-start flex flex-col items-center py-3" style={{ background: d.date === data.todayIso ? "var(--rbr-primary-soft)" : "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
                   <span className="text-[11px] font-semibold tracking-wider" style={{ color: "var(--rbr-text-muted)" }}>
-                    {d.date === data.todayIso ? "TODAY" : WEEKDAY_LABELS[day.getUTCDay()].slice(0, 3).toUpperCase()}
+                    {d.date === data.todayIso ? t("teach", "today") : shortWeekdayName(day.getUTCDay(), data.locale).toUpperCase()}
                   </span>
                   <span className="text-[34px] leading-none my-1" style={{ fontFamily: "var(--tt-font-display)" }}>
                     {day.getUTCDate()}
@@ -750,7 +793,7 @@ function ScheduleAgenda({
                 <div className="flex flex-col gap-3">
                   {mode === "classes"
                     ? d.classes.map(classCard)
-                    : d.windows.map((w) => <TeachAvailabilityCard key={w.id} item={w} dateIso={d.date} teacherName={data.teacherName} contact={data.settings.teachContact} />)}
+                    : d.windows.map((w) => <TeachAvailabilityCard key={w.id} item={w} dateIso={d.date} teacherName={data.teacherName} contact={data.settings.teachContact} locale={data.locale} />)}
                 </div>
               </section>
             );
@@ -767,7 +810,8 @@ function ScheduleAgenda({
 
 function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | null) => string | null }) {
   const a = data.settings.teachAbout;
-  const since = teachingSinceLabel(a.teachingSince, data.todayIso);
+  const { t } = createTranslator(data.locale);
+  const since = teachingSinceLabel(a.teachingSince, data.todayIso, data.locale);
   const photo = url(a.profile.imageRef) ?? url(data.heroImageRef);
   const focal = a.profile.imageRef ? a.profile.imagePosition : data.settings.teachProfile.heroImagePosition;
   const socials: { key: string; href: string; icon: TeachIconName; label: string }[] = [];
@@ -778,7 +822,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
   const wa = whatsappUrl(a.whatsapp);
   if (wa) socials.push({ key: "whatsapp", href: wa, icon: "chat", label: "WhatsApp" });
   const mail = mailtoUrl(a.email);
-  if (mail) socials.push({ key: "email", href: mail, icon: "mail", label: "Email" });
+  if (mail) socials.push({ key: "email", href: mail, icon: "mail", label: t("common", "email") });
 
   return (
     <div className="flex flex-col gap-[var(--tt-section-gap)] w-full @min-[40rem]:max-w-[680px] @min-[40rem]:mx-auto @4xl:max-w-none @4xl:grid @4xl:grid-cols-[320px_minmax(0,1fr)] @4xl:gap-16 @4xl:px-10 @4xl:items-start">
@@ -817,7 +861,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
         {a.philosophy ? (
           <div className="px-4 @4xl:px-0">
             <figure className="p-5 @4xl:p-8 flex flex-col gap-2" style={{ background: "var(--rbr-primary-soft)", borderRadius: "calc(var(--tt-radius-card) + 4px)" }}>
-              <Eyebrow tone="primary">Teaching philosophy</Eyebrow>
+              <Eyebrow tone="primary">{t("teach", "teachingPhilosophy")}</Eyebrow>
               <blockquote className="text-[19px] @4xl:text-[26px] leading-[1.35] italic" style={{ fontFamily: "var(--tt-font-display)" }}>
                 “{a.philosophy}”
               </blockquote>
@@ -826,7 +870,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
         ) : null}
         {a.about ? (
           <section className="px-6 @4xl:px-0 flex flex-col gap-2.5">
-            <SectionHeader title="About me" />
+            <SectionHeader title={t("teach", "aboutMe")} />
             <p dir="auto" className="text-[14.5px] @4xl:text-[16px] leading-[1.65] @4xl:leading-[1.75] whitespace-pre-line @4xl:max-w-[68ch]" style={{ color: "var(--rbr-text-muted)" }}>
               {a.about}
             </p>
@@ -834,7 +878,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
         ) : null}
         {a.styles.length > 0 ? (
           <section className="px-6 @4xl:px-0 flex flex-col gap-2.5">
-            <SectionHeader title="Styles I teach" />
+            <SectionHeader title={t("teach", "stylesITeach")} />
             <div className="flex flex-wrap gap-2">
               {a.styles.map((st) => (
                 <Chip key={st}>{st}</Chip>
@@ -845,7 +889,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
         {data.gallery.length > 0 ? (
           <section className="px-4 @4xl:px-0 flex flex-col gap-2.5">
             <div className="px-2 @4xl:px-0">
-              <SectionHeader title="Gallery" />
+              <SectionHeader title={t("common", "gallery")} />
             </div>
             <div className="grid grid-cols-2 @xl:grid-cols-3 gap-2 @4xl:gap-3">
               {data.gallery.map((g, i) => (
@@ -853,7 +897,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
                   key={g.id}
                   src={url(g.imageRef)}
                   focal={g.metadata.imagePosition}
-                  alt={g.title || `Gallery photo ${i + 1}`}
+                  alt={g.title || t("teach", "galleryPhoto", { index: i + 1 })}
                   className={`w-full ${i % 3 === 0 ? "h-[220px] @4xl:h-[300px]" : "h-[140px] @4xl:h-[200px]"}`}
                   style={{ borderRadius: "var(--tt-radius-image)" }}
                 />
@@ -864,7 +908,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
         {data.certificates.length > 0 ? (
           <section className="px-4 @4xl:px-0 flex flex-col gap-2.5">
             <div className="px-2 @4xl:px-0">
-              <SectionHeader title="Training & certificates" />
+              <SectionHeader title={t("teach", "trainingCerts")} />
             </div>
             <ul className="flex flex-col gap-2.5 @4xl:grid @4xl:grid-cols-2 @4xl:gap-3">
               {data.certificates.map((c) => (

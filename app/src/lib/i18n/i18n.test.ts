@@ -82,12 +82,15 @@ describe("translation and fallback", () => {
   it("only repeats English where the word is genuinely the same", () => {
     // Proper nouns and borrowings legitimately match; anything else
     // matching English means it was never translated.
-    // Identical by language, not by omission: "Optional", "WhatsApp" and
-    // "Team" are the same word in German, and "Team" is a loanword in use.
+    // Identical by language, not by omission. "Optional", "Website",
+    // "Pause" and "Team" are the same word in German; "Team" and
+    // "WhatsApp" are in everyday use in Hebrew-language interfaces too.
     const allowed = new Set([
       "flow.whatsapp",
       "flow.navTeam",
       "common.optional",
+      "common.website",
+      "common.pause",
     ]);
     for (const locale of ["he", "de"] as const) {
       const unexpected = untranslatedKeys(locale).filter((k) => !allowed.has(k));

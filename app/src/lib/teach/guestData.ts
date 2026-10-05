@@ -12,7 +12,7 @@ import {
   type TeachSettings,
 } from "./schemas";
 import { expandClassesForWindow, guestWindow } from "./recurrence";
-import { resolveLocale, type Locale } from "@/lib/i18n";
+import { DEFAULT_LOCALE, resolveLocale, translate, type Locale } from "@/lib/i18n";
 
 /**
  * Everything the Time to Teach Guest App renders. Built from the published
@@ -61,11 +61,12 @@ export type PublishedTeachRow = {
   modules: unknown;
 };
 
-export function brandFromPublishedTheme(name: string, theme: unknown): BrandConfig {
+export function brandFromPublishedTheme(name: string, theme: unknown, locale: Locale = DEFAULT_LOCALE): BrandConfig {
   const parsed = publishedThemeSchema.safeParse(theme);
   const t = parsed.success ? parsed.data : DEFAULT_PUBLISHED_THEME;
   return {
-    name: name || "Teacher",
+    // Defensive only - a published Space always has a name.
+    name: name || translate(locale, "teach", "teacherFallback"),
     logoRef: null,
     palette: t.palette as PaletteKey,
     customPrimary: t.customPrimary ?? null,
