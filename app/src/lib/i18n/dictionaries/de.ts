@@ -355,6 +355,127 @@ export const de: Dictionary = {
     gateAskOwner: "Frag den Inhaber dieses Space nach dem Zugangscode.",
     mealsHeading: "Heutige {em}",
     mealsHeadingEm: "Mahlzeiten",
+
+    // ---- Studio: Identity step ----
+    identityTitle: "Erzähl uns von deinem Retreat",
+    identityBody: "Diese Angaben erscheinen überall in der Gäste-Erfahrung und helfen deinen Gästen, sich zurechtzufinden und willkommen zu fühlen.",
+    retreatDetails: "Retreat-Details",
+    retreatName: "Name des Retreats",
+    retreatNamePlaceholder: "z. B. Wonderland Healing Center",
+    timezone: "Zeitzone",
+    timezoneHelp: "Zeitplan und „heute“ richten sich danach, nicht nach dem Gerät deiner Gäste.",
+    guestAddress: "Gäste-Adresse",
+    guestAddressBody: "Hier finden deine Gäste deinen Space, sobald er live ist. Du kannst sie jetzt reservieren und weiterbauen - sie bleibt dir erhalten.",
+    reservedSuccessfully: "Erfolgreich reserviert.",
+    retreatLogo: "Retreat-Logo",
+    spaceImageBody: "Steht für den Space selbst - du siehst sie unter Meine Spaces, getrennt vom Titelbild, das deine Gäste auf „Heute“ sehen.",
+    saveIdentityForLogo: "Speichere zuerst die Identität, um den Logo-Upload freizuschalten.",
+    saveIdentityForSpaceImage: "Speichere zuerst die Identität, um den Space-Bild-Upload freizuschalten.",
+    saveIdentityForPhotos: "Speichere zuerst die Identität, um Foto-Uploads freizuschalten.",
+    continueToBrand: "Weiter zur Marke",
+
+    // ---- Studio: Brand step ----
+    brandTitle: "Gestalte deine Erfahrung",
+    heroPhotographyBody: "Das Hauptbild, das deine Gäste auf „Heute“ sehen.",
+    readabilitySample: "Aa",
+    textColourTooLight: "Deine Text-Farbe ist für sich genommen vielleicht zu hell - wir dunkeln sie automatisch ab, wo es nötig ist, damit Text für Gäste immer lesbar bleibt.",
+    continueToModules: "Weiter zu den Modulen",
+
+    // ---- Studio: Modules step ----
+    modulesTitle: "Wähle, worauf deine Gäste zugreifen können",
+    toggleModule: "{module} ein- oder ausschalten",
+    todayAlwaysIncluded: "„Heute“ ist immer dabei",
+    todayAlwaysIncludedBody: "Der „Heute“-Screen ist der Kern der Gäste-Erfahrung und lässt sich nicht abschalten. Er speist sich automatisch aus deinen aktiven Modulen.",
+    notYetAvailable: "Noch nicht verfügbar.",
+    moduleScheduleDesc: "Dein Retreat-Programm und die täglichen Einheiten.",
+    moduleFacilitatorsDesc: "Stell die Menschen vor, die die Erfahrung begleiten.",
+    moduleMealsDesc: "Teile Essenszeiten, Menüs und Ernährungsinfos.",
+    moduleTreatmentsDesc: "Zeig, welche Heil- und Körperarbeit verfügbar ist.",
+    moduleFacilitiesDesc: "Hilf deinen Gästen, die Räume um sie herum zu entdecken.",
+    moduleArrivalDesc: "Alles, was deine Gäste vor der Ankunft brauchen.",
+    moduleInspirationDesc: "Ein Satz Inspiration, jeden Tag auf „Heute“.",
+    moduleFaqDesc: "Beantworte Fragen, die Gäste vor und während ihres Aufenthalts stellen.",
+    moduleCustomPagesDesc: "Füge eigene Seiten hinzu - Was mitbringen, Richtlinien, was du brauchst.",
+    moduleStayConnectedDesc: "Teile Instagram, Website und weitere Links.",
+
+    // ---- Studio: Schedule step ----
+    stepScheduleTitle: "Stell deinen Zeitplan zusammen",
+    stepScheduleBody: "Füge für jeden Tag deines Retreats Einheiten hinzu und ordne sie. Deine Gäste sehen das im Zeitplan.",
+    editSession: "Einheit bearbeiten",
+    sessionTitle: "Titel der Einheit",
+    sessionTitlePlaceholder: "z. B. Morgen-Yoga-Flow",
+    facilitator: "Begleitung",
+    facilitatorPlaceholder: "z. B. Maya Cohen",
+    locationPlaceholder: "z. B. Yoga-Shala",
+    endTimeOptional: "Endzeit (optional)",
+    notesOptional: "Notizen (optional)",
+    notesPlaceholder: "Zusätzliche Infos für Gäste",
+
+    // ---- Studio: Facilitators step ----
+    addFacilitatorsTitle: "Füge deine Begleitung hinzu",
+    addFacilitatorsBody: "Dein Team erscheint im Team-Screen. Fotos sind hier besonders wichtig - lade die besten hoch, die du hast.",
+    noFacilitatorsYet: "Noch keine Begleitung",
+    noPhotoYet: "Noch kein Foto",
+    addFacilitator: "Begleitung hinzufügen",
+    fullName: "Vollständiger Name",
+    role: "Rolle",
+    rolePlaceholder: "z. B. Yoga- & Atemarbeit-Begleitung",
+    shortBiography: "Kurze Biografie",
+    bioPlaceholder: "Ein paar Sätze über diese Person…",
+    specialties: "Spezialgebiete (mit Komma getrennt)",
+    specialtiesPlaceholder: "Vinyasa Flow, Pranayama, Atemarbeit",
+    socialLinksOptional: "Social-Links (optional)",
+    removeLinkOf: "{platform}-Link entfernen",
+    pasteLinkOf: "{platform}-Link einfügen",
+    linkMustBeHttps: "Gib einen vollständigen Link ein, der mit https:// beginnt (oder lass das Feld leer).",
+
+    // ---- Studio: Preview & Publish step ----
+    previewPublishBody: "Sieh deine Änderungen durch und veröffentliche, wenn du bereit bist. Deine Live-Guest-App aktualisiert sich nur, wenn du veröffentlichst.",
+    guestAppIsLive: "Deine Guest App ist live",
+    viewGuestApp: "Guest App ansehen",
+    viewLiveGuestApp: "Live-Guest-App ansehen",
+    chooseAddressInIdentity: "Wähle eine Adresse unter Identität",
+    shareAndQr: "Teilen & QR-Code",
+    resumeDraftLater: "Diesen Entwurf später über diesen Link fortsetzen",
+
+    // ---- Studio: readiness checklist ----
+    needRetreatName: "Füge unter Identität den Namen deines Retreats hinzu.",
+    needAddress: "Wähle unter Identität eine Adresse.",
+    needCoverImage: "Füge unter Marke ein Titelbild hinzu, damit deine Guest App einen einladenden ersten Eindruck macht.",
+    needSchedule: "Füge mindestens einen Zeitplan-Eintrag hinzu, damit deine Gäste wissen, was passiert.",
+    needFacilitators: "Füge die Menschen hinzu, die dein Retreat begleiten.",
+    navContent: "Inhalt",
+
+    // ---- Studio: module names, as the Studio lists them ----
+    moduleArrivalInfo: "Ankunftsinfos",
+    moduleCustomPages: "Eigene Seiten",
+    moduleDailyInspiration: "Täglicher Impuls",
+
+    // ---- Studio: session categories (a fixed system taxonomy) ----
+    catYoga: "Yoga",
+    catMeditation: "Meditation",
+    catBreathwork: "Atemarbeit",
+    catSound: "Klang",
+    catCommunity: "Gemeinschaft",
+    catOther: "Sonstiges",
+
+    // ---- Studio: schedule and facilitator empty states ----
+    untitledSession: "Einheit ohne Titel",
+    noSessionsYet: "Noch keine Einheiten",
+    nothingThisDay: "An diesem Tag ist nichts geplant",
+    noSessionsBody: "Füge die Einheiten, Mahlzeiten und Aktivitäten hinzu, die deine Gäste im Zeitplan sehen. Starte unten mit + Einheit hinzufügen.",
+    noFacilitatorsBody: "Füge die Lehrenden und Gastgebenden deines Retreats hinzu - ein Foto und eine kurze Biografie machen den Team-Screen persönlich. Starte unten mit der Kachel Begleitung hinzufügen.",
+    unnamed: "Ohne Namen",
+    noRoleSet: "Keine Rolle angegeben",
+    facilitatorPhotoHint: "Empfohlen: Hoch- oder quadratisches Foto, nach dem Zuschnitt etwa 13:10 - wir verankern oben, halte Gesichter also im oberen Bereich.",
+    myRetreatFallback: "Mein Retreat",
+
+    // ---- Module catalog labels (the Studio's own module list) ----
+    moduleFacilitatorsLabel: "Begleitung / Lehrende",
+    moduleResources: "Materialien",
+    moduleAudio: "Audio",
+    moduleAnnouncements: "Mitteilungen",
+    moduleCoverImageOf: "Titelbild für {module}",
   },
   studio: {
     // Shell and navigation
@@ -431,6 +552,34 @@ export const de: Dictionary = {
     imageNotProcessed: "Dieses Bild konnte nicht verarbeitet werden. Versuch eine andere Datei.",
     someDetailsInvalid: "Einige Angaben waren nicht gültig.",
     someLinksInvalid: "Einige Links waren nicht gültig.",
+
+    // Save actions. The section name is a parameter so there is one
+    // key, not one per section ("Save Schedule", "Save Modules", ...).
+    saveSection: "{section} speichern",
+    saveDraft: "Entwurf speichern",
+    saveAndContinue: "Speichern und weiter",
+    publishing: "Veröffentlichung",
+    publishingNow: "Wird veröffentlicht…",
+    republish: "Neu veröffentlichen",
+    notVisibleUntilPublish: "Für Gäste ist nichts sichtbar, bis du veröffentlichst.",
+    notVisibleUntilRepublish: "Deine Gäste sehen weitere Änderungen erst, wenn du neu veröffentlichst.",
+
+    // Guest App address availability
+    checkAvailability: "Verfügbarkeit prüfen",
+    checking: "Wird geprüft…",
+    currentAddress: "Das ist die aktuelle Adresse deines Space.",
+    addressRules: "Nur Kleinbuchstaben, Zahlen und Bindestriche (3-63 Zeichen).",
+    addressReserved: "Diese Adresse ist reserviert.",
+    addressAvailable: "Verfügbar.",
+    addressTaken: "Diese Adresse ist schon belegt.",
+    reserveAddress: "Diese Adresse reservieren",
+    reserving: "Wird reserviert…",
+
+    // Readability check
+    contrastGood: "Der Kontrast sieht gut aus",
+    contrastLow: "Der Kontrast ist möglicherweise zu gering",
+    swatchDark: "Dunkel",
+    swatchWhite: "Weiß",
   },
 
 };

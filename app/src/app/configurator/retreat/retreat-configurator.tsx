@@ -27,7 +27,7 @@ import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
 import { BrandImageField } from "./brand-image-field";
 import { PALETTES, GUEST_BASE_PALETTE, type AtmosphereKey, type PaletteKey } from "@/lib/theme/tokens";
 import { safeTextColor, meetsAA } from "@/lib/theme/contrast";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, StudioIntro, StudioEyebrowContext } from "./studio-ui";
+import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, StudioIntro, StudioEyebrowContext, ForwardArrow } from "./studio-ui";
 import { StudioTopBar } from "@/components/studio/studio-top-bar";
 import { saveStatusLabel, PREVIEW_DRAFT_LABEL, PREVIEW_DRAFT_CAPTION, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
 import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
@@ -50,9 +50,11 @@ import type { EditableFaqItem } from "@/lib/modules/faq";
 import type { EditableCustomPage } from "@/lib/modules/customPage";
 import type { StayConnected } from "@/lib/modules/stayConnected";
 import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL, isLikelyValidUrl, type SocialPlatform } from "@/lib/modules/socialLinks";
-import { IMPLEMENTED_OPTIONAL_MODULES, OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
+import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
 import { todayInTimezone, currentTimeInTimezone, timezoneOptions, timezoneSelectValue, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { moduleLabel } from "@/lib/modules/catalog";
 import {
   saveDraft,
   saveSchedule,
@@ -73,6 +75,9 @@ import {
 
 export type RetreatConfiguratorProps = {
   initialTenantId: string | null;
+  /** The Space's system language. A brand-new Space has none yet, so
+   * the Studio starts in English until the organizer picks one. */
+  initialLocale?: Locale;
   initialName: string;
   initialSlug: string | null;
   initialStep?: StepKey;
@@ -167,16 +172,19 @@ type StepKey =
   | "share"
   | "featured";
 
-const STEP_LABELS: Record<Exclude<StepKey, "identity" | "brand" | "modules" | "publish" | "share" | "featured">, string> = {
-  schedule: "Schedule",
-  facilitators: "Facilitators",
-  meals: "Meals",
-  treatments: "Treatments",
-  facilities: "Facilities",
-  arrivalInfo: "Arrival Info",
-  faq: "FAQ",
-  customPages: "Custom Pages",
-  stayConnected: "Stay Connected",
+type ContentStepKey = Exclude<StepKey, "identity" | "brand" | "modules" | "publish" | "share" | "featured">;
+
+/** Translation keys, not labels - resolved per render in the Space language. */
+const STEP_LABEL_KEYS: Record<ContentStepKey, "navSchedule" | "facilitators" | "meals" | "treatments" | "facilities" | "moduleArrivalInfo" | "faq" | "moduleCustomPages" | "stayConnected"> = {
+  schedule: "navSchedule",
+  facilitators: "facilitators",
+  meals: "meals",
+  treatments: "treatments",
+  facilities: "facilities",
+  arrivalInfo: "moduleArrivalInfo",
+  faq: "faq",
+  customPages: "moduleCustomPages",
+  stayConnected: "stayConnected",
 };
 
 const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
@@ -192,7 +200,8 @@ function swatchesFor(role: "primary" | "accent" | "navigation" | "text" | "surfa
  * palette) plus a free custom-hex input. Only the bound role, value and
  * swatch list differ.
  */
-function ColorPicker({ label, hint, value, swatches, onChange }: { label: string; hint: string; value: string; swatches: readonly { label: string; hex: string }[]; onChange: (hex: string) => void }) {
+function ColorPicker({ label, hint, value, swatches, onChange, locale }: { label: string; hint: string; value: string; swatches: readonly { label: string; hex: string }[]; onChange: (hex: string) => void; locale: Locale }) {
+  const { t } = createTranslator(locale);
   const [draft, setDraft] = useState(value);
   const [showError, setShowError] = useState(false);
   // Task 015 UX fix: typing "2D4A3E" (no leading #) is a common, obviously
@@ -274,7 +283,7 @@ function ColorPicker({ label, hint, value, swatches, onChange }: { label: string
           style={{ color: GUEST_BASE_PALETTE.forest }}
         />
         <span className="text-[10px] shrink-0" style={{ color: GUEST_BASE_PALETTE.mist }}>
-          Custom hex
+          {t("studio", "customHex")}
         </span>
       </div>
       {showError && (
@@ -286,20 +295,33 @@ function ColorPicker({ label, hint, value, swatches, onChange }: { label: string
   );
 }
 
-const MODULE_META: Record<OptionalModuleKey, { icon: string; description: string }> = {
-  schedule: { icon: "📅", description: "Your retreat program and daily sessions." },
-  facilitators: { icon: "👥", description: "Introduce the people guiding the experience." },
-  meals: { icon: "🌿", description: "Share meal times, menus and dietary information." },
-  treatments: { icon: "✦", description: "Present available healing and bodywork experiences." },
-  facilities: { icon: "⌂", description: "Help guests discover the spaces around them." },
-  arrivalInfo: { icon: "→", description: "Everything guests need before they arrive." },
-  dailyInspiration: { icon: "☾", description: "One inspirational sentence, shown each day on Today." },
-  faq: { icon: "?", description: "Answer common questions guests ask before and during their stay." },
-  customPages: { icon: "▤", description: "Add your own pages - What to Bring, Guidelines, anything you need." },
-  stayConnected: { icon: "@", description: "Share your Instagram, website and other social links." },
-  resources: { icon: "◇", description: "Not yet available." },
-  audio: { icon: "◇", description: "Not yet available." },
-  announcements: { icon: "◇", description: "Not yet available." },
+type ModuleDescriptionKey =
+  | "moduleScheduleDesc"
+  | "moduleFacilitatorsDesc"
+  | "moduleMealsDesc"
+  | "moduleTreatmentsDesc"
+  | "moduleFacilitiesDesc"
+  | "moduleArrivalDesc"
+  | "moduleInspirationDesc"
+  | "moduleFaqDesc"
+  | "moduleCustomPagesDesc"
+  | "moduleStayConnectedDesc"
+  | "notYetAvailable";
+
+const MODULE_META: Record<OptionalModuleKey, { icon: string; descriptionKey: ModuleDescriptionKey }> = {
+  schedule: { icon: "📅", descriptionKey: "moduleScheduleDesc" },
+  facilitators: { icon: "👥", descriptionKey: "moduleFacilitatorsDesc" },
+  meals: { icon: "🌿", descriptionKey: "moduleMealsDesc" },
+  treatments: { icon: "✦", descriptionKey: "moduleTreatmentsDesc" },
+  facilities: { icon: "⌂", descriptionKey: "moduleFacilitiesDesc" },
+  arrivalInfo: { icon: "→", descriptionKey: "moduleArrivalDesc" },
+  dailyInspiration: { icon: "☾", descriptionKey: "moduleInspirationDesc" },
+  faq: { icon: "?", descriptionKey: "moduleFaqDesc" },
+  customPages: { icon: "▤", descriptionKey: "moduleCustomPagesDesc" },
+  stayConnected: { icon: "@", descriptionKey: "moduleStayConnectedDesc" },
+  resources: { icon: "◇", descriptionKey: "notYetAvailable" },
+  audio: { icon: "◇", descriptionKey: "notYetAvailable" },
+  announcements: { icon: "◇", descriptionKey: "notYetAvailable" },
 };
 
 /**
@@ -320,7 +342,23 @@ const EXPLORE_CARD_MODULE_KEYS = new Set<OptionalModuleKey>([
   "stayConnected",
 ]);
 
-const SCHEDULE_CATEGORIES = ["Yoga", "Meditation", "Breathwork", "Sound", "Meal", "Community", "Other"];
+/**
+ * Session categories.
+ *
+ * The VALUE is canonical English and is what gets stored, matched and
+ * styled (STUDIO_CATEGORY_CHIP, and the Guest schedule's own chip map).
+ * Only the label is translated - otherwise switching a Space to Hebrew
+ * would silently rewrite every stored category and lose its styling.
+ */
+const SCHEDULE_CATEGORIES: { value: string; key: "catYoga" | "catMeditation" | "catBreathwork" | "catSound" | "sessionMeal" | "catCommunity" | "catOther" }[] = [
+  { value: "Yoga", key: "catYoga" },
+  { value: "Meditation", key: "catMeditation" },
+  { value: "Breathwork", key: "catBreathwork" },
+  { value: "Sound", key: "catSound" },
+  { value: "Meal", key: "sessionMeal" },
+  { value: "Community", key: "catCommunity" },
+  { value: "Other", key: "catOther" },
+];
 
 const STUDIO_CATEGORY_CHIP: Record<string, { background: string; color: string }> = {
   Meditation: { background: `${GUEST_BASE_PALETTE.sagePale}99`, color: GUEST_BASE_PALETTE.forest },
@@ -355,6 +393,7 @@ function studioDayStrip(dateIso: string): { weekday: string; day: string } {
  * inventing a new one.
  */
 function ScheduleEditor({
+  locale,
   schedule,
   setSchedule,
   updateScheduleItem,
@@ -371,8 +410,10 @@ function ScheduleEditor({
   scheduleState: SaveScheduleState;
   schedulePending: boolean;
   handleSaveSchedule: () => void;
+  locale: Locale;
   goToStep: (delta: 1 | -1) => void;
 }) {
+  const { t } = createTranslator(locale);
   const dates = useMemo(() => Array.from(new Set(schedule.map((s) => s.date))).sort(), [schedule]);
   const [activeDate, setActiveDate] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
@@ -404,8 +445,8 @@ function ScheduleEditor({
 
   return (
     <div className="max-w-2xl">
-      <StudioHeading>Build your schedule</StudioHeading>
-      <StudioIntro>Add and arrange sessions for each day of your retreat. Your guests see this on the Schedule screen.</StudioIntro>
+      <StudioHeading>{t("flow", "stepScheduleTitle")}</StudioHeading>
+      <StudioIntro>{t("flow", "stepScheduleBody")}</StudioIntro>
 
       {dates.length > 0 && (
         <div className="flex gap-2 overflow-x-auto pb-1 mb-6">
@@ -462,7 +503,7 @@ function ScheduleEditor({
               </span>
               <div className="flex-1 min-w-0">
                 <p className="text-[13px] font-medium truncate" style={{ color: GUEST_BASE_PALETTE.forest }}>
-                  {item.title || "Untitled session"}
+                  {item.title || t("flow", "untitledSession")}
                 </p>
                 <p className="text-[11px] mt-0.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
                   {item.facilitator ? `${item.facilitator} · ` : ""}
@@ -484,7 +525,7 @@ function ScheduleEditor({
                   className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
-                  Edit
+                  {t("common", "edit")}
                 </button>
                 <button
                   type="button"
@@ -492,7 +533,7 @@ function ScheduleEditor({
                   className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
-                  Remove
+                  {t("common", "remove")}
                 </button>
               </div>
             </div>
@@ -500,8 +541,8 @@ function ScheduleEditor({
         })}
         {dayItems.length === 0 && (
           <EmptyState
-            title={currentDate === null ? "No sessions yet" : "Nothing scheduled this day"}
-            body="Add the sessions, meals and activities guests will see on the Schedule screen. Use + Add Session below to start."
+            title={currentDate === null ? t("flow", "noSessionsYet") : t("flow", "nothingThisDay")}
+            body={t("flow", "noSessionsBody")}
           />
         )}
       </div>
@@ -519,15 +560,15 @@ function ScheduleEditor({
         <div className="rounded-2xl border p-5" style={{ background: GUEST_BASE_PALETTE.parchmentDeep, borderColor: "rgba(45,74,62,0.15)" }}>
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
-              Edit Session
+              {t("flow", "editSession")}
             </h4>
             <button type="button" onClick={closePanel} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-              Done
+              {t("common", "done")}
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <StudioLabel>Start time</StudioLabel>
+              <StudioLabel>{t("common", "startTime")}</StudioLabel>
               <input
                 type="time"
                 value={editing.startTime}
@@ -536,7 +577,7 @@ function ScheduleEditor({
               />
             </div>
             <div>
-              <StudioLabel>End time (optional)</StudioLabel>
+              <StudioLabel>{t("flow", "endTimeOptional")}</StudioLabel>
               <input
                 type="time"
                 value={editing.endTime ?? ""}
@@ -545,34 +586,34 @@ function ScheduleEditor({
               />
             </div>
             <div className="col-span-2">
-              <StudioLabel>Session title</StudioLabel>
+              <StudioLabel>{t("flow", "sessionTitle")}</StudioLabel>
               <input
                 value={editing.title}
                 onChange={(e) => updateScheduleItem(editing.id, { title: e.target.value })}
-                placeholder="e.g. Morning Yoga Flow"
+                placeholder={t("flow", "sessionTitlePlaceholder")}
                 className={STUDIO_INPUT_CLASS}
               />
             </div>
             <div>
-              <StudioLabel>Facilitator</StudioLabel>
+              <StudioLabel>{t("flow", "facilitator")}</StudioLabel>
               <input
                 value={editing.facilitator ?? ""}
                 onChange={(e) => updateScheduleItem(editing.id, { facilitator: e.target.value || null })}
-                placeholder="e.g. Maya Cohen"
+                placeholder={t("flow", "facilitatorPlaceholder")}
                 className={STUDIO_INPUT_CLASS}
               />
             </div>
             <div>
-              <StudioLabel>Location</StudioLabel>
+              <StudioLabel>{t("common", "location")}</StudioLabel>
               <input
                 value={editing.location ?? ""}
                 onChange={(e) => updateScheduleItem(editing.id, { location: e.target.value || null })}
-                placeholder="e.g. Yoga Shala"
+                placeholder={t("flow", "locationPlaceholder")}
                 className={STUDIO_INPUT_CLASS}
               />
             </div>
             <div>
-              <StudioLabel>Date</StudioLabel>
+              <StudioLabel>{t("common", "date")}</StudioLabel>
               <input
                 type="date"
                 value={editing.date}
@@ -584,26 +625,26 @@ function ScheduleEditor({
               />
             </div>
             <div>
-              <StudioLabel>Category</StudioLabel>
+              <StudioLabel>{t("common", "category")}</StudioLabel>
               <select
                 value={editing.category ?? ""}
                 onChange={(e) => updateScheduleItem(editing.id, { category: e.target.value || null })}
                 className={STUDIO_INPUT_CLASS}
               >
-                <option value="">None</option>
+                <option value="">{t("common", "none")}</option>
                 {SCHEDULE_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
+                  <option key={c.value} value={c.value}>
+                    {t("flow", c.key)}
                   </option>
                 ))}
               </select>
             </div>
             <div className="col-span-2">
-              <StudioLabel>Notes (optional)</StudioLabel>
+              <StudioLabel>{t("flow", "notesOptional")}</StudioLabel>
               <input
                 value={editing.description ?? ""}
                 onChange={(e) => updateScheduleItem(editing.id, { description: e.target.value || null })}
-                placeholder="Extra information for guests"
+                placeholder={t("flow", "notesPlaceholder")}
                 className={STUDIO_INPUT_CLASS}
               />
             </div>
@@ -623,7 +664,7 @@ function ScheduleEditor({
           onClick={() => goToStep(-1)}
           className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3"
         >
-          Back
+          {t("common", "back")}
         </button>
         <button
           type="button"
@@ -638,7 +679,7 @@ function ScheduleEditor({
           onClick={() => goToStep(1)}
           className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
         >
-          Continue →
+          {t("common", "next")} <ForwardArrow />
         </button>
       </div>
     </div>
@@ -657,6 +698,7 @@ function ScheduleEditor({
  * repositioned into this new layout.
  */
 function TeamEditor({
+  locale,
   facilitators,
   setFacilitators,
   updateFacilitator,
@@ -673,8 +715,10 @@ function TeamEditor({
   facilitatorsState: SaveFacilitatorsState;
   facilitatorsPending: boolean;
   handleSaveFacilitators: () => void;
+  locale: Locale;
   goToStep: (delta: 1 | -1) => void;
 }) {
+  const { t } = createTranslator(locale);
   const [editId, setEditId] = useState<string | null>(null);
   const editing = editId ? (facilitators.find((f) => f.id === editId) ?? null) : null;
 
@@ -693,14 +737,14 @@ function TeamEditor({
 
   return (
     <div className="max-w-2xl">
-      <StudioHeading>Add your facilitators</StudioHeading>
-      <StudioIntro>Your team appears on the Team screen. Photos are especially important here - upload the best you have.</StudioIntro>
+      <StudioHeading>{t("flow", "addFacilitatorsTitle")}</StudioHeading>
+      <StudioIntro>{t("flow", "addFacilitatorsBody")}</StudioIntro>
 
       {facilitators.length === 0 && (
         <div className="mb-4">
           <EmptyState
-            title="No facilitators yet"
-            body="Add the teachers and hosts guiding your retreat - a photo and a short bio make the Team screen feel personal. Use the Add Facilitator tile below to start."
+            title={t("flow", "noFacilitatorsYet")}
+            body={t("flow", "noFacilitatorsBody")}
           />
         </div>
       )}
@@ -728,19 +772,19 @@ function TeamEditor({
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                    No photo yet
+                    {t("flow", "noPhotoYet")}
                   </div>
                 )}
                 <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(45,74,62,0.6), transparent)" }} />
                 <div className="absolute bottom-0 left-0 right-0 p-3">
                   <p className="text-white text-[13px] font-medium leading-tight" style={{ fontFamily: "var(--font-dm-serif-display), serif" }}>
-                    {f.name || "Unnamed"}
+                    {f.name || t("flow", "unnamed")}
                   </p>
                 </div>
               </div>
               <div className="bg-white p-3">
                 <p className="text-[10px] leading-snug truncate" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                  {f.role || "No role set"}
+                  {f.role || t("flow", "noRoleSet")}
                 </p>
                 <div className="flex gap-1.5 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button
@@ -749,7 +793,7 @@ function TeamEditor({
                     className="flex-1 text-[10px] py-1 rounded-lg border transition-colors"
                     style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                   >
-                    Edit
+                    {t("common", "edit")}
                   </button>
                   <button
                     type="button"
@@ -757,7 +801,7 @@ function TeamEditor({
                     className="flex-1 text-[10px] py-1 rounded-lg border transition-colors"
                     style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                   >
-                    Remove
+                    {t("common", "remove")}
                   </button>
                 </div>
               </div>
@@ -776,7 +820,7 @@ function TeamEditor({
                     onChange={(patch) => updateFacilitator(f.id, { ...patch, imagePosition: null })}
                     previewAspect="13/10"
                     previewPosition={objectPositionStyle(f.imagePosition, FACILITATOR_DEFAULT_POSITION)}
-                    ratioHint="Recommended: portrait or square photo, about 13:10 once cropped - we anchor to the top, so keep faces near the upper frame."
+                    ratioHint={t("flow", "facilitatorPhotoHint")}
                   />
                   {f.imageUrl && (
                     <FocalPointPicker
@@ -802,7 +846,7 @@ function TeamEditor({
           <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ borderColor: `${GUEST_BASE_PALETTE.sand}b3` }}>
             +
           </div>
-          <span className="text-[11px] font-medium">Add Facilitator</span>
+          <span className="text-[11px] font-medium">{t("flow", "addFacilitator")}</span>
         </button>
       </div>
 
@@ -813,40 +857,40 @@ function TeamEditor({
               Editing {editing.name || "facilitator"}
             </h4>
             <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-              Done
+              {t("common", "done")}
             </button>
           </div>
           <div className="space-y-3">
             <div>
-              <StudioLabel>Full name</StudioLabel>
+              <StudioLabel>{t("flow", "fullName")}</StudioLabel>
               <input
                 value={editing.name}
                 onChange={(e) => updateFacilitator(editing.id, { name: e.target.value })}
-                placeholder="e.g. Maya Cohen"
+                placeholder={t("flow", "facilitatorPlaceholder")}
                 className={STUDIO_INPUT_CLASS}
               />
             </div>
             <div>
-              <StudioLabel>Role</StudioLabel>
+              <StudioLabel>{t("flow", "role")}</StudioLabel>
               <input
                 value={editing.role ?? ""}
                 onChange={(e) => updateFacilitator(editing.id, { role: e.target.value || null })}
-                placeholder="e.g. Yoga & Breathwork Facilitator"
+                placeholder={t("flow", "rolePlaceholder")}
                 className={STUDIO_INPUT_CLASS}
               />
             </div>
             <div>
-              <StudioLabel>Short biography</StudioLabel>
+              <StudioLabel>{t("flow", "shortBiography")}</StudioLabel>
               <textarea
                 value={editing.bio ?? ""}
                 onChange={(e) => updateFacilitator(editing.id, { bio: e.target.value || null })}
-                placeholder="A few sentences about this facilitator…"
+                placeholder={t("flow", "bioPlaceholder")}
                 rows={3}
                 className={`${STUDIO_INPUT_CLASS} resize-none`}
               />
             </div>
             <div>
-              <StudioLabel>Specialties (comma-separated)</StudioLabel>
+              <StudioLabel>{t("flow", "specialties")}</StudioLabel>
               <input
                 defaultValue={editing.specialties.join(", ")}
                 onBlur={(e) =>
@@ -857,12 +901,12 @@ function TeamEditor({
                       .filter(Boolean),
                   })
                 }
-                placeholder="Vinyasa Flow, Pranayama, Breathwork"
+                placeholder={t("flow", "specialtiesPlaceholder")}
                 className={STUDIO_INPUT_CLASS}
               />
             </div>
             <div>
-              <StudioLabel>Social links (optional)</StudioLabel>
+              <StudioLabel>{t("flow", "socialLinksOptional")}</StudioLabel>
               <div className="space-y-3">
                 {editing.socialLinks.map((link, i) => {
                   // Task 015 UX fix: platform+remove and the URL field were
@@ -897,7 +941,7 @@ function TeamEditor({
                         <button
                           type="button"
                           onClick={() => updateFacilitator(editing.id, { socialLinks: editing.socialLinks.filter((_, li) => li !== i) })}
-                          aria-label={`Remove ${SOCIAL_PLATFORM_LABEL[link.platform]} link`}
+                          aria-label={t("flow", "removeLinkOf", { platform: SOCIAL_PLATFORM_LABEL[link.platform] })}
                           className="inline-flex items-center justify-center w-11 h-11 shrink-0 rounded-xl border transition-colors"
                           style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                         >
@@ -919,13 +963,13 @@ function TeamEditor({
                             socialLinks: editing.socialLinks.map((l, li) => (li === i ? { ...l, url: e.target.value } : l)),
                           })
                         }
-                        placeholder={`Paste ${SOCIAL_PLATFORM_LABEL[link.platform]} link`}
+                        placeholder={t("flow", "pasteLinkOf", { platform: SOCIAL_PLATFORM_LABEL[link.platform] })}
                         aria-invalid={urlInvalid}
                         className={`${STUDIO_INPUT_CLASS} w-full mt-2`}
                       />
                       {urlInvalid && (
                         <p className="text-[11px] mt-1" style={{ color: "#B23B3B" }} role="alert">
-                          Enter a full link starting with https:// (or leave this blank).
+                          {t("flow", "linkMustBeHttps")}
                         </p>
                       )}
                     </div>
@@ -963,7 +1007,7 @@ function TeamEditor({
           onClick={() => goToStep(-1)}
           className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3"
         >
-          Back
+          {t("common", "back")}
         </button>
         <button
           type="button"
@@ -978,7 +1022,7 @@ function TeamEditor({
           onClick={() => goToStep(1)}
           className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
         >
-          Continue →
+          {t("common", "next")} <ForwardArrow />
         </button>
       </div>
     </div>
@@ -987,6 +1031,7 @@ function TeamEditor({
 
 export function RetreatConfigurator({
   initialTenantId,
+  initialLocale = DEFAULT_LOCALE,
   initialName,
   initialSlug,
   initialStep,
@@ -1022,6 +1067,9 @@ export function RetreatConfigurator({
   initialFeaturedSubmission,
 }: RetreatConfiguratorProps) {
   const router = useRouter();
+  // The Studio speaks the Space's own language, so an organizer edits in
+  // the same language their guests read.
+  const { t } = createTranslator(initialLocale);
   const [step, setStep] = useState<StepKey>(initialStep ?? "identity");
   const [name, setName] = useState(initialName);
   const [timezone, setTimezone] = useState(initialTimezone || DEFAULT_TIMEZONE);
@@ -1385,16 +1433,17 @@ export function RetreatConfigurator({
 
   const steps = useMemo(() => {
     const list: { key: StepKey; label: string }[] = [
-      { key: "identity", label: "Identity" },
-      { key: "brand", label: "Brand" },
-      { key: "modules", label: "Modules" },
+      { key: "identity", label: t("studio", "navIdentity") },
+      { key: "brand", label: t("studio", "navBrand") },
+      { key: "modules", label: t("studio", "navModules") },
     ];
-    (Object.keys(STEP_LABELS) as (keyof typeof STEP_LABELS)[]).forEach((key) => {
-      if (enabledModules.has(key)) list.push({ key, label: STEP_LABELS[key] });
+    (Object.keys(STEP_LABEL_KEYS) as ContentStepKey[]).forEach((key) => {
+      if (enabledModules.has(key)) list.push({ key, label: t("flow", STEP_LABEL_KEYS[key]) });
     });
-    list.push({ key: "publish", label: "Publish" });
+    list.push({ key: "publish", label: t("studio", "publish") });
     return list;
-  }, [enabledModules]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabledModules, initialLocale]);
 
   /** Visual Fidelity Phase 1: grouped sidebar sections, matching the
    * approved Creator Workspace's "My Space" / "Content" structure - a
@@ -1405,13 +1454,15 @@ export function RetreatConfigurator({
    * own pinned sidebar action below, not inside either group. */
   const sidebarGroups = useMemo(
     () => [
-      { label: "My Space", items: steps.filter((s) => s.key === "identity" || s.key === "brand" || s.key === "modules") },
+      { label: t("studio", "mySpace"), items: steps.filter((s) => s.key === "identity" || s.key === "brand" || s.key === "modules") },
       {
-        label: "Content",
+        label: t("flow", "navContent"),
         items: steps.filter((s) => s.key !== "identity" && s.key !== "brand" && s.key !== "modules" && s.key !== "publish"),
       },
     ],
-    [steps]
+    // `t` is derived from initialLocale, which never changes for a mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [steps, initialLocale]
   );
 
   /** Generic prev/next navigation over the current step list - this is
@@ -1730,7 +1781,7 @@ export function RetreatConfigurator({
               rel="noopener noreferrer"
               className="block mt-3 text-xs text-idw-forest/60 underline text-center"
             >
-              View live guest app →
+              {t("flow", "viewLiveGuestApp")} <ForwardArrow />
             </a>
           )}
         </div>
@@ -1744,27 +1795,27 @@ export function RetreatConfigurator({
             <input type="hidden" name="tenantId" value={tenantId ?? ""} />
             <input type="hidden" name="name" value={name} />
             <input type="hidden" name="timezone" value={timezone} />
-            <StudioHeading>Tell us about your retreat</StudioHeading>
-      <StudioIntro>This information appears throughout your guest experience and helps guests feel oriented and welcomed.</StudioIntro>
+            <StudioHeading>{t("flow", "identityTitle")}</StudioHeading>
+      <StudioIntro>{t("flow", "identityBody")}</StudioIntro>
 
-            <StudioSectionSub first>Retreat Details</StudioSectionSub>
+            <StudioSectionSub first>{t("flow", "retreatDetails")}</StudioSectionSub>
             <div className="space-y-4">
               <div>
-                <StudioLabel>Retreat Name</StudioLabel>
+                <StudioLabel>{t("flow", "retreatName")}</StudioLabel>
                 <input
                   value={name}
                   onChange={(e) => {
                     setName(e.target.value);
                     dirty.markDirty("identityAndBrand");
                   }}
-                  placeholder="e.g. Wonderland Healing Center"
+                  placeholder={t("flow", "retreatNamePlaceholder")}
                   className={STUDIO_INPUT_CLASS}
                 />
               </div>
               <div>
-                <StudioLabel>Timezone</StudioLabel>
+                <StudioLabel>{t("flow", "timezone")}</StudioLabel>
                 <p className="text-[11px] mb-1.5 -mt-1" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                  Schedule times and &quot;today&quot; are based on this, not the guest&apos;s device.
+                  {t("flow", "timezoneHelp")}
                 </p>
                 <select
                   value={timezoneSelectValue(timezone)}
@@ -1783,10 +1834,9 @@ export function RetreatConfigurator({
               </div>
             </div>
 
-            <StudioSectionSub>Guest Address</StudioSectionSub>
+            <StudioSectionSub>{t("flow", "guestAddress")}</StudioSectionSub>
             <p className="text-[11px] -mt-2 mb-3" style={{ color: GUEST_BASE_PALETTE.mist }}>
-              This is where guests will find your Space once it&apos;s live. You can reserve it now and keep building
-              - it won&apos;t go anywhere.
+              {t("flow", "guestAddressBody")}
             </p>
             <div
               className="flex items-center rounded-xl border border-[#D4C5A9]/70 overflow-hidden focus-within:ring-2 focus-within:ring-[#2D4A3E]/15"
@@ -1856,18 +1906,18 @@ export function RetreatConfigurator({
             )}
             {reserveState.slug && reserveState.slug === slugInput && !reserveState.error && (
               <p className="text-xs mt-2" style={{ color: GUEST_BASE_PALETTE.sage }}>
-                Reserved successfully.
+                {t("flow", "reservedSuccessfully")}
               </p>
             )}
 
-            <StudioSectionSub>Retreat Logo</StudioSectionSub>
+            <StudioSectionSub>{t("flow", "retreatLogo")}</StudioSectionSub>
             {tenantId ? (
               <div className="max-w-[200px]">
                 <BrandImageField
                   tenantId={tenantId}
                   kind="logo"
-                  label="Upload logo"
-                  hint="SVG, PNG · transparent background preferred"
+                  label={t("studio", "uploadLogo")}
+                  hint={t("studio", "logoFormats")}
                   imageRef={logoRef}
                   imageUrl={logoUrl}
                   onChange={(patch) => {
@@ -1878,20 +1928,20 @@ export function RetreatConfigurator({
               </div>
             ) : (
               <p className="text-[12px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                Save your Identity first to unlock the logo upload.
+                {t("flow", "saveIdentityForLogo")}
               </p>
             )}
 
-            <StudioSectionSub>Space Image</StudioSectionSub>
+            <StudioSectionSub>{t("studio", "spaceImage")}</StudioSectionSub>
             <p className="text-[11px] -mt-2 mb-3" style={{ color: GUEST_BASE_PALETTE.mist }}>
-              Represents this Space itself - shown to you in My Spaces, separate from the Today Hero photo guests see.
+              {t("flow", "spaceImageBody")}
             </p>
             {tenantId ? (
               <BrandImageField
                 tenantId={tenantId}
                 kind="space"
-                label="Upload Space image"
-                hint="JPG, PNG, WebP"
+                label={t("studio", "uploadSpaceImage")}
+                hint={t("studio", "imageFormats")}
                 imageRef={spaceImageRef}
                 imageUrl={spaceImageUrl}
                 onChange={(patch) => {
@@ -1901,7 +1951,7 @@ export function RetreatConfigurator({
               />
             ) : (
               <p className="text-[12px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                Save your Identity first to unlock the Space image upload.
+                {t("flow", "saveIdentityForSpaceImage")}
               </p>
             )}
 
@@ -1911,7 +1961,7 @@ export function RetreatConfigurator({
               className="mt-8 rounded-xl text-[13px] font-medium px-4 py-2.5 transition-colors"
               style={{ background: GUEST_BASE_PALETTE.forest, color: "white" }}
             >
-              Continue to Brand
+              {t("flow", "continueToBrand")}
             </button>
           </form>
         )}
@@ -1938,7 +1988,7 @@ export function RetreatConfigurator({
             <input type="hidden" name="customNavigation" value={customNavigation ?? ""} />
             <input type="hidden" name="customText" value={customText ?? ""} />
             <input type="hidden" name="customSurface" value={customSurface ?? ""} />
-            <StudioHeading>Brand your experience</StudioHeading>
+            <StudioHeading>{t("flow", "brandTitle")}</StudioHeading>
       <StudioIntro>Choose colors that reflect your retreat&apos;s energy. InnerDweS ensures they work beautifully across
               your entire guest application.</StudioIntro>
 
@@ -1963,10 +2013,11 @@ export function RetreatConfigurator({
 
             <div id="flow-custom-colors">
             <ColorPicker
+              locale={initialLocale}
               key={`primary-${presetNonce}`}
-              label="Primary Color"
+              label={t("studio", "primaryColour")}
               swatches={swatchesFor("primary")}
-              hint="Used for key actions, navigation highlights and immersive moments."
+              hint={t("studio", "primaryColourHelp")}
               value={effectivePrimary}
               onChange={(hex) => {
                 setCustomPrimary(hex);
@@ -1974,10 +2025,11 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
+              locale={initialLocale}
               key={`accent-${presetNonce}`}
-              label="Accent Color"
+              label={t("studio", "accentColour")}
               swatches={swatchesFor("accent")}
-              hint="Used for live indicators, tags and warm highlights."
+              hint={t("studio", "accentColourHelp")}
               value={effectiveSecondary}
               onChange={(hex) => {
                 setCustomSecondary(hex);
@@ -1985,8 +2037,9 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
+              locale={initialLocale}
               key={`navigation-${presetNonce}`}
-              label="Navigation / Tabs Color"
+              label={t("studio", "navigationColour")}
               swatches={swatchesFor("navigation")}
               hint="Used for the bottom navigation's active tab, and other tab-like selections (e.g. Schedule's day picker)."
               value={effectiveNavigation}
@@ -1996,10 +2049,11 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
+              locale={initialLocale}
               key={`surface-${presetNonce}`}
-              label="App Background"
+              label={t("studio", "backgroundTint")}
               swatches={swatchesFor("surface")}
-              hint="The page tint behind every screen. Leave it as-is to keep the default parchment ground."
+              hint={t("studio", "backgroundTintHelp")}
               value={effectiveSurface}
               onChange={(hex) => {
                 setCustomSurface(hex);
@@ -2007,10 +2061,11 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
+              locale={initialLocale}
               key={`text-${presetNonce}`}
-              label="App Text Color"
+              label={t("studio", "textColour")}
               swatches={swatchesFor("text")}
-              hint="Used for headings, session titles and quote text."
+              hint={t("studio", "textColourHelp")}
               value={effectiveText}
               onChange={(hex) => {
                 setCustomText(hex);
@@ -2019,16 +2074,16 @@ export function RetreatConfigurator({
             />
             </div>
 
-            <StudioSectionSub>Hero Photography</StudioSectionSub>
+            <StudioSectionSub>{t("studio", "heroPhotography")}</StudioSectionSub>
             <p className="text-[11px] -mt-2 mb-3" style={{ color: GUEST_BASE_PALETTE.mist }}>
-              The main image guests see on the Today screen.
+              {t("flow", "heroPhotographyBody")}
             </p>
             {tenantId ? (
               <BrandImageField
                 tenantId={tenantId}
                 kind="hero"
-                label="Upload hero photo"
-                hint="JPG, PNG, WebP · min 1600px wide recommended"
+                label={t("studio", "uploadHeroPhoto")}
+                hint={t("studio", "heroFormats")}
                 imageRef={heroImageRef}
                 imageUrl={heroImageUrl}
                 onChange={(patch) => {
@@ -2038,11 +2093,11 @@ export function RetreatConfigurator({
               />
             ) : (
               <p className="text-[12px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                Save your Identity first to unlock photo uploads.
+                {t("flow", "saveIdentityForPhotos")}
               </p>
             )}
 
-            <StudioSectionSub>Readability Check</StudioSectionSub>
+            <StudioSectionSub>{t("studio", "readabilityCheck")}</StudioSectionSub>
             <div className="rounded-2xl border p-4 flex items-center gap-4" style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, background: "white" }}>
               <span
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-[13px] font-semibold shrink-0"
@@ -2100,7 +2155,7 @@ export function RetreatConfigurator({
                 onClick={() => setStep("identity")}
                 className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3"
               >
-                Back
+                {t("common", "back")}
               </button>
               <button
                 type="submit"
@@ -2115,7 +2170,7 @@ export function RetreatConfigurator({
                   onClick={() => setStep("modules")}
                   className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
                 >
-                  Continue to Modules →
+                  {t("flow", "continueToModules")} <ForwardArrow />
                 </button>
               )}
             </div>
@@ -2128,7 +2183,7 @@ export function RetreatConfigurator({
             {IMPLEMENTED_OPTIONAL_MODULES.map((key) => (
               <input key={key} type="hidden" name={`module_${key}`} value={enabledModules.has(key) ? "on" : "off"} />
             ))}
-            <StudioHeading>Choose what your guests can access</StudioHeading>
+            <StudioHeading>{t("flow", "modulesTitle")}</StudioHeading>
       <StudioIntro>Enable the experiences that are part of your retreat. Disabled modules won&apos;t appear in the guest
               app. You can change this any time.</StudioIntro>
 
@@ -2162,16 +2217,16 @@ export function RetreatConfigurator({
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium" style={{ color: on ? GUEST_BASE_PALETTE.forest : GUEST_BASE_PALETTE.dusk }}>
-                          {OPTIONAL_MODULES[key].label}
+                          {moduleLabel(key, initialLocale)}
                         </p>
                         <p className="text-[11px] mt-0.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                          {meta.description}
+                          {t("flow", meta.descriptionKey)}
                         </p>
                       </div>
                       <button
                         type="button"
                         onClick={() => toggleModule(key)}
-                        aria-label={`Toggle ${OPTIONAL_MODULES[key].label}`}
+                        aria-label={t("flow", "toggleModule", { module: moduleLabel(key, initialLocale) })}
                         className="w-10 h-6 rounded-full transition-all relative flex-shrink-0"
                         style={{ background: on ? GUEST_BASE_PALETTE.forest : `${GUEST_BASE_PALETTE.sand}cc` }}
                       >
@@ -2210,7 +2265,7 @@ export function RetreatConfigurator({
                               persistModuleCoverPosition(key, position);
                             }}
                             aspect="16/9"
-                            label={`${OPTIONAL_MODULES[key].label} cover image`}
+                            label={t("flow", "moduleCoverImageOf", { module: moduleLabel(key, initialLocale) })}
                           />
                         )}
                       </>
@@ -2225,11 +2280,10 @@ export function RetreatConfigurator({
               style={{ background: `${GUEST_BASE_PALETTE.sagePale}33`, borderColor: `${GUEST_BASE_PALETTE.sage}55` }}
             >
               <p className="text-[12px] font-medium mb-1" style={{ color: GUEST_BASE_PALETTE.forest }}>
-                Today is always included
+                {t("flow", "todayAlwaysIncluded")}
               </p>
               <p className="text-[12px] leading-relaxed" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-                The Today screen is the core of your guest experience and cannot be disabled. It automatically draws
-                from your enabled modules.
+                {t("flow", "todayAlwaysIncludedBody")}
               </p>
             </div>
 
@@ -2245,7 +2299,7 @@ export function RetreatConfigurator({
                 onClick={() => setStep("brand")}
                 className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3"
               >
-                Back
+                {t("common", "back")}
               </button>
               <button
                 type="submit"
@@ -2259,7 +2313,7 @@ export function RetreatConfigurator({
                 onClick={() => goToStep(1)}
                 className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
               >
-                Continue →
+                {t("common", "next")} <ForwardArrow />
               </button>
             </div>
           </form>
@@ -2274,6 +2328,7 @@ export function RetreatConfigurator({
             scheduleState={scheduleState}
             schedulePending={schedulePending}
             handleSaveSchedule={handleSaveSchedule}
+            locale={initialLocale}
             goToStep={goToStep}
           />
         )}
@@ -2287,6 +2342,7 @@ export function RetreatConfigurator({
             facilitatorsState={facilitatorsState}
             facilitatorsPending={facilitatorsPending}
             handleSaveFacilitators={handleSaveFacilitators}
+            locale={initialLocale}
             goToStep={goToStep}
           />
         )}
@@ -2370,17 +2426,16 @@ export function RetreatConfigurator({
 
         {step === "publish" && tenantId && (
           <div className="max-w-4xl">
-            <StudioHeading>Preview &amp; Publish</StudioHeading>
+            <StudioHeading>{t("studio", "navPreviewPublish")}</StudioHeading>
             <StudioIntro>
-              Review your changes and publish when you&apos;re ready. Your live guest app only updates when you
-              choose to publish.
+              {t("flow", "previewPublishBody")}
             </StudioIntro>
 
             {showFirstPublishMoment && (
               <div className="mt-6 rounded-2xl border border-idw-sage/40 bg-idw-sage/10 p-5 flex items-center justify-between gap-4 flex-wrap">
                 <div>
-                  <p className="text-sm font-semibold text-idw-forest">Your Guest App is live</p>
-                  <p className="text-xs text-idw-forest/60 mt-0.5">Guests can open it right now.</p>
+                  <p className="text-sm font-semibold text-idw-forest">{t("flow", "guestAppIsLive")}</p>
+                  <p className="text-xs text-idw-forest/60 mt-0.5">{t("studio", "guestsCanOpenNow")}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <a
@@ -2389,7 +2444,7 @@ export function RetreatConfigurator({
                     rel="noopener noreferrer"
                     className="text-xs font-semibold uppercase tracking-wide px-4 py-2 rounded-full border border-idw-forest/20 text-idw-forest"
                   >
-                    View Guest App
+                    {t("flow", "viewGuestApp")}
                   </a>
                   <button
                     type="button"
@@ -2433,7 +2488,7 @@ export function RetreatConfigurator({
 
                 <div className="mt-4 rounded-2xl border border-[#E2DACD] bg-white p-5">
                   <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84] mb-3">
-                    Ready to publish?
+                    {t("studio", "readyToPublish")}
                   </p>
                   <ReadinessChecklist items={publishReadiness} />
                 </div>
@@ -2447,13 +2502,13 @@ export function RetreatConfigurator({
                     />
                   ) : (
                     <div className="rounded-2xl border border-[#E2DACD] bg-white p-5">
-                      <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84]">Guest App link</p>
+                      <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84]">{t("studio", "guestAppLink")}</p>
                       <button
                         type="button"
                         onClick={() => setStep("identity")}
                         className="mt-1 text-sm text-[#192B21] underline"
                       >
-                        Choose an address in Identity →
+                        {t("flow", "chooseAddressInIdentity")} <ForwardArrow />
                       </button>
                     </div>
                   )}
@@ -2496,7 +2551,7 @@ export function RetreatConfigurator({
                     onClick={() => goToStep(-1)}
                     className="w-full min-h-12 rounded-full border border-[#192B21]/20 text-[#192B21] text-[13.5px] font-medium"
                   >
-                    Back
+                    {t("common", "back")}
                   </button>
                   {currentPublishedAt && (
                     <button
@@ -2504,7 +2559,7 @@ export function RetreatConfigurator({
                       onClick={() => attemptNavigate(() => setStep("share"))}
                       className="w-full min-h-12 rounded-full border border-[#192B21]/20 text-[#192B21] text-[13.5px] font-medium"
                     >
-                      Share &amp; QR code →
+                      {t("flow", "shareAndQr")} <ForwardArrow />
                     </button>
                   )}
                 </div>
@@ -2522,6 +2577,7 @@ export function RetreatConfigurator({
                   style={{ border: `3px solid ${GUEST_BASE_PALETTE.forest}`, background: GUEST_BASE_PALETTE.parchment }}
                 >
                   <GuestApp
+                    locale={initialLocale}
                     tenantName={name}
                     brand={{
                       name,
@@ -2605,6 +2661,7 @@ export function RetreatConfigurator({
           style={{ border: `3px solid ${GUEST_BASE_PALETTE.forest}`, background: GUEST_BASE_PALETTE.parchment }}
         >
           <GuestApp
+            locale={initialLocale}
             tenantName={name}
             brand={{
               name,
@@ -2640,7 +2697,7 @@ export function RetreatConfigurator({
             onClick={() => router.push(`/configurator/retreat/${tenantId}`)}
             className="mt-6 text-xs text-[#4A4A44] underline"
           >
-            Resume this draft later at this link
+            {t("flow", "resumeDraftLater")}
           </button>
         )}
       </aside>

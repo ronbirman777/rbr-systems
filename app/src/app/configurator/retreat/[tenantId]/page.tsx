@@ -22,6 +22,8 @@ import { getGuestAccessSettingsForOwner } from "../guestAccessActions";
 import { getFeaturedSubmissionForOwner } from "../featuredActions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { SPACE_SETTINGS_KEY, parseSpaceSettings } from "@/lib/spaceSettings";
+import { DEFAULT_LOCALE } from "@/lib/i18n";
 /** Signed preview URLs are resolved server-side, through the same
  * RLS-scoped session as everything else on this page - the organizer can
  * only ever get a signed URL for their own tenant's objects. */
@@ -72,6 +74,7 @@ export default async function ResumeRetreatConfiguratorPage({
     { data: stayConnectedRow },
     { data: moduleConfigRows },
     { data: published },
+    { data: spaceSettingsRow },
   ] = await Promise.all([
     // PRE-MIGRATION WARNING: custom_surface (0032), custom_navigation/
     // custom_text (0015) and custom_secondary/hero_image_ref/
@@ -143,6 +146,12 @@ export default async function ResumeRetreatConfiguratorPage({
       .maybeSingle(),
     supabase.from("module_configs").select("module_key, enabled, image_ref, image_position").eq("tenant_id", tenantId),
     supabase.from("published_spaces").select("published_at, modules").eq("tenant_id", tenantId).maybeSingle(),
+    supabase
+      .from("module_settings")
+      .select("data")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", SPACE_SETTINGS_KEY)
+      .maybeSingle(),
   ]);
 
   // Share Your Space's Share Card needs the PUBLISHED Hero image, not the
@@ -338,6 +347,7 @@ export default async function ResumeRetreatConfiguratorPage({
         initialSlug={tenant.slug ?? null}
         initialStep={step === "publish" ? "publish" : undefined}
         initialTimezone={tenant.timezone ?? DEFAULT_TIMEZONE}
+        initialLocale={parseSpaceSettings(spaceSettingsRow?.data).locale ?? DEFAULT_LOCALE}
         initialPalette={brandInitial.initialPalette as PaletteKey}
         initialAtmosphere={brandInitial.initialAtmosphere as AtmosphereKey}
         initialCustomPrimary={brandInitial.initialCustomPrimary}

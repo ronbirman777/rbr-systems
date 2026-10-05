@@ -357,6 +357,127 @@ export const en = {
     gateAskOwner: "Ask the owner of this space for the access code.",
     mealsHeading: "Today’s {em}",
     mealsHeadingEm: "Meals",
+
+    // ---- Studio: Identity step ----
+    identityTitle: "Tell us about your retreat",
+    identityBody: "This information appears throughout your guest experience and helps guests feel oriented and welcomed.",
+    retreatDetails: "Retreat details",
+    retreatName: "Retreat name",
+    retreatNamePlaceholder: "e.g. Wonderland Healing Center",
+    timezone: "Timezone",
+    timezoneHelp: "Schedule times and “today” are based on this, not the guest’s device.",
+    guestAddress: "Guest address",
+    guestAddressBody: "This is where guests will find your Space once it’s live. You can reserve it now and keep building - it won’t go anywhere.",
+    reservedSuccessfully: "Reserved successfully.",
+    retreatLogo: "Retreat logo",
+    spaceImageBody: "Represents this Space itself - shown to you in My Spaces, separate from the Today Hero photo guests see.",
+    saveIdentityForLogo: "Save your Identity first to unlock the logo upload.",
+    saveIdentityForSpaceImage: "Save your Identity first to unlock the Space image upload.",
+    saveIdentityForPhotos: "Save your Identity first to unlock photo uploads.",
+    continueToBrand: "Continue to Brand",
+
+    // ---- Studio: Brand step ----
+    brandTitle: "Brand your experience",
+    heroPhotographyBody: "The main image guests see on the Today screen.",
+    readabilitySample: "Aa",
+    textColourTooLight: "Your app text colour may be too light to read comfortably on its own - we’ll automatically darken it where needed so guest-facing text always stays legible.",
+    continueToModules: "Continue to Modules",
+
+    // ---- Studio: Modules step ----
+    modulesTitle: "Choose what your guests can access",
+    toggleModule: "Toggle {module}",
+    todayAlwaysIncluded: "Today is always included",
+    todayAlwaysIncludedBody: "The Today screen is the core of your guest experience and cannot be disabled. It automatically draws from your enabled modules.",
+    notYetAvailable: "Not yet available.",
+    moduleScheduleDesc: "Your retreat program and daily sessions.",
+    moduleFacilitatorsDesc: "Introduce the people guiding the experience.",
+    moduleMealsDesc: "Share meal times, menus and dietary information.",
+    moduleTreatmentsDesc: "Present available healing and bodywork experiences.",
+    moduleFacilitiesDesc: "Help guests discover the spaces around them.",
+    moduleArrivalDesc: "Everything guests need before they arrive.",
+    moduleInspirationDesc: "One inspirational sentence, shown each day on Today.",
+    moduleFaqDesc: "Answer common questions guests ask before and during their stay.",
+    moduleCustomPagesDesc: "Add your own pages - What to Bring, Guidelines, anything you need.",
+    moduleStayConnectedDesc: "Share your Instagram, website and other social links.",
+
+    // ---- Studio: Schedule step ----
+    stepScheduleTitle: "Build your schedule",
+    stepScheduleBody: "Add and arrange sessions for each day of your retreat. Your guests see this on the Schedule screen.",
+    editSession: "Edit session",
+    sessionTitle: "Session title",
+    sessionTitlePlaceholder: "e.g. Morning Yoga Flow",
+    facilitator: "Facilitator",
+    facilitatorPlaceholder: "e.g. Maya Cohen",
+    locationPlaceholder: "e.g. Yoga Shala",
+    endTimeOptional: "End time (optional)",
+    notesOptional: "Notes (optional)",
+    notesPlaceholder: "Extra information for guests",
+
+    // ---- Studio: Facilitators step ----
+    addFacilitatorsTitle: "Add your facilitators",
+    addFacilitatorsBody: "Your team appears on the Team screen. Photos are especially important here - upload the best you have.",
+    noFacilitatorsYet: "No facilitators yet",
+    noPhotoYet: "No photo yet",
+    addFacilitator: "Add facilitator",
+    fullName: "Full name",
+    role: "Role",
+    rolePlaceholder: "e.g. Yoga & Breathwork Facilitator",
+    shortBiography: "Short biography",
+    bioPlaceholder: "A few sentences about this facilitator…",
+    specialties: "Specialties (comma-separated)",
+    specialtiesPlaceholder: "Vinyasa Flow, Pranayama, Breathwork",
+    socialLinksOptional: "Social links (optional)",
+    removeLinkOf: "Remove {platform} link",
+    pasteLinkOf: "Paste {platform} link",
+    linkMustBeHttps: "Enter a full link starting with https:// (or leave this blank).",
+
+    // ---- Studio: Preview & Publish step ----
+    previewPublishBody: "Review your changes and publish when you’re ready. Your live guest app only updates when you choose to publish.",
+    guestAppIsLive: "Your Guest App is live",
+    viewGuestApp: "View Guest App",
+    viewLiveGuestApp: "View live guest app",
+    chooseAddressInIdentity: "Choose an address in Identity",
+    shareAndQr: "Share & QR code",
+    resumeDraftLater: "Resume this draft later at this link",
+
+    // ---- Studio: readiness checklist ----
+    needRetreatName: "Add your retreat name in Identity.",
+    needAddress: "Choose an address in Identity.",
+    needCoverImage: "Add a hero image in Brand so your Guest App has a welcoming first impression.",
+    needSchedule: "Add at least one schedule item so guests know what is happening.",
+    needFacilitators: "Add the people guiding your retreat.",
+    navContent: "Content",
+
+    // ---- Studio: module names, as the Studio lists them ----
+    moduleArrivalInfo: "Arrival Info",
+    moduleCustomPages: "Custom Pages",
+    moduleDailyInspiration: "Daily Inspiration",
+
+    // ---- Studio: session categories (a fixed system taxonomy) ----
+    catYoga: "Yoga",
+    catMeditation: "Meditation",
+    catBreathwork: "Breathwork",
+    catSound: "Sound",
+    catCommunity: "Community",
+    catOther: "Other",
+
+    // ---- Studio: schedule and facilitator empty states ----
+    untitledSession: "Untitled session",
+    noSessionsYet: "No sessions yet",
+    nothingThisDay: "Nothing scheduled this day",
+    noSessionsBody: "Add the sessions, meals and activities guests will see on the Schedule screen. Use + Add Session below to start.",
+    noFacilitatorsBody: "Add the teachers and hosts guiding your retreat - a photo and a short bio make the Team screen feel personal. Use the Add Facilitator tile below to start.",
+    unnamed: "Unnamed",
+    noRoleSet: "No role set",
+    facilitatorPhotoHint: "Recommended: portrait or square photo, about 13:10 once cropped - we anchor to the top, so keep faces near the upper frame.",
+    myRetreatFallback: "My Retreat",
+
+    // ---- Module catalog labels (the Studio's own module list) ----
+    moduleFacilitatorsLabel: "Facilitators / Teachers",
+    moduleResources: "Resources",
+    moduleAudio: "Audio",
+    moduleAnnouncements: "Announcements",
+    moduleCoverImageOf: "{module} cover image",
   },
   studio: {
     // Shell and navigation
@@ -433,6 +554,34 @@ export const en = {
     imageNotProcessed: "That image could not be processed. Try a different file.",
     someDetailsInvalid: "Some details weren’t valid.",
     someLinksInvalid: "Some links weren’t valid.",
+
+    // Save actions. The section name is a parameter so there is one
+    // key, not one per section ("Save Schedule", "Save Modules", ...).
+    saveSection: "Save {section}",
+    saveDraft: "Save draft",
+    saveAndContinue: "Save and continue",
+    publishing: "Publishing",
+    publishingNow: "Publishing…",
+    republish: "Republish",
+    notVisibleUntilPublish: "Nothing is visible to guests until you publish.",
+    notVisibleUntilRepublish: "Guests won’t see further edits until you republish.",
+
+    // Guest App address availability
+    checkAvailability: "Check availability",
+    checking: "Checking…",
+    currentAddress: "This is your Space’s current address.",
+    addressRules: "Use lowercase letters, numbers and hyphens only (3-63 characters).",
+    addressReserved: "That address is reserved.",
+    addressAvailable: "Available.",
+    addressTaken: "That address is already taken.",
+    reserveAddress: "Reserve this address",
+    reserving: "Reserving…",
+
+    // Readability check
+    contrastGood: "Contrast looks good",
+    contrastLow: "Contrast may be too low",
+    swatchDark: "Dark",
+    swatchWhite: "White",
   },
 
 } as const;

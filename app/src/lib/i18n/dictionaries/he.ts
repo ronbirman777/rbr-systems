@@ -350,6 +350,127 @@ export const he: Dictionary = {
     gateAskOwner: "בקשו את קוד הגישה מבעל המרחב.",
     mealsHeading: "{em} של היום",
     mealsHeadingEm: "הארוחות",
+
+    // ---- Studio: Identity step ----
+    identityTitle: "ספרו לנו על הריטריט",
+    identityBody: "המידע הזה מופיע בכל חוויית האורח ועוזר לאורחים להתמצא ולהרגיש רצויים.",
+    retreatDetails: "פרטי הריטריט",
+    retreatName: "שם הריטריט",
+    retreatNamePlaceholder: "למשל: מרכז הריפוי וונדרלנד",
+    timezone: "אזור זמן",
+    timezoneHelp: "שעות הלוח ו״היום״ נקבעים לפיו, ולא לפי המכשיר של האורח.",
+    guestAddress: "כתובת לאורחים",
+    guestAddressBody: "כאן האורחים ימצאו את המרחב שלכם כשיעלה לאוויר. אפשר לשמור אותה עכשיו ולהמשיך לבנות - היא לא תיעלם.",
+    reservedSuccessfully: "נשמר בהצלחה.",
+    retreatLogo: "הלוגו של הריטריט",
+    spaceImageBody: "מייצגת את המרחב עצמו - מוצגת לכם במרחבים שלי, בנפרד מהתמונה הראשית שהאורחים רואים ב״היום״.",
+    saveIdentityForLogo: "שמרו קודם את הזהות כדי לפתוח את העלאת הלוגו.",
+    saveIdentityForSpaceImage: "שמרו קודם את הזהות כדי לפתוח את העלאת תמונת המרחב.",
+    saveIdentityForPhotos: "שמרו קודם את הזהות כדי לפתוח את העלאת התמונות.",
+    continueToBrand: "המשך למיתוג",
+
+    // ---- Studio: Brand step ----
+    brandTitle: "עצבו את החוויה שלכם",
+    heroPhotographyBody: "התמונה המרכזית שהאורחים רואים במסך ״היום״.",
+    readabilitySample: "אא",
+    textColourTooLight: "צבע הטקסט עשוי להיות בהיר מדי לקריאה נוחה - נכהה אותו אוטומטית במקומות הנדרשים כדי שהטקסט שהאורחים רואים יישאר קריא.",
+    continueToModules: "המשך למודולים",
+
+    // ---- Studio: Modules step ----
+    modulesTitle: "בחרו למה האורחים יכולים לגשת",
+    toggleModule: "הפעלה או כיבוי של {module}",
+    todayAlwaysIncluded: "״היום״ תמיד כלול",
+    todayAlwaysIncludedBody: "מסך ״היום״ הוא הלב של חוויית האורח ולא ניתן לכבות אותו. הוא נשען אוטומטית על המודולים שהפעלתם.",
+    notYetAvailable: "עוד לא זמין.",
+    moduleScheduleDesc: "התוכנית של הריטריט והמפגשים היומיים.",
+    moduleFacilitatorsDesc: "הציגו את מי שמנחה את החוויה.",
+    moduleMealsDesc: "שתפו שעות ארוחות, תפריטים ומידע תזונתי.",
+    moduleTreatmentsDesc: "הציגו טיפולי ריפוי ועבודת גוף שזמינים.",
+    moduleFacilitiesDesc: "עזרו לאורחים לגלות את המרחבים סביבם.",
+    moduleArrivalDesc: "כל מה שהאורחים צריכים לפני שהם מגיעים.",
+    moduleInspirationDesc: "משפט השראה אחד, שמוצג כל יום ב״היום״.",
+    moduleFaqDesc: "ענו על שאלות שאורחים שואלים לפני ובמהלך השהות.",
+    moduleCustomPagesDesc: "הוסיפו עמודים משלכם - מה להביא, הנחיות, כל מה שצריך.",
+    moduleStayConnectedDesc: "שתפו את האינסטגרם, האתר וקישורים נוספים.",
+
+    // ---- Studio: Schedule step ----
+    stepScheduleTitle: "בנו את לוח הזמנים",
+    stepScheduleBody: "הוסיפו וסדרו מפגשים לכל יום בריטריט. האורחים רואים את זה במסך לוח הזמנים.",
+    editSession: "עריכת מפגש",
+    sessionTitle: "שם המפגש",
+    sessionTitlePlaceholder: "למשל: יוגה בוקר",
+    facilitator: "מנחה",
+    facilitatorPlaceholder: "למשל: מאיה כהן",
+    locationPlaceholder: "למשל: שאלה ליוגה",
+    endTimeOptional: "שעת סיום (לא חובה)",
+    notesOptional: "הערות (לא חובה)",
+    notesPlaceholder: "מידע נוסף לאורחים",
+
+    // ---- Studio: Facilitators step ----
+    addFacilitatorsTitle: "הוסיפו את המנחים",
+    addFacilitatorsBody: "הצוות מופיע במסך הצוות. התמונות חשובות כאן במיוחד - העלו את הטובות שיש לכם.",
+    noFacilitatorsYet: "עדיין אין מנחים",
+    noPhotoYet: "עדיין אין תמונה",
+    addFacilitator: "הוספת מנחה",
+    fullName: "שם מלא",
+    role: "תפקיד",
+    rolePlaceholder: "למשל: מנחה יוגה ונשימה",
+    shortBiography: "ביוגרפיה קצרה",
+    bioPlaceholder: "כמה משפטים על המנחה…",
+    specialties: "התמחויות (מופרדות בפסיקים)",
+    specialtiesPlaceholder: "ויניאסה, פראניאמה, עבודת נשימה",
+    socialLinksOptional: "קישורים לרשתות (לא חובה)",
+    removeLinkOf: "הסרת הקישור ל{platform}",
+    pasteLinkOf: "הדביקו קישור ל{platform}",
+    linkMustBeHttps: "הזינו קישור מלא שמתחיל ב-https:// (או השאירו ריק).",
+
+    // ---- Studio: Preview & Publish step ----
+    previewPublishBody: "עברו על השינויים ופרסמו כשאתם מוכנים. ה-Guest App החי מתעדכן רק כשאתם בוחרים לפרסם.",
+    guestAppIsLive: "ה-Guest App שלכם באוויר",
+    viewGuestApp: "צפייה ב-Guest App",
+    viewLiveGuestApp: "צפייה ב-Guest App החי",
+    chooseAddressInIdentity: "בחרו כתובת במסך הזהות",
+    shareAndQr: "שיתוף וקוד QR",
+    resumeDraftLater: "להמשיך את הטיוטה הזו בהמשך בקישור הזה",
+
+    // ---- Studio: readiness checklist ----
+    needRetreatName: "הוסיפו את שם הריטריט במסך הזהות.",
+    needAddress: "בחרו כתובת במסך הזהות.",
+    needCoverImage: "הוסיפו תמונה ראשית במסך המיתוג כדי שה-Guest App יקבל רושם ראשוני מזמין.",
+    needSchedule: "הוסיפו לפחות פריט אחד ללוח הזמנים כדי שהאורחים ידעו מה קורה.",
+    needFacilitators: "הוסיפו את מי שמנחה את הריטריט.",
+    navContent: "תוכן",
+
+    // ---- Studio: module names, as the Studio lists them ----
+    moduleArrivalInfo: "פרטי הגעה",
+    moduleCustomPages: "עמודים משלכם",
+    moduleDailyInspiration: "השראה יומית",
+
+    // ---- Studio: session categories (a fixed system taxonomy) ----
+    catYoga: "יוגה",
+    catMeditation: "מדיטציה",
+    catBreathwork: "עבודת נשימה",
+    catSound: "צליל",
+    catCommunity: "קהילה",
+    catOther: "אחר",
+
+    // ---- Studio: schedule and facilitator empty states ----
+    untitledSession: "מפגש בלי כותרת",
+    noSessionsYet: "עדיין אין מפגשים",
+    nothingThisDay: "אין כלום בלוח ליום הזה",
+    noSessionsBody: "הוסיפו את המפגשים, הארוחות והפעילויות שהאורחים יראו במסך לוח הזמנים. התחילו עם + הוספת מפגש למטה.",
+    noFacilitatorsBody: "הוסיפו את המורים והמנחים של הריטריט - תמונה וביוגרפיה קצרה הופכות את מסך הצוות לאישי. התחילו עם ריבוע הוספת מנחה למטה.",
+    unnamed: "בלי שם",
+    noRoleSet: "לא הוגדר תפקיד",
+    facilitatorPhotoHint: "מומלץ: תמונת פורטרט או מרובעת, בערך 13:10 לאחר החיתוך - אנחנו מעגנים למעלה, אז שמרו את הפנים בחלק העליון.",
+    myRetreatFallback: "הריטריט שלי",
+
+    // ---- Module catalog labels (the Studio's own module list) ----
+    moduleFacilitatorsLabel: "מנחים / מורים",
+    moduleResources: "חומרים",
+    moduleAudio: "אודיו",
+    moduleAnnouncements: "הודעות",
+    moduleCoverImageOf: "תמונת שער ל{module}",
   },
   studio: {
     // Shell and navigation
@@ -426,6 +547,34 @@ export const he: Dictionary = {
     imageNotProcessed: "לא ניתן היה לעבד את התמונה. נסו קובץ אחר.",
     someDetailsInvalid: "חלק מהפרטים לא היו תקינים.",
     someLinksInvalid: "חלק מהקישורים לא היו תקינים.",
+
+    // Save actions. The section name is a parameter so there is one
+    // key, not one per section ("Save Schedule", "Save Modules", ...).
+    saveSection: "שמירת {section}",
+    saveDraft: "שמירת טיוטה",
+    saveAndContinue: "שמירה והמשך",
+    publishing: "פרסום",
+    publishingNow: "מפרסם…",
+    republish: "פרסום מחדש",
+    notVisibleUntilPublish: "שום דבר לא מוצג לאורחים עד שתפרסמו.",
+    notVisibleUntilRepublish: "האורחים לא יראו שינויים נוספים עד פרסום מחדש.",
+
+    // Guest App address availability
+    checkAvailability: "בדיקת זמינות",
+    checking: "בודק…",
+    currentAddress: "זו הכתובת הנוכחית של המרחב.",
+    addressRules: "אותיות קטנות באנגלית, ספרות ומקפים בלבד (3-63 תווים).",
+    addressReserved: "הכתובת הזו שמורה.",
+    addressAvailable: "זמינה.",
+    addressTaken: "הכתובת הזו תפוסה.",
+    reserveAddress: "שמירת הכתובת",
+    reserving: "שומר…",
+
+    // Readability check
+    contrastGood: "הניגודיות נראית טובה",
+    contrastLow: "הניגודיות עשויה להיות נמוכה מדי",
+    swatchDark: "כהה",
+    swatchWhite: "לבן",
   },
 
 };

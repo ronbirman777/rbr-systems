@@ -103,6 +103,14 @@ describe("translation and fallback", () => {
       "flow.mealBrunch",
       // File format names, not words - the same in every language.
       "studio.imageFormats",
+      // A type specimen: German reads Latin script, so "Aa" is correct
+      // there. Hebrew gets "אא" because the swatch exists to show what
+      // the chosen text colour looks like in the reader's own script.
+      "flow.readabilitySample",
+      // "Yoga", "Meditation" and "Audio" are the German words too.
+      "flow.catYoga",
+      "flow.catMeditation",
+      "flow.moduleAudio",
     ]);
     for (const locale of ["he", "de"] as const) {
       const unexpected = untranslatedKeys(locale).filter((k) => !allowed.has(k));
