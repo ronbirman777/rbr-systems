@@ -65,6 +65,7 @@ vi.mock("@/lib/guestAccess/effectiveAccess", () => ({
   },
 }));
 
+const { PUBLISHED_MEDIA_CACHE_SECONDS, PUBLISHED_MEDIA_SIGNED_TTL_SECONDS } = await import("@/lib/media/cachePolicy");
 const { GET } = await import("./route");
 
 const modules = {
@@ -107,13 +108,16 @@ describe("GET /api/media - published snapshot AND current guest access", () => {
     accessMode = "public";
     const res = await call(V.split("/"));
     expect(res.status).toBe(307);
-    expect(res.headers.get("cache-control")).toBe("public, max-age=300, immutable");
+    expect(res.headers.get("cache-control")).toBe("public, max-age=60, immutable");
     // The signed URL must outlive the cache window, or a redirect served
     // at the end of its life would point at an expired URL - and no
     // longer than that arithmetic needs, because the TTL is also the
     // window in which a revoked visitor's already-issued URL still works.
-    expect(mockSign).toHaveBeenCalledWith(V, 420);
-    expect(420).toBeGreaterThan(300);
+    expect(mockSign).toHaveBeenCalledWith(V, 180);
+    // Asserted against the constants themselves, so the pair cannot be
+    // edited apart: whatever they become, the TTL must still outlast the
+    // cache window by enough for a slow client to follow the redirect.
+    expect(PUBLISHED_MEDIA_SIGNED_TTL_SECONDS).toBeGreaterThanOrEqual(PUBLISHED_MEDIA_CACHE_SECONDS + 120);
   });
 
   it("LEGACY published path is never cacheable - those bytes are overwritten in place", async () => {
@@ -142,14 +146,14 @@ describe("GET /api/media - published snapshot AND current guest access", () => {
     accessMode = "public";
 
     await call(V.split("/"), "w=640");
-    expect(mockSign).toHaveBeenCalledWith(V, 420, { transform: { width: 640, resize: "contain" } });
+    expect(mockSign).toHaveBeenCalledWith(V, 180, { transform: { width: 640, resize: "contain" } });
 
     // Off-ladder, absurd and non-numeric widths all fall back to the
     // untransformed object rather than minting a new cache entry.
     for (const bad of ["w=641", "w=99999", "w=-1", "w=abc", "w="]) {
       mockSign.mockClear();
       await call(V.split("/"), bad);
-      expect(mockSign, bad).toHaveBeenCalledWith(V, 420);
+      expect(mockSign, bad).toHaveBeenCalledWith(V, 180);
     }
   });
 
@@ -178,7 +182,7 @@ describe("GET /api/media - published snapshot AND current guest access", () => {
       .mockResolvedValueOnce({ data: { signedUrl: "http://storage/sign/x?token=t" }, error: null });
     const res = await call(V.split("/"), "w=640");
     expect(res.status).toBe(307);
-    expect(mockSign).toHaveBeenNthCalledWith(2, V, 420);
+    expect(mockSign).toHaveBeenNthCalledWith(2, V, 180);
   });
 
   it("commercially unavailable Space -> 404, nothing signed (brand images too)", async () => {
@@ -543,7 +547,7 @@ describe("CP4 security regression: the new delivery options cannot widen access"
       mockSign.mockResolvedValue({ data: { signedUrl: "http://storage/sign/x?token=t" }, error: null });
       const res = await call(V.split("/"), `w=${w}`);
       expect(res.status, String(w)).toBe(307);
-      expect(mockSign, String(w)).toHaveBeenCalledWith(V, 420, { transform: { width: w, resize: "contain" } });
+      expect(mockSign, String(w)).toHaveBeenCalledWith(V, 180, { transform: { width: w, resize: "contain" } });
     }
     // Anything off the ladder is ignored rather than forwarded, so one
     // path cannot mint unbounded distinct renders or cache entries.
@@ -551,7 +555,7 @@ describe("CP4 security regression: the new delivery options cannot widen access"
       vi.clearAllMocks();
       mockSign.mockResolvedValue({ data: { signedUrl: "http://storage/sign/x?token=t" }, error: null });
       await call(V.split("/"), `w=${bad}`);
-      expect(mockSign, bad).toHaveBeenCalledWith(V, 420);
+      expect(mockSign, bad).toHaveBeenCalledWith(V, 180);
     }
   });
 
@@ -619,8 +623,8 @@ describe("CP4 security regression: published audio", () => {
     accessMode = "public";
     const res = await call(AUDIO.split("/"));
     expect(res.status).toBe(307);
-    expect(res.headers.get("cache-control")).toBe("public, max-age=300, immutable");
-    expect(mockSign).toHaveBeenCalledWith(AUDIO, 420);
+    expect(res.headers.get("cache-control")).toBe("public, max-age=60, immutable");
+    expect(mockSign).toHaveBeenCalledWith(AUDIO, 180);
   });
 
   it("the same audio in a CODE Space keeps the 60-second, uncacheable contract", async () => {
@@ -639,7 +643,7 @@ describe("CP4 security regression: published audio", () => {
       .mockResolvedValueOnce({ data: { signedUrl: "http://storage/sign/a?token=t" }, error: null });
     const res = await call(AUDIO.split("/"), "w=320");
     expect(res.status).toBe(307);
-    expect(mockSign).toHaveBeenNthCalledWith(2, AUDIO, 420);
+    expect(mockSign).toHaveBeenNthCalledWith(2, AUDIO, 180);
   });
 
   it("a draft audio path is still never served to a guest, at any width", async () => {

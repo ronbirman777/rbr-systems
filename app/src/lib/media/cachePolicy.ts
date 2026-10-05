@@ -2,27 +2,50 @@ import { parseVersionedMediaPath } from "./path";
 import type { GuestAccessMode } from "@/lib/guestAccess/mode";
 
 /**
- * How long a browser may reuse a published-media redirect, and how long
- * the signed URL it points at stays valid.
+ * How long a published-media redirect may be reused, and how long the
+ * signed URL it points at stays valid.
+ *
+ * THE PUBLIC VERSIONED MEDIA POLICY, in full:
+ *
+ *     Cache-Control:  public, max-age=60, immutable
+ *     signed URL TTL: 180 seconds
  *
  * These two numbers are a pair and must not be set independently: a
  * cached redirect that outlives its signed URL sends the guest to a
  * Storage 403, so the TTL has to exceed the cache window plus the time a
  * slow client takes to follow the redirect. 120 seconds of slack is
- * ample for that.
+ * ample for that, and is what the gap between them is for.
  *
- * The TTL is kept only as long as that arithmetic requires, and no
- * longer, because it IS the residual exposure window: an already-issued
- * signed URL cannot be revoked. If a Space that was public at issue time
- * later lapses or gains an access code, a URL handed out just before
- * keeps working until it expires. That window was 60 seconds before CP4
- * and is 7 minutes for this one case - versioned, published, and public
- * at the moment of issue, i.e. bytes the organizer had already published
- * to anyone with the link. Draft objects, legacy paths and code-protected
- * Spaces all keep the 60-second default below.
+ * BOTH ARE REVOCATION WINDOWS, which is why they are this short. When an
+ * organizer turns a public Space into a code-protected one, the origin
+ * refuses immediately - but three copies of the old answer may outlive
+ * that decision, and only one of them can be reached by any server-side
+ * action:
+ *
+ *   the visitor's own browser cache   up to max-age   not reachable
+ *   a shared CDN                      up to max-age   purgeable by tag
+ *   an already-issued signed URL      up to the TTL   not reachable
+ *
+ * So the two unreachable windows are governed by nothing except these
+ * constants. CP4 measured the shared one on the deployed Preview
+ * (x-vercel-cache: HIT, age 158) rather than leaving it theoretical, and
+ * the release gate chose to shorten both rather than add a purge
+ * dependency: 300s -> 60s and 420s -> 180s.
+ *
+ * Shortening them costs very little, for a reason worth recording:
+ * browsing inside a loaded Guest App is ALREADY free of network traffic
+ * regardless of max-age - that is the per-document image cache, which
+ * CP4 section 9 showed works even under no-store. These constants govern
+ * only a document reload or a return visit, not tab navigation.
+ *
+ * Note what the window does and does not cover. It applies only to bytes
+ * that were versioned, published, and in a PUBLIC Space at the moment of
+ * issue - i.e. already readable by anyone with the link. Draft objects,
+ * legacy paths and code-protected Spaces are never publicly cacheable
+ * and keep the 60-second default below, so for them the window is zero.
  */
-export const PUBLISHED_MEDIA_CACHE_SECONDS = 300; // 5 minutes
-export const PUBLISHED_MEDIA_SIGNED_TTL_SECONDS = 420; // 7 minutes: the cache window + 2 minutes of slack
+export const PUBLISHED_MEDIA_CACHE_SECONDS = 60; // 1 minute
+export const PUBLISHED_MEDIA_SIGNED_TTL_SECONDS = 180; // 3 minutes: the cache window + 2 minutes of slack
 
 /** The conservative default: no caching, shortest possible signed URL. */
 export const DEFAULT_SIGNED_TTL_SECONDS = 60;
