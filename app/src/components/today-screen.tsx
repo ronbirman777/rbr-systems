@@ -8,6 +8,7 @@ import type { CSSProperties } from "react";
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { formatLongDateLocalized } from "@/lib/i18n/datetime";
 import { BrandImage } from "@/components/shared/brand-image";
+import { FLOW_SIZES } from "./flow-media-sizes";
 export type TodayScreenProps = {
   tenantName: string;
   brand: BrandConfig;
@@ -90,7 +91,7 @@ export function TodayScreen({
             screen stays lazy. */}
         <BrandImage
           priority
-          sizes="100vw"
+          sizes={FLOW_SIZES.frame}
           src={heroImageUrl}
           focal={null}
           alt=""

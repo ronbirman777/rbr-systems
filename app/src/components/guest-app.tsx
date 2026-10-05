@@ -5,7 +5,7 @@ import { TodayScreen } from "./today-screen";
 import { ScheduleScreen } from "./schedule-screen";
 import { FacilitatorsScreen } from "./facilitators-screen";
 import { ExploreScreen, EXPLORE_COVER_SIZES, EXPLORE_CUSTOM_PAGE_SIZES } from "./guest/explore-screen";
-import { FACILITATOR_PHOTO_SIZES } from "./facilitators-screen";
+import { FLOW_SIZES } from "./flow-media-sizes";
 import { MediaPrefetch } from "./shared/media-prefetch";
 import type { MediaPrefetchItem } from "@/lib/media/prefetch";
 import { TodayIcon, ScheduleIcon, TeamIcon, ExploreIcon } from "./guest/icons";
@@ -176,7 +176,7 @@ export function guestPrefetchItems(props: GuestAppProps, activeTab: TabKey): Med
   const items: MediaPrefetchItem[] = [];
 
   if (activeTab !== "facilitators" && enabledModules.includes("facilitators")) {
-    for (const f of props.facilitators) items.push({ src: f.imageUrl, sizes: FACILITATOR_PHOTO_SIZES });
+    for (const f of props.facilitators) items.push({ src: f.imageUrl, sizes: FLOW_SIZES.frame });
   }
 
   if (activeTab !== "explore") {

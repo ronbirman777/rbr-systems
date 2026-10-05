@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 
 import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { BrandImage } from "@/components/shared/brand-image";
+import { FLOW_SIZES } from "./flow-media-sizes";
 export type MealsScreenProps = {
   brand: BrandConfig;
   meals: DisplayMeal[];
@@ -31,8 +32,6 @@ export type MealsScreenProps = {
  * description, location, and dietary tags, apart from legitimate content
  * differences.
  */
-/** This product renders inside a fixed 390px device frame from `sm` up. */
-const SIZES = "(min-width: 640px) 390px, 100vw";
 
 export function MealsScreen({ brand, meals, locale = DEFAULT_LOCALE }: MealsScreenProps) {
   const { t } = createTranslator(locale);
@@ -70,7 +69,7 @@ export function MealsScreen({ brand, meals, locale = DEFAULT_LOCALE }: MealsScre
                   src={meal.imageUrl}
                   alt={meal.name}
                   className="w-full h-full"
-                  sizes={SIZES}
+                  sizes={FLOW_SIZES.frame}
                   style={{ objectPosition: objectPositionStyle(meal.imagePosition) }}
                   fallback="var(--rbr-sand)"
                 />

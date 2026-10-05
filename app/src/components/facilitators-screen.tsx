@@ -11,6 +11,7 @@ import type { CSSProperties } from "react";
 import { BrandImage } from "@/components/shared/brand-image";
 
 import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { FLOW_SIZES } from "./flow-media-sizes";
 /** Facilitators' own established default - the exact numeric equivalent
  * of the CSS keyword "center top" (50% 0%) this replaces, preserved
  * deliberately rather than the shared component's true-center default
@@ -47,13 +48,6 @@ export type FacilitatorsScreenProps = {
  * `facilitator` is free text, not a relation) - inventing a session list
  * here would be fabricated, not derived, data.
  */
-/**
- * The Team card photo's box. Exported for the same reason as Explore's
- * table: the prefetcher warms these portraits before the Team tab is
- * pressed and must select the same render this screen will.
- */
-export const FACILITATOR_PHOTO_SIZES = "(min-width: 640px) 390px, 100vw";
-
 export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCALE }: FacilitatorsScreenProps) {
   const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
@@ -100,7 +94,7 @@ export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCAL
                   src={f.imageUrl}
                   alt={f.name}
                   className="w-full h-full"
-                  sizes={FACILITATOR_PHOTO_SIZES}
+                  sizes={FLOW_SIZES.frame}
                   style={{ objectPosition: objectPositionStyle(f.imagePosition, FACILITATOR_DEFAULT_POSITION) }}
                   fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                 />

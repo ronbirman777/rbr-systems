@@ -8,6 +8,7 @@ import { verifyGuestCodeInitialState, type VerifyGuestCodeState } from "@/lib/gu
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { BrandImage } from "@/components/shared/brand-image";
+import { FLOW_SIZES } from "@/components/flow-media-sizes";
 export type GuestAccessScreenProps = {
   tenantId: string;
   name: string;
@@ -110,7 +111,7 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
               rather than as a full-resolution original. */}
           <BrandImage
             priority
-            sizes="(min-width: 640px) 390px, 100vw"
+            sizes={FLOW_SIZES.frame}
             src={heroImageUrl}
             alt=""
             className="w-full h-full"

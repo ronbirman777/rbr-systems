@@ -134,7 +134,10 @@ export function teachPrefetchItems(
     const cards = data.settings.teachExplore.cards;
     for (const key of ["teachReadings", "teachAudio", "teachContact"] as const) {
       if (exploreModuleStatus(data, key) !== "visible") continue;
-      items.push({ src: url(cards[key]?.imageRef ?? null), sizes: EXPLORE_CARD_SIZES });
+      // Readings is the `feature` tile (see ExploreScreen), so it has a
+      // box of its own and must be warmed at that box's candidate set.
+      const sizes = key === "teachReadings" ? EXPLORE_FEATURE_CARD_SIZES : EXPLORE_CARD_SIZES;
+      items.push({ src: url(cards[key]?.imageRef ?? null), sizes });
     }
     if (exploreModuleStatus(data, "customPages") === "visible") {
       for (const page of data.customPages) {
@@ -1017,21 +1020,32 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
 // ---------------------------------------------------------------------------
 
 /**
- * The Explore tiles' box, as a `sizes` the prefetcher can also read.
+ * The Explore tiles' boxes, as `sizes` the prefetcher can also read.
  *
  * Exported for exactly one reason: lib/media/prefetch.ts warms these
  * covers before the Explore tab is pressed, and it has to select from
  * the same candidate set this card will, or the warmed render is the
  * wrong one and the visitor pays twice. One constant, both readers.
  *
- * The grid itself is sized by CONTAINER queries (one column, then two at
- * @xl, then three at @4xl), which `sizes` - a viewport media query -
- * cannot express exactly; these are the viewport widths those container
- * widths correspond to in the published layout. An imperfect match only
- * costs a slightly larger render than strictly needed, never a wrong or
- * duplicated one.
+ * TWO constants, because the Readings card is `feature` and spans two of
+ * the three desktop columns. CP4's browser matrix caught a single
+ * `sizes` under-claiming it by half at 1440px - a 727px box asking for a
+ * 960px render where it needed 1600 - which is the one failure mode that
+ * is actually VISIBLE, as a soft image, rather than merely wasteful.
+ *
+ * Expressed in px above @4xl rather than vw because the main column is
+ * capped at 1180px there, so a vw fraction would keep growing after the
+ * box has stopped. Below that the grid is sized by CONTAINER queries,
+ * which `sizes` - a viewport media query - cannot express exactly, so
+ * these are the viewport widths those container widths correspond to in
+ * the published layout, rounded UP. Over-claiming costs a slightly
+ * larger render; under-claiming costs sharpness, so the rounding only
+ * ever goes one way.
  */
-export const EXPLORE_CARD_SIZES = "(min-width: 896px) 33vw, (min-width: 576px) 50vw, 100vw";
+export const EXPLORE_CARD_SIZES = "(min-width: 896px) 360px, (min-width: 576px) 50vw, 100vw";
+
+/** The lead tile: two of three columns, plus the gap between them. */
+export const EXPLORE_FEATURE_CARD_SIZES = "(min-width: 896px) 740px, (min-width: 576px) 50vw, 100vw";
 
 function ExploreCard({
   title,
@@ -1076,7 +1090,7 @@ function ExploreCard({
           src={image}
           focal={focal}
           alt=""
-          sizes={EXPLORE_CARD_SIZES}
+          sizes={feature ? EXPLORE_FEATURE_CARD_SIZES : EXPLORE_CARD_SIZES}
           fallback={fallback}
           className="w-full h-full"
         />
@@ -1086,8 +1100,12 @@ function ExploreCard({
         <TeachIcon name={icon} size={17} />
       </span>
       <span className="absolute start-5 end-5 bottom-4 @4xl:start-7 @4xl:end-7 @4xl:bottom-6 flex flex-col gap-1 [--tt-tile-title:24px] @4xl:[--tt-tile-title:30px]">
-        {subtitle ? <Eyebrow tone="light">{subtitle}</Eyebrow> : null}
-        <span className="text-white leading-tight" style={{ fontFamily: "var(--tt-font-display)", fontSize: "calc(var(--tt-tile-title) * var(--tt-display-scale, 1))" }}>
+        {/* Mixed content: both of these are the organizer's own words
+            when they have filled the card in, and a system fallback when
+            they have not - so each reads its own direction instead of
+            inheriting the Space's. */}
+        {subtitle ? <Eyebrow userContent tone="light">{subtitle}</Eyebrow> : null}
+        <span dir="auto" className="text-white leading-tight" style={{ fontFamily: "var(--tt-font-display)", fontSize: "calc(var(--tt-tile-title) * var(--tt-display-scale, 1))" }}>
           {title}
         </span>
       </span>

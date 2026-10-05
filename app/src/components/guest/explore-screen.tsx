@@ -24,6 +24,7 @@ import type { CSSProperties, ReactElement } from "react";
 
 import { createTranslator, splitEmphasis, translate, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { BrandImage } from "@/components/shared/brand-image";
+import { FLOW_SIZES } from "@/components/flow-media-sizes";
 export type ExploreScreenProps = {
   brand: BrandConfig;
   enabledModules: OptionalModuleKey[];
@@ -61,10 +62,6 @@ type Tone = "primary" | "accent";
  * photo - modules with no photographed items yet fall back to a plain
  * gradient tile rather than fabricating imagery.
  */
-/** This product renders inside a fixed 390px device frame from `sm` up. */
-const SIZES = "(min-width: 640px) 390px, 100vw";
-/** Explore tiles sit two to a row. */
-const TILE_SIZES = "(min-width: 640px) 195px, 50vw";
 
 /**
  * Which `sizes` each module's cover is requested at, by card shape:
@@ -77,16 +74,18 @@ const TILE_SIZES = "(min-width: 640px) 195px, 50vw";
  * waste CP4 is removing - hence one table, read by both.
  */
 export const EXPLORE_COVER_SIZES: Record<string, string> = {
-  meals: SIZES,
-  treatments: SIZES,
-  facilities: SIZES,
-  arrivalInfo: TILE_SIZES,
-  faq: TILE_SIZES,
-  stayConnected: TILE_SIZES,
+  meals: FLOW_SIZES.frame,
+  treatments: FLOW_SIZES.frame,
+  // Facilities is an EntryCard like the two above it, but a `compact`
+  // one - it shares a row with the tiles, so it has a tile's box.
+  facilities: FLOW_SIZES.tile,
+  arrivalInfo: FLOW_SIZES.tile,
+  faq: FLOW_SIZES.tile,
+  stayConnected: FLOW_SIZES.tile,
 };
 
 /** Custom pages render as SolidTiles alongside the fixed modules. */
-export const EXPLORE_CUSTOM_PAGE_SIZES = TILE_SIZES;
+export const EXPLORE_CUSTOM_PAGE_SIZES = FLOW_SIZES.tile;
 
 export function ExploreScreen({
   brand,
@@ -329,7 +328,12 @@ function EntryCard({
         src={imageUrl}
         alt=""
         className="w-full h-full"
-        sizes={SIZES}
+        /* `compact` is not only padding: it is what puts this card two to
+           a row in the grid below, so its box is a tile's, not a
+           full-width card's. CP4's browser matrix caught this declaring
+           the full width regardless - a 138px tile on a 320px phone was
+           fetching a 960px render where 480 covers it. */
+        sizes={compact ? FLOW_SIZES.tile : FLOW_SIZES.frame}
         style={{ objectPosition: objectPositionStyle(imagePosition ?? null) }}
         fallback={`linear-gradient(160deg, ${v.color}, ${v.dark})`}
       />
@@ -397,7 +401,7 @@ function SolidTile({
         src={imageUrl}
         alt=""
         className="w-full h-full"
-        sizes={TILE_SIZES}
+        sizes={FLOW_SIZES.tile}
         style={{ objectPosition: objectPositionStyle(imagePosition ?? null) }}
         fallback={v.color}
       />
@@ -421,7 +425,13 @@ function SolidTile({
           >
             {eyebrow}
           </p>
-          <h3 className="text-[18px] leading-tight mt-0.5 truncate" style={{ fontFamily: "var(--rbr-font-display)", color: v.onColor }}>
+          {/* Mixed content: a fixed module's title is a system string in
+              the Space's language, but a custom page's is whatever the
+              organizer typed - so this one tile has to read its own
+              direction rather than inherit the Space's. EntryCard above
+              needs no equivalent: meals, treatments and facilities are
+              the only callers and all three titles are system strings. */}
+          <h3 dir="auto" className="text-[18px] leading-tight mt-0.5 truncate" style={{ fontFamily: "var(--rbr-font-display)", color: v.onColor }}>
             {title}
           </h3>
         </div>

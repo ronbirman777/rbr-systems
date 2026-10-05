@@ -200,3 +200,30 @@ describe("Flow: what gets warmed", () => {
     }
   });
 });
+
+describe("what must never be warmed", () => {
+  it("never speculatively fetches audio", () => {
+    // Section 14's rule is that no audio byte moves before the visitor
+    // asks for it. The player is two presses deep and uses
+    // preload="metadata"; the one way that could be undone by accident
+    // is an inventory picking up an audioRef alongside the artwork, so
+    // that is pinned here rather than left to review.
+    const data = teachData();
+    data.mediaUrls["t1/teach/a1/up-a1/published.mp3"] = "/api/media/t1/teach/a1/up-a1/published.mp3";
+    for (const tab of ["home", "about", "explore", "schedule"] as const) {
+      for (const item of teachPrefetchItems(data, tab, url)) {
+        expect(item.src, `${tab}: ${item.src}`).not.toMatch(/\.(mp3|m4a|aac|wav|ogg|opus)(\?|$)/i);
+      }
+    }
+  });
+
+  it("only ever warms as an image, and only through /api/media", () => {
+    const data = teachData();
+    const all = [
+      ...teachPrefetchItems(data, "home", url),
+      ...guestPrefetchItems(flowProps(), "today"),
+    ];
+    expect(all.length).toBeGreaterThan(0);
+    for (const item of all) expect(item.src).toMatch(/^\/api\/media\//);
+  });
+});

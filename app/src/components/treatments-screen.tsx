@@ -10,6 +10,7 @@ import type { CSSProperties } from "react";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { BrandImage } from "@/components/shared/brand-image";
+import { FLOW_SIZES } from "./flow-media-sizes";
 export type TreatmentsScreenProps = {
   brand: BrandConfig;
   treatments: DisplayTreatment[];
@@ -25,8 +26,6 @@ export type TreatmentsScreenProps = {
  * model exactly (bookingInfo is informational free text; there is no
  * booking engine here, none was ever asked for).
  */
-/** This product renders inside a fixed 390px device frame from `sm` up. */
-const SIZES = "(min-width: 640px) 390px, 100vw";
 
 export function TreatmentsScreen({ brand, treatments, locale = DEFAULT_LOCALE }: TreatmentsScreenProps) {
   const { t: tr } = createTranslator(locale);
@@ -66,7 +65,7 @@ export function TreatmentsScreen({ brand, treatments, locale = DEFAULT_LOCALE }:
                     src={t.imageUrl}
                     alt={t.name}
                     className="w-full h-full"
-                    sizes={SIZES}
+                    sizes={FLOW_SIZES.frame}
                     style={{ objectPosition: objectPositionStyle(t.imagePosition) }}
                     fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                   />

@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { BrandImage } from "@/components/shared/brand-image";
+import { FLOW_SIZES } from "./flow-media-sizes";
 export type FacilitiesScreenProps = {
   brand: BrandConfig;
   facilities: DisplayFacility[];
@@ -21,8 +22,6 @@ export type FacilitiesScreenProps = {
  * generalized the same way as MealsScreen (first item featured, not a
  * fixed 4-item layout).
  */
-/** This product renders inside a fixed 390px device frame from `sm` up. */
-const SIZES = "(min-width: 640px) 390px, 100vw";
 
 export function FacilitiesScreen({ brand, facilities, locale = DEFAULT_LOCALE }: FacilitiesScreenProps) {
   const { t } = createTranslator(locale);
@@ -58,7 +57,7 @@ export function FacilitiesScreen({ brand, facilities, locale = DEFAULT_LOCALE }:
                   src={f.imageUrl}
                   alt={f.name}
                   className="w-full h-full"
-                  sizes={SIZES}
+                  sizes={FLOW_SIZES.frame}
                   style={{ objectPosition: objectPositionStyle(f.imagePosition) }}
                   fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                 />
