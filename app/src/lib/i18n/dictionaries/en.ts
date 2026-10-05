@@ -1223,6 +1223,7 @@ export const en = {
     recurrenceTooLarge: "“{title}”: its repeat settings are damaged and too large to keep - please repair them.",
     tooManyExceptions: "“{title}”: too many changed or cancelled dates on one class.",
     navigationColourHelpFlow: "Used for the bottom navigation's active tab, and other tab-like selections (e.g. Schedule's day picker).",
+    photoOf: "{name} photo",
   },
 
 } as const;

@@ -1221,6 +1221,7 @@ export const de: Dictionary = {
     recurrenceTooLarge: "„{title}“: Die Wiederholungseinstellungen sind beschädigt und zu groß zum Speichern - bitte repariere sie.",
     tooManyExceptions: "„{title}“: zu viele geänderte oder abgesagte Termine bei einem Kurs.",
     navigationColourHelpFlow: "Für den aktiven Tab der unteren Navigation und ähnliche Auswahlen (z. B. die Tagesauswahl im Zeitplan).",
+    photoOf: "Foto von {name}",
   },
 
 };

@@ -929,7 +929,7 @@ export async function uploadModuleItemPhoto(
       id: itemId,
       tenant_id: tenantId,
       module_key: moduleKey,
-      title: title || "Untitled",
+      title: title || translate(localeFromFormData(formData), "common", "untitled"),
       subtitle,
       description,
       image_ref: path,

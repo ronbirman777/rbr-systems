@@ -620,7 +620,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
           </Link>
           <span className="hidden sm:inline text-[#8C8A84]">/</span>
           <span className="truncate text-[16px] italic text-[#192B21]" style={{ fontFamily: "var(--font-fraunces), serif" }}>
-            {name || "My Teaching Space"}
+            {name || t("teach", "myTeachingSpace")}
           </span>
           <span className="hidden md:inline px-2.5 py-1 rounded-full bg-[#F1E9DC] text-[10px] font-semibold tracking-[0.12em] text-[#9A7B4F]">TIME TO TEACH</span>
         </div>

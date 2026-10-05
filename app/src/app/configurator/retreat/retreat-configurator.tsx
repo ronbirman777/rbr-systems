@@ -835,7 +835,7 @@ function TeamEditor({
                       onChange={(imagePosition) => updateFacilitator(f.id, { imagePosition })}
                       defaultPosition={FACILITATOR_DEFAULT_POSITION}
                       aspect="13/10"
-                      label={`${f.name || "Facilitator"} photo`}
+                      label={t("studio", "photoOf", { name: f.name || t("flow", "facilitator") })}
                     />
                   )}
                 </div>
@@ -1662,7 +1662,7 @@ export function RetreatConfigurator({
                     step === "share" ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
                   }`}
                 >
-                  Share Your Space
+                  {t("studio", "shareYourSpace")}
                 </button>
               )}
               {tenantId && (
@@ -1673,7 +1673,7 @@ export function RetreatConfigurator({
                     step === "featured" ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
                   }`}
                 >
-                  Featured on InnerDweS
+                  {t("studio", "featuredOnInnerDwes")}
                 </button>
               )}
             </div>
@@ -2468,7 +2468,7 @@ export function RetreatConfigurator({
                     onClick={() => setStep("share")}
                     className="text-xs font-semibold uppercase tracking-wide px-4 py-2 rounded-full bg-idw-forest text-idw-parchment"
                   >
-                    Share Your Space
+                    {t("studio", "shareYourSpace")}
                   </button>
                   <button
                     type="button"

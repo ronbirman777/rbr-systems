@@ -1216,6 +1216,7 @@ export const he: Dictionary = {
     recurrenceTooLarge: "״{title}״: הגדרות החזרה פגומות וגדולות מכדי לשמור - נא לתקן אותן.",
     tooManyExceptions: "״{title}״: יותר מדי תאריכים שהשתנו או בוטלו בשיעור אחד.",
     navigationColourHelpFlow: "משמש ללשונית הפעילה בניווט התחתון ולבחירות דומות (למשל בוחר היום בלוח הזמנים).",
+    photoOf: "תמונה של {name}",
   },
 
 };
