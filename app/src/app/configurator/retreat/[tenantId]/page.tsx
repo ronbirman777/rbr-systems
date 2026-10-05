@@ -42,12 +42,13 @@ export default async function ResumeRetreatConfiguratorPage({
   const { step } = await searchParams;
   const { supabase, tenant } = await loadStudioTenant(tenantId, "retreat");
 
-  // PRE-MIGRATION WARNING: custom_navigation/custom_text (0015) and
-  // custom_secondary/hero_image_ref/space_image_ref/logo_ref (0014) must
-  // all exist on the same database this code runs against - this select
-  // will error for every tenant, breaking this entire page, otherwise.
-  // Intentional coupling, not an oversight - do not deploy this code
-  // ahead of whichever of those migrations hasn't applied yet.
+  // PRE-MIGRATION WARNING: custom_surface (0032), custom_navigation/
+  // custom_text (0015) and custom_secondary/hero_image_ref/
+  // space_image_ref/logo_ref (0014) must all exist on the same database
+  // this code runs against - this select will error for every tenant,
+  // breaking this entire page, otherwise. Intentional coupling, not an
+  // oversight - do not deploy this code ahead of whichever of those
+  // migrations hasn't applied yet.
   // Task 011 (item C, Space-opening performance): these 12 reads are all
   // independent of one another - every one of them is filtered by
   // tenantId alone, none consumes another's result - so there is no
@@ -72,16 +73,17 @@ export default async function ResumeRetreatConfiguratorPage({
     { data: moduleConfigRows },
     { data: published },
   ] = await Promise.all([
-    // PRE-MIGRATION WARNING: custom_navigation/custom_text (0015) and
-    // custom_secondary/hero_image_ref/space_image_ref/logo_ref (0014) must
-    // all exist on the same database this code runs against - this select
-    // will error for every tenant, breaking this entire page, otherwise.
-    // Intentional coupling, not an oversight - do not deploy this code
-    // ahead of whichever of those migrations hasn't applied yet.
+    // PRE-MIGRATION WARNING: custom_surface (0032), custom_navigation/
+    // custom_text (0015) and custom_secondary/hero_image_ref/
+    // space_image_ref/logo_ref (0014) must all exist on the same database
+    // this code runs against - this select will error for every tenant,
+    // breaking this entire page, otherwise. Intentional coupling, not an
+    // oversight - do not deploy this code ahead of whichever of those
+    // migrations hasn't applied yet.
     supabase
       .from("brand_configs")
       .select(
-        "palette, atmosphere, custom_primary, custom_secondary, custom_navigation, custom_text, hero_image_ref, space_image_ref, logo_ref"
+        "palette, atmosphere, custom_primary, custom_secondary, custom_navigation, custom_text, custom_surface, hero_image_ref, space_image_ref, logo_ref"
       )
       .eq("tenant_id", tenantId)
       .maybeSingle(),
@@ -341,6 +343,7 @@ export default async function ResumeRetreatConfiguratorPage({
         initialCustomPrimary={brandInitial.initialCustomPrimary}
         initialCustomSecondary={brandInitial.initialCustomSecondary}
         initialCustomNavigation={brandInitial.initialCustomNavigation}
+        initialCustomSurface={brandInitial.initialCustomSurface}
         initialCustomText={brandInitial.initialCustomText}
         initialHeroImageRef={brandInitial.initialHeroImageRef}
         initialHeroImageUrl={initialHeroImageUrl}

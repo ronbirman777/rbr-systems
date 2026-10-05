@@ -14,6 +14,7 @@ import {
 } from "./accessibility";
 import { CANONICAL_BRAND_PRESETS, BRAND_PRESET_KEYS, getBrandPresets, presetColorUpdate } from "./presets";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
+import { brandFromPublishedTheme } from "@/lib/teach/guestData";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { TEACH_LEGACY_PRESET_KEYS } from "@/lib/teach/schemas";
 import { BrandImage } from "@/components/shared/brand-image";
@@ -243,6 +244,38 @@ describe("shared Surface role is backward compatible", () => {
     // Brand colours themselves never move.
     expect(after["--rbr-primary"]).toBe(before["--rbr-primary"]);
     expect(after["--rbr-secondary"]).toBe(before["--rbr-secondary"]);
+  });
+
+  it("carries a published customSurface through to the Guest ground (0032 end to end)", () => {
+    const brand = brandFromPublishedTheme("QA", {
+      palette: "forest-sage",
+      atmosphere: "calm-organic",
+      customPrimary: "#3B6E8F",
+      customSurface: "#FBF5F1",
+    });
+    expect(brand.customSurface).toBe("#FBF5F1");
+    expect(deriveThemeVars(brand)["--rbr-background"]).toBe("#FBF5F1");
+  });
+
+  it("falls back to the fixed ground for a snapshot published before 0032", () => {
+    // A pre-0032 snapshot has no customSurface key at all - absence must
+    // parse cleanly and mean "no override", not break the Space.
+    const brand = brandFromPublishedTheme("QA", {
+      palette: "forest-sage",
+      atmosphere: "calm-organic",
+      customPrimary: "#3B6E8F",
+    });
+    expect(brand.customSurface).toBeUndefined();
+    expect(deriveThemeVars(brand)["--rbr-background"]).toBe(GUEST_BASE_PALETTE.parchment);
+  });
+
+  it("treats an explicit null surface as no override, exactly like absence", () => {
+    const brand = brandFromPublishedTheme("QA", {
+      palette: "forest-sage",
+      atmosphere: "calm-organic",
+      customSurface: null,
+    });
+    expect(deriveThemeVars(brand)["--rbr-background"]).toBe(GUEST_BASE_PALETTE.parchment);
   });
 
   it("keeps retired Teach preset keys resolvable so old Spaces still render", () => {

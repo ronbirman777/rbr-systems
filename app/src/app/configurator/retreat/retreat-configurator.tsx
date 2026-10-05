@@ -81,6 +81,7 @@ export type RetreatConfiguratorProps = {
   initialCustomPrimary: string | null;
   initialCustomSecondary: string | null;
   initialCustomNavigation: string | null;
+  initialCustomSurface: string | null;
   initialCustomText: string | null;
   initialHeroImageRef: string | null;
   initialHeroImageUrl: string | null;
@@ -180,7 +181,7 @@ const STEP_LABELS: Record<Exclude<StepKey, "identity" | "brand" | "modules" | "p
 const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 /** One swatch per canonical preset for a colour role. */
-function swatchesFor(role: "primary" | "accent" | "navigation" | "text") {
+function swatchesFor(role: "primary" | "accent" | "navigation" | "text" | "surface") {
   return getBrandPresets("retreat").map((p) => ({ label: p.label, hex: p[role] }));
 }
 
@@ -994,6 +995,7 @@ export function RetreatConfigurator({
   initialCustomPrimary,
   initialCustomSecondary,
   initialCustomNavigation,
+  initialCustomSurface,
   initialCustomText,
   initialHeroImageRef,
   initialHeroImageUrl,
@@ -1044,15 +1046,19 @@ export function RetreatConfigurator({
   const [customPrimary, setCustomPrimary] = useState<string | null>(initialCustomPrimary);
   const [customSecondary, setCustomSecondary] = useState<string | null>(initialCustomSecondary);
   const [customNavigation, setCustomNavigation] = useState<string | null>(initialCustomNavigation);
+  // 028B: Surface/Tint, the fifth shared brand role. Null keeps the fixed
+  // Guest ground, so an existing Space renders exactly as before.
+  const [customSurface, setCustomSurface] = useState<string | null>(initialCustomSurface);
   const [customText, setCustomText] = useState<string | null>(initialCustomText);
   // Bumped when a Brand preset is applied so the colour pickers re-sync their hex drafts.
   const [presetNonce, setPresetNonce] = useState(0);
   const effectivePrimary = customPrimary ?? PALETTES[palette].primary;
   const effectiveSecondary = customSecondary ?? PALETTES[palette].secondary;
   const effectiveNavigation = customNavigation ?? effectivePrimary;
+  const effectiveSurface = customSurface ?? GUEST_BASE_PALETTE.parchment;
   const effectiveText = customText ?? effectivePrimary;
   const activePresetKey =
-    matchBrandPreset("retreat", { primary: customPrimary, accent: customSecondary, navigation: customNavigation, text: customText })?.key ?? null;
+    matchBrandPreset("retreat", { primary: customPrimary, accent: customSecondary, navigation: customNavigation, text: customText, surface: customSurface })?.key ?? null;
   const readabilityTextColor = safeTextColor(effectivePrimary);
   const readabilityPasses = meetsAA(effectivePrimary, readabilityTextColor);
   // App Text Color is drawn directly on the app's own light background,
@@ -1929,6 +1935,7 @@ export function RetreatConfigurator({
             <input type="hidden" name="customSecondary" value={customSecondary ?? ""} />
             <input type="hidden" name="customNavigation" value={customNavigation ?? ""} />
             <input type="hidden" name="customText" value={customText ?? ""} />
+            <input type="hidden" name="customSurface" value={customSurface ?? ""} />
             <StudioHeading>Brand your experience</StudioHeading>
       <StudioIntro>Choose colors that reflect your retreat&apos;s energy. InnerDweS ensures they work beautifully across
               your entire guest application.</StudioIntro>
@@ -1945,6 +1952,7 @@ export function RetreatConfigurator({
                   setCustomSecondary(next.accent);
                   setCustomNavigation(next.navigation);
                   setCustomText(next.text);
+                  setCustomSurface(next.surface ?? null);
                   setPresetNonce((n) => n + 1);
                   dirty.markDirty("identityAndBrand");
                 }}
@@ -1982,6 +1990,17 @@ export function RetreatConfigurator({
               value={effectiveNavigation}
               onChange={(hex) => {
                 setCustomNavigation(hex);
+                dirty.markDirty("identityAndBrand");
+              }}
+            />
+            <ColorPicker
+              key={`surface-${presetNonce}`}
+              label="App Background"
+              swatches={swatchesFor("surface")}
+              hint="The page tint behind every screen. Leave it as-is to keep the default parchment ground."
+              value={effectiveSurface}
+              onChange={(hex) => {
+                setCustomSurface(hex);
                 dirty.markDirty("identityAndBrand");
               }}
             />
@@ -2050,7 +2069,7 @@ export function RetreatConfigurator({
               accent={effectiveSecondary}
               navigation={effectiveNavigation}
               text={effectiveText}
-              surface={GUEST_BASE_PALETTE.parchment}
+              surface={effectiveSurface}
             />
 
             {!textReadabilityPasses && (

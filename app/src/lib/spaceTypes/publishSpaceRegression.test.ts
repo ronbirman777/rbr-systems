@@ -118,6 +118,9 @@ const TEACH_BLOCK = /if v_tenant\.product_type = 'teach' then[\s\S]*?end if;/i;
 const TEACH_CUSTOM_PAGES_GATE = /if 'customPages' = any\(v_enabled_modules\) and v_tenant\.product_type is distinct from 'teach' then/i;
 /** TASK 028A's addition: the product-neutral spaceSettings object. */
 const SPACE_SETTINGS_BLOCK = /v_modules := v_modules \|\| jsonb_build_object\(\s*'spaceSettings',[\s\S]*?\);/i;
+/** TASK 028B's addition: the shared brand Surface/Tint role. */
+const SURFACE_SELECT = /custom_navigation, custom_text, custom_surface,/i;
+const SURFACE_EMIT = /,\s*(?:--[^\n]*\n\s*)*'customSurface', v_brand\.custom_surface/i;
 
 describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Phase 4A)", () => {
   const latest = latestFunctionDefinition(migrations, "publish_space")!;
@@ -131,14 +134,35 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     expect(teachPayload.file).toMatch(/^0028_/);
   });
 
-  it("publish_space() is last redefined by 0031, which adds the shared Space Settings object and nothing else", () => {
-    expect(latest.file).toMatch(/^0031_/);
-    expect(SPACE_SETTINGS_BLOCK.test(latest.body)).toBe(true);
+  it("publish_space() is last redefined by 0032, adding only the shared Surface role on top of 0031", () => {
+    expect(latest.file).toMatch(/^0032_/);
+    expect(SURFACE_SELECT.test(latest.body)).toBe(true);
+    expect(SURFACE_EMIT.test(latest.body)).toBe(true);
 
-    // The 0031 body must equal 0028's body plus exactly that block - no
-    // other edit may ride along in a publish-contract migration.
+    // 0032's body must equal 0031's plus exactly those two edits - no
+    // other change may ride along in a publish-contract migration.
+    const zero31 = extractFunctionBody(migrations.find((m) => m.name.startsWith("0031_"))!.sql, "publish_space")!;
+    const stripped = latest.body
+      .replace(SURFACE_SELECT, "custom_navigation, custom_text,")
+      .replace(SURFACE_EMIT, "");
+    expect(norm(stripped)).toBe(norm(zero31));
+  });
+
+  it("0031's own body is still 0028 plus only the Space Settings block", () => {
+    const zero31 = extractFunctionBody(migrations.find((m) => m.name.startsWith("0031_"))!.sql, "publish_space")!;
     const zero28 = extractFunctionBody(migrations.find((m) => m.name.startsWith("0028_"))!.sql, "publish_space")!;
-    expect(norm(latest.body.replace(SPACE_SETTINGS_BLOCK, ""))).toBe(norm(zero28));
+    expect(SPACE_SETTINGS_BLOCK.test(zero31)).toBe(true);
+    expect(norm(zero31.replace(SPACE_SETTINGS_BLOCK, ""))).toBe(norm(zero28));
+  });
+
+  it("the Surface role is a brand column, never Teach content", () => {
+    // build_teach_payload must not learn about it: surface is a brand
+    // role that every product shares, not Teach-specific content.
+    const teachSql = migrations.find((m) => m.name === teachPayload.file)!.sql;
+    const start = teachSql.indexOf("create or replace function public.build_teach_payload");
+    const fn = teachSql.slice(start, teachSql.indexOf("create or replace function public.publish_space"));
+    expect(fn).not.toContain("custom_surface");
+    expect(fn).not.toContain("customSurface");
   });
 
   it("the Space Settings block is product-neutral and adds only modules.spaceSettings", () => {
@@ -151,11 +175,13 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     expect(norm(block)).toContain("'{}'::jsonb");
   });
 
-  it("the Retreat branch is byte-for-byte 0025's body once the Teach and Space Settings blocks are removed (moduleCovers, imagePosition, snapshot shape untouched)", () => {
+  it("the Retreat branch is byte-for-byte 0025's body once every later additive block is removed (moduleCovers, imagePosition, snapshot shape untouched)", () => {
     expect(TEACH_BLOCK.test(latest.body)).toBe(true);
     const retreatOnly = latest.body
       .replace(TEACH_BLOCK, "")
       .replace(SPACE_SETTINGS_BLOCK, "")
+      .replace(SURFACE_SELECT, "custom_navigation, custom_text,")
+      .replace(SURFACE_EMIT, "")
       .replace(TEACH_CUSTOM_PAGES_GATE, "if 'customPages' = any(v_enabled_modules) then");
     expect(norm(retreatOnly)).toBe(norm(base));
   });
@@ -225,15 +251,16 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     }
   });
 
-  it("migration chain: one migration per number, 0031 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
+  it("migration chain: one migration per number, 0032 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
     const names = migrations.map((m) => m.name);
     expect(names.filter((n) => n.startsWith("0028_"))).toEqual(["0028_teach_foundation.sql"]);
     expect(names.filter((n) => n.startsWith("0029_"))).toEqual(["0029_versioned_media_update_deny.sql"]);
     expect(names.filter((n) => n.startsWith("0030_"))).toEqual(["0030_tenant_media_policies_uuid_safe.sql"]);
     expect(names.filter((n) => n.startsWith("0031_"))).toEqual(["0031_space_settings_publish.sql"]);
+    expect(names.filter((n) => n.startsWith("0032_"))).toEqual(["0032_brand_surface.sql"]);
     // Nothing beyond the current head, and historical numbers are never
     // renumbered or back-filled.
-    expect(names.some((n) => /^00(3[2-9]|[4-9]\d)_/.test(n))).toBe(false);
+    expect(names.some((n) => /^00(3[3-9]|[4-9]\d)_/.test(n))).toBe(false);
     expect(names.filter((n) => n.startsWith("0019_"))).toEqual(["0019_signup_profile.sql"]);
     expect(names.some((n) => n.startsWith("0023_"))).toBe(false);
   });

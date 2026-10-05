@@ -18,6 +18,7 @@ export type BrandConfigsRow = {
   custom_primary: string | null;
   custom_secondary: string | null;
   custom_navigation: string | null;
+  custom_surface?: string | null;
   custom_text: string | null;
   hero_image_ref: string | null;
   space_image_ref: string | null;
@@ -30,6 +31,7 @@ export type BrandInitialProps = {
   initialCustomPrimary: string | null;
   initialCustomSecondary: string | null;
   initialCustomNavigation: string | null;
+  initialCustomSurface: string | null;
   initialCustomText: string | null;
   initialHeroImageRef: string | null;
   initialSpaceImageRef: string | null;
@@ -43,6 +45,7 @@ export function mapBrandRowToInitialProps(row: BrandConfigsRow): BrandInitialPro
     initialCustomPrimary: row?.custom_primary ?? null,
     initialCustomSecondary: row?.custom_secondary ?? null,
     initialCustomNavigation: row?.custom_navigation ?? null,
+    initialCustomSurface: row?.custom_surface ?? null,
     initialCustomText: row?.custom_text ?? null,
     initialHeroImageRef: row?.hero_image_ref ?? null,
     initialSpaceImageRef: row?.space_image_ref ?? null,

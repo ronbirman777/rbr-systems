@@ -63,6 +63,7 @@ export function brandFromPublishedTheme(name: string, theme: unknown): BrandConf
     customSecondary: t.customSecondary ?? null,
     customNavigation: t.customNavigation ?? null,
     customText: t.customText ?? null,
+    customSurface: t.customSurface ?? undefined,
     atmosphere: t.atmosphere as AtmosphereKey,
     imageStyle: t.imageStyle ?? "rounded",
   };

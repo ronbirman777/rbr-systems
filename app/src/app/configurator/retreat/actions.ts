@@ -130,6 +130,7 @@ export async function saveDraft(
   const rawCustomPrimary = String(formData.get("customPrimary") ?? "").trim();
   const rawCustomSecondary = String(formData.get("customSecondary") ?? "").trim();
   const rawCustomNavigation = String(formData.get("customNavigation") ?? "").trim();
+  const rawCustomSurface = String(formData.get("customSurface") ?? "").trim();
   const rawCustomText = String(formData.get("customText") ?? "").trim();
 
   // logoRef is deliberately not read/written here - Logo has its own
@@ -144,6 +145,7 @@ export async function saveDraft(
     customPrimary: rawCustomPrimary || null,
     customSecondary: rawCustomSecondary || null,
     customNavigation: rawCustomNavigation || null,
+    customSurface: rawCustomSurface || null,
     customText: rawCustomText || null,
     atmosphere: String(formData.get("atmosphere") ?? "calm-organic"),
     imageStyle: "rounded",
@@ -183,6 +185,7 @@ export async function saveDraft(
     custom_primary: parsed.data.customPrimary,
     custom_secondary: parsed.data.customSecondary,
     custom_navigation: parsed.data.customNavigation,
+    custom_surface: parsed.data.customSurface,
     custom_text: parsed.data.customText,
     atmosphere: parsed.data.atmosphere,
     image_style: parsed.data.imageStyle,

@@ -94,12 +94,20 @@ export function matchBrandPreset(
 export type BrandPresetColors = { primary: string; accent: string; navigation: string; text: string; surface?: string };
 
 /**
- * The colour fields a preset click writes - the preset's full model for the
- * roles that product persists. Time to Teach also persists the surface tint
- * (its background); Time to Flow keeps its fixed Guest App base, so no
- * surface is written there.
+ * The colour fields a preset click writes - the preset's full model.
+ *
+ * Since 028B every product persists a surface (Flow via the shared
+ * brand_configs.custom_surface column added in 0032, Teach via its
+ * existing teachStyle.background), so all five roles are written for all
+ * of them. client_hub has no Brand UI yet and simply never calls this.
  */
 export function presetColorUpdate(product: BrandPresetProduct, preset: BrandPreset): BrandPresetColors {
-  const base = { primary: preset.primary, accent: preset.accent, navigation: preset.navigation, text: preset.text };
-  return product === "teach" ? { ...base, surface: preset.surface } : base;
+  void product;
+  return {
+    primary: preset.primary,
+    accent: preset.accent,
+    navigation: preset.navigation,
+    text: preset.text,
+    surface: preset.surface,
+  };
 }
