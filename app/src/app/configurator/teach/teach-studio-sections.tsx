@@ -10,7 +10,7 @@ import { dstConflicts, upcomingOccurrenceDates, type DstConflict } from "@/lib/t
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
 import { MEDIA_BUCKET } from "@/lib/media/path";
 import { uploadAudioDraftObject } from "@/lib/teach/audioUpload";
-import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL, type SocialPlatform } from "@/lib/modules/socialLinks";
+import { SOCIAL_PLATFORMS, socialPlatformLabel, type SocialPlatform } from "@/lib/modules/socialLinks";
 import { checkSlugAvailability, reserveSlug } from "@/app/configurator/retreat/actions";
 import { publishTeachSpace, saveTeachDirectoryListing } from "./actions";
 import { PublicLinkCard } from "@/components/studio/public-link-card";
@@ -259,6 +259,7 @@ function ItemImage<K extends TeachEditableItemKey>({
   const meta = item.metadata as { imagePosition?: { x: number; y: number } | null };
   return (
     <ImageField
+      locale={api.locale}
       label={label}
       imageUrl={api.mediaUrl(item.imageRef)}
       focal={meta.imagePosition ?? null}
@@ -305,6 +306,7 @@ function SettingsImage({
   const { t } = createTranslator(api.locale);
   return (
     <ImageField
+      locale={api.locale}
       label={label}
       imageUrl={api.mediaUrl(value.imageRef)}
       focal={value.imagePosition}
@@ -386,8 +388,8 @@ export function IdentitySection({ api }: Props) {
   return (
     <>
       <SectionHeader eyebrow={t("teach", "identityEyebrow")} title={t("teach", "sectionIdentity")} intro={t("teach", "identityBody")} />
-      <SpaceCountryCard tenantId={api.tenantId} />
-      <SpaceLanguageCard tenantId={api.tenantId} />
+      <SpaceCountryCard tenantId={api.tenantId} locale={api.locale} />
+      <SpaceLanguageCard tenantId={api.tenantId} uiLocale={api.locale} />
       <Card title={t("teach", "whoYouAre")} description={t("teach", "whoYouAreBody")}>
         <Grid>
           <TextField label={t("teach", "myName")} value={api.name} onChange={api.setName} maxLength={80} placeholder={t("teach", "myNamePlaceholder")} />
@@ -428,6 +430,7 @@ export function IdentitySection({ api }: Props) {
       </Card>
       <Card title={t("teach", "primaryImage")} description={t("teach", "primaryImageBody")}>
         <ImageField
+          locale={api.locale}
           label={t("teach", "heroImage")}
           imageUrl={api.mediaUrl(api.heroImageRef)}
           focal={profile.heroImagePosition}
@@ -483,7 +486,13 @@ export function IdentitySection({ api }: Props) {
             {t("common", "add")}
           </StudioButton>
         </div>
-        <Hint>{`${quotes.length} of ${DAILY_INSPIRATION_MAX_QUOTES} quotes · up to ${DAILY_INSPIRATION_MAX_LENGTH} characters each`}</Hint>
+        <Hint>
+          {t("teach", "quotesCounter", {
+            count: quotes.length,
+            max: DAILY_INSPIRATION_MAX_QUOTES,
+            chars: DAILY_INSPIRATION_MAX_LENGTH,
+          })}
+        </Hint>
         <Toggle
           checked={di.useFallback}
           onChange={(v) => api.updateSetting("dailyInspiration", { useFallback: v }, "identity")}
@@ -558,6 +567,7 @@ export function BrandSection({ api }: Props) {
         {/* Shared with Flow - the same component grades both products, so
             "is this readable" has one answer across InnerDweS. */}
         <BrandContrastFeedback
+          locale={api.locale}
           primary={api.colors.primary}
           accent={api.colors.accent}
           navigation={api.colors.navigation ?? api.colors.primary}
@@ -566,6 +576,7 @@ export function BrandSection({ api }: Props) {
         />
         <Grid>
           <ColorField
+            locale={api.locale}
             label={t("studio", "primaryColour")}
             value={api.colors.primary}
             checkWhiteText
@@ -577,6 +588,7 @@ export function BrandSection({ api }: Props) {
             hint={t("teach", "primaryColourHelpTeach")}
           />
           <ColorField
+            locale={api.locale}
             label={t("studio", "accentColour")}
             value={api.colors.accent}
             swatches={presets.map((p) => ({ label: p.label, hex: p.accent }))}
@@ -587,18 +599,18 @@ export function BrandSection({ api }: Props) {
             hint={t("teach", "accentColourHelpTeach")}
           />
         </Grid>
-        <ColorField label={t("studio", "backgroundTint")} value={style.background ?? "#F5F0E8"} onChange={(hex) => set({ background: hex, preset: "custom" })} hint={t("teach", "backgroundTintHelpTeach")} />
+        <ColorField locale={api.locale} label={t("studio", "backgroundTint")} value={style.background ?? "#F5F0E8"} onChange={(hex) => set({ background: hex, preset: "custom" })} hint={t("teach", "backgroundTintHelpTeach")} />
         <Toggle checked={advanced} onChange={(v) => {
           setAdvanced(v);
           if (!v) api.setColors({ ...api.colors, navigation: null, text: null });
         }} label={t("teach", "fineTuneColours")} description={t("teach", "fineTuneColoursBody")} />
         {advanced ? (
           <Grid>
-            <ColorField label={t("studio", "navigationColour")} value={api.colors.navigation ?? api.colors.primary} onChange={(hex) => {
+            <ColorField locale={api.locale} label={t("studio", "navigationColour")} value={api.colors.navigation ?? api.colors.primary} onChange={(hex) => {
               api.setColors({ ...api.colors, navigation: hex });
               set({ preset: "custom" });
             }} />
-            <ColorField label={t("studio", "textColour")} value={api.colors.text ?? api.colors.primary} onChange={(hex) => {
+            <ColorField locale={api.locale} label={t("studio", "textColour")} value={api.colors.text ?? api.colors.primary} onChange={(hex) => {
               api.setColors({ ...api.colors, text: hex });
               set({ preset: "custom" });
             }} />
@@ -1178,7 +1190,7 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
             previewValues={classTemplateValues(api.name || t("teach", "yourName"), item.title || t("teach", "classLabel"), m)}
           />
         ) : null}
-        {reg.method === "whatsapp" && cta ? <ClassWhatsAppQr tenantId={api.tenantId} classId={item.id} /> : null}
+        {reg.method === "whatsapp" && cta ? <ClassWhatsAppQr tenantId={api.tenantId} classId={item.id} locale={api.locale} /> : null}
         {reg.method ? (
           cta ? (
             <p className="text-[12px] text-[#3F6A4C]">✓ Guests will see “{cta.label}”.</p>
@@ -1384,7 +1396,7 @@ export function AboutSection({ api }: Props) {
       <Card title={t("teach", "socialAndDirectLinks")} description={t("teach", "socialLinksBody")}>
         <Grid>
           {SOCIAL_PLATFORMS.map((p) => (
-            <TextField key={p} label={SOCIAL_PLATFORM_LABEL[p]} value={linkFor(p)} onChange={(v) => setLink(p, v)} inputMode="url" placeholder="https://" />
+            <TextField key={p} label={socialPlatformLabel(api.locale)[p]} value={linkFor(p)} onChange={(v) => setLink(p, v)} inputMode="url" placeholder="https://" />
           ))}
           <TextField label={t("flow", "whatsapp")} value={str(a.whatsapp)} onChange={(v) => set({ whatsapp: nul(v) })} inputMode="tel" placeholder="+972 50 000 0000" />
           <TextField label={t("common", "email")} value={str(a.email)} onChange={(v) => set({ email: nul(v) })} inputMode="email" />
@@ -1711,7 +1723,7 @@ function AudioFileField({ api, item, update, index }: { api: StudioApi; item: Ed
         ref={inputRef}
         type="file"
         accept={Object.keys(AUDIO_ALLOWED_TYPES).join(",")}
-        className={t("teach", "availHidden")}
+        className="hidden"
         aria-label={t("teach", "audioFile")}
         onChange={(e) => {
           const f = e.target.files?.[0];
@@ -1938,14 +1950,15 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
       </Card>
       <Card title={t("teach", "shareYourGuestApp")} description={t("teach", "shareGuestAppBody")}>
         <PublicLinkCard
+          locale={api.locale}
           url={publicSpaceUrl(api.tenantId, api.slug)}
           openHref={guestAppPath(api.tenantId, api.slug)}
           published={Boolean(api.publishedAt)}
           shareName={api.name}
           shareRole={api.settings.teachProfile.teacherType}
         />
-        <QrCodeCard tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} />
-        <ShareCardPanel tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} />
+        <QrCodeCard tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} locale={api.locale} />
+        <ShareCardPanel tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} locale={api.locale} />
       </Card>
       <DirectoryOptInCard tenantId={api.tenantId} initialListed={api.directoryListed} locale={api.locale} />
       <Card title={t("teach", "draftPreview")} description={t("teach", "draftPreviewBody")}>

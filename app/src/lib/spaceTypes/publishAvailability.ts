@@ -1,5 +1,6 @@
 import { resolveSpaceType, type SpaceTypeId } from "./registry";
 
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
 /**
  * Which Space types have a COMPLETE, safe publish path wired to the shared
  * "Publish / Republish" chip on My Spaces. A type is only `true` once its
@@ -19,9 +20,9 @@ const PUBLISH_READY: Record<SpaceTypeId, boolean> = {
 
 export type PublishAvailability = { available: true } | { available: false; message: string };
 
-export function getPublishAvailability(productType: string | null | undefined): PublishAvailability {
+export function getPublishAvailability(productType: string | null | undefined, locale: Locale = DEFAULT_LOCALE): PublishAvailability {
   const resolved = resolveSpaceType(productType);
-  if (resolved.kind !== "known") return { available: false, message: "This Space type can't be published here." };
+  if (resolved.kind !== "known") return { available: false, message: translate(locale, "studio", "cannotPublishThisType") };
   if (!PUBLISH_READY[resolved.type.id]) {
     return { available: false, message: `Publishing for ${resolved.type.product.name} isn't available yet.` };
   }

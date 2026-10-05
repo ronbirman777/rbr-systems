@@ -79,11 +79,11 @@ export function ReadingsScreen({ data, onBack, onOpen, title }: { data: TeachGue
                   .filter(Boolean)
                   .join(" · ")}
               </Eyebrow>
-              <DisplayHeading as="h2" className="[--tt-h2:23px] @min-[40rem]:[--tt-h2:28px] @4xl:[--tt-h2:34px]" style={{ fontSize: "calc(var(--tt-h2) * var(--tt-display-scale, 1))" }}>
+              <DisplayHeading userContent as="h2" className="[--tt-h2:23px] @min-[40rem]:[--tt-h2:28px] @4xl:[--tt-h2:34px]" style={{ fontSize: "calc(var(--tt-h2) * var(--tt-display-scale, 1))" }}>
                 {featured.title}
               </DisplayHeading>
               {featured.metadata.excerpt ? (
-                <span className="text-[13.5px] @4xl:text-[15px] leading-[1.5]" style={{ color: "var(--rbr-text-muted)" }}>
+                <span dir="auto" className="text-[13.5px] @4xl:text-[15px] leading-[1.5]" style={{ color: "var(--rbr-text-muted)" }}>
                   {featured.metadata.excerpt}
                 </span>
               ) : null}
@@ -95,8 +95,8 @@ export function ReadingsScreen({ data, onBack, onOpen, title }: { data: TeachGue
                 <button type="button" onClick={() => onOpen(r.id)} className="tt-reveal w-full h-full text-start flex items-center gap-3 p-2.5 @4xl:flex-col @4xl:items-stretch @4xl:gap-0 @4xl:p-0 @4xl:overflow-hidden" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
                   <TeachImage {...cardImage(data, "teachReadings", r)} alt="" fallbackLabel={r.title} className="w-[78px] h-[78px] @4xl:w-full @4xl:h-[180px] @4xl:!rounded-none shrink-0" style={{ borderRadius: "var(--tt-radius-image)" }} />
                   <span className="flex-1 min-w-0 flex flex-col gap-1 @4xl:p-4 @4xl:gap-1.5">
-                    {r.metadata.category ? <Eyebrow tone="primary">{r.metadata.category}</Eyebrow> : null}
-                    <DisplayHeading as="h3" size={16.5} className="line-clamp-2">
+                    {r.metadata.category ? <Eyebrow userContent tone="primary">{r.metadata.category}</Eyebrow> : null}
+                    <DisplayHeading userContent as="h3" size={16.5} className="line-clamp-2">
                       {r.title}
                     </DisplayHeading>
                     <span className="flex items-center gap-1 text-[12px] truncate" style={{ color: "var(--rbr-text-muted)" }}>
@@ -133,7 +133,7 @@ export function ReadingDetailScreen({ data, item, onBack }: { data: TeachGuestDa
           {[item.metadata.category, mins ? t("teach", "minutesRead", { count: mins }) : null].filter(Boolean).join(" · ") ||
             t("teach", "reading")}
         </Eyebrow>
-        <DisplayHeading as="h1" className="[--tt-h1:30px] @min-[40rem]:[--tt-h1:38px] @4xl:[--tt-h1:46px]" style={{ fontSize: "calc(var(--tt-h1) * var(--tt-display-scale, 1))" }}>
+        <DisplayHeading userContent as="h1" className="[--tt-h1:30px] @min-[40rem]:[--tt-h1:38px] @4xl:[--tt-h1:46px]" style={{ fontSize: "calc(var(--tt-h1) * var(--tt-display-scale, 1))" }}>
           {item.title}
         </DisplayHeading>
         {item.metadata.author || item.metadata.date ? (
@@ -144,7 +144,7 @@ export function ReadingDetailScreen({ data, item, onBack }: { data: TeachGuestDa
           </p>
         ) : null}
         {!item.description && item.metadata.excerpt ? (
-          <p className="text-[15px] leading-[1.65]" style={{ color: "var(--rbr-text)" }}>
+          <p dir="auto" className="text-[15px] leading-[1.65]" style={{ color: "var(--rbr-text)" }}>
             {item.metadata.excerpt}
           </p>
         ) : null}
@@ -208,7 +208,7 @@ export function AudioListScreen({ data, onBack, onOpen, title }: { data: TeachGu
             <span aria-hidden="true" className="absolute inset-0" style={{ background: "linear-gradient(180deg, transparent 30%, rgb(20 30 25 / calc(var(--tt-overlay) + 0.25)))" }} />
             <span className="absolute start-4 bottom-4 end-20 @4xl:start-8 @4xl:bottom-8 @4xl:end-32 flex flex-col gap-1">
               <Eyebrow tone="light">{[featured.metadata.category, formatDuration(featured.metadata.durationSeconds)].filter(Boolean).join(" · ")}</Eyebrow>
-              <span className="text-white text-[22px] @min-[40rem]:text-[28px] @4xl:text-[36px] leading-tight" style={{ fontFamily: "var(--tt-font-display)" }}>
+              <span dir="auto" className="text-white text-[22px] @min-[40rem]:text-[28px] @4xl:text-[36px] leading-tight" style={{ fontFamily: "var(--tt-font-display)" }}>
                 {featured.title}
               </span>
             </span>
@@ -222,8 +222,8 @@ export function AudioListScreen({ data, onBack, onOpen, title }: { data: TeachGu
                 <button type="button" onClick={() => onOpen(track.id)} className="tt-reveal w-full text-start flex items-center gap-3 p-2.5" style={{ background: "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
                   <TeachImage {...cardImage(data, "teachAudio", track)} alt="" fallbackLabel={track.title} className="w-16 h-16 shrink-0" style={{ borderRadius: "var(--tt-radius-image)" }} />
                   <span className="flex-1 min-w-0 flex flex-col gap-0.5">
-                    {track.metadata.category ? <Eyebrow tone="primary">{track.metadata.category}</Eyebrow> : null}
-                    <DisplayHeading as="h3" size={16.5} className="truncate">
+                    {track.metadata.category ? <Eyebrow userContent tone="primary">{track.metadata.category}</Eyebrow> : null}
+                    <DisplayHeading userContent as="h3" size={16.5} className="truncate">
                       {track.title}
                     </DisplayHeading>
                     {formatDuration(track.metadata.durationSeconds) ? (
@@ -293,8 +293,8 @@ export function AudioPlayerScreen({ data, item, onBack }: { data: TeachGuestData
         />
         <div className="w-full flex flex-col items-center gap-5 @4xl:items-start">
           <div className="text-center @4xl:text-start flex flex-col gap-1.5">
-            {item.metadata.category ? <Eyebrow tone="primary">{item.metadata.category}</Eyebrow> : null}
-            <DisplayHeading as="h1" className="[--tt-h1:27px] @4xl:[--tt-h1:40px]" style={{ fontSize: "calc(var(--tt-h1) * var(--tt-display-scale, 1))" }}>
+            {item.metadata.category ? <Eyebrow userContent tone="primary">{item.metadata.category}</Eyebrow> : null}
+            <DisplayHeading userContent as="h1" className="[--tt-h1:27px] @4xl:[--tt-h1:40px]" style={{ fontSize: "calc(var(--tt-h1) * var(--tt-display-scale, 1))" }}>
               {item.title}
             </DisplayHeading>
             <p className="text-[13px]" style={{ color: "var(--rbr-text-muted)" }}>
@@ -369,13 +369,13 @@ export function AudioPlayerScreen({ data, item, onBack }: { data: TeachGuestData
                 <TeachIcon name="leaf" size={15} />
                 {t("teach", "noteFrom", { name: data.teacherName.split(" ")[0] || t("teach", "yourTeacher") })}
               </p>
-              <p className="text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
+              <p dir="auto" className="text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
                 {item.metadata.teacherNote}
               </p>
             </div>
           ) : null}
           {item.description ? (
-            <p className="w-full text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
+            <p dir="auto" className="w-full text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
               {item.description}
             </p>
           ) : null}
@@ -426,7 +426,7 @@ export function ContactScreen({ data, onBack, backLabel }: { data: TeachGuestDat
               {c.title ?? t("teach", "letsConnect")}
             </DisplayHeading>
             {c.intro ? (
-              <p className="text-[13.5px] leading-[1.55]" style={{ color: "var(--rbr-text-muted)" }}>
+              <p dir="auto" className="text-[13.5px] leading-[1.55]" style={{ color: "var(--rbr-text-muted)" }}>
                 {c.intro}
               </p>
             ) : null}
@@ -476,7 +476,7 @@ export function ContactScreen({ data, onBack, backLabel }: { data: TeachGuestDat
                   {c.locationName ?? t("teach", "studioAddress")}
                 </span>
                 {c.address ? (
-                  <span className="block text-[13.5px]" style={{ color: "var(--rbr-text)" }}>
+                  <span dir="auto" className="block text-[13.5px]" style={{ color: "var(--rbr-text)" }}>
                     {c.address}
                   </span>
                 ) : null}

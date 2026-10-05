@@ -156,7 +156,7 @@ export function TodayScreen({
           >
             <div className="flex items-center justify-between mb-3">
               {nowSession.category && (
-                <span
+                <span dir="auto"
                   className="text-[10px] tracking-[0.18em] uppercase font-medium"
                   style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-on-primary)", opacity: 0.75 }}
                 >
@@ -170,7 +170,7 @@ export function TodayScreen({
                 {t("flow", "live")}
               </span>
             </div>
-            <h2 className="text-white text-[22px] leading-tight" style={{ fontFamily: "var(--rbr-font-display)" }}>
+            <h2 dir="auto" className="text-white text-[22px] leading-tight" style={{ fontFamily: "var(--rbr-font-display)" }}>
               {nowSession.title}
             </h2>
             <p className="text-white/50 text-xs mt-1 mb-4" style={{ fontFamily: "var(--rbr-font-ui)" }}>
@@ -211,17 +211,17 @@ export function TodayScreen({
           >
             <div className="flex-1 min-w-0">
               {nextSession.category && (
-                <span
+                <span dir="auto"
                   className="text-[10px] tracking-widest uppercase font-medium"
                   style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-secondary-foreground)" }}
                 >
                   {nextSession.category}
                 </span>
               )}
-              <h3 className="text-[17px] leading-snug mt-0.5" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
+              <h3 dir="auto" className="text-[17px] leading-snug mt-0.5" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
                 {nextSession.title}
               </h3>
-              <p className="text-xs mt-0.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
+              <p dir="auto" className="text-xs mt-0.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
                 {nextSession.startTime}
                 {nextSession.location ? ` · ${nextSession.location}` : ""}
               </p>

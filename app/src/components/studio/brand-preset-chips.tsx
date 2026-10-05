@@ -1,5 +1,6 @@
 import type { BrandPreset } from "@/lib/brand/presets";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 /**
  * Shared Brand preset picker: a row of named starting looks. Applying a
  * preset is the caller's job (it just populates the product's existing
@@ -9,9 +10,10 @@ export function BrandPresetChips({
   presets,
   activeKey,
   onApply,
-  label = "Start from a preset",
+  label,
   customActive,
   onCustom,
+  locale = DEFAULT_LOCALE,
 }: {
   presets: readonly BrandPreset[];
   activeKey: string | null;
@@ -20,11 +22,13 @@ export function BrandPresetChips({
   /** Renders the separate "Custom colors" option when onCustom is given. */
   customActive?: boolean;
   onCustom?: () => void;
+  locale?: Locale;
 }) {
+  const { t } = createTranslator(locale);
   return (
     <div data-testid="brand-presets">
-      <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84] mb-2">{label}</p>
-      <div className="flex flex-wrap gap-2" role="group" aria-label={label}>
+      <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84] mb-2">{label ?? t("studio", "startFromPreset")}</p>
+      <div className="flex flex-wrap gap-2" role="group" aria-label={label ?? t("studio", "startFromPreset")}>
         {presets.map((p) => {
           const active = p.key === activeKey;
           return (
@@ -58,7 +62,7 @@ export function BrandPresetChips({
                 : "border-[#CFC4B4] bg-white/60 text-[#4A4A44] hover:bg-white"
             }`}
           >
-            Custom colors
+            {t("teach", "customColours")}
           </button>
         ) : null}
       </div>

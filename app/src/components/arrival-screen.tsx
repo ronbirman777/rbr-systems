@@ -71,7 +71,7 @@ export function ArrivalScreen({ brand, info, locale = DEFAULT_LOCALE }: ArrivalS
       <div className="px-4 pb-10 space-y-3">
         {info.welcomeMessage && (
           <div className="rounded-2xl p-4" style={{ background: "var(--rbr-primary)" }}>
-            <p className="text-sm leading-relaxed" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-on-primary)" }}>
+            <p dir="auto" className="text-sm leading-relaxed" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-on-primary)" }}>
               {info.welcomeMessage}
             </p>
           </div>
@@ -116,7 +116,7 @@ export function ArrivalScreen({ brand, info, locale = DEFAULT_LOCALE }: ArrivalS
               </div>
               <div className="flex-1">
                 {info.address && (
-                  <p className="text-[12px] leading-relaxed whitespace-pre-line" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
+                  <p dir="auto" className="text-[12px] leading-relaxed whitespace-pre-line" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
                     {info.address}
                   </p>
                 )}
@@ -142,7 +142,7 @@ export function ArrivalScreen({ brand, info, locale = DEFAULT_LOCALE }: ArrivalS
               {t("common", "contact")}
             </p>
             {info.contactName && (
-              <p className="text-[12px] mb-2.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
+              <p dir="auto" className="text-[12px] mb-2.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
                 {info.contactName}
               </p>
             )}

@@ -5,7 +5,7 @@ import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
 import type { DisplayFacilitator } from "@/lib/modules/facilitator";
 import { SocialIcon } from "./guest/social-icon";
-import { SOCIAL_PLATFORM_LABEL } from "@/lib/modules/socialLinks";
+import { socialPlatformLabel } from "@/lib/modules/socialLinks";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 import { BrandImage } from "@/components/shared/brand-image";
@@ -101,11 +101,11 @@ export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCAL
                   style={{ background: "linear-gradient(to top, color-mix(in srgb, var(--rbr-primary-dark) 75%, transparent), color-mix(in srgb, var(--rbr-primary-dark) 10%, transparent) 60%, transparent)" }}
                 />
                 <div className="absolute bottom-0 left-0 right-0 p-5">
-                  <h2 className="text-white text-[22px] leading-tight" style={{ fontFamily: "var(--rbr-font-display)" }}>
+                  <h2 dir="auto" className="text-white text-[22px] leading-tight" style={{ fontFamily: "var(--rbr-font-display)" }}>
                     {f.name}
                   </h2>
                   {f.role && (
-                    <p className="text-white/65 text-[10px] tracking-[0.16em] uppercase font-medium mt-0.5" style={{ fontFamily: "var(--rbr-font-ui)" }}>
+                    <p dir="auto" className="text-white/65 text-[10px] tracking-[0.16em] uppercase font-medium mt-0.5" style={{ fontFamily: "var(--rbr-font-ui)" }}>
                       {f.role}
                     </p>
                   )}
@@ -133,7 +133,7 @@ export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCAL
 
                   {f.bio && (
                     <>
-                      <p
+                      <p dir="auto"
                         className={`text-[13px] leading-relaxed ${isOpen ? "" : "line-clamp-2"}`}
                         style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}
                       >
@@ -167,7 +167,7 @@ export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCAL
                           href={link.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          aria-label={SOCIAL_PLATFORM_LABEL[link.platform]}
+                          aria-label={socialPlatformLabel(locale)[link.platform]}
                           className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
                           style={{ background: "var(--rbr-parchment-deep)" }}
                         >

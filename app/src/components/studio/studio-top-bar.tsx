@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 /**
  * Shared Studio top bar (desktop): back to My Spaces, Space name, product
  * badge, save status and the primary Publish action. Presentational only -
@@ -16,10 +17,11 @@ export function StudioTopBar({
   saveStatus,
   onBack,
   onPublish,
-  publishLabel = "Publish",
+  publishLabel,
   trailing,
   backHref = "/space",
-  backLabel = "My Spaces",
+  backLabel,
+  locale = DEFAULT_LOCALE,
 }: {
   name: string;
   fallbackName: string;
@@ -31,11 +33,13 @@ export function StudioTopBar({
   trailing?: ReactNode;
   backHref?: string;
   backLabel?: string;
+  locale?: Locale;
 }) {
+  const { t } = createTranslator(locale);
   const back = (
     <>
       <InnerDweSMark size={20} />
-      {backLabel}
+      {backLabel ?? t("studio", "mySpaces")}
     </>
   );
   return (
@@ -67,7 +71,7 @@ export function StudioTopBar({
         </span>
         {trailing}
         <button type="button" onClick={onPublish} className="min-h-10 px-4 rounded-full bg-[#192B21] text-white text-[12.5px] font-semibold">
-          {publishLabel}
+          {publishLabel ?? t("studio", "publish")}
         </button>
       </div>
     </header>

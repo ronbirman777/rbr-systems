@@ -1,7 +1,10 @@
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+
 export type ReadinessItem = { ok: boolean; label: string; hint?: string };
 
 /** "Ready to publish?" checklist - ticks for done items, a warning mark for gaps. */
-export function ReadinessChecklist({ items }: { items: readonly ReadinessItem[] }) {
+export function ReadinessChecklist({ items, locale = DEFAULT_LOCALE }: { items: readonly ReadinessItem[]; locale?: Locale }) {
+  const { t } = createTranslator(locale);
   return (
     <ul className="flex flex-col gap-2.5" data-testid="readiness-checklist">
       {items.map((item) => (
@@ -15,7 +18,7 @@ export function ReadinessChecklist({ items }: { items: readonly ReadinessItem[] 
             {item.ok ? "✓" : "!"}
           </span>
           <span className={item.ok ? "text-[#192B21]" : "text-[#8A4F27]"}>
-            <span className="sr-only">{item.ok ? "Done: " : "Needs attention: "}</span>
+            <span className="sr-only">{item.ok ? t("studio", "doneLabel") : t("studio", "needsAttentionLabel")}{" "}</span>
             {item.label}
             {!item.ok && item.hint ? <span className="block text-[12px] text-[#8C8A84]">{item.hint}</span> : null}
           </span>

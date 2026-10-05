@@ -70,7 +70,7 @@ export function TreatmentsScreen({ brand, treatments, locale = DEFAULT_LOCALE }:
                 )}
                 <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.5), transparent 60%)" }} />
                 <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between gap-3">
-                  <h3 className="text-white text-[20px] leading-snug" style={{ fontFamily: "var(--rbr-font-display)" }}>
+                  <h3 dir="auto" className="text-white text-[20px] leading-snug" style={{ fontFamily: "var(--rbr-font-display)" }}>
                     {t.name}
                   </h3>
                   {t.durationMinutes && (
@@ -122,7 +122,7 @@ export function TreatmentsScreen({ brand, treatments, locale = DEFAULT_LOCALE }:
                     <span className="text-[11px]" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
                       {tr("flow", "toBook")}
                     </span>
-                    <span
+                    <span dir="auto"
                       className="text-[10px] px-3 py-1.5 rounded-full font-medium tracking-wide"
                       style={{ fontFamily: "var(--rbr-font-ui)", background: "var(--rbr-parchment-deep)", color: "var(--rbr-text)" }}
                     >

@@ -2,7 +2,7 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SocialLink } from "@/lib/modules/socialLinks";
-import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL } from "@/lib/modules/socialLinks";
+import { SOCIAL_PLATFORMS, socialPlatformLabel } from "@/lib/modules/socialLinks";
 import { SocialIcon } from "@/components/guest/social-icon";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioHeading, StudioIntro } from "./studio-ui";
@@ -124,7 +124,7 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
             >
               {SOCIAL_PLATFORMS.map((p) => (
                 <option key={p} value={p}>
-                  {SOCIAL_PLATFORM_LABEL[p]}
+                  {socialPlatformLabel(locale)[p]}
                 </option>
               ))}
             </select>

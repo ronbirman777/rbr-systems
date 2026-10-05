@@ -642,6 +642,7 @@ export const de: Dictionary = {
     previewUpdatesNote: "Aktualisiert sich beim Tippen · deine Gäste sehen es nach dem Veröffentlichen",
     yourNameFallback: "Dein Name",
     sectionModules: "Module",
+    quotesCounter: "{count} von {max} Zitaten · je bis zu {chars} Zeichen",
   },
 
   flow: {
@@ -1222,6 +1223,53 @@ export const de: Dictionary = {
     tooManyExceptions: "„{title}“: zu viele geänderte oder abgesagte Termine bei einem Kurs.",
     navigationColourHelpFlow: "Für den aktiven Tab der unteren Navigation und ähnliche Auswahlen (z. B. die Tagesauswahl im Zeitplan).",
     photoOf: "Foto von {name}",
+
+    // The shared Studio status vocabulary (lib/studio/status.ts), so the
+    // same state reads the same way in every product.
+    previewingDraft: "Vorschau des aktuellen Entwurfs",
+    previewDraftCaption: "Aktualisiert sich beim Bearbeiten · deine Gäste sehen es nach dem Veröffentlichen",
+
+    // ---- Shared Studio components (components/studio/*) ----
+    // These sit outside both product folders, which is how they were
+    // missed by CP3B's first string audit; the audit's roots now
+    // include them.
+    contrastClear: "Klar und gut lesbar.",
+    contrastUsable: "Brauchbar, aber ein stärkerer Kontrast läse sich besser.",
+    contrastHeadingsOnly: "Für Überschriften und Buttons in Ordnung, für kleinen Fließtext etwas zu gering.",
+    contrastTooLow: "Zu gering für verlässliches Lesen — die App setzt hier eine lesbare Farbe ein.",
+    contrastPolicy: "Deine Farben werden genau so gespeichert, wie du sie gewählt hast. Wo eine Kombination schwer lesbar wäre, wählt die Guest App darüber eine lesbare Textfarbe, statt deine Farbe zu ändern.",
+    startFromPreset: "Mit einer Vorlage starten",
+    downloadQr: "QR herunterladen",
+    hideRegistrationQr: "Anmelde-QR ausblenden",
+    registrationQrForClass: "Anmelde-QR für diesen Kurs",
+    registrationQrAlt: "QR-Code, der WhatsApp mit der Anfrage zu diesem Kurs öffnet",
+    registrationQrHint: "Druck das neben dem Kurs aus. Beim Scannen öffnet sich WhatsApp mit der schon formulierten Anfrage — Senden drückt dein Gast selbst.",
+    openGuestApp: "Guest App öffnen",
+    opensInNewTab: "(öffnet in einem neuen Tab)",
+    linkGoesLiveOnPublish: "Dieser Link wird mit dem Veröffentlichen aktiv. Bis dahin können Gäste ihn nicht öffnen.",
+    qrCode: "QR-Code",
+    qrCodeAlt: "QR-Code für deinen Guest-App-Link",
+    needsAttentionLabel: "Benötigt Aufmerksamkeit:",
+    shareCard: "Share-Karte",
+    yourShareCard: "Deine Share-Karte",
+    downloadShareCard: "Share-Karte herunterladen",
+    whereYouAre: "Wo du bist",
+    searchCountries: "Länder suchen",
+    countryCardHint: "Dient dazu, bei neuen Nummern ein Telefonland vorzuschlagen. Eine bereits gespeicherte Nummer wird nie geändert, und Gäste sehen das nicht.",
+    systemLanguage: "Systemsprache",
+    languageNotSetYet: "Noch nicht gesetzt — dein Space wird auf Englisch angezeigt.",
+    languageCardHint: "Die Sprache, in der dein Space angezeigt wird - für dich und für deine Gäste. Sie übersetzt und verändert nichts von dem, was du geschrieben hast.",
+    uploadImage: "Bild hochladen",
+    couldNotRemoveImage: "Das Bild konnte nicht entfernt werden",
+    hexHint: "Verwende einen 6-stelligen Hex-Wert wie #5B7A6E",
+    buttonsReadableWhite: "✓ Buttons bleiben mit weißem Text lesbar (WCAG AA).",
+    lightColourDarkText: "Diese Farbe ist hell — Buttons wechseln automatisch zu dunklem Text, um lesbar zu bleiben.",
+    shareOnWhatsapp: "Über WhatsApp teilen",
+    publishOrRepublish: "Veröffentlichen / Neu veröffentlichen",
+    cannotPublishThisType: "Dieser Space-Typ kann hier nicht veröffentlicht werden.",
+    doneLabel: "Erledigt:",
+    readability: "Lesbarkeit",
+    imageFormats8mb: "JPG, PNG oder WebP bis 8 MB.",
   },
 
 };

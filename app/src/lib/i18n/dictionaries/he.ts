@@ -637,6 +637,7 @@ export const he: Dictionary = {
     previewUpdatesNote: "מתעדכן בזמן ההקלדה · האורחים רואים אחרי הפרסום",
     yourNameFallback: "השם שלכם",
     sectionModules: "מודולים",
+    quotesCounter: "{count} מתוך {max} ציטוטים · עד {chars} תווים כל אחד",
   },
 
   flow: {
@@ -1217,6 +1218,53 @@ export const he: Dictionary = {
     tooManyExceptions: "״{title}״: יותר מדי תאריכים שהשתנו או בוטלו בשיעור אחד.",
     navigationColourHelpFlow: "משמש ללשונית הפעילה בניווט התחתון ולבחירות דומות (למשל בוחר היום בלוח הזמנים).",
     photoOf: "תמונה של {name}",
+
+    // The shared Studio status vocabulary (lib/studio/status.ts), so the
+    // same state reads the same way in every product.
+    previewingDraft: "תצוגה מקדימה של הטיוטה הנוכחית",
+    previewDraftCaption: "מתעדכן בזמן העריכה · האורחים רואים אחרי הפרסום",
+
+    // ---- Shared Studio components (components/studio/*) ----
+    // These sit outside both product folders, which is how they were
+    // missed by CP3B's first string audit; the audit's roots now
+    // include them.
+    contrastClear: "ברור וקריא.",
+    contrastUsable: "שמיש, אבל ניגודיות חזקה יותר תיקרא טוב יותר.",
+    contrastHeadingsOnly: "מתאים לכותרות ולכפתורים, נמוך מדי לטקסט גוף קטן.",
+    contrastTooLow: "נמוך מדי לקריאה אמינה — האפליקציה תחליף כאן בצבע קריא.",
+    contrastPolicy: "הצבעים שלכם נשמרים בדיוק כפי שבחרתם. כששילוב יהיה קשה לקריאה, ה-Guest App בוחר צבע טקסט קריא מעליו ולא משנה את הצבע שלכם.",
+    startFromPreset: "להתחיל מלוח מוכן",
+    downloadQr: "הורדת קוד QR",
+    hideRegistrationQr: "הסתרת קוד ה-QR להרשמה",
+    registrationQrForClass: "קוד QR להרשמה לשיעור הזה",
+    registrationQrAlt: "קוד QR שפותח וואטסאפ עם פנייה לשיעור הזה",
+    registrationQrHint: "הדפיסו את זה ליד השיעור. סריקה פותחת וואטסאפ עם הפנייה כבר מנוסחת — האורח עדיין לוחץ שליחה.",
+    openGuestApp: "פתיחת ה-Guest App",
+    opensInNewTab: "(נפתח בלשונית חדשה)",
+    linkGoesLiveOnPublish: "הקישור עולה לאוויר כשמפרסמים. עד אז האורחים לא יכולים לפתוח אותו.",
+    qrCode: "קוד QR",
+    qrCodeAlt: "קוד QR לקישור ה-Guest App שלכם",
+    needsAttentionLabel: "דורש טיפול:",
+    shareCard: "כרטיס שיתוף",
+    yourShareCard: "כרטיס השיתוף שלכם",
+    downloadShareCard: "הורדת כרטיס השיתוף",
+    whereYouAre: "איפה אתם",
+    searchCountries: "חיפוש מדינות",
+    countryCardHint: "משמש להצעת קידומת טלפון למספרים חדשים. הוא לעולם לא משנה מספר שכבר שמרתם, והוא לא מוצג לאורחים.",
+    systemLanguage: "שפת המערכת",
+    languageNotSetYet: "עוד לא נבחרה — המרחב מוצג באנגלית.",
+    languageCardHint: "השפה שבה המרחב מוצג, לכם ולאורחים. היא לא מתרגמת ולא משנה דבר ממה שכתבתם.",
+    uploadImage: "העלאת תמונה",
+    couldNotRemoveImage: "לא ניתן להסיר את התמונה",
+    hexHint: "השתמשו בקוד hex בן 6 ספרות, למשל #5B7A6E",
+    buttonsReadableWhite: "✓ הכפתורים נשארים קריאים עם טקסט לבן (WCAG AA).",
+    lightColourDarkText: "הצבע בהיר — הכפתורים יעברו אוטומטית לטקסט כהה כדי להישאר קריאים.",
+    shareOnWhatsapp: "שיתוף בוואטסאפ",
+    publishOrRepublish: "פרסום / פרסום מחדש",
+    cannotPublishThisType: "לא ניתן לפרסם סוג מרחב כזה כאן.",
+    doneLabel: "בוצע:",
+    readability: "קריאות",
+    imageFormats8mb: "JPG, PNG או WebP עד 8MB.",
   },
 
 };

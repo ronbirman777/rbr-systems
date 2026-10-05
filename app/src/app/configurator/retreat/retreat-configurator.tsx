@@ -29,7 +29,7 @@ import { PALETTES, GUEST_BASE_PALETTE, type AtmosphereKey, type PaletteKey } fro
 import { safeTextColor, meetsAA } from "@/lib/theme/contrast";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, StudioIntro, StudioEyebrowContext, ForwardArrow } from "./studio-ui";
 import { StudioTopBar } from "@/components/studio/studio-top-bar";
-import { saveStatusLabel, PREVIEW_DRAFT_LABEL, PREVIEW_DRAFT_CAPTION, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
+import { saveStatusLabel, previewDraftLabel, previewDraftCaption, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
 import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
 import { SpaceCountryCard } from "@/components/studio/space-country-card";
 import { SpaceLanguageCard } from "@/components/studio/space-language-card";
@@ -49,7 +49,7 @@ import type { ArrivalInfo } from "@/lib/modules/arrival";
 import type { EditableFaqItem } from "@/lib/modules/faq";
 import type { EditableCustomPage } from "@/lib/modules/customPage";
 import type { StayConnected } from "@/lib/modules/stayConnected";
-import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL, isLikelyValidUrl, type SocialPlatform } from "@/lib/modules/socialLinks";
+import { SOCIAL_PLATFORMS, socialPlatformLabel, isLikelyValidUrl, type SocialPlatform } from "@/lib/modules/socialLinks";
 import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
 import { todayInTimezone, currentTimeInTimezone, timezoneOptions, timezoneSelectValue, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
@@ -940,14 +940,14 @@ function TeamEditor({
                         >
                           {SOCIAL_PLATFORMS.map((p) => (
                             <option key={p} value={p}>
-                              {SOCIAL_PLATFORM_LABEL[p]}
+                              {socialPlatformLabel(locale)[p]}
                             </option>
                           ))}
                         </select>
                         <button
                           type="button"
                           onClick={() => updateFacilitator(editing.id, { socialLinks: editing.socialLinks.filter((_, li) => li !== i) })}
-                          aria-label={t("flow", "removeLinkOf", { platform: SOCIAL_PLATFORM_LABEL[link.platform] })}
+                          aria-label={t("flow", "removeLinkOf", { platform: socialPlatformLabel(locale)[link.platform] })}
                           className="inline-flex items-center justify-center w-11 h-11 shrink-0 rounded-xl border transition-colors"
                           style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                         >
@@ -969,7 +969,7 @@ function TeamEditor({
                             socialLinks: editing.socialLinks.map((l, li) => (li === i ? { ...l, url: e.target.value } : l)),
                           })
                         }
-                        placeholder={t("flow", "pasteLinkOf", { platform: SOCIAL_PLATFORM_LABEL[link.platform] })}
+                        placeholder={t("flow", "pasteLinkOf", { platform: socialPlatformLabel(locale)[link.platform] })}
                         aria-invalid={urlInvalid}
                         className={`${STUDIO_INPUT_CLASS} w-full mt-2`}
                       />
@@ -1526,10 +1526,11 @@ export function RetreatConfigurator({
   return (
     <>
       <StudioTopBar
+        locale={initialLocale}
         name={name}
         fallbackName={t("flow", "myRetreatFallback")}
         productBadge="Time to Flow"
-        saveStatus={saveStatusLabel({ saving: publishPending, dirty: dirty.isDirtyAnywhere })}
+        saveStatus={saveStatusLabel({ saving: publishPending, dirty: dirty.isDirtyAnywhere }, initialLocale)}
         onBack={() => attemptNavigate(() => router.push("/space"))}
         onPublish={() => attemptNavigate(() => setStep("publish"))}
         publishLabel={currentPublishedAt ? t("studio", "republish") : t("studio", "publish")}
@@ -1987,8 +1988,8 @@ export function RetreatConfigurator({
             the shared action rather than this product's draft payload. */}
         {step === "identity" && tenantId ? (
           <div className="max-w-xl mt-6 flex flex-col gap-4">
-            <SpaceCountryCard tenantId={tenantId} />
-            <SpaceLanguageCard tenantId={tenantId} />
+            <SpaceCountryCard tenantId={tenantId} locale={initialLocale} />
+            <SpaceLanguageCard tenantId={tenantId} uiLocale={initialLocale} />
           </div>
         ) : null}
 
@@ -2010,6 +2011,7 @@ export function RetreatConfigurator({
 
             <div className="mb-8">
               <BrandPresetChips
+                locale={initialLocale}
                 presets={getBrandPresets("retreat")}
                 activeKey={activePresetKey}
                 customActive={activePresetKey === null}
@@ -2139,6 +2141,7 @@ export function RetreatConfigurator({
                 products, covering every brand role rather than Primary
                 alone. The product-specific notes below stay as-is. */}
             <BrandContrastFeedback
+              locale={initialLocale}
               className="mt-3"
               primary={effectivePrimary}
               accent={effectiveSecondary}
@@ -2489,7 +2492,7 @@ export function RetreatConfigurator({
 
                 <div className="rounded-2xl border border-[#E2DACD] bg-white p-5" data-testid="publish-status-card">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <StatusPill state={studioPublishState(currentPublishedAt)} />
+                    <StatusPill state={studioPublishState(currentPublishedAt)} locale={initialLocale} />
                     {formatPublishedAtUtc(currentPublishedAt) && (
                       <span className="text-[12px] text-[#8C8A84]">
                         Last published {formatPublishedAtUtc(currentPublishedAt)}
@@ -2507,12 +2510,13 @@ export function RetreatConfigurator({
                   <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84] mb-3">
                     {t("studio", "readyToPublish")}
                   </p>
-                  <ReadinessChecklist items={publishReadiness} />
+                  <ReadinessChecklist items={publishReadiness} locale={initialLocale} />
                 </div>
 
                 <div className="mt-4">
                   {currentSlug ? (
                     <PublicLinkCard
+                      locale={initialLocale}
                       url={publicSpaceUrl(tenantId, currentSlug)}
                       openHref={guestAppPath(tenantId, currentSlug)}
                       published={!!currentPublishedAt}
@@ -2587,8 +2591,8 @@ export function RetreatConfigurator({
                   only preview visible, matching the approved Publish
                   screen's own embedded, larger phone. */}
               <div className="flex flex-col items-center lg:items-start gap-2">
-                <p className="text-[10.5px] tracking-[0.12em] uppercase font-semibold text-[#8C8A84]">{PREVIEW_DRAFT_LABEL}</p>
-                <p className="text-[11px] text-[#8C8A84] mb-1">{PREVIEW_DRAFT_CAPTION}</p>
+                <p className="text-[10.5px] tracking-[0.12em] uppercase font-semibold text-[#8C8A84]">{previewDraftLabel(initialLocale)}</p>
+                <p className="text-[11px] text-[#8C8A84] mb-1">{previewDraftCaption(initialLocale)}</p>
                 <div
                   className="w-[220px] h-[440px] rounded-[24px] overflow-hidden shadow-2xl"
                   style={{ border: `3px solid ${GUEST_BASE_PALETTE.forest}`, background: GUEST_BASE_PALETTE.parchment }}
@@ -2672,9 +2676,9 @@ export function RetreatConfigurator({
       {step !== "publish" && step !== "share" && step !== "featured" && (
       <aside className="hidden lg:flex bg-[#E9E3D8] border-l border-[#E2DACD] px-8 py-8 flex-col items-center overflow-y-auto lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]" data-testid="studio-preview-pane">
         <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#8C8A84]">
-          {PREVIEW_DRAFT_LABEL}
+          {previewDraftLabel(initialLocale)}
         </div>
-        <div className="text-[11px] text-[#8C8A84] mt-1 text-center">{PREVIEW_DRAFT_CAPTION}</div>
+        <div className="text-[11px] text-[#8C8A84] mt-1 text-center">{previewDraftCaption(initialLocale)}</div>
         <div
           className="mt-7 w-[260px] h-[520px] rounded-[24px] lg:w-[220px] lg:h-[440px] lg:rounded-[20px] overflow-hidden shadow-2xl"
           style={{ border: `3px solid ${GUEST_BASE_PALETTE.forest}`, background: GUEST_BASE_PALETTE.parchment }}

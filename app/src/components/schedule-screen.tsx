@@ -148,7 +148,7 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime, locale = DE
             const chip = item.category ? (CATEGORY_CHIP_STYLE[item.category] ?? DEFAULT_CHIP_STYLE) : null;
 
             return (
-              <div key={`${item.date}-${item.startTime}-${item.title}`} className={`flex gap-3 ${isPast ? "opacity-40" : ""}`}>
+              <div dir="auto" key={`${item.date}-${item.startTime}-${item.title}`} className={`flex gap-3 ${isPast ? "opacity-40" : ""}`}>
                 <div className="w-11 flex-shrink-0 pt-4 text-right">
                   <span
                     className="text-[11px] font-medium tabular-nums leading-none"
@@ -191,14 +191,14 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime, locale = DE
                   )}
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
-                      <h3
+                      <h3 dir="auto"
                         className="text-[16px] leading-snug"
                         style={{ fontFamily: "var(--rbr-font-display)", color: isNow ? "var(--rbr-on-primary)" : "var(--rbr-text)" }}
                       >
                         {item.title}
                       </h3>
                       {item.facilitator && (
-                        <p
+                        <p dir="auto"
                           className="text-[11px] mt-0.5"
                           style={{ fontFamily: "var(--rbr-font-ui)", color: isNow ? "color-mix(in srgb, var(--rbr-on-primary) 55%, transparent)" : "var(--rbr-dusk)" }}
                         >
@@ -210,13 +210,13 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime, locale = DE
                           className="flex items-center gap-2 mt-2 flex-wrap text-[10px]"
                           style={{ fontFamily: "var(--rbr-font-ui)", color: isNow ? "color-mix(in srgb, var(--rbr-on-primary) 45%, transparent)" : "var(--rbr-mist)" }}
                         >
-                          {item.location && <span>{item.location}</span>}
+                          {item.location && <span dir="auto">{item.location}</span>}
                           {item.endTime && <span>· until {item.endTime}</span>}
                         </div>
                       )}
                     </div>
                     {item.category && chip && (
-                      <span
+                      <span dir="auto"
                         className="flex-shrink-0 text-[9px] px-2.5 py-0.5 rounded-full tracking-widest font-medium uppercase mt-0.5"
                         style={{
                           fontFamily: "var(--rbr-font-ui)",

@@ -49,7 +49,7 @@ export function FaqScreen({ brand, faq, locale = DEFAULT_LOCALE }: FaqScreenProp
           return (
             <div key={i} className="rounded-3xl overflow-hidden" style={{ background: "var(--rbr-cream)", border: "1px solid color-mix(in srgb, var(--rbr-sand) 40%, transparent)" }}>
               <button type="button" onClick={() => setOpenIndex(isOpen ? null : i)} className="w-full flex items-center justify-between p-4 text-left gap-3">
-                <span className="text-[14px] font-medium leading-snug" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text)" }}>
+                <span dir="auto" className="text-[14px] font-medium leading-snug" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text)" }}>
                   {item.question}
                 </span>
                 <svg
@@ -66,7 +66,7 @@ export function FaqScreen({ brand, faq, locale = DEFAULT_LOCALE }: FaqScreenProp
               {isOpen && item.answer && (
                 <div className="px-5 pb-4">
                   <div className="w-full h-px mb-3" style={{ background: "color-mix(in srgb, var(--rbr-sand) 50%, transparent)" }} />
-                  <p className="text-[13px] leading-relaxed whitespace-pre-line" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
+                  <p dir="auto" className="text-[13px] leading-relaxed whitespace-pre-line" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
                     {item.answer}
                   </p>
                 </div>

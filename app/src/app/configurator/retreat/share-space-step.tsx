@@ -202,15 +202,15 @@ export function ShareSpaceStep({
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-medium truncate text-[#192B21]">{name}</p>
           <div className="mt-1.5">
-            <StatusPill state={copy.pill} label={t("studio", copy.labelKey)} />
+            <StatusPill state={copy.pill} label={t("studio", copy.labelKey)} locale={locale} />
           </div>
         </div>
       </div>
       <p className="text-xs mt-2 leading-relaxed text-[#6F6C66]">{t("studio", copy.detailKey)}</p>
 
       <div className="mt-6 flex flex-col gap-4">
-        <PublicLinkCard url={url} openHref={guestAppPath(tenantId, slug)} published={status !== "draft"} />
-        <QrCodeCard tenantId={tenantId} slug={slug} published={status === "live"} />
+        <PublicLinkCard url={url} openHref={guestAppPath(tenantId, slug)} published={status !== "draft"} locale={locale} />
+        <QrCodeCard tenantId={tenantId} slug={slug} published={status === "live"} locale={locale} />
       </div>
 
       <GuestAccessPanel tenantId={tenantId} initialSettings={initialGuestAccessSettings} locale={locale} />

@@ -5,10 +5,20 @@ import { TeachIcon, type TeachIconName } from "./teach-icons";
 
 /** Small presentational building blocks shared by every Teach guest screen. */
 
-export function Eyebrow({ children, tone = "muted", className = "" }: { children: ReactNode; tone?: "muted" | "primary" | "light"; className?: string }) {
+/**
+ * `userContent` marks text the ORGANIZER wrote, which gets dir="auto" so
+ * the browser takes its direction from the text itself.
+ *
+ * It is opt-in rather than the default because these primitives render
+ * system labels too, and dir="auto" would be wrong for those: a system
+ * string that happens to start with a Latin word or a digit would turn
+ * left-to-right inside a Hebrew Space. System text follows the Space;
+ * only the organizer's own words decide for themselves.
+ */
+export function Eyebrow({ children, tone = "muted", className = "", userContent = false }: { children: ReactNode; tone?: "muted" | "primary" | "light"; className?: string; userContent?: boolean }) {
   const color = tone === "primary" ? "var(--rbr-primary)" : tone === "light" ? "rgba(255,255,255,0.9)" : "var(--rbr-text-muted)";
   return (
-    <p className={`text-[10.5px] font-semibold uppercase tracking-[0.18em] ${className}`} style={{ color }}>
+    <p dir={userContent ? "auto" : undefined} className={`text-[10.5px] font-semibold uppercase tracking-[0.18em] ${className}`} style={{ color }}>
       {children}
     </p>
   );
@@ -20,15 +30,19 @@ export function DisplayHeading({
   size = 22,
   className = "",
   style,
+  userContent = false,
 }: {
   children: ReactNode;
   as?: "h1" | "h2" | "h3";
   size?: number;
   className?: string;
   style?: CSSProperties;
+  /** See Eyebrow: opt-in dir="auto" for organizer-written text. */
+  userContent?: boolean;
 }) {
   return (
     <Tag
+      dir={userContent ? "auto" : undefined}
       className={`leading-[1.15] ${className}`}
       style={{
         fontFamily: "var(--tt-font-display)",
@@ -156,13 +170,14 @@ export function TeachDivider({ kind }: { kind: TeachStyle["dividers"] }) {
 export function DailyQuoteBlock({ quote, style, attribution }: { quote: DailyQuote; style: TeachStyle; attribution: string }) {
   const text = (
     <p
+      dir="auto"
       className="text-[20px] leading-[1.35] italic"
       style={{ fontFamily: "var(--tt-font-display)", color: "var(--rbr-text)", fontSize: "calc(20px * var(--tt-display-scale, 1))" }}
     >
       “{quote.text}”
     </p>
   );
-  const label = <Eyebrow className="mt-3">{quote.source || attribution}</Eyebrow>;
+  const label = <Eyebrow userContent className="mt-3">{quote.source || attribution}</Eyebrow>;
   if (style.quoteStyle === "card") {
     return (
       <figure className="p-5 text-center" style={{ background: "var(--rbr-primary-soft)", borderRadius: "var(--tt-radius-card)" }}>

@@ -642,6 +642,7 @@ export const en = {
     previewUpdatesNote: "Updates as you type · guests see it after you publish",
     yourNameFallback: "Your name",
     sectionModules: "Modules",
+    quotesCounter: "{count} of {max} quotes · up to {chars} characters each",
   },
 
   flow: {
@@ -1224,6 +1225,53 @@ export const en = {
     tooManyExceptions: "“{title}”: too many changed or cancelled dates on one class.",
     navigationColourHelpFlow: "Used for the bottom navigation's active tab, and other tab-like selections (e.g. Schedule's day picker).",
     photoOf: "{name} photo",
+
+    // The shared Studio status vocabulary (lib/studio/status.ts), so the
+    // same state reads the same way in every product.
+    previewingDraft: "Previewing current draft",
+    previewDraftCaption: "Updates as you edit · guests see it after you publish",
+
+    // ---- Shared Studio components (components/studio/*) ----
+    // These sit outside both product folders, which is how they were
+    // missed by CP3B's first string audit; the audit's roots now
+    // include them.
+    contrastClear: "Clear and readable.",
+    contrastUsable: "Usable, though a stronger contrast would read better.",
+    contrastHeadingsOnly: "Fine for headings and buttons, a little low for small body text.",
+    contrastTooLow: "Too low to read reliably — the app will substitute a readable colour here.",
+    contrastPolicy: "Your colours are saved exactly as you chose them. Where a combination would be hard to read, the Guest App picks a readable text colour on top rather than changing your colour.",
+    startFromPreset: "Start from a preset",
+    downloadQr: "Download QR",
+    hideRegistrationQr: "Hide registration QR",
+    registrationQrForClass: "Registration QR for this class",
+    registrationQrAlt: "QR code that opens WhatsApp with this class's enquiry",
+    registrationQrHint: "Print this next to the class. Scanning it opens WhatsApp with the enquiry already written — your guest still presses Send.",
+    openGuestApp: "Open Guest App",
+    opensInNewTab: "(opens in a new tab)",
+    linkGoesLiveOnPublish: "This link goes live when you publish. Until then guests cannot open it.",
+    qrCode: "QR code",
+    qrCodeAlt: "QR code for your Guest App link",
+    needsAttentionLabel: "Needs attention:",
+    shareCard: "Share card",
+    yourShareCard: "Your share card",
+    downloadShareCard: "Download share card",
+    whereYouAre: "Where you are",
+    searchCountries: "Search countries",
+    countryCardHint: "Used to suggest a phone country for new numbers. It never changes a number you have already saved, and it is not shown to guests.",
+    systemLanguage: "System language",
+    languageNotSetYet: "Not set yet — your Space is shown in English.",
+    languageCardHint: "The language your Space is shown in, for you and for your guests. It does not translate or change anything you have written.",
+    uploadImage: "Upload image",
+    couldNotRemoveImage: "Couldn't remove the image",
+    hexHint: "Use a 6-digit hex like #5B7A6E",
+    buttonsReadableWhite: "✓ Buttons stay readable with white text (WCAG AA).",
+    lightColourDarkText: "This colour is light — buttons will switch to dark text automatically to stay readable.",
+    shareOnWhatsapp: "Share on WhatsApp",
+    publishOrRepublish: "Publish / Republish",
+    cannotPublishThisType: "This Space type can't be published here.",
+    doneLabel: "Done:",
+    readability: "Readability",
+    imageFormats8mb: "JPG, PNG or WebP up to 8 MB.",
   },
 
 } as const;

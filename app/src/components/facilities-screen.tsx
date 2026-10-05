@@ -63,7 +63,7 @@ export function FacilitiesScreen({ brand, facilities, locale = DEFAULT_LOCALE }:
               <div className="absolute inset-0" style={{ background: "linear-gradient(to top, color-mix(in srgb, var(--rbr-primary-dark) 70%, transparent), transparent 60%)" }} />
               <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="text-white text-[20px] leading-snug" style={{ fontFamily: "var(--rbr-font-display)" }}>
+                  <h3 dir="auto" className="text-white text-[20px] leading-snug" style={{ fontFamily: "var(--rbr-font-display)" }}>
                     {f.name}
                   </h3>
                   {f.location && (
@@ -79,7 +79,7 @@ export function FacilitiesScreen({ brand, facilities, locale = DEFAULT_LOCALE }:
                     style={{ background: "rgba(0,0,0,0.2)", backdropFilter: "blur(4px)" }}
                   >
                     <ClockIcon style={{ color: "rgba(255,255,255,0.7)" }} />
-                    <span className="text-white text-[10px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)" }}>
+                    <span dir="auto" className="text-white text-[10px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)" }}>
                       {f.openingHours}
                     </span>
                   </div>
@@ -88,7 +88,7 @@ export function FacilitiesScreen({ brand, facilities, locale = DEFAULT_LOCALE }:
             </div>
             {f.description && (
               <div className="px-4 py-3.5">
-                <p className="text-[12px] leading-relaxed" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
+                <p dir="auto" className="text-[12px] leading-relaxed" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
                   {f.description}
                 </p>
               </div>

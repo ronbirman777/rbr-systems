@@ -25,9 +25,10 @@ C_RULES = [
  (r"text-\[|tracking-|leading-|shrink-|flex|grid|rounded|border|overflow|transition|uppercase|font-|@4xl|@min-|STUDIO_INPUT", "Tailwind class list"),
  (r"^\$\{|=\$\{|: \"\"\}|\?$|^\} |^\) |^; |^= |^, ", "fragment of a template literal or expression, split by the scanner"),
  (r"Promise|=> void|Record$|Partial|Pick|Patch|ListUpdate|items\?|previewValues|EditableTeachItem|LifecycleActionState|durationSeconds", "TypeScript type fragment"),
- (r"^item-|^cat-|^acat-|^module_|^primary-|^accent-|^navigation-|^surface-|^tt-day|^customPage:", "DOM id or React key"),
+ (r"^item-|^cat-|^acat-|^module_|^primary-|^accent-|^navigation-|^surface-|^tt-day|^customPage:"
+   r"|^(?:color|image)-field-|^class-\$\{|\.png$", "DOM id, React key or generated filename"),
  (r"^(Backspace|Arrow(Left|Right|Up|Down)|Enter|Escape|Tab|Delete|Home|End)$", "KeyboardEvent.key value"),
- (r"YYYY|HH:MM|new Date|force-dynamic|select \*|idx ===|nextTone|auth\.getUser|slots_|published\.\*|tenantMediaPath|\{tenant\}|next build|credentials:|Access-Control|fetch\(signedUrl|commit\(\)|<Link>|<input type|label === |\\bCustom\\b.*stays selected|its own \"Back\" button|bottom nav \+ ", "code or format example inside a doc comment"),
+ (r"YYYY|HH:MM|new Date|force-dynamic|select \*|idx ===|nextTone|auth\.getUser|slots_|published\.\*|tenantMediaPath|\{tenant\}|next build|credentials:|Access-Control|fetch\(signedUrl|commit\(\)|<Link>|<input type|label === |Custom colors. option|marked .Recommended.|Recommended first|\\bCustom\\b.*stays selected|its own \"Back\" button|bottom nav \+ ", "code or format example inside a doc comment"),
  (r"DM Serif Display|DM Sans", "CSS font shorthand or font family name"),
  (r"Could not load image|Failed to fetch|Could not export image|AbortError|Could not find the (table|function)|could not remove Space media", "internal error string, replaced by a localized message before display"),
  (r"^Not found$", "HTTP response body, not UI"),
@@ -43,6 +44,8 @@ C_COMMENT_SITES = {
  ("studio-ui.tsx", "Continue \u2192"):           'The "\u2192" that trails a forward action ("Continue \u2192")',
  ("teach-studio-sections.tsx", "Custom"):     'Kept locally so "Custom" stays selected',
  ("teach-guest-app.tsx", "Get in touch"):     'bottom nav + "Get in touch"',
+ ("brand-preset-chips.tsx", "Custom colors"):  'Renders the separate "Custom colors" option when onCustom is given',
+ ("space-language-card.tsx", "Recommended"):   'languages that country suggests are marked "Recommended" and listed first',
 }
 
 # ---------------------------------------------------------------------------
@@ -54,6 +57,35 @@ B_RULES = [
  (r"^(JPG, PNG, WebP)$", "file format names"),
  (r"^Aa$", "type specimen, localized where the script differs (he gets אא)"),
 ]
+# Whole modules whose strings are all one category, with the reason.
+# Keyed by file, so a NEW string in one of these still has to be
+# justified by the rule rather than slipping through unexamined.
+BY_FILE = [
+ ("lib/content/dailyQuotes.ts", "A",
+  "InnerDweS's own curated quote collection and its attributions. This is "
+  "editorial CONTENT, not interface chrome - and translating Lao Tzu, the "
+  "Buddha or Patanjali means sourcing published translations, which is an "
+  "editorial decision for the owner, not a localization task."),
+ ("lib/teach/style.ts", "C",
+  "canonical English *_LABEL records; styleLabels(locale) is the display path"),
+ ("lib/modules/catalog.ts", "C",
+  "canonical English module labels; moduleLabel(key, locale) is the display path"),
+ ("lib/spaceTypes/migrationInspect.ts", "C", "SQL identifiers and probe text"),
+ ("lib/spaceTypes/registry.ts", "D-exception",
+  "Space Type Registry copy, rendered on /create and used as a new Space's "
+  "default name - both happen BEFORE a Space exists, so there is no "
+  "spaceSettings.locale to read; an account-level language is out of CP3 scope"),
+ ("components/brand/wordmark.tsx", "B", "the InnerDweS wordmark and its tagline"),
+ ("lib/modules/socialLinks.ts", "B", "third-party platform names"),
+ ("lib/teach/schedule.ts", "C", "worked examples inside doc comments"),
+ ("lib/teach/recurrenceText.ts", "C", "worked examples inside doc comments"),
+ ("lib/modules/facilitator.ts", "C", "example tags named in a doc comment"),
+ ("lib/studio/publicLink.ts", "C", "control names quoted in doc comments"),
+ ("components/studio/empty-state.tsx", "C", "no user-visible literals"),
+ ("components/studio/section-header.tsx", "C", "no user-visible literals"),
+ ("lib/spaceTypes/publishAvailability.ts", "C", "control names quoted in doc comments"),
+]
+
 # ---------------------------------------------------------------------------
 # D - system UI that is deliberately NOT localized, with the reason.
 # ---------------------------------------------------------------------------
@@ -70,6 +102,10 @@ D_EXCEPTIONS = {
 }
 
 def classify(text, loc=""):
+    path = loc.split(":")[0]
+    for prefix, cat, why in BY_FILE:
+        if path == prefix or path.startswith(prefix):
+            return cat, why
     basename = loc.split("/")[-1].split(":")[0]
     site = C_COMMENT_SITES.get((basename, text))
     if site: return "C", f"doc comment: {site}"

@@ -17,8 +17,13 @@ import json, os, re, sys, collections
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "app", "src")
 
 SURFACES = {
-    "teachStudio": ["app/configurator/teach/"],
-    "flowStudio":  ["app/configurator/retreat/"],
+    # Shared Studio infrastructure is listed under BOTH Studios on
+    # purpose. lib/studio/status.ts is exactly how a gap happens: it is
+    # not under a product folder, so a surface-rooted scan missed it, and
+    # it kept returning English labels into an otherwise fully
+    # translated Hebrew and German Studio until browser QA caught it.
+    "teachStudio": ["app/configurator/teach/", "lib/studio/", "components/studio/", "lib/teach/style.ts", "lib/teach/schedule.ts", "lib/teach/recurrenceText.ts"],
+    "flowStudio":  ["app/configurator/retreat/", "lib/studio/", "components/studio/", "lib/modules/", "lib/spaceTypes/"],
     "teachGuest":  ["components/teach/", "app/t/", "lib/teach/links.ts", "lib/teach/guestData.ts"],
     # Flow's Guest screens sit directly under components/, not in a
     # product folder - missing them is what undercounted CP3B's first pass.
@@ -29,7 +34,7 @@ SURFACES = {
                     "components/treatments-screen.tsx", "components/facilities-screen.tsx",
                     "components/facilitators-screen.tsx", "components/faq-screen.tsx",
                     "components/stay-connected-screen.tsx", "components/custom-page-screen.tsx",
-                    "components/shared/"],
+                    "components/shared/", "components/brand/", "lib/content/"],
 }
 SKIP = ("i18n/", ".test.", "__tests__", "/icons", "-icons.tsx")
 

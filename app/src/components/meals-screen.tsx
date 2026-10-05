@@ -82,17 +82,17 @@ export function MealsScreen({ brand, meals, locale = DEFAULT_LOCALE }: MealsScre
                   {meal.startTime}
                 </span>
               </div>
-              <h3 className="text-[18px] leading-snug" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
+              <h3 dir="auto" className="text-[18px] leading-snug" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
                 {meal.name}
               </h3>
               {meal.description && (
-                <p className="text-[12px] leading-relaxed mt-1.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
+                <p dir="auto" className="text-[12px] leading-relaxed mt-1.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
                   {meal.description}
                 </p>
               )}
               <div className="flex items-center gap-2 mt-3 flex-wrap">
                 {meal.location && (
-                  <span className="text-[10px]" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
+                  <span dir="auto" className="text-[10px]" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
                     {meal.location}
                   </span>
                 )}

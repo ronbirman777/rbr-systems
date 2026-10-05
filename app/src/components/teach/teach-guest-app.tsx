@@ -301,12 +301,13 @@ function Hero({
   const identity = (light: boolean) => (
     <div className={`flex flex-col gap-1.5 @min-[40rem]:gap-2 ${fullbleed ? "" : "items-center text-center @min-[40rem]:items-start @min-[40rem]:text-start"}`}>
       {p.greeting ? (
-        <p className="text-[13px] @min-[40rem]:text-[15px] italic" style={{ color: light ? "rgba(255,255,255,.9)" : "var(--rbr-text-muted)", fontFamily: "var(--tt-font-display)" }}>
+        <p dir="auto" className="text-[13px] @min-[40rem]:text-[15px] italic" style={{ color: light ? "rgba(255,255,255,.9)" : "var(--rbr-text-muted)", fontFamily: "var(--tt-font-display)" }}>
           {p.greeting}
         </p>
       ) : null}
-      {p.teacherType ? <Eyebrow tone={light ? "light" : "primary"}>{p.teacherType}</Eyebrow> : null}
+      {p.teacherType ? <Eyebrow userContent tone={light ? "light" : "primary"}>{p.teacherType}</Eyebrow> : null}
       <DisplayHeading
+        userContent
         as="h1"
         className="[--tt-hero-name:38px] @min-[40rem]:[--tt-hero-name:52px] @4xl:[--tt-hero-name:66px] @4xl:leading-[1.05]"
         style={{ fontSize: "calc(var(--tt-hero-name) * var(--tt-display-scale, 1))", ...(light ? { color: "#fff" } : null) }}
@@ -314,7 +315,7 @@ function Hero({
         {data.teacherName}
       </DisplayHeading>
       {p.locationLine ? (
-        <p className="text-[12.5px] @min-[40rem]:text-[14px]" style={{ color: light ? "rgba(255,255,255,.85)" : "var(--rbr-text-muted)" }}>
+        <p dir="auto" className="text-[12.5px] @min-[40rem]:text-[14px]" style={{ color: light ? "rgba(255,255,255,.85)" : "var(--rbr-text-muted)" }}>
           {p.locationLine}
         </p>
       ) : null}
@@ -495,7 +496,7 @@ function HomeScreen({
                     <TeachImage {...cardImage(data, "teachReadings", latestReading)} alt="" fallbackLabel={latestReading.title} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
                     <span className="p-3 @min-[40rem]:p-4 flex flex-col gap-1">
                       <Eyebrow tone="primary">{t("teach", "reading")}</Eyebrow>
-                      <span className="text-[15px] @min-[40rem]:text-[18px] leading-tight line-clamp-2" style={{ fontFamily: "var(--tt-font-display)" }}>
+                      <span dir="auto" className="text-[15px] @min-[40rem]:text-[18px] leading-tight line-clamp-2" style={{ fontFamily: "var(--tt-font-display)" }}>
                         {latestReading.title}
                       </span>
                     </span>
@@ -506,7 +507,7 @@ function HomeScreen({
                     <TeachImage {...cardImage(data, "teachAudio", latestAudio)} alt="" fallbackLabel={latestAudio.title} className="w-full h-[110px] @min-[40rem]:h-[170px]" />
                     <span className="p-3 @min-[40rem]:p-4 flex flex-col gap-1">
                       <Eyebrow tone="primary">{t("teach", "exploreAudio")}</Eyebrow>
-                      <span className="text-[15px] @min-[40rem]:text-[18px] leading-tight line-clamp-2" style={{ fontFamily: "var(--tt-font-display)" }}>
+                      <span dir="auto" className="text-[15px] @min-[40rem]:text-[18px] leading-tight line-clamp-2" style={{ fontFamily: "var(--tt-font-display)" }}>
                         {latestAudio.title}
                       </span>
                     </span>
@@ -862,7 +863,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
           <div className="px-4 @4xl:px-0">
             <figure className="p-5 @4xl:p-8 flex flex-col gap-2" style={{ background: "var(--rbr-primary-soft)", borderRadius: "calc(var(--tt-radius-card) + 4px)" }}>
               <Eyebrow tone="primary">{t("teach", "teachingPhilosophy")}</Eyebrow>
-              <blockquote className="text-[19px] @4xl:text-[26px] leading-[1.35] italic" style={{ fontFamily: "var(--tt-font-display)" }}>
+              <blockquote dir="auto" className="text-[19px] @4xl:text-[26px] leading-[1.35] italic" style={{ fontFamily: "var(--tt-font-display)" }}>
                 “{a.philosophy}”
               </blockquote>
             </figure>
@@ -921,7 +922,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
                     </span>
                   )}
                   <span className="flex-1 min-w-0">
-                    <span className="block text-[13.5px] font-semibold" style={{ color: "var(--rbr-text)" }}>
+                    <span dir="auto" className="block text-[13.5px] font-semibold" style={{ color: "var(--rbr-text)" }}>
                       {c.title}
                     </span>
                     {c.subtitle || c.description ? (

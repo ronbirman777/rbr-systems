@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { loadSpaceSettings, saveSpaceSettings } from "@/app/space/spaceSettingsActions";
 import { LOCALE_LABEL, SUPPORTED_LOCALES, recommendedLocales, type Locale } from "@/lib/i18n";
 
+import { createTranslator, DEFAULT_LOCALE } from "@/lib/i18n";
 /**
  * The Space's system language. Shared verbatim by Flow and Teach, and
  * ready for Heal - the setting is product-neutral, so the UI is too.
@@ -23,7 +24,15 @@ import { LOCALE_LABEL, SUPPORTED_LOCALES, recommendedLocales, type Locale } from
  * It writes through the same merging action as the country card, so
  * saving a language cannot clear the country.
  */
-export function SpaceLanguageCard({ tenantId }: { tenantId: string }) {
+/**
+ * `uiLocale` is what this card RENDERS in; `locale` below is the Space
+ * locale it EDITS. They are deliberately different names: the two are
+ * the same value in steady state, but while a change is in flight they
+ * are not, and conflating them is how a card like this ends up
+ * half-switching mid-save.
+ */
+export function SpaceLanguageCard({ tenantId, uiLocale = DEFAULT_LOCALE }: { tenantId: string; uiLocale?: Locale }) {
+  const { t } = createTranslator(uiLocale);
   const [locale, setLocale] = useState<Locale | null>(null);
   const [country, setCountry] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -59,7 +68,7 @@ export function SpaceLanguageCard({ tenantId }: { tenantId: string }) {
     setMessage(null);
     startTransition(async () => {
       const result = await saveSpaceSettings(tenantId, { locale: next });
-      setMessage(result.error ? { ok: false, text: result.error } : { ok: true, text: "Saved" });
+      setMessage(result.error ? { ok: false, text: result.error } : { ok: true, text: t("common", "saved") });
     });
   }
 
@@ -68,14 +77,13 @@ export function SpaceLanguageCard({ tenantId }: { tenantId: string }) {
   return (
     <div className="rounded-2xl border border-[#E2DACD] bg-white p-4 sm:p-5 flex flex-col gap-3" data-testid="space-language-card">
       <div className="flex flex-col gap-1">
-        <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84]">Language</p>
+        <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84]">{t("common", "language")}</p>
         <p className="text-[13px] text-[#6F6C66] leading-relaxed max-w-[52ch]">
-          The language your Space is shown in, for you and for your guests. It does not translate or change anything you
-          have written.
+          {t("studio", "languageCardHint")}
         </p>
       </div>
 
-      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="System language">
+      <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("studio", "systemLanguage")}>
         {ordered.map((code) => {
           const active = effective === code;
           const isRecommended = recommended.includes(code) && recommended.length > 1;
@@ -94,7 +102,7 @@ export function SpaceLanguageCard({ tenantId }: { tenantId: string }) {
             >
               <span lang={code}>{LOCALE_LABEL[code]}</span>
               {isRecommended && !active ? (
-                <span className="ms-2 text-[11px] font-medium text-[#8C8A84]">Recommended</span>
+                <span className="ms-2 text-[11px] font-medium text-[#8C8A84]">{t("common", "recommended")}</span>
               ) : null}
             </button>
           );
@@ -102,7 +110,7 @@ export function SpaceLanguageCard({ tenantId }: { tenantId: string }) {
       </div>
 
       {locale === null && loaded ? (
-        <p className="text-[12px] text-[#8C8A84]">Not set yet — your Space is shown in English.</p>
+        <p className="text-[12px] text-[#8C8A84]">{t("studio", "languageNotSetYet")}</p>
       ) : null}
 
       {message ? (

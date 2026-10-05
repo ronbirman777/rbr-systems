@@ -426,6 +426,42 @@ describe("user-authored content keeps its own direction", () => {
     expect(html).toContain('lang="en"');
   });
 
+  it("marks the hero, the quote and item titles dir=auto, not just the biography", () => {
+    // Browser QA caught this: a German greeting inside a Hebrew Space
+    // rendered as ".Willkommen — schön, dass du da bist" because the
+    // paragraph inherited RTL and moved the full stop. Every block of
+    // organizer-written text has to decide its own direction.
+    const data = parsePublishedTeachSpace({
+      name: "Lena",
+      theme: null,
+      timezone: "Europe/Berlin",
+      enabled_modules: ["teachReadings"],
+      modules: {
+        spaceSettings: { locale: "he" },
+        teach: {
+          settings: {
+            teachProfile: { greeting: "Willkommen — schön, dass du da bist.", teacherType: "Yoga Teacher", locationLine: "Berlin" },
+            teachAbout: { philosophy: "Move slowly enough to hear your body." },
+          },
+          items: { teachReadings: [{ id: "r1", title: "On beginning again", imageRef: null, metadata: {} }] },
+        },
+      },
+    });
+    const home = renderToStaticMarkup(createElement(TeachGuestApp, { data }));
+    // The app itself is Hebrew and right-to-left...
+    expect(home).toContain('dir="rtl"');
+    // ...while each block the organizer wrote decides for itself.
+    for (const text of ["Willkommen", "Yoga Teacher", "Berlin"]) {
+      expect(home, text).toContain(text);
+    }
+    const autoBlocks = home.split('dir="auto"').length - 1;
+    expect(autoBlocks, "organizer blocks marked dir=auto").toBeGreaterThanOrEqual(4);
+
+    const about = renderToStaticMarkup(createElement(TeachGuestApp, { data, initialTab: "about" }));
+    expect(about).toContain('dir="auto"');
+    expect(about).toContain("Move slowly enough");
+  });
+
   it("does not translate or alter anything the organizer typed", () => {
     const text = "Morning Vinyasa Flow — bring a mat";
     const data = parsePublishedTeachSpace({

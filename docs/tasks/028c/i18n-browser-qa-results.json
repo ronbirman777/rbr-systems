@@ -1,0 +1,260 @@
+{
+ "cells": 147,
+ "surfaces": [
+  "flow-guest",
+  "flow-studio",
+  "teach-guest-about",
+  "teach-guest-explore",
+  "teach-guest-home",
+  "teach-guest-schedule",
+  "teach-studio"
+ ],
+ "locales": [
+  "de",
+  "en",
+  "he"
+ ],
+ "widths": [
+  320,
+  360,
+  390,
+  430,
+  768,
+  820,
+  1440
+ ],
+ "pageOverflowCells": 0,
+ "elementsWiderThanViewport": 0,
+ "clippedTextNodes": 0,
+ "englishLeaksInHeDe": 0,
+ "langDirByCell": [
+  {
+   "surface": "flow-guest",
+   "locale": "de",
+   "lang": "de",
+   "dir": "ltr"
+  },
+  {
+   "surface": "flow-guest",
+   "locale": "en",
+   "lang": "en",
+   "dir": "ltr"
+  },
+  {
+   "surface": "flow-guest",
+   "locale": "he",
+   "lang": "he",
+   "dir": "rtl"
+  },
+  {
+   "surface": "flow-studio",
+   "locale": "de",
+   "lang": "de",
+   "dir": "ltr"
+  },
+  {
+   "surface": "flow-studio",
+   "locale": "en",
+   "lang": "en",
+   "dir": "ltr"
+  },
+  {
+   "surface": "flow-studio",
+   "locale": "he",
+   "lang": "he",
+   "dir": "rtl"
+  },
+  {
+   "surface": "teach-guest-about",
+   "locale": "de",
+   "lang": "de",
+   "dir": "ltr"
+  },
+  {
+   "surface": "teach-guest-about",
+   "locale": "en",
+   "lang": "en",
+   "dir": "ltr"
+  },
+  {
+   "surface": "teach-guest-about",
+   "locale": "he",
+   "lang": "he",
+   "dir": "rtl"
+  },
+  {
+   "surface": "teach-guest-explore",
+   "locale": "de",
+   "lang": "de",
+   "dir": "ltr"
+  },
+  {
+   "surface": "teach-guest-explore",
+   "locale": "en",
+   "lang": "en",
+   "dir": "ltr"
+  },
+  {
+   "surface": "teach-guest-explore",
+   "locale": "he",
+   "lang": "he",
+   "dir": "rtl"
+  },
+  {
+   "surface": "teach-guest-home",
+   "locale": "de",
+   "lang": "de",
+   "dir": "ltr"
+  },
+  {
+   "surface": "teach-guest-home",
+   "locale": "en",
+   "lang": "en",
+   "dir": "ltr"
+  },
+  {
+   "surface": "teach-guest-home",
+   "locale": "he",
+   "lang": "he",
+   "dir": "rtl"
+  },
+  {
+   "surface": "teach-guest-schedule",
+   "locale": "de",
+   "lang": "de",
+   "dir": "ltr"
+  },
+  {
+   "surface": "teach-guest-schedule",
+   "locale": "en",
+   "lang": "en",
+   "dir": "ltr"
+  },
+  {
+   "surface": "teach-guest-schedule",
+   "locale": "he",
+   "lang": "he",
+   "dir": "rtl"
+  },
+  {
+   "surface": "teach-studio",
+   "locale": "de",
+   "lang": "de",
+   "dir": "ltr"
+  },
+  {
+   "surface": "teach-studio",
+   "locale": "en",
+   "lang": "en",
+   "dir": "ltr"
+  },
+  {
+   "surface": "teach-studio",
+   "locale": "he",
+   "lang": "he",
+   "dir": "rtl"
+  }
+ ],
+ "mixedContentResolved": [
+  {
+   "surface": "teach-guest-about",
+   "locale": "de",
+   "blocks": [
+    {
+     "resolved": "rtl",
+     "sample": "שלום, אני לנה. אני מלמדת יוגה כבר אח"
+    }
+   ]
+  },
+  {
+   "surface": "teach-guest-about",
+   "locale": "en",
+   "blocks": [
+    {
+     "resolved": "rtl",
+     "sample": "שלום, אני לנה. אני מלמדת יוגה כבר אח"
+    }
+   ]
+  },
+  {
+   "surface": "teach-guest-about",
+   "locale": "he",
+   "blocks": [
+    {
+     "resolved": "rtl",
+     "sample": "שלום, אני לנה. אני מלמדת יוגה כבר אח"
+    }
+   ]
+  }
+ ],
+ "iconMirroring": [
+  {
+   "surface": "teach-guest-home",
+   "locale": "de",
+   "flipped": 0,
+   "total": 1
+  },
+  {
+   "surface": "teach-guest-home",
+   "locale": "en",
+   "flipped": 0,
+   "total": 1
+  },
+  {
+   "surface": "teach-guest-home",
+   "locale": "he",
+   "flipped": 1,
+   "total": 1
+  }
+ ],
+ "touchTargetsUnder44px": [
+  [
+   1,
+   "INPUT"
+  ],
+  [
+   16,
+   "BUTTON"
+  ],
+  [
+   17,
+   "BUTTON"
+  ],
+  [
+   36,
+   "BUTTON"
+  ],
+  [
+   40,
+   "BUTTON"
+  ],
+  [
+   40,
+   "INPUT"
+  ],
+  [
+   40,
+   "SELECT"
+  ],
+  [
+   41,
+   "SELECT"
+  ],
+  [
+   42,
+   "BUTTON"
+  ],
+  [
+   42,
+   "INPUT"
+  ],
+  [
+   43,
+   "BUTTON"
+  ],
+  [
+   43,
+   "INPUT"
+  ]
+ ]
+}

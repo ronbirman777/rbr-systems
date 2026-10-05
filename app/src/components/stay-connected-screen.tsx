@@ -1,7 +1,7 @@
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
 import type { StayConnected } from "@/lib/modules/stayConnected";
-import { SOCIAL_PLATFORM_LABEL } from "@/lib/modules/socialLinks";
+import { socialPlatformLabel } from "@/lib/modules/socialLinks";
 import { SocialIcon } from "./guest/social-icon";
 import type { CSSProperties } from "react";
 
@@ -50,7 +50,7 @@ export function StayConnectedScreen({ brand, stayConnected, locale = DEFAULT_LOC
               <SocialIcon platform={link.platform} style={{ color: "var(--rbr-text)" }} />
             </div>
             <span className="text-[14px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text)" }}>
-              {SOCIAL_PLATFORM_LABEL[link.platform]}
+              {socialPlatformLabel(locale)[link.platform]}
             </span>
           </a>
         ))}

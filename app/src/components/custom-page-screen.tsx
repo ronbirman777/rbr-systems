@@ -30,7 +30,7 @@ export function CustomPageScreen({ brand, page }: CustomPageScreenProps) {
         </div>
       )}
       <div className="px-6 pt-7 pb-10">
-        <h1 className="text-[24px] font-normal leading-tight" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
+        <h1 dir="auto" className="text-[24px] font-normal leading-tight" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
           {page.title}
         </h1>
         {page.body && (

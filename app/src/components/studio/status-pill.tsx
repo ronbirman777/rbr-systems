@@ -1,7 +1,8 @@
-import { STUDIO_STATUS_LABEL, type StudioPublishState } from "@/lib/studio/status";
+import { studioStatusLabel, type StudioPublishState } from "@/lib/studio/status";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 
 /** Draft / Published pill - the same wording in every Studio. */
-export function StatusPill({ state, label }: { state: StudioPublishState; label?: string }) {
+export function StatusPill({ state, label, locale = DEFAULT_LOCALE }: { state: StudioPublishState; label?: string; locale?: Locale }) {
   const published = state === "published";
   return (
     <span
@@ -12,7 +13,7 @@ export function StatusPill({ state, label }: { state: StudioPublishState; label?
       data-state={state}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${published ? "bg-[#6B9478]" : "bg-[#C4A36A]"}`} aria-hidden="true" />
-      {label ?? STUDIO_STATUS_LABEL[state]}
+      {label ?? studioStatusLabel(state, locale)}
     </span>
   );
 }

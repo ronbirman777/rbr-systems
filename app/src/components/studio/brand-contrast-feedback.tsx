@@ -2,6 +2,7 @@
 
 import { gradeBrandRoles, type RolePairReport } from "@/lib/brand/accessibility";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 /**
  * Live contrast feedback for the Brand step, shared by Flow and Teach.
  *
@@ -26,14 +27,12 @@ const TONE: Record<RolePairReport["grade"], { dot: string; text: string; prefix:
   fail: { dot: "#8F3B3B", text: "#8F3B3B", prefix: "!" },
 };
 
-function message(report: RolePairReport): string {
-  if (report.grade === "pass") return "Clear and readable.";
+function messageKey(report: RolePairReport) {
+  if (report.grade === "pass") return "contrastClear" as const;
   if (report.grade === "warn") {
-    return report.level === "normalText"
-      ? "Fine for headings and buttons, a little low for small body text."
-      : "Usable, though a stronger contrast would read better.";
+    return report.level === "normalText" ? ("contrastHeadingsOnly" as const) : ("contrastUsable" as const);
   }
-  return "Too low to read reliably — the app will substitute a readable colour here.";
+  return "contrastTooLow" as const;
 }
 
 export function BrandContrastFeedback({
@@ -43,6 +42,7 @@ export function BrandContrastFeedback({
   text,
   surface,
   className = "",
+  locale = DEFAULT_LOCALE,
 }: {
   primary: string;
   accent: string;
@@ -50,12 +50,14 @@ export function BrandContrastFeedback({
   text: string;
   surface: string;
   className?: string;
+  locale?: Locale;
 }) {
+  const { t } = createTranslator(locale);
   const reports = gradeBrandRoles({ primary, accent, navigation, text, surface });
 
   return (
     <div className={`flex flex-col gap-2 ${className}`} data-testid="brand-contrast-feedback">
-      <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84]">Readability</p>
+      <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84]">{t("studio", "readability")}</p>
       <ul className="flex flex-col gap-1.5">
         {reports.map((report) => {
           const tone = TONE[report.grade];
@@ -67,7 +69,7 @@ export function BrandContrastFeedback({
                 <span className="text-[#8C8A84]"> — {report.displayRatio}</span>
                 <span style={{ color: tone.text }}>
                   {" "}
-                  {tone.prefix} {message(report)}
+                  {tone.prefix} {t("studio", messageKey(report))}
                 </span>
               </span>
             </li>
@@ -75,8 +77,7 @@ export function BrandContrastFeedback({
         })}
       </ul>
       <p className="text-[11.5px] text-[#8C8A84] max-w-[56ch]">
-        Your colours are saved exactly as you chose them. Where a combination would be hard to read, the Guest App picks a
-        readable text colour on top rather than changing your colour.
+        {t("studio", "contrastPolicy")}
       </p>
     </div>
   );

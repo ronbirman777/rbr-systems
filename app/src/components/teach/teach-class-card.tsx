@@ -110,7 +110,7 @@ export function TeachClassCard({
           style={{ borderRadius: "var(--tt-radius-image)" }}
         />
         <span className="flex-1 min-w-0 flex flex-col gap-1">
-          <span className="flex items-center gap-2">
+          <span dir="auto" className="flex items-center gap-2">
             {item.subtitle ? <Eyebrow tone="primary">{item.subtitle}</Eyebrow> : null}
             {past ? (
               <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: "var(--tt-line)", color: "var(--rbr-text-muted)" }}>
@@ -118,7 +118,7 @@ export function TeachClassCard({
               </span>
             ) : null}
           </span>
-          <DisplayHeading as="h3" size={18} className="line-clamp-2">
+          <DisplayHeading userContent as="h3" size={18} className="line-clamp-2">
             {item.title}
           </DisplayHeading>
           <MetaRow icon="clock">
@@ -153,7 +153,7 @@ export function TeachClassCard({
               </p>
             ) : null}
             {item.description ? (
-              <p className="text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
+              <p dir="auto" className="text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
                 {item.description}
               </p>
             ) : null}
@@ -270,7 +270,7 @@ export function TeachAvailabilityCard({
         </div>
       </div>
       {item.description ? (
-        <p className="text-[13px] leading-[1.5]" style={{ color: "var(--rbr-text-muted)" }}>
+        <p dir="auto" className="text-[13px] leading-[1.5]" style={{ color: "var(--rbr-text-muted)" }}>
           {item.description}
         </p>
       ) : null}
