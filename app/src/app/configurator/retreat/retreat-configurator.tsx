@@ -200,7 +200,13 @@ function swatchesFor(role: "primary" | "accent" | "navigation" | "text" | "surfa
  * palette) plus a free custom-hex input. Only the bound role, value and
  * swatch list differ.
  */
-function ColorPicker({ label, hint, value, swatches, onChange, locale }: { label: string; hint: string; value: string; swatches: readonly { label: string; hex: string }[]; onChange: (hex: string) => void; locale: Locale }) {
+/**
+ * `first` is an explicit flag, not `label === "Primary Color"`.
+ * Branching on display text silently stopped working the moment the
+ * label was translated, which is exactly the class of bug localization
+ * exposes - the first picker simply lost its spacing in he/de.
+ */
+function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: { label: string; hint: string; value: string; swatches: readonly { label: string; hex: string }[]; onChange: (hex: string) => void; locale: Locale; first?: boolean }) {
   const { t } = createTranslator(locale);
   const [draft, setDraft] = useState(value);
   const [showError, setShowError] = useState(false);
@@ -229,7 +235,7 @@ function ColorPicker({ label, hint, value, swatches, onChange, locale }: { label
 
   return (
     <div>
-      <StudioSectionSub first={label === "Primary Color"}>{label}</StudioSectionSub>
+      <StudioSectionSub first={first}>{label}</StudioSectionSub>
       <p className="text-[11px] -mt-2 mb-3" style={{ color: GUEST_BASE_PALETTE.mist }}>
         {hint}
       </p>
@@ -672,7 +678,7 @@ function ScheduleEditor({
           onClick={handleSaveSchedule}
           className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
         >
-          {schedulePending ? "Saving…" : "Save Schedule"}
+          {schedulePending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "navSchedule") })}
         </button>
         <button
           type="button"
@@ -1015,7 +1021,7 @@ function TeamEditor({
           onClick={handleSaveFacilitators}
           className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
         >
-          {facilitatorsPending ? "Saving…" : "Save Facilitators"}
+          {facilitatorsPending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "facilitators") })}
         </button>
         <button
           type="button"
@@ -1329,7 +1335,7 @@ export function RetreatConfigurator({
   // Custom Pages/Stay Connected/Arrival Info) are now wired into this same
   // guard through the shared studioSection.ts contract: each marks its own
   // section dirty on a meaningful edit, clears it only after a save that
-  // actually succeeded, and registers its save here so "Save and continue"
+  // actually succeeded, and registers its save here so t("studio", "saveAndContinue")
   // below can run it.
   /** Each mounted module editor publishes its own save here (see
    * useRegisteredSave). A ref, not state: registering must never trigger a
@@ -1505,28 +1511,28 @@ export function RetreatConfigurator({
   }
 
   const publishReadiness: ReadinessItem[] = [
-    { ok: name.trim().length > 0, label: "Retreat name", hint: "Add your retreat name in Identity." },
-    { ok: !!currentSlug, label: "Guest App address", hint: "Choose an address in Identity." },
-    { ok: !!heroImageUrl, label: "Cover image", hint: "Add a hero image in Brand so your Guest App has a welcoming first impression." },
-    { ok: schedule.length > 0, label: "Schedule", hint: "Add at least one schedule item so guests know what is happening." },
-    { ok: facilitators.length > 0, label: "Facilitators", hint: "Add the people guiding your retreat." },
+    { ok: name.trim().length > 0, label: t("flow", "retreatName"), hint: t("flow", "needRetreatName") },
+    { ok: !!currentSlug, label: t("studio", "guestAppAddress"), hint: t("flow", "needAddress") },
+    { ok: !!heroImageUrl, label: t("studio", "coverImage"), hint: t("flow", "needCoverImage") },
+    { ok: schedule.length > 0, label: t("flow", "navSchedule"), hint: t("flow", "needSchedule") },
+    { ok: facilitators.length > 0, label: t("flow", "facilitators"), hint: t("flow", "needFacilitators") },
   ];
 
   const stepEyebrow =
     step === "publish" || step === "share" || step === "featured"
-      ? "Publishing"
+      ? t("studio", "publishing")
       : sidebarGroups.find((g) => g.items.some((i) => i.key === step))?.label;
 
   return (
     <>
       <StudioTopBar
         name={name}
-        fallbackName="My Retreat"
+        fallbackName={t("flow", "myRetreatFallback")}
         productBadge="Time to Flow"
         saveStatus={saveStatusLabel({ saving: publishPending, dirty: dirty.isDirtyAnywhere })}
         onBack={() => attemptNavigate(() => router.push("/space"))}
         onPublish={() => attemptNavigate(() => setStep("publish"))}
-        publishLabel={currentPublishedAt ? "Republish" : "Publish"}
+        publishLabel={currentPublishedAt ? t("studio", "republish") : t("studio", "publish")}
       />
       {/* Mobile Studio Navigation - the desktop sidebar below is
           `hidden lg:flex`, so below that breakpoint this topbar + drawer
@@ -1535,7 +1541,7 @@ export function RetreatConfigurator({
         <button
           type="button"
           onClick={() => setMobileNavOpen(true)}
-          aria-label="Open Studio menu"
+          aria-label={t("studio", "openStudioMenu")}
           aria-expanded={mobileNavOpen}
           className="w-11 h-11 shrink-0 flex flex-col items-center justify-center gap-1 rounded-lg active:bg-idw-forest/10"
         >
@@ -1556,22 +1562,22 @@ export function RetreatConfigurator({
         <button
           type="button"
           onClick={() => attemptNavigate(() => router.push("/space"))}
-          aria-label="Back to My Spaces"
+          aria-label={t("studio", "backToMySpaces")}
           className="flex items-center gap-1 min-h-11 pl-1 pr-2.5 -ml-1 rounded-lg text-idw-forest active:bg-idw-forest/10 transition-colors shrink-0"
         >
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
             <path d="M12.5 15.5L7 10l5.5-5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <span className="text-sm font-semibold whitespace-nowrap">My Spaces</span>
+          <span className="text-sm font-semibold whitespace-nowrap">{t("studio", "mySpaces")}</span>
         </button>
         <span className="ml-auto text-xs font-semibold text-idw-forest/60 truncate max-w-[28%]">
           {steps.find((s) => s.key === step)?.label ??
-            (step === "share" ? "Share Your Space" : step === "featured" ? "Featured on InnerDweS" : "")}
+            (step === "share" ? t("studio", "shareYourSpace") : step === "featured" ? t("studio", "featuredOnInnerDwes") : "")}
         </span>
       </div>
 
       {mobileNavOpen && (
-        <div className="lg:hidden fixed inset-0 z-[100] flex" role="dialog" aria-modal="true" aria-label="Studio menu">
+        <div className="lg:hidden fixed inset-0 z-[100] flex" role="dialog" aria-modal="true" aria-label={t("studio", "studioMenu")}>
           <div
             className="absolute inset-0"
             style={{ background: "rgba(27,46,36,0.45)" }}
@@ -1591,7 +1597,7 @@ export function RetreatConfigurator({
                 <button
                   type="button"
                   onClick={() => setMobileNavOpen(false)}
-                  aria-label="Close Studio menu"
+                  aria-label={t("studio", "closeStudioMenu")}
                   className="text-idw-forest/50 text-xl leading-none px-1"
                 >
                   ×
@@ -1603,13 +1609,13 @@ export function RetreatConfigurator({
                   setMobileNavOpen(false);
                   attemptNavigate(() => router.push("/space"));
                 }}
-                aria-label="Back to My Spaces"
+                aria-label={t("studio", "backToMySpaces")}
                 className="w-full flex items-center gap-1.5 min-h-11 px-3 mb-4 rounded-lg text-sm font-semibold text-idw-forest/70 active:bg-idw-forest/10 hover:bg-idw-forest/5"
               >
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
                   <path d="M12.5 15.5L7 10l5.5-5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                My Spaces
+                {t("studio", "mySpaces")}
               </button>
               {sidebarGroups.map((group) => (
                 <div key={group.label} className="mb-6">
@@ -1646,7 +1652,7 @@ export function RetreatConfigurator({
                   step === "publish" ? "bg-idw-forest text-idw-parchment" : "bg-idw-clay/10 text-idw-clay-text border border-idw-clay/25"
                 }`}
               >
-                Preview &amp; Publish
+                {t("studio", "navPreviewPublish")}
               </button>
               {tenantId && (
                 <button
@@ -1755,7 +1761,7 @@ export function RetreatConfigurator({
                 : "bg-idw-clay/10 text-idw-clay-text border border-idw-clay/25 hover:bg-idw-clay/15"
             }`}
           >
-            <span>Preview &amp; Publish</span>
+            <span>{t("studio", "navPreviewPublish")}</span>
             {step !== "publish" && !currentPublishedAt && (
               <span className="w-1.5 h-1.5 rounded-full bg-idw-clay shrink-0" aria-hidden="true" />
             )}
@@ -1768,7 +1774,7 @@ export function RetreatConfigurator({
                 step === "share" ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70 hover:bg-idw-forest/5"
               }`}
             >
-              <span>Share Your Space</span>
+              <span>{t("studio", "shareYourSpace")}</span>
             </button>
           )}
           {tenantId && (
@@ -1779,7 +1785,7 @@ export function RetreatConfigurator({
                 step === "featured" ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70 hover:bg-idw-forest/5"
               }`}
             >
-              <span>Featured on InnerDweS</span>
+              <span>{t("studio", "featuredOnInnerDwes")}</span>
             </button>
           )}
           {currentPublishedAt && (
@@ -1873,22 +1879,22 @@ export function RetreatConfigurator({
                 className="text-[11px] font-semibold uppercase tracking-wide underline disabled:opacity-40"
                 style={{ color: GUEST_BASE_PALETTE.forest }}
               >
-                {slugCheckPending ? "Checking…" : "Check availability"}
+                {slugCheckPending ? t("studio", "checking") : t("studio", "checkAvailability")}
               </button>
               <span className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
                 {slugInput.length === 0
                   ? null
                   : currentSlug === slugInput
-                    ? "This is your Space's current address."
+                    ? t("studio", "currentAddress")
                     : localSlugStatus === "invalid"
-                      ? "Use lowercase letters, numbers and hyphens only (3-63 characters)."
+                      ? t("studio", "addressRules")
                       : localSlugStatus === "reserved"
-                        ? "That address is reserved."
+                        ? t("studio", "addressReserved")
                         : slugCheckState.slug === slugInput
                           ? slugCheckState.status === "available"
-                            ? "Available."
+                            ? t("studio", "addressAvailable")
                             : slugCheckState.status === "unavailable"
-                              ? "That address is already taken."
+                              ? t("studio", "addressTaken")
                               : slugCheckState.error
                           : null}
               </span>
@@ -1904,7 +1910,7 @@ export function RetreatConfigurator({
                   className="mt-3 rounded-full border text-[11px] font-semibold uppercase tracking-wide px-5 py-2.5 disabled:opacity-50"
                   style={{ borderColor: GUEST_BASE_PALETTE.forest, color: GUEST_BASE_PALETTE.forest }}
                 >
-                  {reservePending ? "Reserving…" : "Reserve this address"}
+                  {reservePending ? t("studio", "reserving") : t("studio", "reserveAddress")}
                 </button>
               )}
             {reserveState.error && (
@@ -2024,6 +2030,7 @@ export function RetreatConfigurator({
             <div id="flow-custom-colors">
             <ColorPicker
               locale={initialLocale}
+              first
               key={`primary-${presetNonce}`}
               label={t("studio", "primaryColour")}
               swatches={swatchesFor("primary")}
@@ -2051,7 +2058,7 @@ export function RetreatConfigurator({
               key={`navigation-${presetNonce}`}
               label={t("studio", "navigationColour")}
               swatches={swatchesFor("navigation")}
-              hint="Used for the bottom navigation's active tab, and other tab-like selections (e.g. Schedule's day picker)."
+              hint={t("studio", "navigationColourHelpFlow")}
               value={effectiveNavigation}
               onChange={(hex) => {
                 setCustomNavigation(hex);
@@ -2118,10 +2125,10 @@ export function RetreatConfigurator({
               </span>
               <div className="flex-1">
                 <p className="text-[12px] font-medium" style={{ color: GUEST_BASE_PALETTE.forest }}>
-                  {readabilityPasses ? "Contrast looks good" : "Contrast may be too low"}
+                  {readabilityPasses ? t("studio", "contrastGood") : t("studio", "contrastLow")}
                 </p>
                 <p className="text-[11px] mt-0.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                  {readabilityTextColor === "#FBF9F5" ? "White" : "Dark"} text on this color{" "}
+                  {readabilityTextColor === "#FBF9F5" ? t("studio", "swatchWhite") : t("studio", "swatchDark")} text on this color{" "}
                   {readabilityPasses ? "meets" : "may not meet"} accessibility standards.
                 </p>
               </div>
@@ -2148,8 +2155,7 @@ export function RetreatConfigurator({
               >
                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: GUEST_BASE_PALETTE.clay }} />
                 <p className="text-[11px] leading-relaxed" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-                  Your App Text Color may be too light to read comfortably on its own - we&apos;ll automatically
-                  darken it where needed so guest-facing text always stays legible.
+                  {t("flow", "textColourTooLightFlow")}
                 </p>
               </div>
             )}
@@ -2173,7 +2179,7 @@ export function RetreatConfigurator({
                 disabled={draftPending}
                 className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
               >
-                {draftPending ? "Saving…" : "Save Draft"}
+                {draftPending ? t("common", "savingNow") : t("studio", "saveDraft")}
               </button>
               {tenantId && (
                 <button
@@ -2317,7 +2323,7 @@ export function RetreatConfigurator({
                 disabled={modulesPending}
                 className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
               >
-                {modulesPending ? "Saving…" : "Save Modules"}
+                {modulesPending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("studio", "navModules") })}
               </button>
               <button
                 type="button"
@@ -2467,7 +2473,7 @@ export function RetreatConfigurator({
                   <button
                     type="button"
                     onClick={() => setFirstPublishMomentDismissed(true)}
-                    aria-label="Dismiss"
+                    aria-label={t("common", "dismiss")}
                     className="text-idw-forest/40 text-lg leading-none px-1"
                   >
                     ×
@@ -2492,8 +2498,8 @@ export function RetreatConfigurator({
                   </div>
                   <p className="mt-3 text-[12.5px] leading-relaxed text-[#6F6C66]">
                     {currentPublishedAt
-                      ? "Guests won't see further edits until you republish."
-                      : "Nothing is visible to guests until you publish."}
+                      ? t("studio", "notVisibleUntilRepublish")
+                      : t("studio", "notVisibleUntilPublish")}
                   </p>
                 </div>
 
@@ -2552,10 +2558,10 @@ export function RetreatConfigurator({
                         // time reads as "working", not "stuck", since the
                         // button previously just showed static unchanging text
                         // for however long that took.
-                        "Publishing…"
+                        t("studio", "publishingNow")
                       : currentPublishedAt
-                        ? "Republish"
-                        : "Publish"}
+                        ? t("studio", "republish")
+                        : t("studio", "publish")}
                   </button>
                   <button
                     type="button"
@@ -2661,7 +2667,7 @@ export function RetreatConfigurator({
           Hidden below `lg` entirely (Mobile Studio Navigation) - a
           390px-wide screen has no room to stack a full phone mockup
           into the content flow underneath the section being edited;
-          the "Resume this draft later" link it also carries isn't
+          the t("flow", "resumeDraftLater") link it also carries isn't
           reachable there either, so nothing mobile-only is lost. */}
       {step !== "publish" && step !== "share" && step !== "featured" && (
       <aside className="hidden lg:flex bg-[#E9E3D8] border-l border-[#E2DACD] px-8 py-8 flex-col items-center overflow-y-auto lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]" data-testid="studio-preview-pane">

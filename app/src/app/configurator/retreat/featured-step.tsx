@@ -19,11 +19,15 @@ export type FeaturedStepProps = {
   locale?: Locale;
 };
 
-const STATUS_COPY: Record<FeaturedSubmission["status"], { label: string; dotClass: string }> = {
-  not_submitted: { label: "Not submitted", dotClass: "bg-idw-forest/30" },
-  submitted: { label: "Pending review", dotClass: "bg-idw-clay" },
-  approved: { label: "Approved", dotClass: "bg-idw-sage" },
-  rejected: { label: "Not approved", dotClass: "bg-idw-forest/30" },
+/** Translation keys, resolved per render in the Space language. */
+const STATUS_COPY: Record<
+  FeaturedSubmission["status"],
+  { labelKey: "statusNotSubmitted" | "statusPending" | "statusApproved" | "statusNotApproved"; dotClass: string }
+> = {
+  not_submitted: { labelKey: "statusNotSubmitted", dotClass: "bg-idw-forest/30" },
+  submitted: { labelKey: "statusPending", dotClass: "bg-idw-clay" },
+  approved: { labelKey: "statusApproved", dotClass: "bg-idw-sage" },
+  rejected: { labelKey: "statusNotApproved", dotClass: "bg-idw-forest/30" },
 };
 
 type LinkDraft = { label: string; url: string };
@@ -91,7 +95,7 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission,
           <div className="flex items-center gap-1.5 mt-1">
             <span className={`w-2 h-2 rounded-full ${statusCopy.dotClass}`} />
             <span className="text-xs font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
-              {statusCopy.label}
+              {t("studio", statusCopy.labelKey)}
             </span>
           </div>
         </div>
@@ -114,7 +118,7 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission,
 
         <div className="space-y-4">
           <div>
-            <StudioLabel>Description</StudioLabel>
+            <StudioLabel>{t("common", "description")}</StudioLabel>
             <textarea
               name="description"
               value={description}
@@ -130,7 +134,7 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission,
           </div>
 
           <div>
-            <StudioLabel>Location</StudioLabel>
+            <StudioLabel>{t("common", "location")}</StudioLabel>
             <input
               name="location"
               value={location}
@@ -141,7 +145,7 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission,
           </div>
 
           <div>
-            <StudioLabel>Website</StudioLabel>
+            <StudioLabel>{t("common", "website")}</StudioLabel>
             <input
               name="website"
               value={website}
@@ -186,7 +190,7 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission,
                     style={{ color: GUEST_BASE_PALETTE.mist }}
                     aria-label={t("flow", "removeLinkN", { index: i + 1 })}
                   >
-                    Remove
+                    {t("common", "remove")}
                   </button>
                 </div>
               ))}

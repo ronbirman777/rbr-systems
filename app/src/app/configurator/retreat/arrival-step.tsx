@@ -92,8 +92,7 @@ export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDir
     <div className="max-w-xl">
       <StudioHeading>{t("flow", "arrivalStepTitle")}</StudioHeading>
       <StudioIntro>
-        Everything guests need before and on arrival. Clear, calm information makes a big difference to first
-        impressions.
+        {t("flow", "arrivalStepBody")}
       </StudioIntro>
 
       {Object.values(info).every((v) => !v) && (
@@ -122,7 +121,7 @@ export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDir
 
       <StudioSectionSub>{t("common", "location")}</StudioSectionSub>
       <div className="space-y-4">
-        <Field label={t("common", "address")} value={info.address} onChange={(v) => set("address", v)} textarea placeholder={"147 Moo 4, Ban Tai\nKo Samui, Surat Thani 84320"} />
+        <Field label={t("common", "address")} value={info.address} onChange={(v) => set("address", v)} textarea placeholder={t("flow", "addressPlaceholder")} />
         <Field label={t("flow", "mapsLinkOptional")} value={info.mapUrl} onChange={(v) => set("mapUrl", v)} placeholder="https://maps.apple.com/..." />
       </div>
 

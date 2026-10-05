@@ -641,6 +641,7 @@ export const de: Dictionary = {
     liveDraftPreview: "Live-Vorschau des Entwurfs",
     previewUpdatesNote: "Aktualisiert sich beim Tippen · deine Gäste sehen es nach dem Veröffentlichen",
     yourNameFallback: "Dein Name",
+    sectionModules: "Module",
   },
 
   flow: {
@@ -973,6 +974,12 @@ export const de: Dictionary = {
     manageSpace: "Space verwalten",
     scanToOpen: "Scannen, um die Retreat-App zu öffnen",
     untitledRetreat: "Retreat ohne Titel",
+    textColourTooLightFlow: "Deine Text-Farbe ist für sich genommen vielleicht zu hell - wir dunkeln sie automatisch ab, wo es nötig ist, damit Text für Gäste immer lesbar bleibt.",
+
+    // Share Card (canvas-rendered). Latin script only - see
+    // shareCardLocale() in shareCard.ts for why Hebrew falls back.
+    cardKicker: "DEIN RETREAT-BEGLEITER",
+    cardScanLabel: "SCANNEN, UM DIE RETREAT-APP ZU ÖFFNEN",
   },
   studio: {
     // Shell and navigation
@@ -1213,6 +1220,7 @@ export const de: Dictionary = {
     untitledAudio: "Audio ohne Titel",
     recurrenceTooLarge: "„{title}“: Die Wiederholungseinstellungen sind beschädigt und zu groß zum Speichern - bitte repariere sie.",
     tooManyExceptions: "„{title}“: zu viele geänderte oder abgesagte Termine bei einem Kurs.",
+    navigationColourHelpFlow: "Für den aktiven Tab der unteren Navigation und ähnliche Auswahlen (z. B. die Tagesauswahl im Zeitplan).",
   },
 
 };

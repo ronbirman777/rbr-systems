@@ -122,7 +122,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
     <div className="max-w-2xl">
       <StudioHeading>{t("flow", "mealsStepTitle")}</StudioHeading>
       <StudioIntro>
-        Good food photography and clear dietary information make a real difference for your guests.
+        {t("flow", "mealsStepBody")}
       </StudioIntro>
 
       <div className="space-y-3 mb-4">
@@ -234,7 +234,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
                   position={editing.imagePosition}
                   onChange={(imagePosition) => update(editing.id, { imagePosition })}
                   aspect="39/16"
-                  label={`${editing.name || "Meal"} photo`}
+                  label={`${editing.name || t("flow", "sessionMeal")} photo`}
                 />
               )}
             </div>

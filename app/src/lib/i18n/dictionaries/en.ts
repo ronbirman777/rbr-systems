@@ -641,6 +641,7 @@ export const en = {
     liveDraftPreview: "Live draft preview",
     previewUpdatesNote: "Updates as you type · guests see it after you publish",
     yourNameFallback: "Your name",
+    sectionModules: "Modules",
   },
 
   flow: {
@@ -975,6 +976,12 @@ export const en = {
     manageSpace: "Manage Space",
     scanToOpen: "Scan to open the retreat app",
     untitledRetreat: "Untitled Retreat",
+    textColourTooLightFlow: "Your app text colour may be too light to read comfortably on its own - we'll automatically darken it where needed so guest-facing text always stays legible.",
+
+    // Share Card (canvas-rendered). Latin script only - see
+    // shareCardLocale() in shareCard.ts for why Hebrew falls back.
+    cardKicker: "YOUR RETREAT COMPANION",
+    cardScanLabel: "SCAN TO OPEN THE RETREAT APP",
   },
   studio: {
     // Shell and navigation
@@ -1215,6 +1222,7 @@ export const en = {
     untitledAudio: "Untitled audio",
     recurrenceTooLarge: "“{title}”: its repeat settings are damaged and too large to keep - please repair them.",
     tooManyExceptions: "“{title}”: too many changed or cancelled dates on one class.",
+    navigationColourHelpFlow: "Used for the bottom navigation's active tab, and other tab-like selections (e.g. Schedule's day picker).",
   },
 
 } as const;

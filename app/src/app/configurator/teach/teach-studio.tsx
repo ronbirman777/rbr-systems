@@ -20,7 +20,7 @@ import type {
   TeachSettingsKey,
 } from "@/lib/teach/schemas";
 import { uploadModuleItemPhoto, removeModuleItemPhoto, uploadBrandImage, removeBrandImage } from "@/app/configurator/retreat/actions";
-import { createTranslator } from "@/lib/i18n";
+import { createTranslator, type TranslationKey } from "@/lib/i18n";
 import {
   saveTeachBrandColors,
   saveTeachIdentity,
@@ -80,30 +80,32 @@ export type SectionKey =
   | "pages"
   | "publish";
 
-const NAV: { group: string; items: { key: SectionKey; label: string }[] }[] = [
+/** Translation keys, resolved per render in the Space language. */
+type TeachKey = TranslationKey<"teach">;
+const NAV: { groupKey: TeachKey; items: { key: SectionKey; labelKey: TeachKey }[] }[] = [
   {
-    group: "My teaching space",
+    groupKey: "identityEyebrow",
     items: [
-      { key: "identity", label: "Identity" },
-      { key: "brand", label: "Brand" },
-      { key: "home", label: "Home" },
+      { key: "identity", labelKey: "sectionIdentity" },
+      { key: "brand", labelKey: "sectionBrand" },
+      { key: "home", labelKey: "sectionHome" },
     ],
   },
   {
-    group: "Teaching",
+    groupKey: "teaching",
     items: [
-      { key: "schedule", label: "Schedule" },
-      { key: "about", label: "About Me" },
+      { key: "schedule", labelKey: "sectionSchedule" },
+      { key: "about", labelKey: "sectionAboutMe" },
     ],
   },
   {
-    group: "Explore library",
+    groupKey: "exploreLibrary",
     items: [
-      { key: "modules", label: "Modules" },
-      { key: "readings", label: "My Readings" },
-      { key: "audio", label: "My Audio" },
-      { key: "contact", label: "How to Contact Me" },
-      { key: "pages", label: "Custom Pages" },
+      { key: "modules", labelKey: "sectionModules" },
+      { key: "readings", labelKey: "myReadings" },
+      { key: "audio", labelKey: "exploreAudio" },
+      { key: "contact", labelKey: "howToContactMeTitle" },
+      { key: "pages", labelKey: "customPagesTitle" },
     ],
   },
 ];
@@ -574,8 +576,8 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
   const navList = (
     <nav aria-label={t("studio", "studioSections")} className="flex flex-col gap-1">
       {NAV.map((g) => (
-        <div key={g.group} className="flex flex-col gap-0.5 mb-2">
-          <p className="px-3 pt-3 pb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#8C8A84]">{g.group}</p>
+        <div key={g.groupKey} className="flex flex-col gap-0.5 mb-2">
+          <p className="px-3 pt-3 pb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#8C8A84]">{t("teach", g.groupKey)}</p>
           {g.items.map((it) => {
             const active = it.key === section;
             return (
@@ -587,7 +589,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
                 className={`flex items-center gap-2.5 px-3 min-h-10 rounded-lg text-left text-[13.5px] transition ${active ? "bg-white shadow-sm font-semibold text-[#192B21]" : "text-[#232926] hover:bg-white/60"}`}
               >
                 <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full ${active ? "bg-[#9A7B4F]" : "bg-[#8C8A84]/35"}`} />
-                <span className="flex-1">{it.label}</span>
+                <span className="flex-1">{t("teach", it.labelKey)}</span>
                 {dirty.has(it.key) ? <span className="text-[10px] font-semibold text-[#A8643C]" aria-label={t("studio", "unsavedChanges")}>●</span> : null}
               </button>
             );

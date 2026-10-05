@@ -215,7 +215,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                   position={editing.imagePosition}
                   onChange={(imagePosition) => update(editing.id, { imagePosition })}
                   aspect="39/16"
-                  label={`${editing.name || "Facility"} photo`}
+                  label={`${editing.name || t("flow", "facilityName")} photo`}
                 />
               )}
             </div>

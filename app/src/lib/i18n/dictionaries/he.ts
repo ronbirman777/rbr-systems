@@ -636,6 +636,7 @@ export const he: Dictionary = {
     liveDraftPreview: "תצוגה מקדימה חיה של הטיוטה",
     previewUpdatesNote: "מתעדכן בזמן ההקלדה · האורחים רואים אחרי הפרסום",
     yourNameFallback: "השם שלכם",
+    sectionModules: "מודולים",
   },
 
   flow: {
@@ -968,6 +969,12 @@ export const he: Dictionary = {
     manageSpace: "ניהול המרחב",
     scanToOpen: "סרקו כדי לפתוח את אפליקציית הריטריט",
     untitledRetreat: "ריטריט בלי שם",
+    textColourTooLightFlow: "צבע הטקסט עשוי להיות בהיר מדי לקריאה נוחה - נכהה אותו אוטומטית במקומות הנדרשים כדי שהטקסט שהאורחים רואים יישאר קריא.",
+
+    // Share Card (canvas-rendered). Latin script only - see
+    // shareCardLocale() in shareCard.ts for why Hebrew falls back.
+    cardKicker: "YOUR RETREAT COMPANION",
+    cardScanLabel: "SCAN TO OPEN THE RETREAT APP",
   },
   studio: {
     // Shell and navigation
@@ -1208,6 +1215,7 @@ export const he: Dictionary = {
     untitledAudio: "אודיו בלי כותרת",
     recurrenceTooLarge: "״{title}״: הגדרות החזרה פגומות וגדולות מכדי לשמור - נא לתקן אותן.",
     tooManyExceptions: "״{title}״: יותר מדי תאריכים שהשתנו או בוטלו בשיעור אחד.",
+    navigationColourHelpFlow: "משמש ללשונית הפעילה בניווט התחתון ולבחירות דומות (למשל בוחר היום בלוח הזמנים).",
   },
 
 };

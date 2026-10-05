@@ -52,16 +52,7 @@ import {
   RECURRENCE_MAX_COUNT,
   RECURRENCE_MAX_INTERVAL,
 } from "@/lib/teach/schemas";
-import {
-  CORNERS_LABEL,
-  DIVIDER_LABEL,
-  HERO_LABEL,
-  OVERLAY_LABEL,
-  QUOTE_LABEL,
-  SPACING_LABEL,
-  TEXTURE_LABEL,
-  TYPOGRAPHY_LABEL,
-} from "@/lib/teach/style";
+import { styleLabels } from "@/lib/teach/style";
 import {
   TEMPLATE_VARIABLES,
   buildRegistrationCta,
@@ -78,8 +69,8 @@ import { getBrandPresets, presetColorUpdate } from "@/lib/brand/presets";
 import type { StudioApi, SectionKey } from "./teach-studio";
 import { audioAttached, audioDetached, imageRemoved, imageUploaded, moveItemById, patchExploreCard, patchItemById, patchSlot, type Patch } from "./studioStateUpdates";
 import { SectionHeader } from "@/components/studio/section-header";
-import { createTranslator, type Locale } from "@/lib/i18n";
-import { formatShortDateLocalized } from "@/lib/i18n/datetime";
+import { createTranslator, translate, type Locale, type TranslationKey } from "@/lib/i18n";
+import { formatShortDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime";
 import {
   Card,
   ColorField,
@@ -107,7 +98,7 @@ function SaveBar({ api, section }: { api: StudioApi; section: SectionKey }) {
   return (
     <div className="sticky bottom-3 z-10 flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-white/95 backdrop-blur border border-[#E2DACD] shadow-md">
       <span className="text-[12.5px] text-[#6F6C66]" role="status">
-        {api.saving === section ? "Saving…" : dirty ? "You have unsaved changes" : "Everything here is saved"}
+        {api.saving === section ? t("common", "savingNow") : dirty ? t("studio", "unsavedChangesShort") : t("studio", "allChangesSaved")}
       </span>
       <StudioButton onClick={() => api.save(section)} disabled={!dirty || api.saving !== null}>
         {t("studio", "saveChanges")}
@@ -176,7 +167,7 @@ function ItemList<K extends TeachEditableItemKey>({
     setOpen(item.id);
   };
   const remove = async (id: string) => {
-    if (!window.confirm("Remove this item? This can't be undone.")) return;
+    if (!window.confirm(t("studio", "removeConfirm"))) return;
     setBusy(id);
     const err = await api.removeItem(moduleKey, id);
     setBusy(null);
@@ -201,7 +192,7 @@ function ItemList<K extends TeachEditableItemKey>({
                 )
               ) : null}
               <button type="button" onClick={() => setOpen(isOpen ? null : item.id)} aria-expanded={isOpen} className="flex-1 min-w-0 text-left min-h-11">
-                <span className="block text-[14px] font-semibold text-[#192B21] truncate">{s.title || "Untitled"}</span>
+                <span className="block text-[14px] font-semibold text-[#192B21] truncate">{s.title || t("common", "untitled")}</span>
                 <span className="block text-[11.5px] text-[#8C8A84] truncate">{s.sub}</span>
               </button>
               {reorder && !order ? (
@@ -214,7 +205,7 @@ function ItemList<K extends TeachEditableItemKey>({
                   </button>
                 </span>
               ) : null}
-              <button type="button" onClick={() => setOpen(isOpen ? null : item.id)} aria-label={isOpen ? "Collapse" : "Edit"} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5">
+              <button type="button" onClick={() => setOpen(isOpen ? null : item.id)} aria-label={isOpen ? t("studio", "collapse") : t("common", "edit")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5">
                 {isOpen ? "▴" : "▾"}
               </button>
             </div>
@@ -223,7 +214,7 @@ function ItemList<K extends TeachEditableItemKey>({
                 {editor(item, (patch) => update(item.id, patch), index)}
                 <div className="flex justify-end">
                   <StudioButton kind="danger" onClick={() => remove(item.id)} disabled={busy === item.id}>
-                    {busy === item.id ? "Removing…" : "Remove"}
+                    {busy === item.id ? t("common", "removing") : t("common", "remove")}
                   </StudioButton>
                 </div>
               </div>
@@ -264,6 +255,7 @@ function ItemImage<K extends TeachEditableItemKey>({
   previewClassName?: string;
   hint?: string;
 }) {
+  const { t } = createTranslator(api.locale);
   const meta = item.metadata as { imagePosition?: { x: number; y: number } | null };
   return (
     <ImageField
@@ -275,7 +267,7 @@ function ItemImage<K extends TeachEditableItemKey>({
       onFocal={(f) => update((cur) => ({ metadata: { ...cur.metadata, imagePosition: f } }))}
       onUpload={async (file) => {
         const res = await api.uploadItemImage(moduleKey, item, index, file);
-        if (res.error || !res.ref) return res.error ?? "Upload failed.";
+        if (res.error || !res.ref) return res.error ?? t("studio", "uploadFailed");
         const ref = res.ref;
         // Touch only the image fields of this item, against the latest state.
         update(imageUploaded<EditableTeachItem<K>>(ref));
@@ -310,6 +302,7 @@ function SettingsImage({
   label: string;
   previewClassName?: string;
 }) {
+  const { t } = createTranslator(api.locale);
   return (
     <ImageField
       label={label}
@@ -319,7 +312,7 @@ function SettingsImage({
       onFocal={(f) => onChange({ imagePosition: f })}
       onUpload={async (file) => {
         const res = await api.uploadSettingsImage(settingsKey, slot, file);
-        if (res.error || !res.ref) return res.error ?? "Upload failed.";
+        if (res.error || !res.ref) return res.error ?? t("studio", "uploadFailed");
         onChange({ imageRef: res.ref, imagePosition: null });
         return null;
       }}
@@ -364,12 +357,12 @@ export function IdentitySection({ api }: Props) {
       setSlugBusy(false);
       setSlugStatus(
         check.status === "invalid"
-          ? "Use 3–63 lowercase letters, numbers or hyphens."
+          ? t("studio", "addressRulesShort")
           : check.status === "reserved"
-            ? "That address is reserved."
+            ? t("studio", "addressReserved")
             : check.status === "unavailable"
-              ? "That address is already taken."
-              : (check.error ?? "Couldn't check that address.")
+              ? t("studio", "addressTaken")
+              : (check.error ?? t("studio", "addressCheckFailed"))
       );
       return;
     }
@@ -383,7 +376,7 @@ export function IdentitySection({ api }: Props) {
     if (res.error) setSlugStatus(res.error);
     else {
       api.setSlug(res.slug);
-      setSlugStatus(`Reserved — your guests will find you at ${res.slug}.innerdwes.com`);
+      setSlugStatus(t("studio", "addressReservedAt", { address: `${res.slug}.innerdwes.com` }));
     }
   }
 
@@ -417,18 +410,18 @@ export function IdentitySection({ api }: Props) {
                 <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[13px] text-[#8C8A84] pointer-events-none">.innerdwes.com</span>
               </div>
               <StudioButton kind="outline" onClick={checkAndReserve} disabled={slugBusy || !normalized || normalized === api.slug || local !== "ok"}>
-                {slugBusy ? "…" : "Reserve"}
+                {slugBusy ? "…" : t("studio", "reserve")}
               </StudioButton>
             </div>
             <Hint>
               {slugStatus ??
                 (api.slug
-                  ? `Current address: ${api.slug}.innerdwes.com`
+                  ? t("studio", "currentAddressIs", { address: `${api.slug}.innerdwes.com` })
                   : local === "invalid"
-                    ? "Use 3–63 lowercase letters, numbers or hyphens."
+                    ? t("studio", "addressRulesShort")
                     : local === "reserved"
-                      ? "That address is reserved."
-                      : "Reserve your public address.")}
+                      ? t("studio", "addressReserved")
+                      : t("studio", "reserveYourAddress"))}
             </Hint>
           </div>
         </Grid>
@@ -453,11 +446,11 @@ export function IdentitySection({ api }: Props) {
                 value={q}
                 maxLength={DAILY_INSPIRATION_MAX_LENGTH}
                 onChange={(e) => setQuotes(quotes.map((x, j) => (j === i ? e.target.value : x)))}
-                aria-label={`Quote ${i + 1}`}
+                aria-label={t("teach", "quoteN", { index: i + 1 })}
                 className={`${INPUT} italic`}
                 style={{ fontFamily: "var(--font-fraunces), serif" }}
               />
-              <button type="button" aria-label={`Remove quote ${i + 1}`} onClick={() => setQuotes(quotes.filter((_, j) => j !== i))} className="w-10 h-10 rounded-lg text-[#8C8A84] hover:bg-black/5 shrink-0">
+              <button type="button" aria-label={t("teach", "removeQuoteN", { index: i + 1 })} onClick={() => setQuotes(quotes.filter((_, j) => j !== i))} className="w-10 h-10 rounded-lg text-[#8C8A84] hover:bg-black/5 shrink-0">
                 ✕
               </button>
             </li>
@@ -508,6 +501,7 @@ export function IdentitySection({ api }: Props) {
 
 export function BrandSection({ api }: Props) {
   const { t } = createTranslator(api.locale);
+  const styleLabel = styleLabels(api.locale);
   const style = api.settings.teachStyle;
   const set = (patch: Partial<typeof style>) => api.updateSetting("teachStyle", patch, "brand");
   const [advanced, setAdvanced] = useState(Boolean(api.colors.navigation || api.colors.text));
@@ -614,14 +608,14 @@ export function BrandSection({ api }: Props) {
       <Card title={t("studio", "lookAndFeel")} description={t("teach", "lookAndFeelBody")}>
         {(
           [
-            ["Typography pairing", "typography", opt(TEACH_TYPOGRAPHY, TYPOGRAPHY_LABEL)],
-            ["Card corners", "corners", opt(TEACH_CORNERS, CORNERS_LABEL)],
-            ["Hero layout", "heroLayout", opt(TEACH_HERO_LAYOUTS, HERO_LABEL)],
-            ["Quote style", "quoteStyle", opt(TEACH_QUOTE_STYLES, QUOTE_LABEL)],
-            ["Image overlay", "overlay", opt(TEACH_OVERLAYS, OVERLAY_LABEL)],
-            ["Section spacing", "spacing", opt(TEACH_SPACING, SPACING_LABEL)],
-            ["Background texture", "texture", opt(TEACH_TEXTURES, TEXTURE_LABEL)],
-            ["Dividers", "dividers", opt(TEACH_DIVIDERS, DIVIDER_LABEL)],
+            [t("teach", "typographyPairing"), "typography", opt(TEACH_TYPOGRAPHY, styleLabel.typography)],
+            [t("teach", "cardCorners"), "corners", opt(TEACH_CORNERS, styleLabel.corners)],
+            [t("teach", "heroLayout"), "heroLayout", opt(TEACH_HERO_LAYOUTS, styleLabel.hero)],
+            [t("teach", "quoteStyle"), "quoteStyle", opt(TEACH_QUOTE_STYLES, styleLabel.quote)],
+            [t("teach", "imageOverlay"), "overlay", opt(TEACH_OVERLAYS, styleLabel.overlay)],
+            [t("teach", "sectionSpacing"), "spacing", opt(TEACH_SPACING, styleLabel.spacing)],
+            [t("teach", "backgroundTexture"), "texture", opt(TEACH_TEXTURES, styleLabel.texture)],
+            [t("teach", "dividers"), "dividers", opt(TEACH_DIVIDERS, styleLabel.dividers)],
           ] as const
         ).map(([label, key, options]) => (
           <div key={key} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -675,14 +669,15 @@ export function HomeSection({ api }: Props) {
 // Schedule
 // ---------------------------------------------------------------------------
 
-const REG_VALUE_LABEL: Record<RegistrationMethod, string> = {
-  whatsapp: "WhatsApp number",
-  website: "Registration page URL",
-  instagram: "Instagram handle or URL",
-  facebook: "Facebook event or page URL",
-  email: "Email address",
-  bookingLink: "Booking link",
-  venueLink: "",
+/** Translation keys; venueLink shows no value field of its own. */
+const REG_VALUE_LABEL_KEY: Record<RegistrationMethod, TranslationKey<"teach"> | null> = {
+  whatsapp: "whatsappNumber",
+  website: "registrationPageUrl",
+  instagram: "instagramHandleOrUrl",
+  facebook: "facebookEventOrPage",
+  email: "emailAddress",
+  bookingLink: "bookingLink",
+  venueLink: null,
 };
 
 function TemplateEditor({ value, onChange, fallback, previewValues, locale }: { value: string | null; onChange: (v: string | null) => void; fallback: string; previewValues: Parameters<typeof renderTemplate>[1]; locale: Locale }) {
@@ -726,19 +721,24 @@ function TemplateEditor({ value, onChange, fallback, previewValues, locale }: { 
 // Studio never shows raw RRULE text.
 // ---------------------------------------------------------------------------
 
-const REPEAT_OPTIONS: { value: RepeatPreset; label: string }[] = [
-  { value: "none", label: "Does not repeat" },
-  { value: "daily", label: "Daily" },
-  { value: "weekly", label: "Weekly" },
-  { value: "monthly", label: "Monthly" },
-  { value: "custom", label: "Custom" },
+/** Translation keys; the stored VALUE stays the canonical English enum. */
+const REPEAT_OPTIONS: { value: RepeatPreset; labelKey: "repeatNone" | "repeatDaily" | "repeatWeekly" | "repeatMonthly" | "repeatCustom" }[] = [
+  { value: "none", labelKey: "repeatNone" },
+  { value: "daily", labelKey: "repeatDaily" },
+  { value: "weekly", labelKey: "repeatWeekly" },
+  { value: "monthly", labelKey: "repeatMonthly" },
+  { value: "custom", labelKey: "repeatCustom" },
 ];
-const UNIT_OPTIONS: { value: RecurrenceFreq; label: string }[] = [
-  { value: "daily", label: "day(s)" },
-  { value: "weekly", label: "week(s)" },
-  { value: "monthly", label: "month(s)" },
+const UNIT_OPTIONS: { value: RecurrenceFreq; labelKey: "unitDays" | "unitWeeks" | "unitMonths" }[] = [
+  { value: "daily", labelKey: "unitDays" },
+  { value: "weekly", labelKey: "unitWeeks" },
+  { value: "monthly", labelKey: "unitMonths" },
 ];
-const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const END_OPTIONS: { value: "never" | "until" | "count"; labelKey: "endsNever" | "endsOnDate" | "endsAfter" }[] = [
+  { value: "never", labelKey: "endsNever" },
+  { value: "until", labelKey: "endsOnDate" },
+  { value: "count", labelKey: "endsAfter" },
+];
 
 function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMetadata; setM: (patch: Partial<ClassMetadata>) => void }) {
   const { t } = createTranslator(api.locale);
@@ -827,7 +827,7 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
 
       {!problem?.recurrence ? (
         <Grid>
-          <SelectField label={t("teach", "repeat")} value={preset} onChange={choosePreset} options={REPEAT_OPTIONS} />
+          <SelectField label={t("teach", "repeat")} value={preset} onChange={choosePreset} options={REPEAT_OPTIONS.map((o) => ({ value: o.value, label: t("teach", o.labelKey) }))} />
           {rule && preset === "custom" ? (
             <div className="grid grid-cols-[96px_1fr] gap-2 items-end">
               <TextField
@@ -843,7 +843,7 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
                 label={t("teach", "unit")}
                 value={rule.freq}
                 onChange={(f) => setRule({ freq: f, byWeekday: f === "weekly" ? (rule.byWeekday.length ? rule.byWeekday : [startWeekday]) : [] })}
-                options={UNIT_OPTIONS}
+                options={UNIT_OPTIONS.map((o) => ({ value: o.value, label: t("teach", o.labelKey) }))}
               />
             </div>
           ) : null}
@@ -854,7 +854,8 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
         <div className="flex flex-col gap-1.5">
           <Label>{t("teach", "repeatOn")}</Label>
           <div className="flex flex-wrap gap-1.5" role="group" aria-label={t("teach", "repeatOn")}>
-            {WEEKDAY_SHORT.map((label, d) => {
+            {[0, 1, 2, 3, 4, 5, 6].map((d) => {
+              const label = shortWeekdayName(d, api.locale);
               const on = (rule.byWeekday.length ? rule.byWeekday : [startWeekday]).includes(d);
               return (
                 <button
@@ -876,13 +877,7 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
         <div className="flex flex-col gap-2">
           <Label>{t("teach", "ends")}</Label>
           <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("teach", "ends")}>
-            {(
-              [
-                ["never", "Never"],
-                ["until", "On date"],
-                ["count", "After"],
-              ] as const
-            ).map(([k, label]) => (
+            {END_OPTIONS.map(({ value: k, labelKey }) => (
               <button
                 key={k}
                 type="button"
@@ -891,7 +886,7 @@ function RecurrenceEditor({ api, meta, setM }: { api: StudioApi; meta: ClassMeta
                 onClick={() => setRule({ end: k === "never" ? { type: "never" } : k === "until" ? { type: "until", until: rule.end.type === "until" ? rule.end.until : addDaysIso(meta.startDate, 90) } : { type: "count", count: rule.end.type === "count" ? rule.end.count : 10 } })}
                 className={`px-3 min-h-9 rounded-full text-[12px] font-semibold ${rule.end.type === k ? "bg-[#192B21] text-white" : "border border-[#E2DACD] text-[#192B21]"}`}
               >
-                {label}
+                {t("teach", labelKey)}
               </button>
             ))}
           </div>
@@ -1013,8 +1008,8 @@ function DstConflictRow({
     const date = ex?.startDate ?? conflict.originalDate;
     const s = resolveLocalTime(date, start, timeZone);
     const e = end ? resolveLocalTime(date, end, timeZone) : null;
-    if (!s.ok || (e && !e.ok)) return setError(`That time doesn’t exist on ${formatShortDateLocalized(date, locale)} in ${timeZone} either — please pick another.`);
-    if (e && e.ok && s.ok && e.instant <= s.instant) return setError("The class must end after it starts.");
+    if (!s.ok || (e && !e.ok)) return setError(t("teach", "timeDoesNotExist", { date: formatShortDateLocalized(date, locale), timeZone }));
+    if (e && e.ok && s.ok && e.instant <= s.instant) return setError(t("teach", "mustEndAfterStart"));
     setError(null);
     onApply(start, end || null);
   };
@@ -1029,7 +1024,7 @@ function DstConflictRow({
       {editable ? (
         <div className="flex flex-wrap gap-2">
           <StudioButton kind="outline" onClick={onMove}>
-            {moving ? "Close" : "Move this date…"}
+            {moving ? t("common", "close") : t("teach", "moveThisDate")}
           </StudioButton>
           <StudioButton kind="outline" onClick={onCancel}>
             {t("teach", "cancelThisDate")}
@@ -1062,12 +1057,16 @@ function DstConflictRow({
 function classListSummary(m: ClassMetadata, subtitle: string | null, todayIso: string, tz: string, locale: Locale): string {
   const time = `${m.startTime}${m.endTime ? `–${m.endTime}` : ""}${subtitle ? ` · ${subtitle}` : ""}`;
   const problem = recurrenceProblem(m);
-  if (problem) return `⚠ Repeat settings need repair · ${time}`;
+  if (problem) return `${translate(locale, "teach", "repeatNeedsRepairShort")} · ${time}`;
   const rule = validRule(m);
   if (!rule) return `${formatShortDateLocalized(m.startDate, locale)} · ${time}`;
   const from = m.startDate > todayIso ? m.startDate : todayIso;
   const n = new Set(dstConflicts(m, from, addDaysIso(from, 366), tz).map((c) => c.originalDate)).size;
-  const attention = n ? ` · ⚠ ${n === 1 ? "1 date needs" : `${n} dates need`} attention` : "";
+  const attention = n
+    ? ` · ⚠ ${
+        n === 1 ? translate(locale, "teach", "dateNeedsAttention") : translate(locale, "teach", "datesNeedAttention", { count: n })
+      } ${translate(locale, "teach", "attentionSuffix")}`
+    : "";
   return `${recurrenceSummary(rule, m.startDate, { withEnd: false, locale })} · ${time}${attention}`;
 }
 
@@ -1085,7 +1084,7 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
   const setReg = (patch: Partial<typeof reg>) => setM({ registration: { ...reg, ...patch } });
   const venue = m.venue;
   const setVenue = (patch: Partial<typeof venue>) => setM({ venue: { ...venue, ...patch } });
-  const cta = buildRegistrationCta(api.name, item.title || "Class", m);
+  const cta = buildRegistrationCta(api.name, item.title || t("teach", "classLabel"), m);
   const timezones = useMemo(() => {
     const options = timezoneOptions(api.timezone);
     const own = timezoneSelectValue(m.timezone);
@@ -1114,7 +1113,7 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
           value={timezoneSelectValue(m.timezone ?? api.timezone)}
           onChange={(v) => setM({ timezone: v })}
           options={timezones.map((t) => ({ value: t, label: t }))}
-          hint={m.timezone && timezoneSelectValue(m.timezone) !== timezoneSelectValue(api.timezone) ? `Differs from your Space time zone (${api.timezone}).` : "The time zone this class happens in."}
+          hint={m.timezone && timezoneSelectValue(m.timezone) !== timezoneSelectValue(api.timezone) ? t("teach", "differsFromSpaceTz", { timezone: api.timezone }) : t("teach", "classTimeZoneHint")}
         />
       </Grid>
       {timeIssues.map((t) => (
@@ -1159,12 +1158,12 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
         {reg.method && reg.method !== "venueLink" ? (
           <Grid>
             <TextField
-              label={REG_VALUE_LABEL[reg.method]}
+              label={t("teach", REG_VALUE_LABEL_KEY[reg.method] ?? "bookingLink")}
               value={str(reg.value)}
               onChange={(v) => setReg({ value: nul(v) })}
               inputMode={reg.method === "whatsapp" ? "tel" : reg.method === "email" ? "email" : "url"}
               placeholder={reg.method === "whatsapp" ? "+972 50 000 0000" : ""}
-              hint={reg.method === "whatsapp" ? "International format with country code." : undefined}
+              hint={reg.method === "whatsapp" ? t("teach", "internationalFormat") : undefined}
             />
             <TextField label={t("teach", "buttonLabelOptional")} value={str(reg.buttonLabel)} onChange={(v) => setReg({ buttonLabel: nul(v) })} maxLength={60} placeholder={cta?.label ?? ""} />
           </Grid>
@@ -1176,7 +1175,7 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
             value={reg.whatsappTemplate}
             onChange={(v) => setReg({ whatsappTemplate: v })}
             fallback={defaultClassWhatsappTemplate(api.locale)}
-            previewValues={classTemplateValues(api.name || "Your name", item.title || "Class", m)}
+            previewValues={classTemplateValues(api.name || t("teach", "yourName"), item.title || t("teach", "classLabel"), m)}
           />
         ) : null}
         {reg.method === "whatsapp" && cta ? <ClassWhatsAppQr tenantId={api.tenantId} classId={item.id} /> : null}
@@ -1237,7 +1236,7 @@ function AvailabilityEditor({ item, update, locale }: { item: EditableTeachItem<
       <Toggle checked={m.enabled} onChange={(v) => setM({ enabled: v })} label={t("studio", "visibleToGuests")} />
       <Grid>
         <TextField label={t("common", "label")} value={item.title} onChange={(v) => update({ title: v })} placeholder={t("teach", "availableForPrivate")} maxLength={120} />
-        <SelectField label={t("teach", "repeats")} value={m.repeat} onChange={(v) => setM({ repeat: v })} options={[{ value: "weekly", label: "Every week" }, { value: "once", label: "One date only" }]} />
+        <SelectField label={t("teach", "repeats")} value={m.repeat} onChange={(v) => setM({ repeat: v })} options={[{ value: "weekly", label: t("teach", "everyWeekOption") }, { value: "once", label: t("teach", "oneDateOnly") }]} />
       </Grid>
       <Grid cols={3}>
         {m.repeat === "weekly" ? (
@@ -1254,7 +1253,7 @@ function AvailabilityEditor({ item, update, locale }: { item: EditableTeachItem<
         <div className="flex flex-wrap gap-1.5">
           {AVAILABILITY_METHODS.map((k) => (
             <button key={k} type="button" aria-pressed={m.methods.includes(k)} onClick={() => toggleMethod(k)} className={`px-3 min-h-9 rounded-full text-[12px] font-semibold ${m.methods.includes(k) ? "bg-[#192B21] text-white" : "border border-[#E2DACD] text-[#192B21]"}`}>
-              {k === "bookingLink" ? "Booking link" : k === "whatsapp" ? "WhatsApp" : k === "email" ? "Email" : "Website"}
+              {k === "bookingLink" ? t("teach", "bookingLink") : k === "whatsapp" ? "WhatsApp" : k === "email" ? t("common", "email") : t("common", "website")}
             </button>
           ))}
         </div>
@@ -1267,7 +1266,7 @@ function AvailabilityEditor({ item, update, locale }: { item: EditableTeachItem<
           value={m.whatsappTemplate}
           onChange={(v) => setM({ whatsappTemplate: v })}
           fallback={defaultPrivateWhatsappTemplate(locale)}
-          previewValues={{ teacher_name: "Maya", date: formatShortDateLocalized(m.date ?? new Date().toISOString().slice(0, 10), locale), start_time: m.from, end_time: m.to }}
+          previewValues={{ teacher_name: t("teach", "maya"), date: formatShortDateLocalized(m.date ?? new Date().toISOString().slice(0, 10), locale), start_time: m.from, end_time: m.to }}
         />
       ) : null}
     </>
@@ -1288,9 +1287,9 @@ export function ScheduleSection({ api }: Props) {
   return (
     <>
       <SectionHeader eyebrow={t("teach", "teaching")} title={t("teach", "navSchedule")} intro={t("teach", "scheduleBody")} />
-      <Segmented label={t("teach", "scheduleType")} value={mode} onChange={setMode} options={[{ value: "classes", label: "Classes" }, { value: "private", label: "Private availability" }]} />
+      <Segmented label={t("teach", "scheduleType")} value={mode} onChange={setMode} options={[{ value: "classes", label: t("teach", "classesTab") }, { value: "private", label: t("teach", "privateAvailability") }]} />
       {mode === "classes" ? (
-        <Card title={t("teach", "classesTab")} description={`Listed by date and time in ${api.timezone}.`}>
+        <Card title={t("teach", "classesTab")} description={t("teach", "listedByDate", { timezone: api.timezone })}>
           {otherZoneClasses > 0 ? (
             <div className="flex flex-wrap items-center gap-3 px-3 py-2.5 rounded-lg bg-[#F4EFE6]" data-testid="apply-zone-to-classes">
               <p className="text-[12.5px] text-[#4A4843] flex-1 min-w-[200px]">
@@ -1324,7 +1323,7 @@ export function ScheduleSection({ api }: Props) {
             section="schedule"
             addLabel={t("teach", "addTimeWindow")}
             emptyText={t("teach", "noWindowsYet")}
-            summary={(a) => ({ title: a.title || "Available for private session", sub: `${describeAvailability(a.metadata)}${a.metadata.enabled ? "" : " · hidden"}` })}
+            summary={(a) => ({ title: a.title || t("teach", "availabilityLabelPlaceholder"), sub: `${describeAvailability(a.metadata)}${a.metadata.enabled ? "" : " · hidden"}` })}
             editor={(item, update) => <AvailabilityEditor item={item} update={update} locale={api.locale} />}
           />
         </Card>
@@ -1352,7 +1351,7 @@ export function AboutSection({ api }: Props) {
     <>
       <SectionHeader eyebrow={t("teach", "teaching")} title={t("teach", "navAbout")} intro={t("teach", "aboutMeBody")} />
       <Card title={t("teach", "aboutMeTab")} description={t("teach", "aboutMeTabBody")}>
-        <Toggle checked={a.showTab} onChange={(v) => set({ showTab: v })} label={a.showTab ? "Shown in navigation" : "Hidden from navigation"} description={t("teach", "aboutMeToggleHint")} />
+        <Toggle checked={a.showTab} onChange={(v) => set({ showTab: v })} label={a.showTab ? t("teach", "shownInNavigation") : t("teach", "hiddenFromNavigation")} description={t("teach", "aboutMeToggleHint")} />
       </Card>
       <Card title={t("teach", "profile")} description={t("teach", "profileBody")}>
         <SettingsImage api={api} settingsKey="teachAbout" slot="profile" value={a.profile} onChange={(v) => api.updateSetting("teachAbout", (latest) => patchSlot(latest, "profile", v), "about")} label={t("teach", "profileImageHint")} previewClassName="w-[120px] h-[120px] rounded-full" />
@@ -1399,7 +1398,11 @@ export function AboutSection({ api }: Props) {
           addLabel={t("teach", "addPhoto")}
           emptyText={t("teach", "noPhotosYet")}
           max={12}
-          summary={(g) => ({ title: g.title || "Photo", sub: g.imageRef ? "Image set" : "No image yet", thumb: api.mediaUrl(g.imageRef) })}
+          summary={(g) => ({
+            title: g.title || t("common", "photo"),
+            sub: g.imageRef ? t("teach", "imageSet") : t("teach", "noImageYet"),
+            thumb: api.mediaUrl(g.imageRef),
+          })}
           editor={(item, update, index) => (
             <>
               <ItemImage api={api} moduleKey="teachGallery" section="about" item={item} index={index} update={update} label={t("common", "photo")} />
@@ -1440,11 +1443,27 @@ export function AboutSection({ api }: Props) {
 // Explore modules
 // ---------------------------------------------------------------------------
 
-const MODULE_INFO: Record<TeachExploreModule, { label: string; desc: string; defaultTitle: string; defaultSubtitle: string }> = {
-  teachReadings: { label: "My Readings", desc: "Your writing and external articles.", defaultTitle: "My Readings", defaultSubtitle: "Reflections & articles" },
-  teachAudio: { label: "My Audio", desc: "Guided practices guests can play.", defaultTitle: "My Audio", defaultSubtitle: "Practices to listen to" },
-  teachContact: { label: "How to Contact Me", desc: "A polished contact destination.", defaultTitle: "Contact", defaultSubtitle: "How to reach me" },
-  customPages: { label: "Custom Pages", desc: "Workshops, retreats, policies — each page is its own card.", defaultTitle: "", defaultSubtitle: "" },
+/**
+ * Translation keys for each Explore module's Studio copy.
+ *
+ * `defaultTitleKey`/`defaultSubtitleKey` are the card title a guest sees
+ * when the teacher has not written their own, so they follow the Space
+ * language too; customPages has none, because its cards are the
+ * teacher's own pages.
+ */
+const MODULE_INFO: Record<
+  TeachExploreModule,
+  {
+    labelKey: TranslationKey<"teach">;
+    descKey: TranslationKey<"teach">;
+    defaultTitleKey: TranslationKey<"teach"> | null;
+    defaultSubtitleKey: TranslationKey<"teach"> | null;
+  }
+> = {
+  teachReadings: { labelKey: "myReadings", descKey: "myReadingsBody", defaultTitleKey: "myReadings", defaultSubtitleKey: "readingsEyebrow" },
+  teachAudio: { labelKey: "exploreAudio", descKey: "myAudioBody", defaultTitleKey: "exploreAudio", defaultSubtitleKey: "audioEyebrow" },
+  teachContact: { labelKey: "howToContactMeTitle", descKey: "contactDestinationBody", defaultTitleKey: "contactCardTitle", defaultSubtitleKey: "howToReachMe" },
+  customPages: { labelKey: "customPagesTitle", descKey: "customPagesBody", defaultTitleKey: null, defaultSubtitleKey: null },
 };
 
 const FALLBACK_SWATCHES = ["#5B7A6E", "#2D4A3E", "#7E6A57", "#A9553A", "#6A4C6B", "#2F5D7C"];
@@ -1471,14 +1490,14 @@ export function ModulesSection({ api }: Props) {
         const info = MODULE_INFO[k];
         const card = k === "customPages" ? null : cards[k];
         return (
-          <Card key={k} title={info.label} description={info.desc}>
-            <Toggle checked={on} onChange={(v) => api.setEnabledExplore(v ? [...api.enabledExplore, k] : api.enabledExplore.filter((x) => x !== k))} label={on ? "Shown in Explore" : "Hidden"} />
+          <Card key={k} title={t("teach", info.labelKey)} description={t("teach", info.descKey)}>
+            <Toggle checked={on} onChange={(v) => api.setEnabledExplore(v ? [...api.enabledExplore, k] : api.enabledExplore.filter((x) => x !== k))} label={on ? t("teach", "shownInExplore") : t("teach", "hiddenLabel")} />
             {exploreModuleStatus(statusInput, k) === "empty" ? <Hint>{EXPLORE_MODULE_EMPTY_HINT[k]}</Hint> : null}
             {on && k !== "customPages" ? (
               <>
                 <Grid>
-                  <TextField label={t("teach", "cardTitle")} value={str(card?.title)} onChange={(v) => setCard(k, { title: nul(v) })} placeholder={info.defaultTitle} maxLength={60} />
-                  <TextField label={t("teach", "subtitleOptional")} value={str(card?.subtitle)} onChange={(v) => setCard(k, { subtitle: nul(v) })} placeholder={info.defaultSubtitle} maxLength={90} />
+                  <TextField label={t("teach", "cardTitle")} value={str(card?.title)} onChange={(v) => setCard(k, { title: nul(v) })} placeholder={info.defaultTitleKey ? t("teach", info.defaultTitleKey) : ""} maxLength={60} />
+                  <TextField label={t("teach", "subtitleOptional")} value={str(card?.subtitle)} onChange={(v) => setCard(k, { subtitle: nul(v) })} placeholder={info.defaultSubtitleKey ? t("teach", info.defaultSubtitleKey) : ""} maxLength={90} />
                 </Grid>
                 <SettingsImage
                   api={api}
@@ -1493,7 +1512,7 @@ export function ModulesSection({ api }: Props) {
                   <Label>{t("teach", "fallbackColourNoCover")}</Label>
                   <div className="flex flex-wrap gap-2">
                     {FALLBACK_SWATCHES.map((h) => (
-                      <button key={h} type="button" aria-label={`Fallback ${h}`} aria-pressed={card?.fallbackColor === h} onClick={() => setCard(k, { fallbackColor: h })} className="w-8 h-8 rounded-full" style={{ background: h, outline: card?.fallbackColor === h ? "2px solid #192B21" : "none", outlineOffset: 2 }} />
+                      <button key={h} type="button" aria-label={t("teach", "fallbackN", { index: h })} aria-pressed={card?.fallbackColor === h} onClick={() => setCard(k, { fallbackColor: h })} className="w-8 h-8 rounded-full" style={{ background: h, outline: card?.fallbackColor === h ? "2px solid #192B21" : "none", outlineOffset: 2 }} />
                     ))}
                     <button type="button" onClick={() => setCard(k, { fallbackColor: null })} className="text-[12px] underline text-[#6F6C66] min-h-8">
                       {t("teach", "themeDefault")}
@@ -1621,16 +1640,16 @@ function AudioFileField({ api, item, update, index }: { api: StudioApi; item: Ed
   async function handle(file: File) {
     setError(null);
     const ext = AUDIO_ALLOWED_TYPES[file.type];
-    if (!ext) return setError("Please upload an MP3, M4A, AAC, WAV or OGG audio file.");
-    if (file.size > MAX_AUDIO_BYTES) return setError("Audio must be under 100 MB.");
-    setBusy("Uploading…");
+    if (!ext) return setError(t("studio", "unsupportedAudio"));
+    if (file.size > MAX_AUDIO_BYTES) return setError(t("teach", "audioTooLarge100"));
+    setBusy(t("common", "uploading"));
     const duration = await detectDuration(file);
     // Ownership at upload: the server makes sure this item's row exists
     // before any bytes land, and hands back a brand-new versioned path.
     const prep = await api.prepareAudioUpload(item, index, file.type, file.size);
     if (prep.error || !prep.path) {
       setBusy(null);
-      return setError(prep.error ?? "Upload failed.");
+      return setError(prep.error ?? t("studio", "uploadFailed"));
     }
     const path = prep.path;
     // Uploaded straight from the browser through the member's own session:
@@ -1668,14 +1687,14 @@ function AudioFileField({ api, item, update, index }: { api: StudioApi; item: Ed
       )}
       <div className="flex gap-2">
         <StudioButton kind="outline" onClick={() => inputRef.current?.click()} disabled={busy !== null}>
-          {busy ?? (ref ? "Replace audio" : "Upload audio")}
+          {busy ?? (ref ? t("teach", "replaceAudio") : t("teach", "uploadAudio"))}
         </StudioButton>
         {ref ? (
           <StudioButton
             kind="outline"
             disabled={busy !== null}
             onClick={async () => {
-              setBusy("Removing…");
+              setBusy(t("common", "removing"));
               const err = await api.detachAudio(item.id);
               setBusy(null);
               if (err) setError(err);
@@ -1778,7 +1797,7 @@ export function ContactSection({ api }: Props) {
             label={t("teach", "primaryButton")}
             value={(c.primary ?? "") as ContactMethod | ""}
             onChange={(v) => set({ primary: (v || null) as ContactMethod | null })}
-            options={[{ value: "" as const, label: "None" }, ...CONTACT_METHODS.map((k) => ({ value: k, label: contactMethodLabel(api.locale)[k] }))]}
+            options={[{ value: "" as const, label: t("common", "none") }, ...CONTACT_METHODS.map((k) => ({ value: k, label: contactMethodLabel(api.locale)[k] }))]}
           />
           <TextField label={t("teach", "buttonLabel")} value={str(c.buttonLabel)} onChange={(v) => set({ buttonLabel: nul(v) })} placeholder={t("teach", "contactButtonPlaceholder")} maxLength={60} />
         </Grid>
@@ -1821,7 +1840,7 @@ export function CustomPagesSection({ api }: Props) {
           addLabel={t("teach", "addPage")}
           emptyText={t("teach", "noPagesYet")}
           max={api.customPagesLimit}
-          summary={(p) => ({ title: p.title, sub: `${p.subtitle ?? "Custom page"}${p.metadata.enabled ? "" : " · hidden"}`, thumb: api.mediaUrl(p.imageRef) })}
+          summary={(p) => ({ title: p.title, sub: `${p.subtitle ?? t("teach", "customPage")}${p.metadata.enabled ? "" : " · hidden"}`, thumb: api.mediaUrl(p.imageRef) })}
           editor={(item, update, index) => (
             <>
               <Toggle checked={item.metadata.enabled} onChange={(v) => update((cur) => ({ metadata: { ...cur.metadata, enabled: v } }))} label={t("studio", "visibleToGuests")} />
@@ -1834,7 +1853,7 @@ export function CustomPagesSection({ api }: Props) {
                 <Label>{t("teach", "fallbackColourCard")}</Label>
                 <div className="flex flex-wrap gap-2">
                   {FALLBACK_SWATCHES.map((h) => (
-                    <button key={h} type="button" aria-label={`Fallback ${h}`} aria-pressed={item.metadata.fallbackColor === h} onClick={() => update((cur) => ({ metadata: { ...cur.metadata, fallbackColor: h } }))} className="w-8 h-8 rounded-full" style={{ background: h, outline: item.metadata.fallbackColor === h ? "2px solid #192B21" : "none", outlineOffset: 2 }} />
+                    <button key={h} type="button" aria-label={t("teach", "fallbackN", { index: h })} aria-pressed={item.metadata.fallbackColor === h} onClick={() => update((cur) => ({ metadata: { ...cur.metadata, fallbackColor: h } }))} className="w-8 h-8 rounded-full" style={{ background: h, outline: item.metadata.fallbackColor === h ? "2px solid #192B21" : "none", outlineOffset: 2 }} />
                   ))}
                 </div>
               </div>
@@ -1862,12 +1881,12 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const noRegistration = api.items.teachClasses.filter((c) => !buildRegistrationCta(api.name, c.title, c.metadata));
   const checks: { ok: boolean; text: string; blocking?: boolean }[] = [
-    { ok: Boolean(api.name.trim()), text: "Your name is set", blocking: true },
-    { ok: api.canPublish, text: api.canPublish ? `Active access (${api.accessLabel})` : "This Space needs active access before it can be published", blocking: true },
-    { ok: Boolean(api.slug), text: api.slug ? `Guest address: ${api.slug}.innerdwes.com` : "No guest address reserved yet — guests can still open the /g/ link" },
-    { ok: Boolean(api.heroImageRef), text: api.heroImageRef ? "Primary image set" : "No primary image yet" },
+    { ok: Boolean(api.name.trim()), text: t("teach", "readinessNameSet"), blocking: true },
+    { ok: api.canPublish, text: api.canPublish ? t("teach", "readinessAccess", { plan: api.accessLabel }) : t("teach", "readinessNoAccess"), blocking: true },
+    { ok: Boolean(api.slug), text: api.slug ? t("teach", "readinessAddress", { address: `${api.slug}.innerdwes.com` }) : t("teach", "readinessNoAddress") },
+    { ok: Boolean(api.heroImageRef), text: api.heroImageRef ? t("teach", "readinessImageSet") : t("teach", "readinessNoImage") },
     { ok: api.items.teachClasses.length > 0, text: `${api.items.teachClasses.length} classes · ${api.items.teachAvailability.length} private windows` },
-    { ok: noRegistration.length === 0, text: noRegistration.length === 0 ? "Every class has a registration method" : `${noRegistration.length} class(es) have no working registration method — no join button will show` },
+    { ok: noRegistration.length === 0, text: noRegistration.length === 0 ? t("teach", "readinessRegistration") : `${noRegistration.length} class(es) have no working registration method — no join button will show` },
   ];
   const blocked = checks.some((c) => c.blocking && !c.ok);
 
@@ -1877,7 +1896,7 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
     const saveErr = await api.saveAll();
     if (saveErr) {
       setBusy(false);
-      setMessage({ ok: false, text: `Couldn’t save first: ${saveErr}` });
+      setMessage({ ok: false, text: t("teach", "saveFirstFailed", { reason: saveErr }) });
       return;
     }
     const res = await publishTeachSpace(api.tenantId, api.locale);
@@ -1885,7 +1904,7 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
     if (res.error) setMessage({ ok: false, text: res.error });
     else {
       api.setPublishedAt(res.publishedAt);
-      setMessage({ ok: true, text: "Published — your guests see this version now." });
+      setMessage({ ok: true, text: t("teach", "publishedNow") });
     }
   }
 
@@ -1905,7 +1924,7 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
         </ul>
         <div className="flex flex-wrap gap-2">
           <StudioButton onClick={publish} disabled={busy || blocked}>
-            {busy ? "Publishing…" : api.publishedAt ? "Republish" : "Publish now"}
+            {busy ? t("studio", "publishingNow") : api.publishedAt ? t("studio", "republish") : t("teach", "publishNow")}
           </StudioButton>
         </div>
         {message ? (
@@ -1913,7 +1932,9 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
             {message.text}
           </p>
         ) : null}
-        <Hint>{api.publishedAt ? `Last published ${api.publishedAt.slice(0, 16).replace("T", " ")} UTC` : "Not published yet."}</Hint>
+        <Hint>{api.publishedAt
+            ? t("teach", "lastPublished", { timestamp: api.publishedAt.slice(0, 16).replace("T", " ") })
+            : t("teach", "notPublishedYet")}</Hint>
       </Card>
       <Card title={t("teach", "shareYourGuestApp")} description={t("teach", "shareGuestAppBody")}>
         <PublicLinkCard
@@ -1968,7 +1989,7 @@ export function DirectoryOptInCard({ tenantId, initialListed, locale }: { tenant
         >
           <span aria-hidden="true" className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${listed ? "translate-x-6" : "translate-x-1"}`} />
         </button>
-        <span className="text-[13px] text-[#232926]">{listed ? "Yes, list me on InnerDweS" : "Not listed"}</span>
+        <span className="text-[13px] text-[#232926]">{listed ? t("teach", "yesListMe") : t("teach", "notListed")}</span>
       </div>
       {error ? (
         <p role="alert" className="text-[13px] text-[#8F3B3B]">

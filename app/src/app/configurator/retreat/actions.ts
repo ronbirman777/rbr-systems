@@ -313,7 +313,7 @@ export async function createScheduleItemStub(
       tenant_id: tenantId,
       date: date || new Date().toISOString().slice(0, 10),
       start_time: startTime || "09:00",
-      title: "Untitled",
+      title: translate(localeFromFormData(formData), "common", "untitled"),
     },
     { onConflict: "id", ignoreDuplicates: true }
   );
@@ -1356,7 +1356,7 @@ export async function createModuleItemStub(
       id: itemId,
       tenant_id: tenantId,
       module_key: moduleKey,
-      title: "Untitled",
+      title: translate(localeFromFormData(formData), "common", "untitled"),
       subtitle: null,
       description: null,
       sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,

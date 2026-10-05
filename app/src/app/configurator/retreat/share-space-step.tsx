@@ -29,33 +29,29 @@ export type ShareSpaceStepProps = {
   locale?: Locale;
 };
 
-const STATUS_COPY: Record<ShareSpaceStatus, { label: string; pill: "draft" | "published"; detail: string }> = {
-  live: {
-    label: "Published",
-    pill: "published",
-    detail: "Guests can open your app at this link right now.",
-  },
-  draft: {
-    label: "Draft",
-    pill: "draft",
-    detail: "Publish your Space first - this link won't work for guests until then.",
-  },
-  inactive: {
-    label: "Inactive",
-    pill: "draft",
-    detail: "This Space was published, but isn't currently publicly available. Check your commercial access.",
-  },
+/** Translation keys, resolved per render in the Space language. */
+const STATUS_COPY: Record<
+  ShareSpaceStatus,
+  {
+    labelKey: "published" | "draft" | "statusInactive";
+    pill: "draft" | "published";
+    detailKey: "statusPublishedBody" | "statusDraftBody" | "statusInactiveBody";
+  }
+> = {
+  live: { labelKey: "published", pill: "published", detailKey: "statusPublishedBody" },
+  draft: { labelKey: "draft", pill: "draft", detailKey: "statusDraftBody" },
+  inactive: { labelKey: "statusInactive", pill: "draft", detailKey: "statusInactiveBody" },
 };
 
 /**
  * Distribution phase - the one organizer-facing place to get the real
  * public link, its branded Share Card, and an accurate status once a
  * Space is built. Reuses the exact same /s/[slug] -> /g/[tenantId] URL
- * every other t("flow", "viewLiveGuestApp") link in Studio already uses
+ * every other "View live guest app" link in Studio already uses
  * (buildGuestSpaceUrl) - no second URL system. `status` is computed
  * server-side in the page component from published_spaces +
  * isSpacePubliclyAvailable, the same authority the guest routes
- * themselves gate on, so this can never claim "Live" for a Space guests
+ * themselves gate on, so this can never claim t("common", "live") for a Space guests
  * can't actually reach - and Share/Save Image are disabled whenever
  * status isn't "live", so Share can never imply an inactive/unpublished
  * Space is publicly accessible.
@@ -83,7 +79,7 @@ export function ShareSpaceStep({
   const copy = STATUS_COPY[status];
   const canShareOrSave = status === "live";
 
-  const cardOptions = { name, logoUrl, heroImageUrl, qrUrl: qrSrc, primaryHex, secondaryHex };
+  const cardOptions = { name, logoUrl, heroImageUrl, qrUrl: qrSrc, primaryHex, secondaryHex, locale };
 
   useEffect(() => {
     const visible = previewRef.current;
@@ -157,7 +153,7 @@ export function ShareSpaceStep({
     try {
       const blob = await renderFullCard();
       const file = new File([blob], `${slug ?? tenantId}-share-card.png`, { type: "image/png" });
-      const shareText = "Scan to open the retreat app";
+      const shareText = t("flow", "scanToOpen");
 
       if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
         try {
@@ -206,11 +202,11 @@ export function ShareSpaceStep({
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-medium truncate text-[#192B21]">{name}</p>
           <div className="mt-1.5">
-            <StatusPill state={copy.pill} label={copy.label} />
+            <StatusPill state={copy.pill} label={t("studio", copy.labelKey)} />
           </div>
         </div>
       </div>
-      <p className="text-xs mt-2 leading-relaxed text-[#6F6C66]">{copy.detail}</p>
+      <p className="text-xs mt-2 leading-relaxed text-[#6F6C66]">{t("studio", copy.detailKey)}</p>
 
       <div className="mt-6 flex flex-col gap-4">
         <PublicLinkCard url={url} openHref={guestAppPath(tenantId, slug)} published={status !== "draft"} />
@@ -258,7 +254,7 @@ export function ShareSpaceStep({
               className="text-[13px] font-semibold uppercase tracking-wide px-5 py-2.5 rounded-full disabled:opacity-50"
               style={{ background: GUEST_BASE_PALETTE.forest, color: "white" }}
             >
-              {busy === "share" ? t("common", "preparing") : "Share"}
+              {busy === "share" ? t("common", "preparing") : t("common", "share")}
             </button>
             <button
               type="button"

@@ -126,7 +126,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
     <div className="max-w-2xl">
       <StudioHeading>{t("flow", "treatmentsStepTitle")}</StudioHeading>
       <StudioIntro>
-        What&apos;s available, and how to access it. Not a booking system yet - guests are told how to book.
+        {t("flow", "treatmentsStepBody")}
       </StudioIntro>
 
       <div className="space-y-3 mb-4">
@@ -238,7 +238,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                   position={editing.imagePosition}
                   onChange={(imagePosition) => update(editing.id, { imagePosition })}
                   aspect="39/20"
-                  label={`${editing.name || "Treatment"} photo`}
+                  label={t("studio", "coverImage")}
                 />
               )}
             </div>

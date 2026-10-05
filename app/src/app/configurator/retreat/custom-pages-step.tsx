@@ -176,7 +176,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
           style={{ background: `${GUEST_BASE_PALETTE.sand}40`, color: GUEST_BASE_PALETTE.dusk }}
         >
           <p className="font-medium">You&apos;ve reached the {DEFAULT_CUSTOM_PAGES_LIMIT}-page limit.</p>
-          <p className="mt-0.5">Need more pages for your retreat? Contact us.</p>
+          <p className="mt-0.5">{t("flow", "needMorePages")}</p>
         </div>
       ) : (
         <button
@@ -221,7 +221,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
                   position={editing.imagePosition}
                   onChange={(imagePosition) => update(editing.id, { imagePosition })}
                   aspect="13/6"
-                  label={`${editing.title || "Page"} photo`}
+                  label={`${editing.title || t("flow", "pageLabel")} photo`}
                 />
               )}
             </div>
