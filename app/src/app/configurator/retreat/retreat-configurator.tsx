@@ -1346,10 +1346,11 @@ export function RetreatConfigurator({
           if (save) moduleSaversRef.current.set(section, save);
           else moduleSaversRef.current.delete(section);
         },
+        locale: initialLocale,
       } satisfies StudioSectionEditorProps,
     ]);
     return Object.fromEntries(entries) as Record<StudioModuleSection, StudioSectionEditorProps>;
-  }, [markDirty, markClean]);
+  }, [markDirty, markClean, initialLocale]);
 
   async function saveAllDirtySections(): Promise<boolean> {
     let allSucceeded = true;

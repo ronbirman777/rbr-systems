@@ -91,6 +91,11 @@ export const he: Dictionary = {
     startTime: "שעת התחלה",
     endTime: "שעת סיום",
     untitled: "בלי כותרת",
+    time: "שעה",
+    disabled: "כבוי",
+    question: "שאלה",
+    answer: "תשובה",
+    savingNow: "שומר…",
   },
 
   teach: {
@@ -471,6 +476,95 @@ export const he: Dictionary = {
     moduleAudio: "אודיו",
     moduleAnnouncements: "הודעות",
     moduleCoverImageOf: "תמונת שער ל{module}",
+
+    // ---- Studio: Arrival step ----
+    arrivalStepTitle: "הכינו את פרטי ההגעה",
+    arrivalStepBody: "כל מה שהאורחים צריכים לפני ובזמן ההגעה. מידע בהיר ורגוע עושה הבדל גדול ברושם הראשון.",
+    noArrivalInfoYet: "עדיין אין פרטי הגעה",
+    noArrivalInfoBody: "התחילו משעות הצ׳ק-אין והצ׳ק-אאוט ומהכתובת - האורחים רואים אותן קודם במסך ההגעה. כל השאר לא חובה.",
+    arrivalBasics: "יסודות ההגעה",
+    preparingForArrival: "הכנה להגעה",
+    welcomeMessageOptional: "הודעת ברוכים הבאים (לא חובה)",
+    welcomeMessagePlaceholder: "ברכה אישית קצרה שתוצג במסך ההגעה…",
+    addressPlaceholder: "147 Moo 4, Ban Tai\\nKo Samui, Surat Thani 84320",
+    mapsLinkOptional: "קישור למפות (לא חובה)",
+    gettingHerePlaceholder: "אפשרויות הגעה, הוראות משדה התעופה או מהתחנה הקרובים…",
+    onArrivalPlaceholder: "מה לעשות כשמגיעים לריטריט…",
+    whatToBringPlaceholder: "הצעות לאריזה ודברים הכרחיים…",
+    importantNotesPlaceholder: "כללי הבית, נהלים, כל מה שחשוב לדעת לפני ההגעה…",
+    contactName: "שם איש קשר",
+    contactNamePlaceholder: "למשל: הקבלה",
+    phoneNumber: "מספר טלפון",
+    whatsappNumber: "מספר וואטסאפ",
+
+    // ---- Studio: Meals step ----
+    mealsStepTitle: "תכננו את הארוחות",
+    mealsStepBody: "תמונות אוכל טובות ומידע תזונתי בהיר עושים הבדל אמיתי לאורחים.",
+    untitledMeal: "ארוחה בלי כותרת",
+    noMealsYet: "עדיין אין ארוחות",
+    noMealsBody: "הוסיפו את הארוחות שיוגשו - בוקר, צהריים, ערב - עם שעות והערות תזונה. התחילו עם + הוספת ארוחה למטה.",
+    mealType: "סוג הארוחה",
+    mealTitlePlaceholder: "למשל: קערת בוקר מרעננת",
+    mealLocationPlaceholder: "למשל: מסעדת הגן",
+    mealDescriptionPlaceholder: "למה האורחים יכולים לצפות…",
+    dietaryTags: "תגיות תזונה (מופרדות בפסיקים)",
+    dietaryTagsPlaceholder: "טבעוני, ללא גלוטן",
+
+    // ---- Studio: Treatments step ----
+    treatmentsStepTitle: "הציגו את הטיפולים",
+    treatmentsStepBody: "מה זמין ואיך מגיעים לזה. זו עוד לא מערכת הזמנות - האורחים מקבלים הסבר איך להזמין.",
+    untitledTreatment: "טיפול בלי כותרת",
+    noTreatmentsYet: "עדיין אין טיפולים",
+    noTreatmentsBody: "הוסיפו את הטיפולים או המפגשים שאפשר להזמין, עם משך ותיאור קצר. התחילו עם + הוספת טיפול למטה.",
+    treatmentName: "שם הטיפול",
+    treatmentNamePlaceholder: "למשל: מסאז׳ תאילנדי מסורתי",
+    shortDescription: "תיאור קצר",
+    shortDescriptionPlaceholder: "שורה אחת לכרטיס הכניסה",
+    durationMinutes: "משך (דקות)",
+    practitioner: "מטפל / ספק",
+    treatmentLocationPlaceholder: "למשל: חדר ספא 2",
+    bookingInfo: "פרטי הזמנה",
+    bookingInfoPlaceholder: "למשל: הזמנה בקבלה",
+    fullDescription: "תיאור מלא",
+    fullDescriptionPlaceholder: "מה הטיפול כולל…",
+
+    // ---- Studio: Facilities step ----
+    facilitiesStepTitle: "עזרו לאורחים למצוא את הדרך",
+    facilitiesStepBody: "המרחבים שהאורחים ירצו למצוא - בריכות, סטודיואים, גנים, פינות שקטות.",
+    untitledFacility: "מתקן בלי כותרת",
+    noFacilitiesYet: "עדיין אין מתקנים",
+    noFacilitiesBody: "הוסיפו את המרחבים שהאורחים יכולים להשתמש בהם - סאונה, בריכה, שאלה ליוגה - עם שעות פתיחה. התחילו עם + הוספת מתקן למטה.",
+    facilityName: "שם המתקן",
+    facilityNamePlaceholder: "למשל: בריכת מים מלוחים",
+    openingHours: "שעות פתיחה",
+    facilityLocationPlaceholder: "למשל: הגן התחתון",
+    facilityDescriptionPlaceholder: "מה האורחים ימצאו כאן…",
+    importantInfoOptional: "מידע חשוב (לא חובה)",
+    importantInfoPlaceholder: "למשל: נא להתקלח לפני הכניסה",
+
+    // ---- Studio: FAQ step ----
+    faqStepTitle: "ענו על שאלות נפוצות",
+    faqStepBody: "האורחים רואים אותן כאקורדיון בתוך ״גלו״. שאלות כבויות נשמרות אבל לא מוצגות.",
+    untitledQuestion: "שאלה בלי כותרת",
+    noQuestionsYet: "עדיין אין שאלות",
+    noQuestionsBody: "ענו על השאלות שאורחים שואלים הכי הרבה - וויי-פיי, צ׳ק-אאוט או מה להביא. התחילו עם + הוספת שאלה למטה.",
+    editQuestion: "עריכת שאלה",
+    questionPlaceholder: "למשל: מה כדאי לארוז?",
+
+    // ---- Studio: Custom pages step ----
+    customPagesStepTitle: "הוסיפו עמודים משלכם",
+    customPagesStepBody: "בחרו כותרות משלכם - מה להביא, הנחיות קהילה, על הריטריט, כל מה שצריך.",
+    untitledPage: "עמוד בלי כותרת",
+    noCustomPagesYet: "עדיין אין עמודים משלכם",
+    noCustomPagesBody: "צרו עמוד לכל מה שהאורחים צריכים ואין לו מקום - מה להביא, הנחיות קהילה, על הריטריט. התחילו עם + הוספת עמוד למטה.",
+    needMorePages: "צריכים עוד עמודים לריטריט? דברו איתנו.",
+    pageTitle: "כותרת העמוד",
+    pageTitlePlaceholder: "למשל: מה להביא",
+    pageLabel: "עמוד",
+
+    // ---- Studio: Stay Connected step ----
+    stayConnectedStepBody: "הוסיפו את הפלטפורמות שבהן האורחים יכולים למצוא אתכם. רק קישורים עם כתובת מוצגים.",
+    noLinksYet: "עדיין אין קישורים.",
   },
   studio: {
     // Shell and navigation
@@ -575,6 +669,11 @@ export const he: Dictionary = {
     contrastLow: "הניגודיות עשויה להיות נמוכה מדי",
     swatchDark: "כהה",
     swatchWhite: "לבן",
+
+    // Photo guidance, shared by every module that takes a photo
+    photoLandscape2to1: "מומלץ: תמונה לרוחב, בערך 2:1.",
+    photoThumbAndBanner: "התמונה מופיעה גם כתמונה ממוזערת מרובעת וגם כבאנר רחב, תלוי במקום - שמרו את הנושא במרכז.",
+    photoVariableHeight: "התמונה מוצגת בגבהים שונים במקצת תלוי במקום - שמרו את הנושא במרכז והימנעו מחיתוך צמוד בקצוות.",
   },
 
 };

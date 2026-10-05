@@ -12,6 +12,8 @@ import { EmptyState } from "@/components/studio/empty-state";
 import { saveFacilities, type SaveFacilitiesState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
+import { createTranslator } from "@/lib/i18n";
+import { ForwardArrow } from "./studio-ui";
 const initialState: SaveFacilitiesState = { error: null };
 
 export function blankFacility(): EditableFacility {
@@ -41,7 +43,8 @@ export type FacilitiesStepProps = {
  * meals-step.tsx's doc comment). Same underlying state/persistence as
  * before.
  */
-export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, onContinue, onDirty, onSaved, registerSave }: FacilitiesStepProps) {
+export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, onContinue, onDirty, onSaved, registerSave, locale }: FacilitiesStepProps) {
+  const { t } = createTranslator(locale);
   const [state, setState] = useState<SaveFacilitiesState>(initialState);
   const [pending, setPending] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -102,8 +105,8 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
 
   return (
     <div className="max-w-2xl">
-      <StudioHeading>Help guests find their way</StudioHeading>
-      <StudioIntro>The spaces guests will want to find - pools, studios, gardens, quiet corners.</StudioIntro>
+      <StudioHeading>{t("flow", "facilitiesStepTitle")}</StudioHeading>
+      <StudioIntro>{t("flow", "facilitiesStepBody")}</StudioIntro>
 
       <div className="space-y-3 mb-4">
         {facilities.map((f) => {
@@ -135,7 +138,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                   </span>
                 )}
                 <p className="text-[13px] font-medium truncate" style={{ color: GUEST_BASE_PALETTE.forest }}>
-                  {f.name || "Untitled facility"}
+                  {f.name || t("flow", "untitledFacility")}
                 </p>
                 <p className="text-[11px] mt-0.5 truncate" style={{ color: GUEST_BASE_PALETTE.mist }}>
                   {f.location}
@@ -148,7 +151,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                   className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
-                  Edit
+                  {t("common", "edit")}
                 </button>
                 <button
                   type="button"
@@ -156,7 +159,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                   className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
-                  Remove
+                  {t("common", "remove")}
                 </button>
               </div>
             </div>
@@ -166,7 +169,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
 
       {facilities.length === 0 && (
         <div className="mb-4">
-          <EmptyState title="No facilities yet" body="Add the spaces guests can use - sauna, pool, yoga shala - with opening hours. Use + Add Facility below to start." />
+          <EmptyState title={t("flow", "noFacilitiesYet")} body={t("flow", "noFacilitiesBody")} />
         </div>
       )}
 
@@ -186,7 +189,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
               Editing {editing.name || "facility"}
             </h4>
             <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-              Done
+              {t("common", "done")}
             </button>
           </div>
           <div className="grid grid-cols-3 gap-4">
@@ -203,7 +206,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                 onChange={(patch) => update(editing.id, { ...patch, imagePosition: null })}
                 previewAspect="39/16"
                 previewPosition={objectPositionStyle(editing.imagePosition)}
-                ratioHint="This photo displays at slightly different heights depending on position - keep the subject centered and avoid tight crops at the edges."
+                ratioHint={t("studio", "photoVariableHeight")}
               />
               {editing.imageUrl && (
                 <FocalPointPicker
@@ -217,17 +220,17 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
             </div>
             <div className="col-span-2 space-y-3">
               <div>
-                <StudioLabel>Facility name</StudioLabel>
+                <StudioLabel>{t("flow", "facilityName")}</StudioLabel>
                 <input
                   value={editing.name}
                   onChange={(e) => update(editing.id, { name: e.target.value })}
-                  placeholder="e.g. Saltwater Pool"
+                  placeholder={t("flow", "facilityNamePlaceholder")}
                   className={STUDIO_INPUT_CLASS}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <StudioLabel>Opening hours</StudioLabel>
+                  <StudioLabel>{t("flow", "openingHours")}</StudioLabel>
                   <input
                     value={editing.openingHours ?? ""}
                     onChange={(e) => update(editing.id, { openingHours: e.target.value || null })}
@@ -236,31 +239,31 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                   />
                 </div>
                 <div>
-                  <StudioLabel>Location</StudioLabel>
+                  <StudioLabel>{t("common", "location")}</StudioLabel>
                   <input
                     value={editing.location ?? ""}
                     onChange={(e) => update(editing.id, { location: e.target.value || null })}
-                    placeholder="e.g. Lower Garden"
+                    placeholder={t("flow", "facilityLocationPlaceholder")}
                     className={STUDIO_INPUT_CLASS}
                   />
                 </div>
               </div>
               <div>
-                <StudioLabel>Description</StudioLabel>
+                <StudioLabel>{t("common", "description")}</StudioLabel>
                 <textarea
                   value={editing.description ?? ""}
                   onChange={(e) => update(editing.id, { description: e.target.value || null })}
-                  placeholder="What guests will find here…"
+                  placeholder={t("flow", "facilityDescriptionPlaceholder")}
                   rows={2}
                   className={`${STUDIO_INPUT_CLASS} resize-none`}
                 />
               </div>
               <div>
-                <StudioLabel>Important information (optional)</StudioLabel>
+                <StudioLabel>{t("flow", "importantInfoOptional")}</StudioLabel>
                 <input
                   value={editing.importantInfo ?? ""}
                   onChange={(e) => update(editing.id, { importantInfo: e.target.value || null })}
-                  placeholder="e.g. Please shower before entering"
+                  placeholder={t("flow", "importantInfoPlaceholder")}
                   className={STUDIO_INPUT_CLASS}
                 />
               </div>
@@ -281,7 +284,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
           onClick={onBack}
           className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3"
         >
-          Back
+          {t("common", "back")}
         </button>
         <button
           type="button"
@@ -289,14 +292,14 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
           onClick={handleSave}
           className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
         >
-          {pending ? "Saving…" : "Save Facilities"}
+          {pending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "facilities") })}
         </button>
         <button
           type="button"
           onClick={onContinue}
           className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
         >
-          Continue →
+          {t("common", "next")} <ForwardArrow />
         </button>
       </div>
     </div>

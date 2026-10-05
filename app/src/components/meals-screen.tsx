@@ -1,6 +1,6 @@
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
-import type { DisplayMeal } from "@/lib/modules/meal";
+import { mealTypeLabel, type DisplayMeal } from "@/lib/modules/meal";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
@@ -12,16 +12,6 @@ export type MealsScreenProps = {
   locale?: Locale;
 };
 
-/** The meal kinds are a fixed system taxonomy, so they are translated;
- * a meal's own title and description are the organizer's words. */
-const MEAL_TYPE_KEY: Record<string, "mealBreakfast" | "mealBrunch" | "mealLunch" | "mealDinner" | "mealSpecial" | "sessionMeal"> = {
-  breakfast: "mealBreakfast",
-  brunch: "mealBrunch",
-  lunch: "mealLunch",
-  dinner: "mealDinner",
-  special: "mealSpecial",
-  other: "sessionMeal",
-};
 
 /**
  * Task 014 (item D, first-meal consistency fix): this component
@@ -86,7 +76,7 @@ export function MealsScreen({ brand, meals, locale = DEFAULT_LOCALE }: MealsScre
             <div className="p-4">
               <div className="flex items-baseline justify-between mb-1.5">
                 <span className="text-[10px] tracking-[0.18em] uppercase font-semibold" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-                  {MEAL_TYPE_KEY[meal.mealType] ? t("flow", MEAL_TYPE_KEY[meal.mealType]) : meal.mealType}
+                  {mealTypeLabel(meal.mealType, locale)}
                 </span>
                 <span className="text-[11px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-clay)" }}>
                   {meal.startTime}

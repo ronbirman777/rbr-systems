@@ -91,6 +91,11 @@ export const en = {
     startTime: "Start time",
     endTime: "End time",
     untitled: "Untitled",
+    time: "Time",
+    disabled: "Disabled",
+    question: "Question",
+    answer: "Answer",
+    savingNow: "Saving…",
   },
 
   teach: {
@@ -478,6 +483,95 @@ export const en = {
     moduleAudio: "Audio",
     moduleAnnouncements: "Announcements",
     moduleCoverImageOf: "{module} cover image",
+
+    // ---- Studio: Arrival step ----
+    arrivalStepTitle: "Prepare arrival information",
+    arrivalStepBody: "Everything guests need before and on arrival. Clear, calm information makes a big difference to first impressions.",
+    noArrivalInfoYet: "No arrival information yet",
+    noArrivalInfoBody: "Start with check-in and check-out times and your address - guests see these first on the Arrival screen. Everything else is optional.",
+    arrivalBasics: "Arrival basics",
+    preparingForArrival: "Preparing for arrival",
+    welcomeMessageOptional: "Welcome message (optional)",
+    welcomeMessagePlaceholder: "A short personal welcome shown on the Arrival screen…",
+    addressPlaceholder: "147 Moo 4, Ban Tai\\nKo Samui, Surat Thani 84320",
+    mapsLinkOptional: "Maps link (optional)",
+    gettingHerePlaceholder: "Transport options, directions from nearest airport or station…",
+    onArrivalPlaceholder: "What to do when guests reach the retreat…",
+    whatToBringPlaceholder: "Packing suggestions and essentials…",
+    importantNotesPlaceholder: "House rules, policies, anything guests must know before arriving…",
+    contactName: "Contact name",
+    contactNamePlaceholder: "e.g. Front Desk",
+    phoneNumber: "Phone number",
+    whatsappNumber: "WhatsApp number",
+
+    // ---- Studio: Meals step ----
+    mealsStepTitle: "Plan your meals",
+    mealsStepBody: "Good food photography and clear dietary information make a real difference for your guests.",
+    untitledMeal: "Untitled meal",
+    noMealsYet: "No meals yet",
+    noMealsBody: "Add the meals guests will be served - breakfast, lunch, dinner - with times and dietary notes. Use + Add Meal below to start.",
+    mealType: "Meal type",
+    mealTitlePlaceholder: "e.g. Morning Vitality Bowl",
+    mealLocationPlaceholder: "e.g. Garden Restaurant",
+    mealDescriptionPlaceholder: "What guests can expect…",
+    dietaryTags: "Dietary tags (comma-separated)",
+    dietaryTagsPlaceholder: "Vegan, Gluten-free",
+
+    // ---- Studio: Treatments step ----
+    treatmentsStepTitle: "Present your treatments",
+    treatmentsStepBody: "What’s available, and how to access it. Not a booking system yet - guests are told how to book.",
+    untitledTreatment: "Untitled treatment",
+    noTreatmentsYet: "No treatments yet",
+    noTreatmentsBody: "Add the treatments or sessions guests can book, with duration and a short description. Use + Add Treatment below to start.",
+    treatmentName: "Treatment name",
+    treatmentNamePlaceholder: "e.g. Traditional Thai Massage",
+    shortDescription: "Short description",
+    shortDescriptionPlaceholder: "One line for the entry card",
+    durationMinutes: "Duration (minutes)",
+    practitioner: "Practitioner / provider",
+    treatmentLocationPlaceholder: "e.g. Spa Room 2",
+    bookingInfo: "Booking info",
+    bookingInfoPlaceholder: "e.g. Book at reception",
+    fullDescription: "Full description",
+    fullDescriptionPlaceholder: "What this treatment involves…",
+
+    // ---- Studio: Facilities step ----
+    facilitiesStepTitle: "Help guests find their way",
+    facilitiesStepBody: "The spaces guests will want to find - pools, studios, gardens, quiet corners.",
+    untitledFacility: "Untitled facility",
+    noFacilitiesYet: "No facilities yet",
+    noFacilitiesBody: "Add the spaces guests can use - sauna, pool, yoga shala - with opening hours. Use + Add Facility below to start.",
+    facilityName: "Facility name",
+    facilityNamePlaceholder: "e.g. Saltwater Pool",
+    openingHours: "Opening hours",
+    facilityLocationPlaceholder: "e.g. Lower Garden",
+    facilityDescriptionPlaceholder: "What guests will find here…",
+    importantInfoOptional: "Important information (optional)",
+    importantInfoPlaceholder: "e.g. Please shower before entering",
+
+    // ---- Studio: FAQ step ----
+    faqStepTitle: "Answer common questions",
+    faqStepBody: "Guests see these as an accordion inside Explore. Disabled questions stay saved but stop appearing.",
+    untitledQuestion: "Untitled question",
+    noQuestionsYet: "No questions yet",
+    noQuestionsBody: "Answer the questions guests ask most, such as wifi, check-out or what to bring. Use + Add Question below to start.",
+    editQuestion: "Edit question",
+    questionPlaceholder: "e.g. What should I pack?",
+
+    // ---- Studio: Custom pages step ----
+    customPagesStepTitle: "Add custom pages",
+    customPagesStepBody: "Choose your own titles - What to Bring, Community Guidelines, About the Retreat, anything you need.",
+    untitledPage: "Untitled page",
+    noCustomPagesYet: "No custom pages yet",
+    noCustomPagesBody: "Create a page for anything guests need that has no home yet - What to Bring, Community Guidelines, About the Retreat. Use + Add Page below to start.",
+    needMorePages: "Need more pages for your retreat? Contact us.",
+    pageTitle: "Page title",
+    pageTitlePlaceholder: "e.g. What to Bring",
+    pageLabel: "Page",
+
+    // ---- Studio: Stay Connected step ----
+    stayConnectedStepBody: "Add the platforms your guests can find you on. Only links with a URL are shown.",
+    noLinksYet: "No links yet.",
   },
   studio: {
     // Shell and navigation
@@ -582,6 +676,11 @@ export const en = {
     contrastLow: "Contrast may be too low",
     swatchDark: "Dark",
     swatchWhite: "White",
+
+    // Photo guidance, shared by every module that takes a photo
+    photoLandscape2to1: "Recommended: landscape photo, about 2:1.",
+    photoThumbAndBanner: "This photo appears both as a small square thumbnail and a wide banner, depending on position - keep the subject centered.",
+    photoVariableHeight: "This photo displays at slightly different heights depending on position - keep the subject centered and avoid tight crops at the edges.",
   },
 
 } as const;

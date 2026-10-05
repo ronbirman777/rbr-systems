@@ -13,6 +13,8 @@ import { saveCustomPages, type SaveCustomPagesState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 import { DEFAULT_CUSTOM_PAGES_LIMIT } from "@/lib/entitlements/customPagesLimit";
 
+import { createTranslator } from "@/lib/i18n";
+import { ForwardArrow } from "./studio-ui";
 const initialState: SaveCustomPagesState = { error: null };
 
 export function blankCustomPage(): EditableCustomPage {
@@ -35,7 +37,8 @@ export type CustomPagesStepProps = {
  * pattern, reorder via sort_order (drag isn't built this batch - the
  * up/down buttons already used by FAQ do the same job).
  */
-export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack, onContinue, onDirty, onSaved, registerSave }: CustomPagesStepProps) {
+export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack, onContinue, onDirty, onSaved, registerSave, locale }: CustomPagesStepProps) {
+  const { t } = createTranslator(locale);
   const [state, setState] = useState<SaveCustomPagesState>(initialState);
   const [pending, setPending] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -110,8 +113,8 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
 
   return (
     <div className="max-w-2xl">
-      <StudioHeading>Add custom pages</StudioHeading>
-      <StudioIntro>Choose your own titles - What to Bring, Community Guidelines, About the Retreat, anything you need.</StudioIntro>
+      <StudioHeading>{t("flow", "customPagesStepTitle")}</StudioHeading>
+      <StudioIntro>{t("flow", "customPagesStepBody")}</StudioIntro>
       <p className="text-[11px] mb-4" style={{ color: GUEST_BASE_PALETTE.mist }}>
         {customPages.length} of {DEFAULT_CUSTOM_PAGES_LIMIT} pages used
       </p>
@@ -137,19 +140,19 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
                 </button>
               </div>
               <p className="flex-1 min-w-0 text-[13px] font-medium truncate" style={{ color: GUEST_BASE_PALETTE.forest }}>
-                {page.title || "Untitled page"}
+                {page.title || t("flow", "untitledPage")}
               </p>
               {!page.enabled && (
                 <span className="text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wide font-medium flex-shrink-0" style={{ background: `${GUEST_BASE_PALETTE.sand}80`, color: GUEST_BASE_PALETTE.dusk }}>
-                  Disabled
+                  {t("common", "disabled")}
                 </span>
               )}
               <div className="flex items-center gap-1.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button type="button" onClick={() => setEditId(isEditing ? null : page.id)} className="text-[11px] px-2.5 py-1 rounded-lg border" style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}>
-                  Edit
+                  {t("common", "edit")}
                 </button>
                 <button type="button" onClick={() => handleRemove(page.id)} className="text-[11px] px-2.5 py-1 rounded-lg border" style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}>
-                  Remove
+                  {t("common", "remove")}
                 </button>
               </div>
             </div>
@@ -160,8 +163,8 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
       {customPages.length === 0 && (
         <div className="mb-4">
           <EmptyState
-            title="No custom pages yet"
-            body="Create a page for anything guests need that has no home yet - What to Bring, Community Guidelines, About the Retreat. Use + Add Page below to start."
+            title={t("flow", "noCustomPagesYet")}
+            body={t("flow", "noCustomPagesBody")}
           />
         </div>
       )}
@@ -192,7 +195,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
               Editing {editing.title || "page"}
             </h4>
             <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-              Done
+              {t("common", "done")}
             </button>
           </div>
           <div className="grid grid-cols-3 gap-4">
@@ -209,7 +212,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
                 onChange={(patch) => update(editing.id, { ...patch, imagePosition: null })}
                 previewAspect="13/6"
                 previewPosition={objectPositionStyle(editing.imagePosition)}
-                ratioHint="Recommended: landscape photo, about 2:1."
+                ratioHint={t("studio", "photoLandscape2to1")}
               />
               {editing.imageUrl && (
                 <FocalPointPicker
@@ -223,16 +226,16 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
             </div>
             <div className="col-span-2 space-y-3">
               <div>
-                <StudioLabel>Page title</StudioLabel>
-                <input value={editing.title} onChange={(e) => update(editing.id, { title: e.target.value })} placeholder="e.g. What to Bring" className={STUDIO_INPUT_CLASS} />
+                <StudioLabel>{t("flow", "pageTitle")}</StudioLabel>
+                <input value={editing.title} onChange={(e) => update(editing.id, { title: e.target.value })} placeholder={t("flow", "pageTitlePlaceholder")} className={STUDIO_INPUT_CLASS} />
               </div>
               <div>
-                <StudioLabel>Content</StudioLabel>
+                <StudioLabel>{t("common", "content")}</StudioLabel>
                 <textarea value={editing.body ?? ""} onChange={(e) => update(editing.id, { body: e.target.value || null })} rows={5} className={`${STUDIO_INPUT_CLASS} resize-none`} />
               </div>
               <label className="flex items-center gap-2 text-[12px]" style={{ color: GUEST_BASE_PALETTE.dusk }}>
                 <input type="checkbox" checked={editing.enabled} onChange={(e) => update(editing.id, { enabled: e.target.checked })} />
-                Visible to guests
+                {t("studio", "visibleToGuests")}
               </label>
             </div>
           </div>
@@ -247,13 +250,13 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
 
       <div className="mt-8 flex gap-3 items-center">
         <button type="button" onClick={onBack} className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3">
-          Back
+          {t("common", "back")}
         </button>
         <button type="button" disabled={pending} onClick={handleSave} className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60">
-          {pending ? "Saving…" : "Save Pages"}
+          {pending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "moduleCustomPages") })}
         </button>
         <button type="button" onClick={onContinue} className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest">
-          Continue →
+          {t("common", "next")} <ForwardArrow />
         </button>
       </div>
     </div>

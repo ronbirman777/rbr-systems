@@ -96,6 +96,11 @@ export const de: Dictionary = {
     startTime: "Startzeit",
     endTime: "Endzeit",
     untitled: "Ohne Titel",
+    time: "Uhrzeit",
+    disabled: "Deaktiviert",
+    question: "Frage",
+    answer: "Antwort",
+    savingNow: "Wird gespeichert…",
   },
 
   teach: {
@@ -476,6 +481,95 @@ export const de: Dictionary = {
     moduleAudio: "Audio",
     moduleAnnouncements: "Mitteilungen",
     moduleCoverImageOf: "Titelbild für {module}",
+
+    // ---- Studio: Arrival step ----
+    arrivalStepTitle: "Ankunftsinfos vorbereiten",
+    arrivalStepBody: "Alles, was deine Gäste vor und bei der Ankunft brauchen. Klare, ruhige Infos machen beim ersten Eindruck einen großen Unterschied.",
+    noArrivalInfoYet: "Noch keine Ankunftsinfos",
+    noArrivalInfoBody: "Fang mit Check-in- und Check-out-Zeit und deiner Adresse an - die sehen deine Gäste zuerst. Alles andere ist optional.",
+    arrivalBasics: "Ankunft: das Wichtigste",
+    preparingForArrival: "Vorbereitung auf die Ankunft",
+    welcomeMessageOptional: "Willkommensnachricht (optional)",
+    welcomeMessagePlaceholder: "Eine kurze persönliche Begrüßung für den Ankunfts-Screen…",
+    addressPlaceholder: "147 Moo 4, Ban Tai\\nKo Samui, Surat Thani 84320",
+    mapsLinkOptional: "Maps-Link (optional)",
+    gettingHerePlaceholder: "Anreisemöglichkeiten, Wegbeschreibung vom nächsten Flughafen oder Bahnhof…",
+    onArrivalPlaceholder: "Was zu tun ist, wenn Gäste am Retreat ankommen…",
+    whatToBringPlaceholder: "Packvorschläge und das Wichtigste…",
+    importantNotesPlaceholder: "Hausregeln, Richtlinien, alles, was Gäste vor der Ankunft wissen müssen…",
+    contactName: "Name der Kontaktperson",
+    contactNamePlaceholder: "z. B. Rezeption",
+    phoneNumber: "Telefonnummer",
+    whatsappNumber: "WhatsApp-Nummer",
+
+    // ---- Studio: Meals step ----
+    mealsStepTitle: "Plane die Mahlzeiten",
+    mealsStepBody: "Gute Food-Fotos und klare Ernährungsinfos machen für deine Gäste einen echten Unterschied.",
+    untitledMeal: "Mahlzeit ohne Titel",
+    noMealsYet: "Noch keine Mahlzeiten",
+    noMealsBody: "Füge die Mahlzeiten hinzu, die serviert werden - Frühstück, Mittag, Abend - mit Zeiten und Ernährungshinweisen. Starte unten mit + Mahlzeit hinzufügen.",
+    mealType: "Art der Mahlzeit",
+    mealTitlePlaceholder: "z. B. Morning Vitality Bowl",
+    mealLocationPlaceholder: "z. B. Gartenrestaurant",
+    mealDescriptionPlaceholder: "Was deine Gäste erwartet…",
+    dietaryTags: "Ernährungs-Tags (mit Komma getrennt)",
+    dietaryTagsPlaceholder: "Vegan, glutenfrei",
+
+    // ---- Studio: Treatments step ----
+    treatmentsStepTitle: "Stell deine Behandlungen vor",
+    treatmentsStepBody: "Was verfügbar ist und wie man hinkommt. Noch kein Buchungssystem - deine Gäste erfahren, wie sie buchen.",
+    untitledTreatment: "Behandlung ohne Titel",
+    noTreatmentsYet: "Noch keine Behandlungen",
+    noTreatmentsBody: "Füge die Behandlungen oder Einheiten hinzu, die Gäste buchen können, mit Dauer und kurzer Beschreibung. Starte unten mit + Behandlung hinzufügen.",
+    treatmentName: "Name der Behandlung",
+    treatmentNamePlaceholder: "z. B. Traditionelle Thai-Massage",
+    shortDescription: "Kurzbeschreibung",
+    shortDescriptionPlaceholder: "Eine Zeile für die Übersichtskarte",
+    durationMinutes: "Dauer (Minuten)",
+    practitioner: "Behandelnde Person / Anbieter",
+    treatmentLocationPlaceholder: "z. B. Spa-Raum 2",
+    bookingInfo: "Buchungsinfos",
+    bookingInfoPlaceholder: "z. B. An der Rezeption buchen",
+    fullDescription: "Vollständige Beschreibung",
+    fullDescriptionPlaceholder: "Was diese Behandlung umfasst…",
+
+    // ---- Studio: Facilities step ----
+    facilitiesStepTitle: "Hilf deinen Gästen, sich zu orientieren",
+    facilitiesStepBody: "Die Orte, die deine Gäste finden wollen - Pools, Studios, Gärten, stille Ecken.",
+    untitledFacility: "Ort ohne Titel",
+    noFacilitiesYet: "Noch keine Orte",
+    noFacilitiesBody: "Füge die Orte hinzu, die Gäste nutzen können - Sauna, Pool, Yoga-Shala - mit Öffnungszeiten. Starte unten mit + Ort hinzufügen.",
+    facilityName: "Name des Ortes",
+    facilityNamePlaceholder: "z. B. Salzwasserpool",
+    openingHours: "Öffnungszeiten",
+    facilityLocationPlaceholder: "z. B. Unterer Garten",
+    facilityDescriptionPlaceholder: "Was deine Gäste hier finden…",
+    importantInfoOptional: "Wichtige Infos (optional)",
+    importantInfoPlaceholder: "z. B. Bitte vor dem Betreten duschen",
+
+    // ---- Studio: FAQ step ----
+    faqStepTitle: "Beantworte häufige Fragen",
+    faqStepBody: "Deine Gäste sehen sie als Akkordeon in „Entdecken“. Deaktivierte Fragen bleiben gespeichert, erscheinen aber nicht.",
+    untitledQuestion: "Frage ohne Titel",
+    noQuestionsYet: "Noch keine Fragen",
+    noQuestionsBody: "Beantworte die Fragen, die Gäste am häufigsten stellen - WLAN, Check-out oder was mitzubringen ist. Starte unten mit + Frage hinzufügen.",
+    editQuestion: "Frage bearbeiten",
+    questionPlaceholder: "z. B. Was soll ich einpacken?",
+
+    // ---- Studio: Custom pages step ----
+    customPagesStepTitle: "Eigene Seiten hinzufügen",
+    customPagesStepBody: "Wähle eigene Titel - Was mitbringen, Community-Richtlinien, Über das Retreat, was du brauchst.",
+    untitledPage: "Seite ohne Titel",
+    noCustomPagesYet: "Noch keine eigenen Seiten",
+    noCustomPagesBody: "Leg eine Seite für alles an, was deine Gäste brauchen und noch keinen Platz hat - Was mitbringen, Community-Richtlinien, Über das Retreat. Starte unten mit + Seite hinzufügen.",
+    needMorePages: "Brauchst du mehr Seiten für dein Retreat? Melde dich bei uns.",
+    pageTitle: "Seitentitel",
+    pageTitlePlaceholder: "z. B. Was mitbringen",
+    pageLabel: "Seite",
+
+    // ---- Studio: Stay Connected step ----
+    stayConnectedStepBody: "Füge die Plattformen hinzu, auf denen deine Gäste dich finden. Es werden nur Links mit URL angezeigt.",
+    noLinksYet: "Noch keine Links.",
   },
   studio: {
     // Shell and navigation
@@ -580,6 +674,11 @@ export const de: Dictionary = {
     contrastLow: "Der Kontrast ist möglicherweise zu gering",
     swatchDark: "Dunkel",
     swatchWhite: "Weiß",
+
+    // Photo guidance, shared by every module that takes a photo
+    photoLandscape2to1: "Empfohlen: Querformat, etwa 2:1.",
+    photoThumbAndBanner: "Dieses Foto erscheint je nach Position als kleines quadratisches Vorschaubild und als breites Banner - halte das Motiv mittig.",
+    photoVariableHeight: "Dieses Foto wird je nach Position in etwas unterschiedlichen Höhen angezeigt - halte das Motiv mittig und vermeide enge Zuschnitte an den Rändern.",
   },
 
 };

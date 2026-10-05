@@ -103,6 +103,9 @@ describe("translation and fallback", () => {
       "flow.mealBrunch",
       // File format names, not words - the same in every language.
       "studio.imageFormats",
+      // A sample postal address, shown as a placeholder. It is an
+      // address, not prose, so it reads the same in every locale.
+      "flow.addressPlaceholder",
       // A type specimen: German reads Latin script, so "Aa" is correct
       // there. Hebrew gets "אא" because the swatch exists to show what
       // the chosen text colour looks like in the reader's own script.
