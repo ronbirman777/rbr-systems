@@ -336,7 +336,7 @@ function Hero({
   if (fullbleed) {
     return (
       <div className="relative h-[360px] @min-[40rem]:h-[460px] @4xl:h-[560px] overflow-hidden -mt-2 @min-[40rem]:mt-0 @min-[40rem]:mx-6 @4xl:mx-10 @min-[40rem]:rounded-[var(--tt-radius-card)]">
-        <TeachImage src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className="absolute inset-0 w-full h-full" />
+        <TeachImage priority sizes="100vw" src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className="absolute inset-0 w-full h-full" />
         <div aria-hidden="true" className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgb(20 30 25 / calc(var(--tt-overlay) * .4)) 0%, rgb(20 30 25 / calc(var(--tt-overlay) + .3)) 100%)" }} />
         <div className="absolute start-6 end-6 bottom-6 @min-[40rem]:start-10 @min-[40rem]:end-10 @min-[40rem]:bottom-10 @4xl:start-14 @4xl:bottom-14 @4xl:max-w-[640px]">{identity(true)}</div>
       </div>
@@ -358,7 +358,7 @@ function Hero({
         };
   return (
     <div className="flex flex-col items-center gap-5 px-6 pt-3 @min-[40rem]:flex-row @min-[40rem]:justify-between @min-[40rem]:gap-10 @min-[40rem]:mx-6 @min-[40rem]:p-10 @min-[40rem]:bg-[var(--tt-surface)] @min-[40rem]:border @min-[40rem]:border-[var(--tt-line)] @min-[40rem]:rounded-[calc(var(--tt-radius-card)+8px)] @4xl:mx-10 @4xl:gap-16 @4xl:px-16 @4xl:py-14">
-      <TeachImage src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className={`shrink-0 @min-[40rem]:order-last ${imgClass}`} style={imgStyle} />
+      <TeachImage priority sizes="(min-width: 896px) 340px, (min-width: 640px) 250px, 230px" src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className={`shrink-0 @min-[40rem]:order-last ${imgClass}`} style={imgStyle} />
       <div className="@min-[40rem]:flex-1 @min-[40rem]:min-w-0">{identity(false)}</div>
     </div>
   );
@@ -830,7 +830,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
       <header
         className="flex flex-col items-center text-center gap-3.5 px-6 pt-3 @4xl:sticky @4xl:top-24 @4xl:px-6 @4xl:py-8"
       >
-        <TeachImage src={photo} focal={focal} alt={data.teacherName} fallbackLabel={data.teacherName} className="w-[150px] h-[150px] @4xl:w-[210px] @4xl:h-[210px] rounded-full" style={{ border: "5px solid var(--tt-surface)", boxShadow: "0 18px 40px -22px rgba(36,59,50,.5)" }} />
+        <TeachImage priority sizes="(min-width: 896px) 210px, 150px" src={photo} focal={focal} alt={data.teacherName} fallbackLabel={data.teacherName} className="w-[150px] h-[150px] @4xl:w-[210px] @4xl:h-[210px] rounded-full" style={{ border: "5px solid var(--tt-surface)", boxShadow: "0 18px 40px -22px rgba(36,59,50,.5)" }} />
         <div className="flex flex-col gap-1">
           <DisplayHeading as="h1" size={32}>
             {data.teacherName}

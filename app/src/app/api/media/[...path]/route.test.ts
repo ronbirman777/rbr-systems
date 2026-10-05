@@ -53,7 +53,17 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 const mockAccess = vi.fn();
-vi.mock("@/lib/guestAccess/effectiveAccess", () => ({ resolveGuestAccess: (...a: unknown[]) => mockAccess(...a) }));
+// The Space's access mode, which /api/media needs in order to decide
+// whether a response may be cached publicly. Defaults to "code" so every
+// pre-existing test keeps the old, uncacheable contract unless it opts in.
+let accessMode: "public" | "code" = "code";
+vi.mock("@/lib/guestAccess/effectiveAccess", () => ({
+  resolveGuestAccess: (...a: unknown[]) => mockAccess(...a),
+  resolveGuestAccessDetailed: async (...a: unknown[]) => {
+    const state = await mockAccess(...a);
+    return { state, mode: state === "unavailable" ? null : accessMode };
+  },
+}));
 
 const { GET } = await import("./route");
 
@@ -63,12 +73,15 @@ const modules = {
   meals: [{ id: "a", imageRef: P.item }],
 };
 
-async function call(path: string[]) {
-  return GET(new Request("http://x/api/media"), { params: Promise.resolve({ path }) });
+async function call(path: string[], query = "") {
+  return GET(new Request(`http://x/api/media${query ? `?${query}` : ""}`), {
+    params: Promise.resolve({ path }),
+  });
 }
 
 describe("GET /api/media - published snapshot AND current guest access", () => {
   beforeEach(() => {
+    accessMode = "code";
     vi.clearAllMocks();
     snapshot = { modules };
     mockAccess.mockResolvedValue("granted");
@@ -81,6 +94,73 @@ describe("GET /api/media - published snapshot AND current guest access", () => {
     expect(res.headers.get("location")).toBe("http://storage/sign/x?token=t");
     expect(res.headers.get("cache-control")).toBe("private, no-store");
     expect(mockSign).toHaveBeenCalledWith(P.item, 60);
+  });
+
+  // ---- CP4: caching policy -------------------------------------------
+  // The rule is one property the publish pipeline guarantees: a VERSIONED
+  // published object is created once and never rewritten, so its URL is
+  // its own version. Everything without that guarantee stays uncacheable.
+
+  it("versioned published object in a PUBLIC Space -> publicly cacheable, longer signed URL", async () => {
+    const V = `${TENANT}/meals/a/up-A/published.webp`;
+    snapshot = { modules: { meals: [{ imageRef: V }] } };
+    accessMode = "public";
+    const res = await call(V.split("/"));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("cache-control")).toBe("public, max-age=300, immutable");
+    // The signed URL must outlive the cache window, or a redirect served
+    // at the end of its life would point at an expired URL.
+    expect(mockSign).toHaveBeenCalledWith(V, 900);
+  });
+
+  it("LEGACY published path is never cacheable - those bytes are overwritten in place", async () => {
+    // `{tenant}/{module}/{item}/published.webp` has no uploadId, and the
+    // legacy publish branch rewrites it with upsert. Caching it is exactly
+    // how a guest would keep seeing the previous image after a republish.
+    accessMode = "public";
+    const res = await call(P.item.split("/"));
+    expect(res.headers.get("cache-control")).toBe("private, no-store");
+    expect(mockSign).toHaveBeenCalledWith(P.item, 60);
+  });
+
+  it("CODE-protected Space is never publicly cacheable, even for a visitor who is let through", async () => {
+    const V = `${TENANT}/meals/a/up-A/published.webp`;
+    snapshot = { modules: { meals: [{ imageRef: V }] } };
+    accessMode = "code"; // granted => this visitor holds a valid cookie
+    const res = await call(V.split("/"));
+    expect(res.status).toBe(307);
+    expect(res.headers.get("cache-control")).toBe("private, no-store");
+    expect(mockSign).toHaveBeenCalledWith(V, 60);
+  });
+
+  it("a width on the allowlist asks Storage for a narrower render; an invalid one is ignored", async () => {
+    const V = `${TENANT}/meals/a/up-A/published.webp`;
+    snapshot = { modules: { meals: [{ imageRef: V }] } };
+    accessMode = "public";
+
+    await call(V.split("/"), "w=640");
+    expect(mockSign).toHaveBeenCalledWith(V, 900, { transform: { width: 640 } });
+
+    // Off-ladder, absurd and non-numeric widths all fall back to the
+    // untransformed object rather than minting a new cache entry.
+    for (const bad of ["w=641", "w=99999", "w=-1", "w=abc", "w="]) {
+      mockSign.mockClear();
+      await call(V.split("/"), bad);
+      expect(mockSign, bad).toHaveBeenCalledWith(V, 900);
+    }
+  });
+
+  it("falls back to the plain object when Storage cannot render a transform", async () => {
+    const V = `${TENANT}/meals/a/up-A/published.webp`;
+    snapshot = { modules: { meals: [{ imageRef: V }] } };
+    accessMode = "public";
+    mockSign.mockReset();
+    mockSign
+      .mockResolvedValueOnce({ data: null, error: { message: "transformations not enabled" } })
+      .mockResolvedValueOnce({ data: { signedUrl: "http://storage/sign/x?token=t" }, error: null });
+    const res = await call(V.split("/"), "w=640");
+    expect(res.status).toBe(307);
+    expect(mockSign).toHaveBeenNthCalledWith(2, V, 900);
   });
 
   it("commercially unavailable Space -> 404, nothing signed (brand images too)", async () => {

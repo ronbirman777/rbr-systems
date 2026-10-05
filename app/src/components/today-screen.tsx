@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { formatLongDateLocalized } from "@/lib/i18n/datetime";
+import { BrandImage } from "@/components/shared/brand-image";
 export type TodayScreenProps = {
   tenantName: string;
   brand: BrandConfig;
@@ -84,23 +85,28 @@ export function TodayScreen({
   return (
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="relative h-[280px]">
-        {heroImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={heroImageUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div
-            className="w-full h-full"
-            style={{ background: `linear-gradient(135deg, var(--rbr-primary), var(--rbr-forest-mid))` }}
-          />
-        )}
+        {/* The Today hero is Flow's LCP element: eager, high fetch
+            priority, and synchronously decoded. Everything else on the
+            screen stays lazy. */}
+        <BrandImage
+          priority
+          sizes="100vw"
+          src={heroImageUrl}
+          focal={null}
+          alt=""
+          className="w-full h-full"
+          fallback="linear-gradient(135deg, var(--rbr-primary), var(--rbr-forest-mid))"
+        />
         <div
           className="absolute inset-0"
           style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.3), transparent, rgba(0,0,0,0.65))" }}
         />
         <div className="absolute top-0 left-0 right-0 px-6 pt-3 flex items-center gap-2">
           {logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt="" className="h-6 w-auto max-w-[88px] object-contain shrink-0" />
+            // eslint-disable-next-line @next/next/no-img-element -- a small
+            // logo with object-contain; BrandImage is a cover/focal-point
+            // primitive and would crop it.
+            <img src={logoUrl} alt="" loading="eager" fetchPriority="high" className="h-6 w-auto max-w-[88px] object-contain shrink-0" />
           )}
           <span className="text-white/60 text-[10px] tracking-[0.22em] font-medium uppercase" style={{ fontFamily: "var(--rbr-font-ui)" }}>
             {tenantName}

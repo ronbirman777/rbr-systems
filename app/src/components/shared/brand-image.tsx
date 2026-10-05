@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- guest media is served through /api/media, which 307s to a short-lived signed URL; next/image cannot be pointed at it (see the 028D findings). */
 import type { CSSProperties } from "react";
 import { focalPointToObjectPosition, type FocalPoint } from "@/lib/media/focalPoint";
+import { MEDIA_WIDTHS } from "@/lib/media/cachePolicy";
 
 /**
  * The shared image presentation primitive for published Guest surfaces.
@@ -34,6 +35,7 @@ export function BrandImage({
   priority = false,
   width,
   height,
+  sizes,
 }: {
   /** Already-resolved display URL, or null for the fallback surface. */
   src: string | null | undefined;
@@ -50,6 +52,14 @@ export function BrandImage({
   /** Intrinsic dimensions, when known, to reserve space and avoid shift. */
   width?: number;
   height?: number;
+  /**
+   * The CSS `sizes` value for this image's box. Supplying it turns on
+   * width-aware delivery: the browser picks a render from the ladder
+   * instead of always downloading the full-resolution original, which on
+   * a phone is the difference between a few hundred KB and a few tens.
+   * Omit it and behaviour is exactly as before.
+   */
+  sizes?: string;
 }) {
   if (!src) {
     return (
@@ -75,9 +85,19 @@ export function BrandImage({
     );
   }
 
+  // Width-aware candidates, built by parameterising the URL we were
+  // given rather than by constructing one: /api/media validates `w`
+  // against its own allowlist and ignores anything else, so this can
+  // only ever ask for a render the server already agreed to produce.
+  const srcSet = sizes && src.startsWith("/api/media/")
+    ? MEDIA_WIDTHS.map((w) => `${src}${src.includes("?") ? "&" : "?"}w=${w} ${w}w`).join(", ")
+    : undefined;
+
   return (
     <img
       src={src}
+      srcSet={srcSet}
+      sizes={srcSet ? sizes : undefined}
       alt={alt}
       width={width}
       height={height}

@@ -19,6 +19,7 @@ export function TeachImage({
   fallback,
   fallbackLabel,
   priority,
+  sizes,
 }: {
   src: string | null | undefined;
   focal?: FocalPoint | null;
@@ -31,6 +32,8 @@ export function TeachImage({
   fallbackLabel?: string | null;
   /** True only for an above-the-fold LCP candidate. */
   priority?: boolean;
+  /** CSS `sizes`; supplying it turns on width-aware delivery. */
+  sizes?: string;
 }) {
   return (
     <BrandImage
@@ -42,6 +45,7 @@ export function TeachImage({
       fallback={fallback}
       fallbackLabel={fallbackLabel}
       priority={priority}
+      sizes={sizes}
     />
   );
 }

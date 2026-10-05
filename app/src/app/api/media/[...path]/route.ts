@@ -4,15 +4,15 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 import {
   MEDIA_BUCKET,
-  MEDIA_SIGNED_URL_TTL_SECONDS,
   collectMediaRefs,
   isWellFormedMediaPath,
   parseVersionedMediaPath,
 } from "@/lib/media/path";
 import { AUDIO_EXTENSIONS, parseAudioDraftRef } from "@/lib/media/audio";
 import { isReferencedDraftAudio } from "@/lib/media/draftAuthorization";
-import { resolveGuestAccess } from "@/lib/guestAccess/effectiveAccess";
+import { resolveGuestAccessDetailed } from "@/lib/guestAccess/effectiveAccess";
 import { publishedIdentityImageRefs } from "@/lib/guestAccess/publishedIdentity";
+import { mediaCacheDecision, parseMediaWidth, DEFAULT_SIGNED_TTL_SECONDS } from "@/lib/media/cachePolicy";
 
 /**
  * The ONLY way an anonymous guest can ever reach a file in the private
@@ -62,7 +62,7 @@ function notFound() {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path } = await params;
@@ -89,29 +89,61 @@ export async function GET(
 
   let access;
   try {
-    access = await resolveGuestAccess(tenantId);
+    access = await resolveGuestAccessDetailed(tenantId);
   } catch {
     return new NextResponse("Service unavailable", { status: 503, headers: NO_STORE });
   }
 
-  if (access === "unavailable") return notFound();
-  if (access === "code-required") {
+  if (access.state === "unavailable") return notFound();
+  if (access.state === "code-required") {
     const { heroImageRef, logoImageRef } = publishedIdentityImageRefs(space.modules);
     if (objectPath !== heroImageRef && objectPath !== logoImageRef) return notFound();
   }
 
-  return signAndRedirect(objectPath);
+  // Authorization is settled above. Everything below only chooses how
+  // the allowed bytes are delivered: how wide, and how long the answer
+  // may be reused.
+  //
+  // The mode comes back with the access decision rather than from a
+  // second lookup: "granted" alone covers both a public Space and a
+  // code-protected one whose visitor holds a cookie, and only the former
+  // may be cached publicly. An absent mode fails closed.
+  const decision = mediaCacheDecision({ objectPath, accessMode: access.mode ?? "code" });
+  const width = parseMediaWidth(new URL(request.url).searchParams.get("w"));
+  return signAndRedirect(objectPath, decision.signedTtlSeconds, decision.cacheControl, width);
 }
 
-async function signAndRedirect(objectPath: string) {
+async function signAndRedirect(
+  objectPath: string,
+  ttlSeconds: number = DEFAULT_SIGNED_TTL_SECONDS,
+  cacheControl: string = NO_STORE["Cache-Control"],
+  width: number | null = null
+) {
   const admin = createAdminClient();
-  const { data: signed, error } = await admin.storage
-    .from(MEDIA_BUCKET)
-    .createSignedUrl(objectPath, MEDIA_SIGNED_URL_TTL_SECONDS);
 
-  if (error || !signed) return notFound();
+  // A width-limited render instead of the full-resolution original: the
+  // difference between a multi-hundred-KB hero and a card-sized fetch on
+  // a phone. Width only, never width+height, so the organizer's focal
+  // point still decides what is in frame. A project without Storage
+  // transformations falls back to the plain object rather than failing -
+  // the same two-step the Share Card pipeline already uses.
+  // When no width is asked for, call createSignedUrl with exactly the two
+  // arguments it has always had - the un-transformed request is byte-for-byte
+  // the same call it was before CP4.
+  const attempts: ({ transform: { width: number } } | undefined)[] = width
+    ? [{ transform: { width } }, undefined]
+    : [undefined];
 
-  return NextResponse.redirect(signed.signedUrl, { headers: NO_STORE });
+  for (const options of attempts) {
+    const { data: signed, error } = options
+      ? await admin.storage.from(MEDIA_BUCKET).createSignedUrl(objectPath, ttlSeconds, options)
+      : await admin.storage.from(MEDIA_BUCKET).createSignedUrl(objectPath, ttlSeconds);
+    if (error || !signed) continue;
+    return NextResponse.redirect(signed.signedUrl, {
+      headers: { "Cache-Control": cacheControl, Vary: "Cookie" },
+    });
+  }
+  return notFound();
 }
 
 async function serveDraftAudio(objectPath: string, tenantId: string) {
