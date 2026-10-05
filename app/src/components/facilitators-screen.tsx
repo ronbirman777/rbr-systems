@@ -10,6 +10,7 @@ import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 import { BrandImage } from "@/components/shared/brand-image";
 
+import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 /** Facilitators' own established default - the exact numeric equivalent
  * of the CSS keyword "center top" (50% 0%) this replaces, preserved
  * deliberately rather than the shared component's true-center default
@@ -25,6 +26,7 @@ const FACILITATOR_DEFAULT_POSITION = { x: 50, y: 0 };
 export type FacilitatorsScreenProps = {
   brand: BrandConfig;
   facilitators: DisplayFacilitator[];
+  locale?: Locale;
 };
 
 /**
@@ -45,7 +47,8 @@ export type FacilitatorsScreenProps = {
  * `facilitator` is free text, not a relation) - inventing a session list
  * here would be fabricated, not derived, data.
  */
-export function FacilitatorsScreen({ brand, facilitators }: FacilitatorsScreenProps) {
+export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCALE }: FacilitatorsScreenProps) {
+  const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
   const [expanded, setExpanded] = useState<number | null>(null);
 
@@ -53,16 +56,18 @@ export function FacilitatorsScreen({ brand, facilitators }: FacilitatorsScreenPr
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-8 pb-6">
         <p className="text-[10px] tracking-[0.22em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Your Guides
+          {t("flow", "yourGuides")}
         </p>
         <h1 className="text-[28px] leading-tight font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Meet the <em>Facilitators</em>
+          {splitEmphasis(t("flow", "facilitatorsHeading"), t("flow", "facilitatorsHeadingEm")).map((part, i) =>
+            i === 1 ? <em key={i}>{part}</em> : part
+          )}
         </h1>
       </div>
 
       {facilitators.length === 0 && (
         <div className="px-6 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          No facilitators added yet.
+          {t("flow", "noFacilitators")}
         </div>
       )}
 
@@ -140,7 +145,7 @@ export function FacilitatorsScreen({ brand, facilitators }: FacilitatorsScreenPr
                         className="mt-2 flex items-center gap-1.5 text-[12px] font-medium hover:opacity-70 transition-opacity"
                         style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text-muted)" }}
                       >
-                        {isOpen ? "Show less" : "Read more"}
+                        {isOpen ? t("flow", "showLess") : t("flow", "readMore")}
                         <svg
                           className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
                           fill="none"

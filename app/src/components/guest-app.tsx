@@ -20,6 +20,7 @@ import type { DisplayCustomPage } from "@/lib/modules/customPage";
 import { EMPTY_STAY_CONNECTED, type StayConnected } from "@/lib/modules/stayConnected";
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
 import { getDailyQuote } from "@/lib/content/dailyQuotes";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import type { ImagePosition } from "@/lib/modules/imagePosition";
 
 export type GuestAppProps = {
@@ -52,6 +53,9 @@ export type GuestAppProps = {
    * absent/null meaning "no cover set, use the existing fallback" (see
    * ExploreScreen). */
   moduleCoverImages?: Record<string, { imageUrl: string | null; imagePosition: ImagePosition }>;
+  /** The Space's system language. Defaults to English so the Studio
+   * preview and every caller written before CP3 keep working. */
+  locale?: Locale;
 };
 
 /**
@@ -76,7 +80,7 @@ const EXPLORE_MODULE_KEYS: OptionalModuleKey[] = [
 
 type TabDef = {
   key: TabKey;
-  label: string;
+  labelKey: "navToday" | "navSchedule" | "navTeam" | "navExplore";
   Icon: (props: { active?: boolean }) => ReactNode;
   render: (props: GuestAppProps, goTo: (key: TabKey) => void) => ReactNode;
 };
@@ -84,7 +88,7 @@ type TabDef = {
 const GUEST_TABS: TabDef[] = [
   {
     key: "today",
-    label: "Today",
+    labelKey: "navToday",
     Icon: TodayIcon,
     render: (props, goTo) => (
       <TodayScreen
@@ -97,26 +101,35 @@ const GUEST_TABS: TabDef[] = [
         nowTime={props.nowTime}
         onViewSchedule={props.enabledModules.includes("schedule") ? () => goTo("schedule") : undefined}
         dailyQuote={props.enabledModules.includes("dailyInspiration") ? getDailyQuote(props.todayIso) : null}
+        locale={props.locale ?? DEFAULT_LOCALE}
       />
     ),
   },
   {
     key: "schedule",
-    label: "Schedule",
+    labelKey: "navSchedule",
     Icon: ScheduleIcon,
     render: (props) => (
-      <ScheduleScreen brand={props.brand} schedule={props.schedule} todayIso={props.todayIso} nowTime={props.nowTime} />
+      <ScheduleScreen
+        brand={props.brand}
+        schedule={props.schedule}
+        todayIso={props.todayIso}
+        nowTime={props.nowTime}
+        locale={props.locale ?? DEFAULT_LOCALE}
+      />
     ),
   },
   {
     key: "facilitators",
-    label: "Team",
+    labelKey: "navTeam",
     Icon: TeamIcon,
-    render: (props) => <FacilitatorsScreen brand={props.brand} facilitators={props.facilitators} />,
+    render: (props) => (
+      <FacilitatorsScreen brand={props.brand} facilitators={props.facilitators} locale={props.locale ?? DEFAULT_LOCALE} />
+    ),
   },
   {
     key: "explore",
-    label: "Explore",
+    labelKey: "navExplore",
     Icon: ExploreIcon,
     render: (props) => (
       <ExploreScreen
@@ -130,6 +143,7 @@ const GUEST_TABS: TabDef[] = [
         customPages={props.customPages ?? []}
         stayConnected={props.stayConnected ?? EMPTY_STAY_CONNECTED}
         moduleCoverImages={props.moduleCoverImages ?? {}}
+        locale={props.locale ?? DEFAULT_LOCALE}
       />
     ),
   },
@@ -189,16 +203,17 @@ function StatusBar() {
 export function GuestApp(props: GuestAppProps) {
   const { enabledModules, brand } = props;
   const vars = deriveThemeVars(brand) as CSSProperties;
+  const { t } = createTranslator(props.locale ?? DEFAULT_LOCALE);
 
   const hasExplore = EXPLORE_MODULE_KEYS.some((k) => enabledModules.includes(k));
-  const visibleTabs = GUEST_TABS.filter((t) => {
-    if (t.key === "today") return true;
-    if (t.key === "explore") return hasExplore;
-    return enabledModules.includes(t.key as OptionalModuleKey);
+  const visibleTabs = GUEST_TABS.filter((tab) => {
+    if (tab.key === "today") return true;
+    if (tab.key === "explore") return hasExplore;
+    return enabledModules.includes(tab.key as OptionalModuleKey);
   });
 
   const [active, setActive] = useState<TabKey>("today");
-  const current = visibleTabs.find((t) => t.key === active) ?? visibleTabs[0];
+  const current = visibleTabs.find((tab) => tab.key === active) ?? visibleTabs[0];
 
   return (
     <div
@@ -219,16 +234,16 @@ export function GuestApp(props: GuestAppProps) {
           }}
         >
           <div className="flex items-stretch">
-            {visibleTabs.map((t) => {
-              const isActive = current.key === t.key;
+            {visibleTabs.map((tab) => {
+              const isActive = current.key === tab.key;
               return (
                 <button
-                  key={t.key}
+                  key={tab.key}
                   type="button"
-                  onClick={() => setActive(t.key)}
+                  onClick={() => setActive(tab.key)}
                   className="flex-1 flex flex-col items-center gap-1 pt-2.5 pb-1 transition-opacity active:opacity-60"
                 >
-                  <t.Icon active={isActive} />
+                  <tab.Icon active={isActive} />
                   <span
                     style={{
                       color: isActive ? "var(--rbr-navigation)" : "var(--rbr-text-muted)",
@@ -236,7 +251,7 @@ export function GuestApp(props: GuestAppProps) {
                     }}
                     className="text-[10px] tracking-wide font-medium transition-colors"
                   >
-                    {t.label}
+                    {t("flow", tab.labelKey)}
                   </span>
                   <div
                     className="w-4 h-[2px] rounded-full transition-all"

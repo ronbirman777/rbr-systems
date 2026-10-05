@@ -8,6 +8,7 @@ import { extractPublishedGuestIdentity } from "@/lib/guestAccess/publishedIdenti
 import { socialSpaceBySlug } from "@/lib/share/publishedSocialSpace";
 import { spaceMetadata } from "@/lib/share/socialMetadata";
 
+import { localeFromPublishedModules } from "@/lib/spaceSettings";
 /**
  * The slug-addressed counterpart to /g/[tenantId] - same unauthenticated,
  * published_spaces-only lookup (see that route's own comment for the
@@ -56,7 +57,10 @@ export default async function GuestSpaceBySlugPage({
   if (loaded.access === "unavailable") notFound();
   if (loaded.access === "code-required") {
     const identity = extractPublishedGuestIdentity(space);
-    return <GuestAccessScreen tenantId={space.tenant_id} {...identity} copy={guestAccessCopy(space.product_type)} />;
+    // The gate speaks the Space's own language; a visitor's device locale
+    // is never consulted, here or anywhere else in a Guest surface.
+    const gateLocale = localeFromPublishedModules(space.modules);
+    return <GuestAccessScreen tenantId={space.tenant_id} {...identity} copy={guestAccessCopy(space.product_type, gateLocale)} locale={gateLocale} />;
   }
 
 

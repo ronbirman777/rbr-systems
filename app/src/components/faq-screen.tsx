@@ -6,9 +6,12 @@ import type { BrandConfig } from "@/lib/theme/tokens";
 import type { DisplayFaqItem } from "@/lib/modules/faq";
 import type { CSSProperties } from "react";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type FaqScreenProps = {
   brand: BrandConfig;
   faq: DisplayFaqItem[];
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
 /**
@@ -18,7 +21,8 @@ export type FaqScreenProps = {
  * publish_space() excludes disabled FAQ items before they ever reach the
  * snapshot, so there is no enabled flag to check here.
  */
-export function FaqScreen({ brand, faq }: FaqScreenProps) {
+export function FaqScreen({ brand, faq, locale = DEFAULT_LOCALE }: FaqScreenProps) {
+  const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
@@ -26,16 +30,16 @@ export function FaqScreen({ brand, faq }: FaqScreenProps) {
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-7 pb-5">
         <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Good to Know
+          {t("flow", "eyebrowFaq")}
         </p>
         <h1 className="text-[24px] font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Frequently Asked Questions
+          {t("flow", "faqFull")}
         </h1>
       </div>
 
       {faq.length === 0 && (
         <div className="px-6 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Nothing here yet.
+          {t("flow", "nothingYet")}
         </div>
       )}
 

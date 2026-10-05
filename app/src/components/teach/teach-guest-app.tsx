@@ -419,7 +419,7 @@ function HomeScreen({
       {sections.contact && contactOn ? (
         <div className="px-4 @min-[40rem]:hidden">
           <PillButton onClick={() => open({ kind: "contact" })} icon="chat" className="w-full">
-            Get in touch
+            {t("teach", "getInTouch")}
           </PillButton>
         </div>
       ) : null}

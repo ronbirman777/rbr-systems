@@ -107,3 +107,16 @@ export function untranslatedKeys(locale: Locale): string[] {
   }
   return same;
 }
+
+/**
+ * Splits a heading whose emphasised word must move with the language.
+ *
+ * "Your {em}" is "{em} שלך" in Hebrew - the emphasis lands before the
+ * rest, not after - so the carrier phrase keeps the placeholder and the
+ * caller renders [before, emphasis, after] in whatever order it arrives.
+ */
+export function splitEmphasis(carrier: string, emphasis: string): [string, string, string] {
+  const i = carrier.indexOf("{em}");
+  if (i < 0) return [carrier, "", ""];
+  return [carrier.slice(0, i), emphasis, carrier.slice(i + 4)];
+}

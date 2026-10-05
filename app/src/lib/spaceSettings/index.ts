@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isSupportedCountry } from "@/lib/countries";
 
+import { resolveLocale, type Locale } from "@/lib/i18n";
 /**
  * Space Settings - the product-neutral home for Space-level preferences
  * that are not specific to Flow, Teach or Heal.
@@ -69,4 +70,19 @@ export function defaultSpaceSettings(): SpaceSettings {
 export function parseSpaceSettings(data: unknown): SpaceSettings {
   const parsed = spaceSettingsSchema.safeParse(data ?? {});
   return parsed.success ? parsed.data : defaultSpaceSettings();
+}
+
+/**
+ * The system language of a PUBLISHED Space, read from the snapshot's
+ * `modules.spaceSettings` (migration 0031).
+ *
+ * Read only from the published payload - never from a private draft and
+ * never from the visitor's device, so a guest sees the Space in the
+ * language its organizer chose. A Space published before 0031 has no
+ * spaceSettings key at all and resolves to English, which is exactly how
+ * it renders today.
+ */
+export function localeFromPublishedModules(modules: unknown): Locale {
+  const m = (modules ?? {}) as { spaceSettings?: unknown };
+  return resolveLocale(parseSpaceSettings(m.spaceSettings).locale);
 }

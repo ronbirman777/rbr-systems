@@ -6,6 +6,7 @@ import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { verifyGuestCode } from "@/lib/guestAccess/verifyAction";
 import { verifyGuestCodeInitialState, type VerifyGuestCodeState } from "@/lib/guestAccess/verifyActionState";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type GuestAccessScreenProps = {
   tenantId: string;
   name: string;
@@ -14,6 +15,8 @@ export type GuestAccessScreenProps = {
   vars: CSSProperties;
   /** Pre-access wording from guestAccessCopy() - never product-revealing beyond Time to Flow's existing text. */
   copy: { title: string; openLabel: string; askHint: string };
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
 const DIGIT_COUNT = 6;
@@ -32,7 +35,8 @@ const DIGIT_COUNT = 6;
  * an attempt count, and this component has no way to display
  * information it was never given.
  */
-export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars, copy }: GuestAccessScreenProps) {
+export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars, copy, locale = DEFAULT_LOCALE }: GuestAccessScreenProps) {
+  const { t } = createTranslator(locale);
   const router = useRouter();
   const boundAction = verifyGuestCode.bind(null, tenantId);
   const [state, formAction, pending] = useActionState<VerifyGuestCodeState, FormData>(boundAction, verifyGuestCodeInitialState);
@@ -127,11 +131,11 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
 
         <form action={formAction} className="flex-1 flex flex-col px-6 pt-8 pb-8">
           <p className="text-[15px] leading-relaxed mb-6" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text)" }}>
-            Enter your 6-digit access code
+            {t("flow", "enterAccessCode")}
           </p>
 
           <input type="hidden" name="code" value={code} />
-          <div className="flex justify-center gap-2.5" role="group" aria-label="6-digit access code">
+          <div className="flex justify-center gap-2.5" role="group" aria-label={t("flow", "accessCode")}>
             {digits.map((digit, i) => (
               <input
                 key={i}
@@ -147,7 +151,7 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
                 onChange={(e) => handleChange(i, e.target.value)}
                 onKeyDown={(e) => handleKeyDown(i, e)}
                 onPaste={handlePaste}
-                aria-label={`Digit ${i + 1} of 6`}
+                aria-label={t("flow", "digitOf", { index: i + 1 })}
                 disabled={pending}
                 className="w-11 h-14 text-center text-[22px] rounded-xl border outline-none transition-colors disabled:opacity-50"
                 style={{
@@ -174,7 +178,7 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
             className="w-full rounded-2xl py-3.5 text-sm font-semibold disabled:opacity-50 transition-opacity"
             style={{ background: "var(--rbr-primary)", color: "var(--rbr-on-primary)", fontFamily: "var(--rbr-font-ui)" }}
           >
-            {pending ? "Checking…" : copy.openLabel}
+            {pending ? t("flow", "checking") : copy.openLabel}
           </button>
           <p className="text-center text-[11px] mt-4" style={{ color: GUEST_BASE_PALETTE.mist, fontFamily: "var(--rbr-font-ui)" }}>
             {copy.askHint}

@@ -250,5 +250,89 @@ export const de: Dictionary = {
     call: "Anrufen",
     whatsapp: "WhatsApp",
     nothingYet: "Hier gibt es noch nichts",
+
+    // Explore. The heading is split so the emphasised word can sit
+    // where each language puts it: "Your Retreat", "הריטריט שלך".
+    exploreHeading: "Dein {em}",
+    exploreHeadingEm: "Retreat",
+    exploreEmpty: "Hier gibt es noch nichts zu entdecken.",
+    eyebrowMeals: "Essen & Trinken",
+    eyebrowTreatments: "Körperarbeit & Heilung",
+    eyebrowFacilities: "Räume",
+    eyebrowArrival: "Praktisches",
+    eyebrowFaq: "Gut zu wissen",
+    eyebrowStayConnected: "Kontakt halten",
+    eyebrowMore: "Mehr",
+
+    // Today
+    goodMorning: "Guten Morgen.",
+    todaysIntention: "Die Intention des Tages",
+    happeningNow: "Jetzt im Gange",
+    live: "Live",
+    upNext: "Als Nächstes",
+    nothingScheduledNow: "Gerade ist nichts geplant.",
+    viewFullSchedule: "Ganzen Tagesplan ansehen",
+
+    // Schedule
+    nothingScheduledDay: "Für diesen Tag ist nichts geplant.",
+    now: "Jetzt",
+    sessionMeal: "Mahlzeit",
+
+    // Facilitators. German "Begleitung" and the Hebrew plural avoid
+    // gendering a team whose members are unknown.
+    yourGuides: "Deine Begleitung",
+    facilitators: "Begleitung",
+    sessionsThisRetreat: "Einheiten in diesem Retreat",
+    noFacilitators: "Noch keine Begleitung hinzugefügt.",
+
+    // Facilities, FAQ
+    spacesAmenities: "Räume & Ausstattung",
+    faqFull: "Häufige Fragen",
+
+    // Arrival
+    practicalInformation: "Praktische Infos",
+    gettingHere: "So kommst du an",
+    onArrival: "Bei der Ankunft",
+    whatToBring: "Was du mitbringst",
+    importantNotes: "Wichtige Hinweise",
+    checkIn: "Check-in",
+    checkOut: "Check-out",
+    openInMaps: "In Maps öffnen",
+
+    // Meals - the meal kinds are a fixed system taxonomy, not
+    // something the organizer types.
+    mealBreakfast: "Frühstück",
+    mealBrunch: "Brunch",
+    mealLunch: "Mittagessen",
+    mealDinner: "Abendessen",
+    mealSpecial: "Besonderes",
+    nothingAddedYet: "Noch nichts hinzugefügt.",
+
+    // Treatments
+    readMore: "Mehr lesen",
+    showLess: "Weniger anzeigen",
+    toBook: "Buchung",
+
+    // Guest access code
+    enterAccessCode: "Gib deinen 6-stelligen Zugangscode ein",
+    accessCode: "6-stelliger Zugangscode",
+    digitOf: "Ziffer {index} von 6",
+    checking: "Wird geprüft…",
+    backToHome: "Zurück zur Startseite",
+    facilitatorsHeading: "Triff {em}",
+    facilitatorsHeadingEm: "deine Begleitung",
+
+    // Guest Access gate. Shown BEFORE a visitor has proven they may
+    // see the Space, so there are only two variants - retreat and
+    // neutral - and translating must not add a third that would reveal
+    // which product a Space is.
+    gatePrivateRetreat: "Privates Retreat",
+    gatePrivateSpace: "Privater Space",
+    gateOpenRetreat: "Retreat öffnen",
+    gateOpen: "Öffnen",
+    gateAskOrganizer: "Frag die Organisation deines Retreats nach dem Zugangscode.",
+    gateAskOwner: "Frag den Inhaber dieses Space nach dem Zugangscode.",
+    mealsHeading: "Heutige {em}",
+    mealsHeadingEm: "Mahlzeiten",
   },
 };

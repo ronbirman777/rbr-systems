@@ -4,18 +4,23 @@ import type { DisplayMeal } from "@/lib/modules/meal";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
+import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type MealsScreenProps = {
   brand: BrandConfig;
   meals: DisplayMeal[];
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
-const MEAL_TYPE_LABEL: Record<string, string> = {
-  breakfast: "Breakfast",
-  brunch: "Brunch",
-  lunch: "Lunch",
-  dinner: "Dinner",
-  special: "Special",
-  other: "Meal",
+/** The meal kinds are a fixed system taxonomy, so they are translated;
+ * a meal's own title and description are the organizer's words. */
+const MEAL_TYPE_KEY: Record<string, "mealBreakfast" | "mealBrunch" | "mealLunch" | "mealDinner" | "mealSpecial" | "sessionMeal"> = {
+  breakfast: "mealBreakfast",
+  brunch: "mealBrunch",
+  lunch: "mealLunch",
+  dinner: "mealDinner",
+  special: "mealSpecial",
+  other: "sessionMeal",
 };
 
 /**
@@ -35,23 +40,26 @@ const MEAL_TYPE_LABEL: Record<string, string> = {
  * description, location, and dietary tags, apart from legitimate content
  * differences.
  */
-export function MealsScreen({ brand, meals }: MealsScreenProps) {
+export function MealsScreen({ brand, meals, locale = DEFAULT_LOCALE }: MealsScreenProps) {
+  const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
 
   return (
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-7 pb-5">
         <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Daily Nourishment
+          {t("flow", "eyebrowMeals")}
         </p>
         <h1 className="text-[24px] font-normal leading-tight" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Today&apos;s <em>Meals</em>
+          {splitEmphasis(t("flow", "mealsHeading"), t("flow", "mealsHeadingEm")).map((part, i) =>
+            i === 1 ? <em key={i}>{part}</em> : part
+          )}
         </h1>
       </div>
 
       {meals.length === 0 && (
         <div className="px-6 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Nothing added yet.
+          {t("flow", "nothingAddedYet")}
         </div>
       )}
 
@@ -78,7 +86,7 @@ export function MealsScreen({ brand, meals }: MealsScreenProps) {
             <div className="p-4">
               <div className="flex items-baseline justify-between mb-1.5">
                 <span className="text-[10px] tracking-[0.18em] uppercase font-semibold" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-                  {MEAL_TYPE_LABEL[meal.mealType] ?? meal.mealType}
+                  {MEAL_TYPE_KEY[meal.mealType] ? t("flow", MEAL_TYPE_KEY[meal.mealType]) : meal.mealType}
                 </span>
                 <span className="text-[11px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-clay)" }}>
                   {meal.startTime}

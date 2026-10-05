@@ -5,9 +5,12 @@ import { PinIcon, ClockIcon } from "./guest/icons";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type FacilitiesScreenProps = {
   brand: BrandConfig;
   facilities: DisplayFacility[];
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
 /**
@@ -17,23 +20,24 @@ export type FacilitiesScreenProps = {
  * generalized the same way as MealsScreen (first item featured, not a
  * fixed 4-item layout).
  */
-export function FacilitiesScreen({ brand, facilities }: FacilitiesScreenProps) {
+export function FacilitiesScreen({ brand, facilities, locale = DEFAULT_LOCALE }: FacilitiesScreenProps) {
+  const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
 
   return (
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-7 pb-5">
         <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Spaces & Amenities
+          {t("flow", "spacesAmenities")}
         </p>
         <h1 className="text-[24px] font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Facilities
+          {t("flow", "facilities")}
         </h1>
       </div>
 
       {facilities.length === 0 && (
         <div className="px-6 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Nothing added yet.
+          {t("flow", "nothingAddedYet")}
         </div>
       )}
 

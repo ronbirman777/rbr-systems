@@ -8,9 +8,12 @@ import { ClockIcon } from "./guest/icons";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type TreatmentsScreenProps = {
   brand: BrandConfig;
   treatments: DisplayTreatment[];
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
 /**
@@ -21,7 +24,8 @@ export type TreatmentsScreenProps = {
  * model exactly (bookingInfo is informational free text; there is no
  * booking engine here, none was ever asked for).
  */
-export function TreatmentsScreen({ brand, treatments }: TreatmentsScreenProps) {
+export function TreatmentsScreen({ brand, treatments, locale = DEFAULT_LOCALE }: TreatmentsScreenProps) {
+  const { t: tr } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
   const [expanded, setExpanded] = useState<number | null>(null);
 
@@ -29,16 +33,16 @@ export function TreatmentsScreen({ brand, treatments }: TreatmentsScreenProps) {
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-7 pb-5">
         <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Bodywork & Healing
+          {tr("flow", "eyebrowTreatments")}
         </p>
         <h1 className="text-[24px] font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Treatments
+          {tr("flow", "treatments")}
         </h1>
       </div>
 
       {treatments.length === 0 && (
         <div className="px-6 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Nothing added yet.
+          {tr("flow", "nothingAddedYet")}
         </div>
       )}
 
@@ -97,7 +101,7 @@ export function TreatmentsScreen({ brand, treatments }: TreatmentsScreenProps) {
                       className="mt-1.5 flex items-center gap-1.5 text-[12px] font-medium hover:opacity-70 transition-opacity"
                       style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text-muted)" }}
                     >
-                      {isOpen ? "Show less" : "Read more"}
+                      {isOpen ? tr("flow", "showLess") : tr("flow", "readMore")}
                       <svg
                         className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
                         fill="none"
@@ -116,7 +120,7 @@ export function TreatmentsScreen({ brand, treatments }: TreatmentsScreenProps) {
                     style={{ borderTop: "1px solid color-mix(in srgb, var(--rbr-sand) 50%, transparent)" }}
                   >
                     <span className="text-[11px]" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-                      To book
+                      {tr("flow", "toBook")}
                     </span>
                     <span
                       className="text-[10px] px-3 py-1.5 rounded-full font-medium tracking-wide"

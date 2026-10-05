@@ -18,7 +18,8 @@ import { parseImagePosition, type ImagePosition } from "@/lib/modules/imagePosit
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
 import { todayInTimezone, currentTimeInTimezone, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { publicMediaUrl } from "@/lib/media/path";
-import { directionOf, resolveLocale } from "@/lib/i18n";
+import { directionOf } from "@/lib/i18n";
+import { localeFromPublishedModules } from "@/lib/spaceSettings";
 
 /**
  * Exactly the columns either guest lookup (by tenant id at /g/[tenantId],
@@ -46,8 +47,7 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
   // modules.spaceSettings). Never a private draft read, never the
   // visitor's device language. Absent resolves to English, which is how
   // every Space published before this renders.
-  const spaceSettings = (modules.spaceSettings ?? {}) as { locale?: unknown };
-  const locale = resolveLocale(spaceSettings.locale);
+  const locale = localeFromPublishedModules(modules);
   const dir = directionOf(locale);
 
   function withImage<T extends { imageRef: string | null }>(items: T[]): (T & { imageUrl: string | null })[] {
@@ -167,6 +167,7 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
           customPages={customPages}
           stayConnected={stayConnected}
           moduleCoverImages={moduleCoverImages}
+          locale={locale}
         />
       </div>
     </main>

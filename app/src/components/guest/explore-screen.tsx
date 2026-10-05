@@ -22,6 +22,7 @@ import { CustomPageScreen } from "../custom-page-screen";
 import { ChevronLeftIcon, ChevronRightIcon, PinIcon, QuestionIcon, PagesIcon, WebsiteIcon } from "./icons";
 import type { CSSProperties, ReactElement } from "react";
 
+import { createTranslator, splitEmphasis, translate, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type ExploreScreenProps = {
   brand: BrandConfig;
   enabledModules: OptionalModuleKey[];
@@ -38,6 +39,8 @@ export type ExploreScreenProps = {
    * when set for meals/treatments/facilities; the sole image source for
    * arrivalInfo/faq/stayConnected, which have no per-item concept. */
   moduleCoverImages?: Record<string, { imageUrl: string | null; imagePosition: ImagePosition }>;
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
 type FixedExplorePage = "meals" | "treatments" | "facilities" | "arrivalInfo" | "faq" | "stayConnected";
@@ -68,8 +71,10 @@ export function ExploreScreen({
   customPages,
   stayConnected,
   moduleCoverImages = {},
+  locale = DEFAULT_LOCALE,
 }: ExploreScreenProps) {
   const vars = deriveThemeVars(brand) as CSSProperties;
+  const { t } = createTranslator(locale);
   const [page, setPage] = useState<ExplorePage | null>(null);
 
   const hasMeals = enabledModules.includes("meals");
@@ -80,18 +85,18 @@ export function ExploreScreen({
   const hasStayConnected = enabledModules.includes("stayConnected") && stayConnected.links.length > 0;
   const hasCustomPages = enabledModules.includes("customPages") && customPages.length > 0;
 
-  if (page === "meals") return <ExploreSubPage vars={vars} onBack={() => setPage(null)}><MealsScreen brand={brand} meals={meals} /></ExploreSubPage>;
-  if (page === "treatments") return <ExploreSubPage vars={vars} onBack={() => setPage(null)}><TreatmentsScreen brand={brand} treatments={treatments} /></ExploreSubPage>;
-  if (page === "facilities") return <ExploreSubPage vars={vars} onBack={() => setPage(null)}><FacilitiesScreen brand={brand} facilities={facilities} /></ExploreSubPage>;
-  if (page === "arrivalInfo") return <ExploreSubPage vars={vars} onBack={() => setPage(null)}><ArrivalScreen brand={brand} info={arrivalInfo} /></ExploreSubPage>;
-  if (page === "faq") return <ExploreSubPage vars={vars} onBack={() => setPage(null)}><FaqScreen brand={brand} faq={faq} /></ExploreSubPage>;
-  if (page === "stayConnected") return <ExploreSubPage vars={vars} onBack={() => setPage(null)}><StayConnectedScreen brand={brand} stayConnected={stayConnected} /></ExploreSubPage>;
+  if (page === "meals") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><MealsScreen brand={brand} meals={meals} locale={locale} /></ExploreSubPage>;
+  if (page === "treatments") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><TreatmentsScreen brand={brand} treatments={treatments} locale={locale} /></ExploreSubPage>;
+  if (page === "facilities") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><FacilitiesScreen brand={brand} facilities={facilities} locale={locale} /></ExploreSubPage>;
+  if (page === "arrivalInfo") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><ArrivalScreen brand={brand} info={arrivalInfo} locale={locale} /></ExploreSubPage>;
+  if (page === "faq") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><FaqScreen brand={brand} faq={faq} locale={locale} /></ExploreSubPage>;
+  if (page === "stayConnected") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><StayConnectedScreen brand={brand} stayConnected={stayConnected} locale={locale} /></ExploreSubPage>;
   if (page?.startsWith("customPage:")) {
     const idx = Number(page.slice("customPage:".length));
     const customPage = customPages[idx];
     if (customPage) {
       return (
-        <ExploreSubPage vars={vars} onBack={() => setPage(null)}>
+        <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}>
           <CustomPageScreen brand={brand} page={customPage} />
         </ExploreSubPage>
       );
@@ -149,10 +154,12 @@ export function ExploreScreen({
     <div style={{ ...vars, background: "var(--rbr-background)" }} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-8 pb-4">
         <p className="text-[10px] tracking-[0.22em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Explore
+          {t("flow", "navExplore")}
         </p>
         <h1 className="text-[28px] font-normal leading-tight" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Your <em>Retreat</em>
+          {splitEmphasis(t("flow", "exploreHeading"), t("flow", "exploreHeadingEm")).map((part, i) =>
+            i === 1 ? <em key={i}>{part}</em> : part
+          )}
         </h1>
       </div>
 
@@ -163,8 +170,8 @@ export function ExploreScreen({
             onClick={() => setPage("meals")}
             imageUrl={mealsImage}
             imagePosition={mealsImagePosition}
-            eyebrow="Daily Nourishment"
-            title="Meals"
+            eyebrow={t("flow", "eyebrowMeals")}
+            title={t("flow", "meals")}
             heightClass="h-[180px]"
             showChevron
           />
@@ -175,8 +182,8 @@ export function ExploreScreen({
             onClick={() => setPage("treatments")}
             imageUrl={treatmentsImage}
             imagePosition={treatmentsImagePosition}
-            eyebrow="Bodywork & Healing"
-            title="Treatments"
+            eyebrow={t("flow", "eyebrowTreatments")}
+            title={t("flow", "treatments")}
             heightClass="h-[200px]"
           />
         )}
@@ -188,8 +195,8 @@ export function ExploreScreen({
                 onClick={() => setPage("facilities")}
                 imageUrl={facilitiesImage}
                 imagePosition={facilitiesImagePosition}
-                eyebrow="Spaces"
-                title="Facilities"
+                eyebrow={t("flow", "eyebrowFacilities")}
+                title={t("flow", "facilities")}
                 heightClass="h-[140px]"
                 compact
               />
@@ -199,8 +206,8 @@ export function ExploreScreen({
                 tone={nextTone()}
                 onClick={() => setPage("arrivalInfo")}
                 icon={<PinIcon className="w-4 h-4" />}
-                eyebrow="Practical"
-                title="Arrival"
+                eyebrow={t("flow", "eyebrowArrival")}
+                title={t("flow", "arrivalInfo")}
                 imageUrl={arrivalImage}
                 imagePosition={arrivalImagePosition}
               />
@@ -210,8 +217,8 @@ export function ExploreScreen({
                 tone={nextTone()}
                 onClick={() => setPage("faq")}
                 icon={<QuestionIcon className="w-4 h-4" />}
-                eyebrow="Good to Know"
-                title="FAQ"
+                eyebrow={t("flow", "eyebrowFaq")}
+                title={t("flow", "faq")}
                 imageUrl={faqImage}
                 imagePosition={faqImagePosition}
               />
@@ -221,8 +228,8 @@ export function ExploreScreen({
                 tone={nextTone()}
                 onClick={() => setPage("stayConnected")}
                 icon={<WebsiteIcon className="w-4 h-4" />}
-                eyebrow="Keep in Touch"
-                title="Stay Connected"
+                eyebrow={t("flow", "eyebrowStayConnected")}
+                title={t("flow", "stayConnected")}
                 imageUrl={stayConnectedImage}
                 imagePosition={stayConnectedImagePosition}
               />
@@ -234,7 +241,7 @@ export function ExploreScreen({
                   tone={nextTone()}
                   onClick={() => setPage(`customPage:${i}`)}
                   icon={<PagesIcon className="w-4 h-4" />}
-                  eyebrow="More"
+                  eyebrow={t("flow", "eyebrowMore")}
                   title={p.title}
                   imageUrl={p.imageUrl}
                   imagePosition={p.imagePosition}
@@ -244,7 +251,7 @@ export function ExploreScreen({
         )}
         {!hasMeals && !hasTreatments && !hasFacilities && !hasArrival && !hasFaq && !hasStayConnected && !hasCustomPages && (
           <div className="text-xs px-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-            Nothing to explore yet.
+            {t("flow", "exploreEmpty")}
           </div>
         )}
       </div>
@@ -401,7 +408,7 @@ function SolidTile({
   );
 }
 
-function ExploreSubPage({ vars, onBack, children }: { vars: CSSProperties; onBack: () => void; children: React.ReactNode }) {
+function ExploreSubPage({ vars, onBack, children, locale }: { vars: CSSProperties; onBack: () => void; children: React.ReactNode; locale: Locale }) {
   return (
     <div style={{ ...vars, background: "var(--rbr-background)" }} className="w-full h-full flex flex-col overflow-hidden">
       <button
@@ -411,7 +418,7 @@ function ExploreSubPage({ vars, onBack, children }: { vars: CSSProperties; onBac
         className="flex items-center gap-1.5 px-5 pt-5 pb-1 text-[11px] font-medium tracking-[0.08em] uppercase shrink-0"
       >
         <ChevronLeftIcon />
-        Explore
+        {translate(locale, "flow", "navExplore")}
       </button>
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{children}</div>
     </div>

@@ -252,6 +252,90 @@ export const en = {
     call: "Call",
     whatsapp: "WhatsApp",
     nothingYet: "Nothing here yet",
+
+    // Explore. The heading is split so the emphasised word can sit
+    // where each language puts it: "Your Retreat", "הריטריט שלך".
+    exploreHeading: "Your {em}",
+    exploreHeadingEm: "Retreat",
+    exploreEmpty: "Nothing to explore yet.",
+    eyebrowMeals: "Daily Nourishment",
+    eyebrowTreatments: "Bodywork & Healing",
+    eyebrowFacilities: "Spaces",
+    eyebrowArrival: "Practical",
+    eyebrowFaq: "Good to Know",
+    eyebrowStayConnected: "Keep in Touch",
+    eyebrowMore: "More",
+
+    // Today
+    goodMorning: "Good morning.",
+    todaysIntention: "Today’s Intention",
+    happeningNow: "Happening Now",
+    live: "Live",
+    upNext: "Up Next",
+    nothingScheduledNow: "Nothing scheduled right now.",
+    viewFullSchedule: "View today’s full schedule",
+
+    // Schedule
+    nothingScheduledDay: "Nothing scheduled for this day.",
+    now: "Now",
+    sessionMeal: "Meal",
+
+    // Facilitators. German "Begleitung" and the Hebrew plural avoid
+    // gendering a team whose members are unknown.
+    yourGuides: "Your Guides",
+    facilitators: "Facilitators",
+    sessionsThisRetreat: "Sessions This Retreat",
+    noFacilitators: "No facilitators added yet.",
+
+    // Facilities, FAQ
+    spacesAmenities: "Spaces & Amenities",
+    faqFull: "Frequently Asked Questions",
+
+    // Arrival
+    practicalInformation: "Practical Information",
+    gettingHere: "Getting Here",
+    onArrival: "On Arrival",
+    whatToBring: "What to Bring",
+    importantNotes: "Important Notes",
+    checkIn: "Check-in",
+    checkOut: "Check-out",
+    openInMaps: "Open in Maps",
+
+    // Meals - the meal kinds are a fixed system taxonomy, not
+    // something the organizer types.
+    mealBreakfast: "Breakfast",
+    mealBrunch: "Brunch",
+    mealLunch: "Lunch",
+    mealDinner: "Dinner",
+    mealSpecial: "Special",
+    nothingAddedYet: "Nothing added yet.",
+
+    // Treatments
+    readMore: "Read more",
+    showLess: "Show less",
+    toBook: "To book",
+
+    // Guest access code
+    enterAccessCode: "Enter your 6-digit access code",
+    accessCode: "6-digit access code",
+    digitOf: "Digit {index} of 6",
+    checking: "Checking…",
+    backToHome: "Back to home",
+    facilitatorsHeading: "Meet the {em}",
+    facilitatorsHeadingEm: "Facilitators",
+
+    // Guest Access gate. Shown BEFORE a visitor has proven they may
+    // see the Space, so there are only two variants - retreat and
+    // neutral - and translating must not add a third that would reveal
+    // which product a Space is.
+    gatePrivateRetreat: "Private Retreat",
+    gatePrivateSpace: "Private Space",
+    gateOpenRetreat: "Open Retreat",
+    gateOpen: "Open",
+    gateAskOrganizer: "Ask your retreat organizer for the access code.",
+    gateAskOwner: "Ask the owner of this space for the access code.",
+    mealsHeading: "Today’s {em}",
+    mealsHeadingEm: "Meals",
   },
 } as const;
 

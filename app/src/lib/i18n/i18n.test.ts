@@ -20,7 +20,9 @@ import {
 import { DIRECTIONAL_ICONS, iconTransform, isDirectionalIcon } from "./direction";
 import { formatLongDateLocalized, formatNumberLocalized, formatShortDateLocalized, formatTimeLocalized } from "./datetime";
 import { formatShortDate } from "@/lib/teach/links";
-import { parseSpaceSettings } from "@/lib/spaceSettings";
+import { localeFromPublishedModules, parseSpaceSettings } from "@/lib/spaceSettings";
+import { guestAccessCopy } from "@/lib/spaceTypes/guestAccessCopy";
+import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
 import { parsePublishedTeachSpace } from "@/lib/teach/guestData";
 import { TeachGuestApp } from "@/components/teach/teach-guest-app";
 
@@ -91,6 +93,14 @@ describe("translation and fallback", () => {
       "common.optional",
       "common.website",
       "common.pause",
+      // German uses these English words as-is; translating them would be
+      // less natural, not more: "Retreat", "Live", "Brunch" and the
+      // hotel terms "Check-in"/"Check-out" are the everyday German forms.
+      "flow.exploreHeadingEm",
+      "flow.live",
+      "flow.checkIn",
+      "flow.checkOut",
+      "flow.mealBrunch",
     ]);
     for (const locale of ["he", "de"] as const) {
       const unexpected = untranslatedKeys(locale).filter((k) => !allowed.has(k));
@@ -182,6 +192,48 @@ describe("the Guest App reads locale from published data only", () => {
     expect(html("he")).toContain("בית");
     expect(html("de")).toContain("Start");
     expect(html()).toContain("Home");
+  });
+});
+
+describe("the Guest Access gate speaks the Space language", () => {
+  it("keeps the English copy identical to the Space Type Registry", () => {
+    // The gate's wording now comes from the dictionary, while the
+    // registry still declares it as the product's own copy. Pinning them
+    // together means either one moving fails here instead of silently
+    // giving guests two different wordings.
+    expect(guestAccessCopy("retreat", "en")).toEqual(SPACE_TYPES.retreat.copy.guestAccess);
+  });
+
+  it("still reveals only retreat-or-neutral, in every language", () => {
+    // The gate is shown before a visitor may see the Space, so it must
+    // not distinguish Teach from an unsupported type. Translating must
+    // not quietly add a third variant.
+    for (const locale of SUPPORTED_LOCALES) {
+      const teach = guestAccessCopy("teach", locale);
+      expect(guestAccessCopy("client_hub", locale)).toEqual(teach);
+      expect(guestAccessCopy("sanctuary", locale)).toEqual(teach);
+      expect(guestAccessCopy(null, locale)).toEqual(teach);
+      expect(guestAccessCopy("something-unknown", locale)).toEqual(teach);
+      expect(guestAccessCopy("retreat", locale)).not.toEqual(teach);
+    }
+  });
+
+  it("translates the gate rather than falling back to English", () => {
+    expect(guestAccessCopy("retreat", "he").title).toBe("ריטריט פרטי");
+    expect(guestAccessCopy("teach", "de").title).toBe("Privater Space");
+  });
+});
+
+describe("published locale is read from the snapshot only", () => {
+  it("takes the locale from modules.spaceSettings", () => {
+    expect(localeFromPublishedModules({ spaceSettings: { locale: "he" } })).toBe("he");
+    expect(localeFromPublishedModules({ spaceSettings: { locale: "de" } })).toBe("de");
+  });
+
+  it("defaults to English for anything else, never throwing", () => {
+    for (const bad of [null, undefined, {}, { spaceSettings: null }, { spaceSettings: { locale: "fr" } }, "nonsense"]) {
+      expect(localeFromPublishedModules(bad), String(bad)).toBe("en");
+    }
   });
 });
 

@@ -1,4 +1,4 @@
-import { SPACE_TYPES } from "./registry";
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
 
 export type GuestAccessCopy = { title: string; openLabel: string; askHint: string };
 
@@ -10,12 +10,18 @@ export type GuestAccessCopy = { title: string; openLabel: string; askHint: strin
  * not-yet-supported or unknown types alike - gets the same neutral wording,
  * so the screen cannot be used to tell those apart.
  */
-const NEUTRAL: GuestAccessCopy = {
-  title: "Private Space",
-  openLabel: "Open",
-  askHint: "Ask the owner of this space for the access code.",
-};
-
-export function guestAccessCopy(productType: string | null | undefined): GuestAccessCopy {
-  return productType === "retreat" ? SPACE_TYPES.retreat.copy.guestAccess : NEUTRAL;
+export function guestAccessCopy(
+  productType: string | null | undefined,
+  locale: Locale = DEFAULT_LOCALE
+): GuestAccessCopy {
+  // Only the retreat wording is product-specific; everything else shares
+  // the neutral set, so the screen still cannot be used to tell a Teach
+  // Space from an unsupported one. Translating does not change that:
+  // each locale has the same two variants and no more.
+  const retreat = productType === "retreat";
+  return {
+    title: translate(locale, "flow", retreat ? "gatePrivateRetreat" : "gatePrivateSpace"),
+    openLabel: translate(locale, "flow", retreat ? "gateOpenRetreat" : "gateOpen"),
+    askHint: translate(locale, "flow", retreat ? "gateAskOrganizer" : "gateAskOwner"),
+  };
 }

@@ -245,5 +245,89 @@ export const he: Dictionary = {
     call: "חיוג",
     whatsapp: "וואטסאפ",
     nothingYet: "אין כאן עדיין תוכן",
+
+    // Explore. The heading is split so the emphasised word can sit
+    // where each language puts it: "Your Retreat", "הריטריט שלך".
+    exploreHeading: "{em} שלך",
+    exploreHeadingEm: "הריטריט",
+    exploreEmpty: "אין עדיין מה לגלות.",
+    eyebrowMeals: "אוכל ושתייה",
+    eyebrowTreatments: "גוף וריפוי",
+    eyebrowFacilities: "מרחבים",
+    eyebrowArrival: "מעשי",
+    eyebrowFaq: "כדאי לדעת",
+    eyebrowStayConnected: "נשארים בקשר",
+    eyebrowMore: "עוד",
+
+    // Today
+    goodMorning: "בוקר טוב.",
+    todaysIntention: "הכוונה של היום",
+    happeningNow: "קורה עכשיו",
+    live: "עכשיו",
+    upNext: "הבא בתור",
+    nothingScheduledNow: "אין כרגע שום דבר בלוח.",
+    viewFullSchedule: "ללוח הזמנים המלא של היום",
+
+    // Schedule
+    nothingScheduledDay: "אין שום דבר בלוח ליום הזה.",
+    now: "עכשיו",
+    sessionMeal: "ארוחה",
+
+    // Facilitators. German "Begleitung" and the Hebrew plural avoid
+    // gendering a team whose members are unknown.
+    yourGuides: "המנחים שלך",
+    facilitators: "מנחים",
+    sessionsThisRetreat: "מפגשים בריטריט הזה",
+    noFacilitators: "עדיין לא נוספו מנחים.",
+
+    // Facilities, FAQ
+    spacesAmenities: "מרחבים ומתקנים",
+    faqFull: "שאלות נפוצות",
+
+    // Arrival
+    practicalInformation: "מידע מעשי",
+    gettingHere: "איך מגיעים",
+    onArrival: "בהגעה",
+    whatToBring: "מה להביא",
+    importantNotes: "חשוב לדעת",
+    checkIn: "צ׳ק-אין",
+    checkOut: "צ׳ק-אאוט",
+    openInMaps: "פתיחה במפות",
+
+    // Meals - the meal kinds are a fixed system taxonomy, not
+    // something the organizer types.
+    mealBreakfast: "ארוחת בוקר",
+    mealBrunch: "בראנץ׳",
+    mealLunch: "ארוחת צהריים",
+    mealDinner: "ארוחת ערב",
+    mealSpecial: "מיוחד",
+    nothingAddedYet: "עדיין לא נוסף דבר.",
+
+    // Treatments
+    readMore: "קראו עוד",
+    showLess: "להציג פחות",
+    toBook: "להזמנה",
+
+    // Guest access code
+    enterAccessCode: "הזינו את קוד הגישה בן 6 הספרות",
+    accessCode: "קוד גישה בן 6 ספרות",
+    digitOf: "ספרה {index} מתוך 6",
+    checking: "בודק…",
+    backToHome: "חזרה לדף הבית",
+    facilitatorsHeading: "הכירו את {em}",
+    facilitatorsHeadingEm: "המנחים",
+
+    // Guest Access gate. Shown BEFORE a visitor has proven they may
+    // see the Space, so there are only two variants - retreat and
+    // neutral - and translating must not add a third that would reveal
+    // which product a Space is.
+    gatePrivateRetreat: "ריטריט פרטי",
+    gatePrivateSpace: "מרחב פרטי",
+    gateOpenRetreat: "כניסה לריטריט",
+    gateOpen: "כניסה",
+    gateAskOrganizer: "בקשו את קוד הגישה ממארגן הריטריט.",
+    gateAskOwner: "בקשו את קוד הגישה מבעל המרחב.",
+    mealsHeading: "{em} של היום",
+    mealsHeadingEm: "הארוחות",
   },
 };

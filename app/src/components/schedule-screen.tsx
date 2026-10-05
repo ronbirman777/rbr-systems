@@ -6,12 +6,14 @@ import type { BrandConfig } from "@/lib/theme/tokens";
 import type { PublicScheduleItem } from "@/lib/schedule/types";
 import type { CSSProperties } from "react";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type ScheduleScreenProps = {
   brand: BrandConfig;
   schedule: PublicScheduleItem[];
   todayIso: string;
   /** "HH:MM" in the Space timezone, for "now" / "up next" context. */
   nowTime: string;
+  locale?: Locale;
 };
 
 // Every category chip derives from the organizer's own Primary/Accent -
@@ -49,7 +51,8 @@ function weekdayLabel(dateIso: string): { weekday: string; day: string } {
  * published_spaces.modules.schedule for guests) - there is no second
  * source of schedule truth, only a second way of looking at the same one.
  */
-export function ScheduleScreen({ brand, schedule, todayIso, nowTime }: ScheduleScreenProps) {
+export function ScheduleScreen({ brand, schedule, todayIso, nowTime, locale = DEFAULT_LOCALE }: ScheduleScreenProps) {
+  const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
 
   const dates = useMemo(() => {
@@ -83,7 +86,7 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime }: ScheduleS
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-8 pb-5">
         <h1 className="text-[26px] font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Schedule
+          {t("flow", "navSchedule")}
         </h1>
       </div>
 
@@ -129,7 +132,7 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime }: ScheduleS
       <div className="px-4 pb-10">
         {items.length === 0 && (
           <div className="text-xs px-1 py-2" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-            Nothing scheduled for this day.
+            {t("flow", "nothingScheduledDay")}
           </div>
         )}
         <div className="flex flex-col">
@@ -182,7 +185,7 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime }: ScheduleS
                         className="text-[9px] tracking-[0.22em] uppercase font-semibold"
                         style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-on-primary)", opacity: 0.85 }}
                       >
-                        Now
+                        {t("flow", "now")}
                       </span>
                     </div>
                   )}
