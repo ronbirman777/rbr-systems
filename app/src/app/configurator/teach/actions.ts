@@ -56,6 +56,7 @@ import { validateRecurrence } from "@/lib/teach/recurrence";
 import { DEFAULT_TEACH_PRESET } from "@/lib/teach/style";
 import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
 
+import { DEFAULT_LOCALE, localeFromFormData, studioMessages, translate, type Locale } from "@/lib/i18n";
 /**
  * Time to Teach Studio server actions.
  *
@@ -166,17 +167,23 @@ export async function createTeachSpace(): Promise<void> {
 // Identity & brand colours
 // ---------------------------------------------------------------------------
 
-const identitySchema = z.object({
-  name: z.string().trim().min(1, "Please add your name.").max(80),
-  timezone: z.string().min(1).max(64),
-});
+/** A factory, not a constant: the validation message is localized, and a
+ * module-level schema would freeze it to whichever locale loaded first. */
+const identitySchema = (locale: Locale) =>
+  z.object({
+    name: z.string().trim().min(1, translate(locale, "studio", "pleaseAddName")).max(80),
+    timezone: z.string().min(1).max(64),
+  });
 
-export async function saveTeachIdentity(tenantId: string, input: { name: string; timezone: string }): Promise<TeachActionState> {
+export async function saveTeachIdentity(tenantId: string, input: { name: string; timezone: string },
+  locale: Locale = DEFAULT_LOCALE
+): Promise<TeachActionState> {
+  const t = studioMessages(locale);
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You need to be logged in to save." };
-  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
-  const parsed = identitySchema.safeParse(input);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Please check your details." };
+  if (!user) return { error: t("notLoggedInToSave") };
+  if (!(await requireTeachTenant(supabase, tenantId))) return { error: t("spaceNotFound") };
+  const parsed = identitySchema(locale).safeParse(input);
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("pleaseCheckDetails") };
   const valid = (() => {
     try {
       new Intl.DateTimeFormat("en", { timeZone: parsed.data.timezone });
@@ -185,7 +192,7 @@ export async function saveTeachIdentity(tenantId: string, input: { name: string;
       return false;
     }
   })();
-  if (!valid) return { error: "That time zone isn't recognised." };
+  if (!valid) return { error: t("timezoneNotRecognised") };
 
   const { error } = await supabase
     .from("tenants")
@@ -202,11 +209,13 @@ const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 
 export async function saveTeachBrandColors(
   tenantId: string,
-  input: { primary: string; accent: string; navigation: string | null; text: string | null }
+  input: { primary: string; accent: string; navigation: string | null; text: string | null },
+  locale: Locale = DEFAULT_LOCALE
 ): Promise<TeachActionState> {
+  const t = studioMessages(locale);
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You need to be logged in to save." };
-  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
+  if (!user) return { error: t("notLoggedInToSave") };
+  if (!(await requireTeachTenant(supabase, tenantId))) return { error: t("spaceNotFound") };
   const parsed = z
     .object({ primary: hex, accent: hex, navigation: hex.nullable(), text: hex.nullable() })
     .safeParse(input);
@@ -230,17 +239,20 @@ export async function saveTeachBrandColors(
 // Settings (module_settings singletons)
 // ---------------------------------------------------------------------------
 
-export async function saveTeachSettings(tenantId: string, key: TeachSettingsKey, data: unknown): Promise<TeachActionState> {
+export async function saveTeachSettings(tenantId: string, key: TeachSettingsKey, data: unknown,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<TeachActionState> {
+  const t = studioMessages(locale);
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You need to be logged in to save." };
-  if (!(TEACH_SETTINGS_KEYS as readonly string[]).includes(key)) return { error: "Unknown section." };
-  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
+  if (!user) return { error: t("notLoggedInToSave") };
+  if (!(TEACH_SETTINGS_KEYS as readonly string[]).includes(key)) return { error: t("unknownSection") };
+  if (!(await requireTeachTenant(supabase, tenantId))) return { error: t("spaceNotFound") };
 
   const parsed = (TEACH_SETTINGS_SCHEMAS[key] as z.ZodTypeAny).safeParse(data);
-  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Some details weren't valid." };
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("someDetailsInvalid") };
   // Any media reference must be one of this tenant's own draft objects.
   for (const ref of collectTeachMediaRefs(parsed.data)) {
-    if (!isTenantMediaRef(tenantId, ref)) return { error: "An image reference wasn't valid - please re-upload it." };
+    if (!isTenantMediaRef(tenantId, ref)) return { error: t("imageRefInvalidReupload") };
   }
 
   // The refs this row points at BEFORE the save: the only candidates for
@@ -265,10 +277,13 @@ export async function saveTeachSettings(tenantId: string, key: TeachSettingsKey,
 }
 
 /** Explicit, owner-only directory opt-in. Private row; never part of the published snapshot. */
-export async function saveTeachDirectoryListing(tenantId: string, listed: boolean): Promise<TeachActionState> {
+export async function saveTeachDirectoryListing(tenantId: string, listed: boolean,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<TeachActionState> {
+  const t = studioMessages(locale);
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You need to be logged in to save." };
-  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
+  if (!user) return { error: t("notLoggedInToSave") };
+  if (!(await requireTeachTenant(supabase, tenantId))) return { error: t("spaceNotFound") };
   const data = teachDirectorySchema.parse({ listed: listed === true });
   const { error } = await supabase
     .from("module_settings")
@@ -373,34 +388,36 @@ async function itemDraftRefs(supabase: SupabaseClient, tenantId: string, itemIds
 export async function saveTeachItems(
   tenantId: string,
   moduleKey: TeachEditableItemKey,
-  items: unknown
+  items: unknown,
+  locale: Locale = DEFAULT_LOCALE
 ): Promise<TeachActionState> {
+  const t = studioMessages(locale);
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You need to be logged in to save." };
-  if (!TEACH_EDITABLE_ITEM_KEYS.includes(moduleKey)) return { error: "Unknown section." };
+  if (!user) return { error: t("notLoggedInToSave") };
+  if (!TEACH_EDITABLE_ITEM_KEYS.includes(moduleKey)) return { error: t("unknownSection") };
   const tenant = await loadTeachTenant(supabase, tenantId);
-  if (!tenant) return { error: "Space not found." };
-  if (!Array.isArray(items)) return { error: "Could not read the list." };
+  if (!tenant) return { error: t("spaceNotFound") };
+  if (!Array.isArray(items)) return { error: t("couldNotReadList") };
   const warnings: string[] = [];
 
   if (moduleKey === "customPages") {
     const entitlement = await getSpaceEntitlement(supabase, tenantId);
     const limit = getCustomPagesLimit(entitlement);
-    if (items.length > limit) return { error: `Your plan allows up to ${limit} custom pages.` };
+    if (items.length > limit) return { error: t("pageLimitPlan", { limit }) };
   }
 
   const schema = teachItemFieldsSchema(moduleKey);
   const rows = [];
   for (const [index, raw] of items.entries()) {
     const id = (raw as { id?: unknown })?.id;
-    if (typeof id !== "string" || !z.string().uuid().safeParse(id).success) return { error: "Could not read the list." };
+    if (typeof id !== "string" || !z.string().uuid().safeParse(id).success) return { error: t("couldNotReadList") };
     const parsed = schema.safeParse(raw);
-    if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Some details weren't valid." };
+    if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? t("someDetailsInvalid") };
     const audioRef = (parsed.data.metadata as { audioRef?: string | null }).audioRef;
     if (audioRef) {
       const parts = parseAudioDraftRef(audioRef);
       if (!parts || parts.tenantId !== tenantId || parts.moduleKey !== TEACH_AUDIO_FOLDER_KEY || parts.itemId !== id) {
-        return { error: "An audio file reference wasn't valid - please re-upload it." };
+        return { error: t("audioRefInvalidReupload") };
       }
     }
     // Canonical class time (time model v1): recompute the UTC instants from
@@ -414,7 +431,7 @@ export async function saveTeachItems(
       // occurrences are never stored (they are expanded when read).
       const rawExceptions = (raw as { metadata?: { exceptions?: unknown } })?.metadata?.exceptions;
       if (rawExceptions && typeof rawExceptions === "object" && Object.keys(rawExceptions).length > RECURRENCE_MAX_EXCEPTIONS) {
-        return { error: `“${parsed.data.title}”: too many changed or cancelled dates on one class.` };
+        return { error: t("tooManyExceptions", { title: parsed.data.title }) };
       }
       const recurrenceIssue = validateRecurrence(times.metadata, tenant.timezone);
       if (recurrenceIssue) return { error: `“${parsed.data.title}”: ${recurrenceIssue.message}` };
@@ -425,7 +442,7 @@ export async function saveTeachItems(
       const recurrenceOut = keepRaw(times.metadata.recurrence);
       const exceptionsOut = keepRaw(times.metadata.exceptions);
       if ((JSON.stringify([recurrenceOut, exceptionsOut]) ?? "").length > 40_000) {
-        return { error: `“${parsed.data.title}”: its repeat settings are damaged and too large to keep - please repair them.` };
+        return { error: t("recurrenceTooLarge", { title: parsed.data.title }) };
       }
       metadata = { ...(times.metadata as unknown as Record<string, unknown>), recurrence: recurrenceOut, exceptions: exceptionsOut, occurrence: null };
       for (const w of times.warnings) warnings.push(`“${parsed.data.title}”: ${w.message}`);
@@ -435,7 +452,7 @@ export async function saveTeachItems(
       tenant_id: tenantId,
       module_key: moduleKey,
       // Optional-title kinds (gallery captions, availability labels) keep an
-      // empty title so guests see the intended default, never "Untitled".
+      // empty title so guests see the intended default, never t("untitled").
       title: parsed.data.title ?? "",
       subtitle: parsed.data.subtitle,
       description: parsed.data.description,
@@ -466,12 +483,15 @@ export async function saveTeachItems(
 }
 
 /** Removes one item immediately: its row, then its own draft image/audio objects. */
-export async function deleteTeachItem(tenantId: string, moduleKey: TeachEditableItemKey, itemId: string): Promise<TeachActionState> {
+export async function deleteTeachItem(tenantId: string, moduleKey: TeachEditableItemKey, itemId: string,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<TeachActionState> {
+  const t = studioMessages(locale);
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You need to be logged in." };
-  if (!TEACH_EDITABLE_ITEM_KEYS.includes(moduleKey)) return { error: "Unknown section." };
-  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
-  if (!z.string().uuid().safeParse(itemId).success) return { error: "Missing item." };
+  if (!user) return { error: t("notLoggedIn") };
+  if (!TEACH_EDITABLE_ITEM_KEYS.includes(moduleKey)) return { error: t("unknownSection") };
+  if (!(await requireTeachTenant(supabase, tenantId))) return { error: t("spaceNotFound") };
+  if (!z.string().uuid().safeParse(itemId).success) return { error: t("missingItem") };
   const staleRefs = await itemDraftRefs(supabase, tenantId, [itemId]);
   const { error } = await supabase.from("module_items").delete().eq("id", itemId).eq("tenant_id", tenantId);
   if (error) return { error: error.message };
@@ -483,10 +503,13 @@ export async function deleteTeachItem(tenantId: string, moduleKey: TeachEditable
 // Explore modules (module_configs)
 // ---------------------------------------------------------------------------
 
-export async function saveTeachModules(tenantId: string, enabled: string[]): Promise<TeachActionState> {
+export async function saveTeachModules(tenantId: string, enabled: string[],
+  locale: Locale = DEFAULT_LOCALE
+): Promise<TeachActionState> {
+  const t = studioMessages(locale);
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You need to be logged in to save." };
-  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
+  if (!user) return { error: t("notLoggedInToSave") };
+  if (!(await requireTeachTenant(supabase, tenantId))) return { error: t("spaceNotFound") };
   const on = new Set(enabled);
   const rows = TEACH_EXPLORE_MODULES.map((module_key) => ({ tenant_id: tenantId, module_key, enabled: on.has(module_key) }));
   const { error } = await supabase.from("module_configs").upsert(rows, { onConflict: "tenant_id,module_key" });
@@ -513,24 +536,25 @@ export type TeachUploadState = { error: string | null; imageRef: string | null; 
  * conventions as every other upload.
  */
 export async function uploadTeachSettingsImage(formData: FormData): Promise<TeachUploadState> {
+  const t = studioMessages(localeFromFormData(formData));
   const fail = (error: string): TeachUploadState => ({ error, imageRef: null, imageUrl: null });
   const { supabase, user } = await requireUser();
-  if (!user) return fail("You need to be logged in.");
+  if (!user) return fail(t("notLoggedIn"));
   const tenantId = String(formData.get("tenantId") ?? "");
   const key = String(formData.get("settingsKey") ?? "");
   const slot = String(formData.get("slot") ?? "");
   const file = formData.get("file");
-  if (!SETTINGS_IMAGE_SLOTS[key]?.includes(slot)) return fail("Unknown image slot.");
-  if (!(await requireTeachTenant(supabase, tenantId))) return fail("Space not found.");
-  if (!(file instanceof File) || file.size === 0) return fail("No file selected.");
-  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return fail("Please upload a JPG, PNG or WEBP image.");
-  if (!isFileSizeAllowed(file.size)) return fail("Image must be under 8MB.");
+  if (!SETTINGS_IMAGE_SLOTS[key]?.includes(slot)) return fail(t("unknownImageSlot"));
+  if (!(await requireTeachTenant(supabase, tenantId))) return fail(t("spaceNotFound"));
+  if (!(file instanceof File) || file.size === 0) return fail(t("noFileSelected"));
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) return fail(t("unsupportedImage"));
+  if (!isFileSizeAllowed(file.size)) return fail(t("imageTooLarge"));
 
   let optimized: Buffer;
   try {
     optimized = await optimizeImageToWebp(file);
   } catch {
-    return fail("That image could not be processed. Try a different file.");
+    return fail(t("imageNotProcessed"));
   }
   // A new uploadId per upload: an existing object is never overwritten.
   const path = tenantMediaPath(tenantId, key, slot, OPTIMIZED_IMAGE_EXTENSION, newUploadId());
@@ -580,29 +604,31 @@ export async function prepareTeachAudioUpload(
   item: unknown,
   sortOrder: number,
   mimeType: string,
-  sizeBytes: number
+  sizeBytes: number,
+  locale: Locale = DEFAULT_LOCALE
 ): Promise<TeachAudioUploadState> {
+  const t = studioMessages(locale);
   const fail = (error: string): TeachAudioUploadState => ({ error, path: null });
   const { supabase, user } = await requireUser();
-  if (!user) return fail("You need to be logged in.");
-  if (!(await requireTeachTenant(supabase, tenantId))) return fail("Space not found.");
+  if (!user) return fail(t("notLoggedIn"));
+  if (!(await requireTeachTenant(supabase, tenantId))) return fail(t("spaceNotFound"));
   const itemId = (item as { id?: unknown } | null)?.id;
-  if (typeof itemId !== "string" || !z.string().uuid().safeParse(itemId).success) return fail("Missing item.");
+  if (typeof itemId !== "string" || !z.string().uuid().safeParse(itemId).success) return fail(t("missingItem"));
   const ext = typeof mimeType === "string" ? AUDIO_ALLOWED_TYPES[normalizeMimeType(mimeType)] : undefined;
-  if (!ext) return fail("Please upload an MP3, M4A, AAC, WAV or OGG audio file.");
-  if (!isAudioSizeAllowed(sizeBytes)) return fail(`Audio files must be under ${MAX_AUDIO_BYTES / (1024 * 1024)}MB.`);
+  if (!ext) return fail(t("unsupportedAudio"));
+  if (!isAudioSizeAllowed(sizeBytes)) return fail(t("audioTooLarge", { limit: MAX_AUDIO_BYTES / (1024 * 1024) }));
 
   const existing = await loadTeachItemRow(supabase, tenantId, itemId);
-  if (existing && existing.module_key !== "teachAudio") return fail("Missing item.");
+  if (existing && existing.module_key !== "teachAudio") return fail(t("missingItem"));
   if (!existing) {
     const raw = item as Record<string, unknown>;
-    const parsed = teachItemFieldsSchema("teachAudio").safeParse({ ...raw, title: String(raw.title ?? "").trim() || "Untitled audio" });
-    if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Some details weren't valid.");
+    const parsed = teachItemFieldsSchema("teachAudio").safeParse({ ...raw, title: String(raw.title ?? "").trim() || t("untitledAudio") });
+    if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? t("someDetailsInvalid"));
     const { error } = await supabase.from("module_items").insert({
       id: itemId,
       tenant_id: tenantId,
       module_key: "teachAudio",
-      title: parsed.data.title ?? "Untitled audio",
+      title: parsed.data.title ?? t("untitledAudio"),
       subtitle: parsed.data.subtitle,
       description: parsed.data.description,
       external_link: parsed.data.externalLink,
@@ -618,17 +644,20 @@ export async function prepareTeachAudioUpload(
   };
 }
 
-export async function attachTeachAudio(tenantId: string, itemId: string, ref: string, durationSeconds: number | null): Promise<TeachActionState> {
+export async function attachTeachAudio(tenantId: string, itemId: string, ref: string, durationSeconds: number | null,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<TeachActionState> {
+  const t = studioMessages(locale);
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You need to be logged in." };
-  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
-  if (!z.string().uuid().safeParse(itemId).success) return { error: "Missing item." };
+  if (!user) return { error: t("notLoggedIn") };
+  if (!(await requireTeachTenant(supabase, tenantId))) return { error: t("spaceNotFound") };
+  if (!z.string().uuid().safeParse(itemId).success) return { error: t("missingItem") };
   const parts = typeof ref === "string" ? parseAudioDraftRef(ref) : null;
   if (!parts || parts.tenantId !== tenantId || parts.moduleKey !== TEACH_AUDIO_FOLDER_KEY || parts.itemId !== itemId) {
-    return { error: "An audio file reference wasn't valid." };
+    return { error: t("audioRefInvalid") };
   }
   const row = await loadTeachItemRow(supabase, tenantId, itemId);
-  if (!row || row.module_key !== "teachAudio") return { error: "Missing item." };
+  if (!row || row.module_key !== "teachAudio") return { error: t("missingItem") };
   const previousRef = currentAudioRef(row);
   const duration = typeof durationSeconds === "number" && Number.isFinite(durationSeconds) && durationSeconds >= 0 && durationSeconds <= 60 * 60 * 12 ? Math.round(durationSeconds) : null;
 
@@ -642,10 +671,10 @@ export async function attachTeachAudio(tenantId: string, itemId: string, ref: st
     return { error: message };
   };
   const { data: info, error: infoError } = await bucket.info(ref);
-  if (infoError || !info) return { error: "The upload didn't finish - please try again." };
-  if (!isAudioSizeAllowed(Number(info.size))) return reject(`Audio files must be under ${MAX_AUDIO_BYTES / (1024 * 1024)}MB.`);
+  if (infoError || !info) return { error: t("uploadDidNotFinish") };
+  if (!isAudioSizeAllowed(Number(info.size))) return reject(t("audioTooLarge", { limit: MAX_AUDIO_BYTES / (1024 * 1024) }));
   if (AUDIO_ALLOWED_TYPES[normalizeMimeType(String(info.contentType ?? ""))] !== parts.ext) {
-    return reject("Please upload an MP3, M4A, AAC, WAV or OGG audio file.");
+    return reject(t("unsupportedAudio"));
   }
 
   if (ref !== previousRef) {
@@ -654,7 +683,7 @@ export async function attachTeachAudio(tenantId: string, itemId: string, ref: st
     // what the live snapshot may reference.
     const published = versionedMediaPath("published", { ...parts });
     const { data: publishedExists } = await bucket.exists(published);
-    if (publishedExists) return { error: "An audio file reference wasn't valid - please re-upload it." };
+    if (publishedExists) return { error: t("audioRefInvalidReupload") };
   }
 
   const { error } = await supabase
@@ -671,14 +700,17 @@ export async function attachTeachAudio(tenantId: string, itemId: string, ref: st
   return OK;
 }
 
-export async function detachTeachAudio(tenantId: string, itemId: string): Promise<TeachActionState> {
+export async function detachTeachAudio(tenantId: string, itemId: string,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<TeachActionState> {
+  const t = studioMessages(locale);
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You need to be logged in." };
-  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found." };
-  if (!z.string().uuid().safeParse(itemId).success) return { error: "Missing item." };
+  if (!user) return { error: t("notLoggedIn") };
+  if (!(await requireTeachTenant(supabase, tenantId))) return { error: t("spaceNotFound") };
+  if (!z.string().uuid().safeParse(itemId).success) return { error: t("missingItem") };
   const row = await loadTeachItemRow(supabase, tenantId, itemId);
   if (!row) return OK;
-  if (row.module_key !== "teachAudio") return { error: "Missing item." };
+  if (row.module_key !== "teachAudio") return { error: t("missingItem") };
   const previousRef = currentAudioRef(row);
   const { error } = await supabase
     .from("module_items")
@@ -712,17 +744,20 @@ export type TeachPublishState = { error: string | null; publishedAt: string | nu
  * Availability is decided by the registry (getPublishAvailability) and the
  * product type is re-verified from the DB here, never from the client.
  */
-export async function publishTeachSpace(tenantId: string): Promise<TeachPublishState> {
+export async function publishTeachSpace(tenantId: string,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<TeachPublishState> {
+  const t = studioMessages(locale);
   const { supabase, user } = await requireUser();
-  if (!user) return { error: "You need to be logged in.", publishedAt: null };
-  if (!(await requireTeachTenant(supabase, tenantId))) return { error: "Space not found.", publishedAt: null };
+  if (!user) return { error: t("notLoggedIn"), publishedAt: null };
+  if (!(await requireTeachTenant(supabase, tenantId))) return { error: t("spaceNotFound"), publishedAt: null };
 
   const publishGate = getPublishAvailability(TEACH_PRODUCT_TYPE);
   if (!publishGate.available) return { error: publishGate.message, publishedAt: null };
 
   const availability = deriveCommercialAvailability(await getSpaceEntitlement(supabase, tenantId));
   if (!availability.canPublish) {
-    return { error: "This Space needs active access before it can be published.", publishedAt: null };
+    return { error: t("needsActiveAccess"), publishedAt: null };
   }
 
   const { data: previousSnapshot } = await supabase
@@ -776,7 +811,7 @@ export async function publishTeachSpace(tenantId: string): Promise<TeachPublishS
     await Promise.all(jobs);
   } catch (err) {
     return {
-      error: err instanceof Error ? `Could not publish your media - ${err.message}` : "Could not publish your media.",
+      error: err instanceof Error ? t("couldNotPublishMediaWhy", { reason: err.message }) : t("couldNotPublishMedia"),
       publishedAt: null,
     };
   }

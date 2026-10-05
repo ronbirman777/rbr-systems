@@ -104,6 +104,7 @@ export const en = {
     share: "Share",
     preparing: "Preparing…",
     saveImage: "Save image",
+    preview: "Preview",
   },
 
   teach: {
@@ -636,6 +637,10 @@ export const en = {
     previewAndPublish: "Preview & Publish",
     publishingEyebrow: "Publishing",
     maya: "Maya",
+    myTeachingSpace: "My Teaching Space",
+    liveDraftPreview: "Live draft preview",
+    previewUpdatesNote: "Updates as you type · guests see it after you publish",
+    yourNameFallback: "Your name",
   },
 
   flow: {
@@ -1200,6 +1205,16 @@ export const en = {
     currentAddressIs: "Current address: {address}",
     reserveYourAddress: "Reserve your public address.",
     reserve: "Reserve",
+
+    // Studio shell
+    studioSections: "Studio sections",
+    allChangesSaved: "All changes saved",
+    unsavedChangesShort: "Unsaved changes",
+    saveAll: "Save all",
+    savedWithWarnings: "Saved. {warnings}",
+    untitledAudio: "Untitled audio",
+    recurrenceTooLarge: "“{title}”: its repeat settings are damaged and too large to keep - please repair them.",
+    tooManyExceptions: "“{title}”: too many changed or cancelled dates on one class.",
   },
 
 } as const;

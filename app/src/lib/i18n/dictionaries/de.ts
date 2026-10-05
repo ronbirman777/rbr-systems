@@ -109,6 +109,7 @@ export const de: Dictionary = {
     share: "Teilen",
     preparing: "Wird vorbereitet…",
     saveImage: "Bild speichern",
+    preview: "Vorschau",
   },
 
   teach: {
@@ -636,6 +637,10 @@ export const de: Dictionary = {
     previewAndPublish: "Vorschau & Veröffentlichen",
     publishingEyebrow: "Veröffentlichung",
     maya: "Maya",
+    myTeachingSpace: "Mein Unterrichtsraum",
+    liveDraftPreview: "Live-Vorschau des Entwurfs",
+    previewUpdatesNote: "Aktualisiert sich beim Tippen · deine Gäste sehen es nach dem Veröffentlichen",
+    yourNameFallback: "Dein Name",
   },
 
   flow: {
@@ -1198,6 +1203,16 @@ export const de: Dictionary = {
     currentAddressIs: "Aktuelle Adresse: {address}",
     reserveYourAddress: "Reserviere deine öffentliche Adresse.",
     reserve: "Reservieren",
+
+    // Studio shell
+    studioSections: "Studio-Abschnitte",
+    allChangesSaved: "Alle Änderungen gespeichert",
+    unsavedChangesShort: "Nicht gespeicherte Änderungen",
+    saveAll: "Alles speichern",
+    savedWithWarnings: "Gespeichert. {warnings}",
+    untitledAudio: "Audio ohne Titel",
+    recurrenceTooLarge: "„{title}“: Die Wiederholungseinstellungen sind beschädigt und zu groß zum Speichern - bitte repariere sie.",
+    tooManyExceptions: "„{title}“: zu viele geänderte oder abgesagte Termine bei einem Kurs.",
   },
 
 };

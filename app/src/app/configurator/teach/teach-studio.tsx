@@ -20,6 +20,7 @@ import type {
   TeachSettingsKey,
 } from "@/lib/teach/schemas";
 import { uploadModuleItemPhoto, removeModuleItemPhoto, uploadBrandImage, removeBrandImage } from "@/app/configurator/retreat/actions";
+import { createTranslator } from "@/lib/i18n";
 import {
   saveTeachBrandColors,
   saveTeachIdentity,
@@ -175,6 +176,9 @@ export type StudioApi = {
 
 export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
   const tenantId = initial.tenantId;
+  // The Studio renders in the Space's own language, so a teacher edits in
+  // the same language their guests read.
+  const { t } = createTranslator(initial.locale);
   const [section, setSection] = useState<SectionKey>(
     ALL_SECTIONS.includes(initial.initialSection as SectionKey) ? (initial.initialSection as SectionKey) : "identity"
   );
@@ -276,32 +280,32 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
     switch (s) {
       case "identity":
         return run(
-          saveTeachIdentity(tenantId, { name, timezone }),
-          saveTeachSettings(tenantId, "teachProfile", settings.teachProfile),
-          saveTeachSettings(tenantId, "dailyInspiration", settings.dailyInspiration)
+          saveTeachIdentity(tenantId, { name, timezone }, initial.locale),
+          saveTeachSettings(tenantId, "teachProfile", settings.teachProfile, initial.locale),
+          saveTeachSettings(tenantId, "dailyInspiration", settings.dailyInspiration, initial.locale)
         );
       case "brand":
-        return run(saveTeachBrandColors(tenantId, colors), saveTeachSettings(tenantId, "teachStyle", settings.teachStyle));
+        return run(saveTeachBrandColors(tenantId, colors, initial.locale), saveTeachSettings(tenantId, "teachStyle", settings.teachStyle, initial.locale));
       case "home":
-        return run(saveTeachSettings(tenantId, "teachProfile", settings.teachProfile));
+        return run(saveTeachSettings(tenantId, "teachProfile", settings.teachProfile, initial.locale));
       case "schedule":
-        return run(saveTeachItems(tenantId, "teachClasses", stripItems(items.teachClasses)), saveTeachItems(tenantId, "teachAvailability", stripItems(items.teachAvailability)));
+        return run(saveTeachItems(tenantId, "teachClasses", stripItems(items.teachClasses), initial.locale), saveTeachItems(tenantId, "teachAvailability", stripItems(items.teachAvailability), initial.locale));
       case "about":
         return run(
-          saveTeachSettings(tenantId, "teachAbout", settings.teachAbout),
-          saveTeachItems(tenantId, "teachGallery", stripItems(items.teachGallery)),
-          saveTeachItems(tenantId, "teachCertificates", stripItems(items.teachCertificates))
+          saveTeachSettings(tenantId, "teachAbout", settings.teachAbout, initial.locale),
+          saveTeachItems(tenantId, "teachGallery", stripItems(items.teachGallery), initial.locale),
+          saveTeachItems(tenantId, "teachCertificates", stripItems(items.teachCertificates), initial.locale)
         );
       case "modules":
-        return run(saveTeachModules(tenantId, enabledExplore), saveTeachSettings(tenantId, "teachExplore", settings.teachExplore));
+        return run(saveTeachModules(tenantId, enabledExplore, initial.locale), saveTeachSettings(tenantId, "teachExplore", settings.teachExplore, initial.locale));
       case "readings":
-        return run(saveTeachItems(tenantId, "teachReadings", stripItems(items.teachReadings)));
+        return run(saveTeachItems(tenantId, "teachReadings", stripItems(items.teachReadings), initial.locale));
       case "audio":
-        return run(saveTeachItems(tenantId, "teachAudio", stripItems(items.teachAudio)));
+        return run(saveTeachItems(tenantId, "teachAudio", stripItems(items.teachAudio), initial.locale));
       case "contact":
-        return run(saveTeachSettings(tenantId, "teachContact", settings.teachContact));
+        return run(saveTeachSettings(tenantId, "teachContact", settings.teachContact, initial.locale));
       case "pages":
-        return run(saveTeachItems(tenantId, "customPages", stripItems(items.customPages)));
+        return run(saveTeachItems(tenantId, "customPages", stripItems(items.customPages), initial.locale));
       case "publish":
         return null;
     }
@@ -315,7 +319,11 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
     if (err) setToast({ kind: "error", text: err });
     else {
       clean(s);
-      setToast(warnings.length ? { kind: "warn", text: `Saved. ${warnings.join(" ")}` } : { kind: "ok", text: "Saved" });
+      setToast(
+        warnings.length
+          ? { kind: "warn", text: t("studio", "savedWithWarnings", { warnings: warnings.join(" ") }) }
+          : { kind: "ok", text: t("common", "saved") }
+      );
     }
     return err;
   };
@@ -348,7 +356,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
     fd.set("previousRef", heroImageRef ?? "");
     fd.set("file", file);
     const res = await uploadBrandImage({ error: null, imageRef: null, imageUrl: null }, fd);
-    if (res.error || !res.imageRef) return res.error ?? "Upload failed.";
+    if (res.error || !res.imageRef) return res.error ?? t("studio", "uploadFailed");
     setHeroImageRef(res.imageRef);
     setMediaUrl(res.imageRef, res.imageUrl ? `${res.imageUrl}` : null);
     // A new photo never inherits the old photo's focal point.
@@ -377,13 +385,13 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
     fd.set("moduleKey", key);
     fd.set("itemId", item.id);
     fd.set("previousRef", item.imageRef ?? "");
-    fd.set("title", item.title || "Untitled");
+    fd.set("title", item.title || t("common", "untitled"));
     if (item.subtitle) fd.set("subtitle", item.subtitle);
     if (item.description) fd.set("description", item.description);
     fd.set("sortOrder", String(index));
     fd.set("file", file);
     const res = await uploadModuleItemPhoto({ error: null, imageRef: null, imageUrl: null }, fd);
-    if (res.error || !res.imageRef) return { ref: null, error: res.error ?? "Upload failed." };
+    if (res.error || !res.imageRef) return { ref: null, error: res.error ?? t("studio", "uploadFailed") };
     // Cache-bust the signed URL so a replaced image (same path) re-renders.
     setMediaUrl(res.imageRef, res.imageUrl);
     return { ref: res.imageRef, error: null };
@@ -407,13 +415,13 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
     fd.set("slot", slot);
     fd.set("file", file);
     const res = await uploadTeachSettingsImage(fd);
-    if (res.error || !res.imageRef) return { ref: null, error: res.error ?? "Upload failed." };
+    if (res.error || !res.imageRef) return { ref: null, error: res.error ?? t("studio", "uploadFailed") };
     setMediaUrl(res.imageRef, res.imageUrl);
     return { ref: res.imageRef, error: null };
   };
 
   const removeItem: StudioApi["removeItem"] = async (key, id) => {
-    const res = await deleteTeachItem(tenantId, key, id);
+    const res = await deleteTeachItem(tenantId, key, id, initial.locale);
     if (res.error) return res.error;
     setItemsState((prev) => ({ ...prev, [key]: (prev[key] as EditableTeachItem[]).filter((i) => i.id !== id) }));
     return null;
@@ -464,10 +472,11 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
         { id: item.id, title: item.title, subtitle: item.subtitle, description: item.description, externalLink: item.externalLink, metadata: item.metadata },
         index,
         mimeType,
-        sizeBytes
+        sizeBytes,
+        initial.locale
       ),
-    attachAudio: async (itemId, ref, durationSeconds) => (await attachTeachAudio(tenantId, itemId, ref, durationSeconds)).error,
-    detachAudio: async (itemId) => (await detachTeachAudio(tenantId, itemId)).error,
+    attachAudio: async (itemId, ref, durationSeconds) => (await attachTeachAudio(tenantId, itemId, ref, durationSeconds, initial.locale)).error,
+    detachAudio: async (itemId) => (await detachTeachAudio(tenantId, itemId, initial.locale)).error,
     markDirty,
     isDirty: (s) => dirty.has(s),
     save,
@@ -488,7 +497,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
   const previewData: TeachGuestData | null = useMemo(() => {
     if (!mounted) return null;
     return {
-      teacherName: name || "Your name",
+      teacherName: name || t("teach", "yourNameFallback"),
       // Preview renders in the Space's own language, so an organizer sees
       // what their guests will see rather than always English.
       locale: initial.locale,
@@ -497,7 +506,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
       nowTime: currentTimeInTimezone(timezone),
       nowInstant: new Date().toISOString(),
       brand: {
-        name: name || "Teacher",
+        name: name || t("teach", "teacherFallback"),
         logoRef: null,
         palette: "forest-sage",
         customPrimary: colors.primary,
@@ -520,6 +529,8 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
       enabledExplore,
       mediaUrls,
     };
+      // `t` is derived from initial.locale, already a dependency here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, name, timezone, colors, heroImageRef, settings, items, enabledExplore, mediaUrls, initial.locale]);
 
   const sectionProps = { api };
@@ -561,7 +572,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
   }
 
   const navList = (
-    <nav aria-label="Studio sections" className="flex flex-col gap-1">
+    <nav aria-label={t("studio", "studioSections")} className="flex flex-col gap-1">
       {NAV.map((g) => (
         <div key={g.group} className="flex flex-col gap-0.5 mb-2">
           <p className="px-3 pt-3 pb-1.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#8C8A84]">{g.group}</p>
@@ -577,7 +588,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
               >
                 <span aria-hidden="true" className={`w-1.5 h-1.5 rounded-full ${active ? "bg-[#9A7B4F]" : "bg-[#8C8A84]/35"}`} />
                 <span className="flex-1">{it.label}</span>
-                {dirty.has(it.key) ? <span className="text-[10px] font-semibold text-[#A8643C]" aria-label="unsaved changes">●</span> : null}
+                {dirty.has(it.key) ? <span className="text-[10px] font-semibold text-[#A8643C]" aria-label={t("studio", "unsavedChanges")}>●</span> : null}
               </button>
             );
           })}
@@ -589,7 +600,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
         aria-current={section === "publish" ? "page" : undefined}
         className={`mt-2 min-h-11 px-3 rounded-lg text-left text-[13.5px] font-semibold ${section === "publish" ? "bg-[#192B21] text-white" : "bg-white border border-[#E2DACD] text-[#192B21]"}`}
       >
-        Preview &amp; Publish
+        {t("teach", "previewAndPublish")}
       </button>
     </nav>
   );
@@ -603,7 +614,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
           </button>
           <Link href="/space" className="hidden sm:flex items-center gap-2 min-h-11 text-[12.5px] font-medium text-[#192B21]">
             <InnerDweSMark size={20} />
-            My Spaces
+            {t("studio", "mySpaces")}
           </Link>
           <span className="hidden sm:inline text-[#8C8A84]">/</span>
           <span className="truncate text-[16px] italic text-[#192B21]" style={{ fontFamily: "var(--font-fraunces), serif" }}>
@@ -613,18 +624,18 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <span className="hidden md:inline text-[12px] text-[#8C8A84]" role="status" aria-live="polite">
-            {saving ? "Saving…" : dirty.size > 0 ? "Unsaved changes" : "All changes saved"}
+            {saving ? t("common", "savingNow") : dirty.size > 0 ? t("studio", "unsavedChangesShort") : t("studio", "allChangesSaved")}
           </span>
           {dirty.size > 0 ? (
             <button type="button" onClick={saveAll} className="min-h-10 px-4 rounded-full text-[12.5px] font-semibold bg-[#9A7B4F] text-white">
-              Save all
+              {t("studio", "saveAll")}
             </button>
           ) : null}
           <button type="button" onClick={() => setMobilePreview(true)} className="lg:hidden min-h-10 px-4 rounded-full border border-[#192B21]/20 text-[12.5px] font-semibold text-[#192B21]">
-            Preview
+            {t("common", "preview")}
           </button>
           <button type="button" onClick={() => goTo("publish")} className="min-h-10 px-4 rounded-full bg-[#192B21] text-white text-[12.5px] font-semibold">
-            Publish
+            {t("studio", "publish")}
           </button>
         </div>
       </header>
@@ -640,21 +651,21 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
         </main>
         <aside className="hidden lg:flex flex-col items-center gap-3 bg-[#E9E3D8] px-5 py-6 border-l border-[#E2DACD]">
           <div className="sticky top-20 flex flex-col items-center gap-3 w-full">
-            <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#8C8A84]">Live draft preview</p>
+            <p className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#8C8A84]">{t("teach", "liveDraftPreview")}</p>
             <div className="w-full max-w-[360px] h-[720px] rounded-[36px] overflow-hidden border-[6px] border-[#D9D1C3] bg-white shadow-xl" data-testid="studio-preview">
               {previewData ? <TeachGuestApp key={section} data={previewData} embedded initialTab={PREVIEW_TAB[section]} /> : null}
             </div>
-            <p className="text-[11px] text-[#8C8A84] text-center">Updates as you type · guests see it after you publish</p>
+            <p className="text-[11px] text-[#8C8A84] text-center">{t("teach", "previewUpdatesNote")}</p>
           </div>
         </aside>
       </div>
 
       {mobilePreview && previewData ? (
-        <div className="lg:hidden fixed inset-0 z-50 bg-black/40 flex flex-col" role="dialog" aria-modal="true" aria-label="Preview">
+        <div className="lg:hidden fixed inset-0 z-50 bg-black/40 flex flex-col" role="dialog" aria-modal="true" aria-label={t("common", "preview")}>
           <div className="flex justify-between items-center px-4 py-3 bg-[#F3EFE7]">
-            <span className="text-[13px] font-semibold text-[#192B21]">Draft preview</span>
+            <span className="text-[13px] font-semibold text-[#192B21]">{t("teach", "draftPreview")}</span>
             <button type="button" onClick={() => setMobilePreview(false)} className="min-h-11 px-3 text-[13px] font-semibold text-[#192B21]">
-              Close
+              {t("common", "close")}
             </button>
           </div>
           <div className="flex-1 min-h-0 bg-white">

@@ -1880,7 +1880,7 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
       setMessage({ ok: false, text: `Couldn’t save first: ${saveErr}` });
       return;
     }
-    const res = await publishTeachSpace(api.tenantId);
+    const res = await publishTeachSpace(api.tenantId, api.locale);
     setBusy(false);
     if (res.error) setMessage({ ok: false, text: res.error });
     else {
@@ -1946,7 +1946,7 @@ export function DirectoryOptInCard({ tenantId, initialListed, locale }: { tenant
     setBusy(true);
     setError(null);
     setListed(next);
-    const res = await saveTeachDirectoryListing(tenantId, next);
+    const res = await saveTeachDirectoryListing(tenantId, next, locale);
     setBusy(false);
     if (res.error) {
       setListed(!next);

@@ -104,6 +104,7 @@ export const he: Dictionary = {
     share: "שיתוף",
     preparing: "מכין…",
     saveImage: "שמירת התמונה",
+    preview: "תצוגה מקדימה",
   },
 
   teach: {
@@ -631,6 +632,10 @@ export const he: Dictionary = {
     previewAndPublish: "תצוגה ופרסום",
     publishingEyebrow: "פרסום",
     maya: "מאיה",
+    myTeachingSpace: "מרחב ההוראה שלי",
+    liveDraftPreview: "תצוגה מקדימה חיה של הטיוטה",
+    previewUpdatesNote: "מתעדכן בזמן ההקלדה · האורחים רואים אחרי הפרסום",
+    yourNameFallback: "השם שלכם",
   },
 
   flow: {
@@ -1193,6 +1198,16 @@ export const he: Dictionary = {
     currentAddressIs: "הכתובת הנוכחית: {address}",
     reserveYourAddress: "שמרו את הכתובת הציבורית שלכם.",
     reserve: "שמירה",
+
+    // Studio shell
+    studioSections: "מקטעי הסטודיו",
+    allChangesSaved: "כל השינויים נשמרו",
+    unsavedChangesShort: "שינויים שלא נשמרו",
+    saveAll: "שמירת הכול",
+    savedWithWarnings: "נשמר. {warnings}",
+    untitledAudio: "אודיו בלי כותרת",
+    recurrenceTooLarge: "״{title}״: הגדרות החזרה פגומות וגדולות מכדי לשמור - נא לתקן אותן.",
+    tooManyExceptions: "״{title}״: יותר מדי תאריכים שהשתנו או בוטלו בשיעור אחד.",
   },
 
 };
