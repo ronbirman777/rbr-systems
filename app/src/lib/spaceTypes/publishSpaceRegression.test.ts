@@ -122,6 +122,43 @@ const SPACE_SETTINGS_BLOCK = /v_modules := v_modules \|\| jsonb_build_object\(\s
 const SURFACE_SELECT = /custom_navigation, custom_text, custom_surface,/i;
 const SURFACE_EMIT = /,\s*(?:--[^\n]*\n\s*)*'customSurface', v_brand\.custom_surface/i;
 
+/**
+ * TASK 029's additions (0033, the Flow content expansion). Each is listed
+ * here so `strip0033()` can take the 0033 body back to 0032's exactly -
+ * which is what proves 0033 added blocks and changed nothing else.
+ *
+ * The two SETTINGS blocks are deliberately matched INCLUDING their
+ * `v_payload <> '{}'::jsonb` guard: that guard is the whole reason an
+ * existing Space's snapshot is byte-identical after 0033, so a later edit
+ * that drops it must fail this test rather than quietly change every
+ * published payload.
+ */
+const DRAFT_REWRITE_LOCALS = /\s*v_draft_pattern text := [^;]+;\s*v_draft_replace text := [^;]+;/;
+const JSONB_PICK_MERGE = / \|\| public\.jsonb_pick\(metadata, array\[[^\]]*\]\)/g;
+const FACILITY_SHORT_MERGE = / \|\| case when subtitle is null then '\{\}'::jsonb else jsonb_build_object\('shortDescription', subtitle\) end/;
+const COVER_ALLOWLIST_0033 = /and module_key in \(\s*'meals', 'treatments', 'facilities', 'arrivalInfo', 'faq', 'stayConnected',\s*'readings', 'audio', 'guidelines'\s*\);/;
+const COVER_ALLOWLIST_0032 = "and module_key in ('meals', 'treatments', 'facilities', 'arrivalInfo', 'faq', 'stayConnected');";
+const moduleBlock = (key: string) => new RegExp(`if '${key}' = any\\(v_enabled_modules\\) then[\\s\\S]*?end if;`, "i");
+const settingsBlock0033 = (key: string) =>
+  new RegExp(
+    `select data into v_payload\\s+from public\\.module_settings where tenant_id = p_tenant_id and module_key = '${key}';` +
+      `\\s*if v_payload is not null and v_payload <> '\\{\\}'::jsonb then[\\s\\S]*?end if;`,
+    "i"
+  );
+const ZERO33_NEW_MODULES = ["guidelines", "readings", "audio"] as const;
+const ZERO33_NEW_SETTINGS = ["retreatProfile", "moduleIntros"] as const;
+
+/** 0033's body minus every block and merge 0033 introduced. */
+function strip0033(body: string): string {
+  let out = body.replace(DRAFT_REWRITE_LOCALS, "");
+  for (const k of ZERO33_NEW_MODULES) out = out.replace(moduleBlock(k), "");
+  for (const k of ZERO33_NEW_SETTINGS) out = out.replace(settingsBlock0033(k), "");
+  return out
+    .replace(JSONB_PICK_MERGE, "")
+    .replace(FACILITY_SHORT_MERGE, "")
+    .replace(COVER_ALLOWLIST_0033, COVER_ALLOWLIST_0032);
+}
+
 describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Phase 4A)", () => {
   const latest = latestFunctionDefinition(migrations, "publish_space")!;
   const base = extractFunctionBody(migrations.find((m) => m.name.startsWith("0025_"))!.sql, "publish_space")!;
@@ -134,18 +171,98 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     expect(teachPayload.file).toMatch(/^0028_/);
   });
 
-  it("publish_space() is last redefined by 0032, adding only the shared Surface role on top of 0031", () => {
-    expect(latest.file).toMatch(/^0032_/);
-    expect(SURFACE_SELECT.test(latest.body)).toBe(true);
-    expect(SURFACE_EMIT.test(latest.body)).toBe(true);
+  it("publish_space() is last redefined by 0033", () => {
+    expect(latest.file).toMatch(/^0033_/);
+  });
 
-    // 0032's body must equal 0031's plus exactly those two edits - no
-    // other change may ride along in a publish-contract migration.
+  it("0032's own body is still 0031 plus only the shared Surface role", () => {
+    // Read 0032 directly rather than through `latest`: once a later
+    // migration takes the head, this step of the chain still has to hold.
+    const zero32 = extractFunctionBody(migrations.find((m) => m.name.startsWith("0032_"))!.sql, "publish_space")!;
     const zero31 = extractFunctionBody(migrations.find((m) => m.name.startsWith("0031_"))!.sql, "publish_space")!;
-    const stripped = latest.body
-      .replace(SURFACE_SELECT, "custom_navigation, custom_text,")
-      .replace(SURFACE_EMIT, "");
+    expect(SURFACE_SELECT.test(zero32)).toBe(true);
+    expect(SURFACE_EMIT.test(zero32)).toBe(true);
+    const stripped = zero32.replace(SURFACE_SELECT, "custom_navigation, custom_text,").replace(SURFACE_EMIT, "");
     expect(norm(stripped)).toBe(norm(zero31));
+  });
+
+  it("0033's body is 0032's plus only the Flow content-expansion blocks", () => {
+    const zero32 = extractFunctionBody(migrations.find((m) => m.name.startsWith("0032_"))!.sql, "publish_space")!;
+    expect(norm(strip0033(latest.body))).toBe(norm(zero32));
+  });
+
+  it("each new 0033 module publishes only while switched on in module_configs", () => {
+    for (const key of ZERO33_NEW_MODULES) {
+      expect(moduleBlock(key).test(latest.body), key).toBe(true);
+      const block = norm(moduleBlock(key).exec(latest.body)![0]);
+      expect(block, key).toContain(`module_key = '${key}'`);
+      expect(block, key).toContain(`jsonb_build_object('${key}', v_payload)`);
+    }
+  });
+
+  it("each new 0033 settings object publishes only when its row is non-empty", () => {
+    // This is the backward-compatibility guarantee in code: an existing
+    // Space with no such row gets no such key, so its snapshot does not
+    // change the day 0033 ships.
+    for (const key of ZERO33_NEW_SETTINGS) {
+      expect(settingsBlock0033(key).test(latest.body), key).toBe(true);
+      const block = norm(settingsBlock0033(key).exec(latest.body)![0]);
+      expect(block, key).toContain("v_payload is not null and v_payload <> '{}'::jsonb");
+      expect(block, key).toContain(`jsonb_build_object(`);
+    }
+  });
+
+  it("every new 0033 field is merged in, never emitted as a null placeholder", () => {
+    // `'longBio', metadata->>'longBio'` would write "longBio": null into
+    // every existing facilitator. jsonb_pick returns only the keys that
+    // are present, which is why none of these may be plain emissions.
+    for (const field of ["longBio", "price", "currency", "chargeType", "availability", "whatToBring", "whatToExpect"]) {
+      expect(norm(latest.body), field).not.toContain(`'${field}', metadata->`);
+    }
+    expect([...norm(latest.body).matchAll(/public\.jsonb_pick\(metadata, array\[/g)]).toHaveLength(3);
+    // Facilities' shortDescription is a CONDITIONAL merge, not an
+    // emission. Treatments has emitted `'shortDescription', subtitle`
+    // unconditionally since 0008 and still must - every treatment row
+    // already carried that key - so the check is scoped to the facilities
+    // block rather than the whole body.
+    const facilities = norm(moduleBlock("facilities").exec(latest.body)![0]);
+    expect(FACILITY_SHORT_MERGE.test(latest.body)).toBe(true);
+    expect(facilities).toContain("case when subtitle is null then '{}'::jsonb");
+    expect(facilities).not.toMatch(/'shortDescription', subtitle(?!\) end)/);
+    expect(norm(moduleBlock("treatments").exec(latest.body)![0])).toContain("'shortDescription', subtitle,");
+  });
+
+  it("0033 adds no table and no destructive statement", () => {
+    const sql = stripSqlComments(migrations.find((m) => m.name.startsWith("0033_"))!.sql).toLowerCase();
+    expect(sql).not.toMatch(/\bcreate\s+(or\s+replace\s+)?(unlogged\s+|temp\w*\s+)?table\b/);
+    expect(sql).not.toMatch(/\bdrop\b/);
+    expect(sql).not.toMatch(/\btruncate\b/);
+    expect(sql).not.toMatch(/\bdelete\s+from\b/);
+    expect(sql).not.toMatch(/\balter\s+column\b/);
+    expect(sql).not.toMatch(/\brename\b/);
+    expect(sql).not.toMatch(/\bsecurity\s+definer\b/);
+    // Exactly one ALTER TABLE, and it is the additive column.
+    const alters = sql.match(/alter\s+table[^;]*;/g) ?? [];
+    expect(alters).toHaveLength(1);
+    expect(norm(alters[0]!)).toBe(
+      "alter table public.schedule_items add column if not exists metadata jsonb not null default '{}'::jsonb;"
+    );
+    // The only UPDATE is the pre-existing one inside publish_space().
+    expect(sql.match(/update\s+public\./g) ?? []).toHaveLength(1);
+  });
+
+  it("jsonb_pick() is a pure projection helper: immutable, invoker, pinned, not callable by anon", () => {
+    const sql = norm(stripSqlComments(migrations.find((m) => m.name.startsWith("0033_"))!.sql));
+    const start = sql.indexOf("create or replace function public.jsonb_pick");
+    const ddl = sql.slice(start, sql.indexOf("create or replace function public.publish_space", start));
+    expect(ddl).toMatch(/language sql immutable parallel safe security invoker/i);
+    expect(ddl).toMatch(/set search_path = public/i);
+    expect(ddl).toContain("revoke all on function public.jsonb_pick(jsonb, text[]) from public;");
+    expect(ddl).toContain("revoke execute on function public.jsonb_pick(jsonb, text[]) from anon;");
+    expect(ddl).toContain("grant execute on function public.jsonb_pick(jsonb, text[]) to authenticated;");
+    // No table may be reachable from it - it only ever walks its argument.
+    expect(ddl).not.toMatch(/\bfrom public\./);
+    expect(ddl).not.toMatch(/\bauth\.|\bstorage\./);
   });
 
   it("0031's own body is still 0028 plus only the Space Settings block", () => {
@@ -177,7 +294,7 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
 
   it("the Retreat branch is byte-for-byte 0025's body once every later additive block is removed (moduleCovers, imagePosition, snapshot shape untouched)", () => {
     expect(TEACH_BLOCK.test(latest.body)).toBe(true);
-    const retreatOnly = latest.body
+    const retreatOnly = strip0033(latest.body)
       .replace(TEACH_BLOCK, "")
       .replace(SPACE_SETTINGS_BLOCK, "")
       .replace(SURFACE_SELECT, "custom_navigation, custom_text,")
@@ -251,16 +368,17 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     }
   });
 
-  it("migration chain: one migration per number, 0032 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
+  it("migration chain: one migration per number, 0033 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
     const names = migrations.map((m) => m.name);
     expect(names.filter((n) => n.startsWith("0028_"))).toEqual(["0028_teach_foundation.sql"]);
     expect(names.filter((n) => n.startsWith("0029_"))).toEqual(["0029_versioned_media_update_deny.sql"]);
     expect(names.filter((n) => n.startsWith("0030_"))).toEqual(["0030_tenant_media_policies_uuid_safe.sql"]);
     expect(names.filter((n) => n.startsWith("0031_"))).toEqual(["0031_space_settings_publish.sql"]);
     expect(names.filter((n) => n.startsWith("0032_"))).toEqual(["0032_brand_surface.sql"]);
+    expect(names.filter((n) => n.startsWith("0033_"))).toEqual(["0033_flow_content_expansion.sql"]);
     // Nothing beyond the current head, and historical numbers are never
     // renumbered or back-filled.
-    expect(names.some((n) => /^00(3[3-9]|[4-9]\d)_/.test(n))).toBe(false);
+    expect(names.some((n) => /^00(3[4-9]|[4-9]\d)_/.test(n))).toBe(false);
     expect(names.filter((n) => n.startsWith("0019_"))).toEqual(["0019_signup_profile.sql"]);
     expect(names.some((n) => n.startsWith("0023_"))).toBe(false);
   });
