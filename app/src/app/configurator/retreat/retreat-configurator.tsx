@@ -46,7 +46,7 @@ import { ReadinessChecklist, type ReadinessItem } from "@/components/studio/read
 import { PublicLinkCard } from "@/components/studio/public-link-card";
 import { publicSpaceUrl, guestAppPath } from "@/lib/studio/publicLink";
 import { hasActivityExtras, type EditableScheduleItem } from "@/lib/schedule/types";
-import type { EditableFacilitator } from "@/lib/modules/facilitator";
+import { facilitatorSavePayload, type EditableFacilitator } from "@/lib/modules/facilitator";
 import type { EditableMeal } from "@/lib/modules/meal";
 import type { EditableTreatment } from "@/lib/modules/treatment";
 import type { EditableFacility } from "@/lib/modules/facility";
@@ -986,7 +986,7 @@ function TeamEditor({
         <div className="rounded-2xl border p-5" style={{ background: GUEST_BASE_PALETTE.parchmentDeep, borderColor: "rgba(45,74,62,0.15)" }}>
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
-              Editing {editing.name || "facilitator"}
+              {t("studio", "editingItem", { name: editing.name || t("flow", "unnamed") })}
             </h4>
             <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
@@ -1404,27 +1404,11 @@ export function RetreatConfigurator({
     const formData = new FormData();
     formData.set("locale", spaceLocale);
     formData.set("tenantId", tenantId ?? "");
-    // socialLinks/specialties MUST be included here - this is the client
-    // half of the metadata round-trip fix. Leaving them out would make
-    // facilitatorSchema.safeParse fail server-side (both fields are
-    // required, if empty, arrays), not silently drop them - but the
-    // correct fix is to always send the full current object, matching
-    // what [tenantId]/page.tsx loaded on this page's initial render.
-    formData.set(
-      "items",
-      JSON.stringify(
-        facilitators.map(({ id, name, role, bio, imageRef, socialLinks, specialties, imagePosition }) => ({
-          id,
-          name,
-          role,
-          bio,
-          imageRef,
-          socialLinks,
-          specialties,
-          imagePosition,
-        }))
-      )
-    );
+    // The whole object, every time - the metadata round-trip discipline
+    // described in lib/modules/facilitator.ts. This list used to be
+    // written out inline here, and it omitted longBio: every save wiped
+    // the field the organizer had just typed, with no error anywhere.
+    formData.set("items", JSON.stringify(facilitatorSavePayload(facilitators)));
     const ids = facilitators.map((f) => f.id);
     setFacilitatorsPending(true);
     const result = await enqueueItemsOp(ids, () => saveFacilitators(facilitatorsInitialState, formData));
@@ -1994,7 +1978,7 @@ export function RetreatConfigurator({
       </aside>
 
       {/* CENTER: configuration */}
-      <section className="px-6 py-10 sm:px-12 min-w-0">
+      <section className="px-6 py-10 sm:px-12 min-w-0" data-testid="studio-editor">
       <StudioEyebrowContext.Provider value={stepEyebrow}>
         {step === "identity" && (
           <form action={draftAction} className="max-w-xl">

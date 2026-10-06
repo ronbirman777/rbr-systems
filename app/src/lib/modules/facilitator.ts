@@ -56,3 +56,33 @@ export type EditableFacilitator = PublicFacilitator & {
 };
 /** What every renderer actually needs to draw a facilitator - imageRef plus its resolved, display-ready URL. */
 export type DisplayFacilitator = PublicFacilitator & { imageUrl: string | null };
+
+/**
+ * What the Studio posts when it saves the Team.
+ *
+ * It exists because the alternative - destructuring the fields inline in
+ * the editor - is how `longBio` came to be dropped: the save carried
+ * every other field, so nothing failed, and the new one was silently
+ * reset to null on the next save. TASK 029 found it in real Staging QA,
+ * not in a unit test.
+ *
+ * The rule this encodes is the metadata round-trip discipline named at
+ * the top of this file: a save carries the WHOLE object, never a subset.
+ * `facilitatorSavePayload` is the only place that list is written down,
+ * and facilitator.test.ts asserts it covers every key the schema parses -
+ * so adding a field to the schema and forgetting the save now fails the
+ * suite instead of the organizer's draft.
+ */
+export function facilitatorSavePayload(items: readonly EditableFacilitator[]): (PublicFacilitator & { id: string })[] {
+  return items.map((f) => ({
+    id: f.id,
+    name: f.name,
+    role: f.role,
+    bio: f.bio,
+    longBio: f.longBio,
+    imageRef: f.imageRef,
+    specialties: f.specialties,
+    socialLinks: f.socialLinks,
+    imagePosition: f.imagePosition,
+  }));
+}

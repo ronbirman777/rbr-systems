@@ -1,0 +1,525 @@
+{
+ "base": "https://innerdwes-6yew0mrkh-inner-dwe-s.vercel.app",
+ "locale": "he",
+ "latinRuns": 111,
+ "report": {
+  "Flow": {
+   "1 זהות": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "2 מיתוג": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "3 מודולים": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "4 בית הריטריט": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "5 לוח זמנים": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "QA Sunrise",
+     "where": "P.text-[13px]"
+    },
+    {
+     "text": "QA Facilitator",
+     "where": "P.text-[11px]"
+    }
+   ],
+   "6 מנחים": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "7 ארוחות": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "8 טיפולים": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "QA Massage",
+     "where": "P.text-[13px]"
+    }
+   ],
+   "9 מתקנים": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "QA Pool",
+     "where": "P.text-[13px]"
+    }
+   ],
+   "10 פרטי הגעה": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "Welcome QA",
+     "where": "P.text-[12.5px]"
+    },
+    {
+     "text": "A towel",
+     "where": "P.text-[12.5px]"
+    },
+    {
+     "text": "a water bottle and shoes you can walk in",
+     "where": "P.text-[12.5px]"
+    }
+   ],
+   "11 הנחיות": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "12 שאלות": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "QA question",
+     "where": "P.flex-1"
+    }
+   ],
+   "13 קריאה": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "x on arriving",
+     "where": "P.text-[13px]"
+    }
+   ],
+   "14 שמע": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "x evening nidra",
+     "where": "P.text-[13px]"
+    }
+   ],
+   "15 עמודים משלכם": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "QA Page",
+     "where": "P.flex-1"
+    }
+   ],
+   "16 נשארים בקשר": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "תצוגה ופרסום": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.text-white/60"
+    },
+    {
+     "text": "x tagline",
+     "where": "P.text-white/80"
+    },
+    {
+     "text": "x short",
+     "where": "P.text-[14px]"
+    },
+    {
+     "text": "Welcome QA",
+     "where": "P.text-[14px]"
+    },
+    {
+     "text": "x about",
+     "where": "P.text-[13.5px]"
+    },
+    {
+     "text": "Knowing others is wisdom",
+     "where": "P.text-[15px]"
+    },
+    {
+     "text": "Knowing yourself is enlightenment",
+     "where": "P.text-[15px]"
+    },
+    {
+     "text": "Lao Tzu",
+     "where": "P.text-[10px]"
+    },
+    {
+     "text": "Tao Te Ching",
+     "where": "P.text-[10px]"
+    }
+   ],
+   "שיתוף המרחב": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "QA Flow Retreat",
+     "where": "P.text-[15px]"
+    }
+   ],
+   "מוצג ב-InnerDweS": [
+    {
+     "text": "QA Flow Retreat",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "QA Flow Retreat",
+     "where": "P.text-[15px]"
+    }
+   ]
+  },
+  "Teach": {
+   "זהות": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "מיתוג": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "בית": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "Welcome to QA",
+     "where": "P.text-[13px]"
+    },
+    {
+     "text": "QA Teacher",
+     "where": "H1.leading-[1.15]"
+    },
+    {
+     "text": "Tel Aviv QA",
+     "where": "P.text-[12.5px]"
+    },
+    {
+     "text": "QA quote one",
+     "where": "P.text-[20px]"
+    },
+    {
+     "text": "QA Reading One",
+     "where": "SPAN.text-[15px]"
+    },
+    {
+     "text": "QA Audio One",
+     "where": "SPAN.text-[15px]"
+    }
+   ],
+   "לוח שיעורים": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "Welcome to QA",
+     "where": "P.text-[13px]"
+    },
+    {
+     "text": "QA Teacher",
+     "where": "H1.leading-[1.15]"
+    },
+    {
+     "text": "Tel Aviv QA",
+     "where": "P.text-[12.5px]"
+    },
+    {
+     "text": "QA quote one",
+     "where": "P.text-[20px]"
+    },
+    {
+     "text": "QA Reading One",
+     "where": "SPAN.text-[15px]"
+    },
+    {
+     "text": "QA Audio One",
+     "where": "SPAN.text-[15px]"
+    }
+   ],
+   "עליי": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "Welcome to QA",
+     "where": "P.text-[13px]"
+    },
+    {
+     "text": "QA Teacher",
+     "where": "H1.leading-[1.15]"
+    },
+    {
+     "text": "Tel Aviv QA",
+     "where": "P.text-[12.5px]"
+    },
+    {
+     "text": "QA quote one",
+     "where": "P.text-[20px]"
+    },
+    {
+     "text": "QA Reading One",
+     "where": "SPAN.text-[15px]"
+    },
+    {
+     "text": "QA Audio One",
+     "where": "SPAN.text-[15px]"
+    }
+   ],
+   "מודולים": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "הקריאות שלי": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "האודיו שלי": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "איך ליצור איתי קשר": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "עמודים משלי": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    }
+   ],
+   "תצוגה ופרסום": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "Welcome to QA",
+     "where": "P.text-[13px]"
+    },
+    {
+     "text": "QA Teacher",
+     "where": "H1.leading-[1.15]"
+    },
+    {
+     "text": "Tel Aviv QA",
+     "where": "P.text-[12.5px]"
+    },
+    {
+     "text": "QA quote one",
+     "where": "P.text-[20px]"
+    },
+    {
+     "text": "QA Reading One",
+     "where": "SPAN.text-[15px]"
+    },
+    {
+     "text": "QA Audio One",
+     "where": "SPAN.text-[15px]"
+    }
+   ],
+   "QA Teacher": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "Welcome to QA",
+     "where": "P.text-[13px]"
+    },
+    {
+     "text": "QA Teacher",
+     "where": "H1.leading-[1.15]"
+    },
+    {
+     "text": "Tel Aviv QA",
+     "where": "P.text-[12.5px]"
+    },
+    {
+     "text": "QA quote one",
+     "where": "P.text-[20px]"
+    },
+    {
+     "text": "QA Reading One",
+     "where": "SPAN.text-[15px]"
+    },
+    {
+     "text": "QA Audio One",
+     "where": "SPAN.text-[15px]"
+    }
+   ],
+   "גלו": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "Welcome to QA",
+     "where": "P.text-[13px]"
+    },
+    {
+     "text": "QA Teacher",
+     "where": "H1.leading-[1.15]"
+    },
+    {
+     "text": "Tel Aviv QA",
+     "where": "P.text-[12.5px]"
+    },
+    {
+     "text": "QA quote one",
+     "where": "P.text-[20px]"
+    },
+    {
+     "text": "QA Reading One",
+     "where": "SPAN.text-[15px]"
+    },
+    {
+     "text": "QA Audio One",
+     "where": "SPAN.text-[15px]"
+    }
+   ],
+   "לצפייה בלוח השיעורים": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "Welcome to QA",
+     "where": "P.text-[13px]"
+    },
+    {
+     "text": "QA Teacher",
+     "where": "H1.leading-[1.15]"
+    },
+    {
+     "text": "Tel Aviv QA",
+     "where": "P.text-[12.5px]"
+    },
+    {
+     "text": "QA quote one",
+     "where": "P.text-[20px]"
+    },
+    {
+     "text": "QA Reading One",
+     "where": "SPAN.text-[15px]"
+    },
+    {
+     "text": "QA Audio One",
+     "where": "SPAN.text-[15px]"
+    }
+   ],
+   "Q VINYASA · QA הסתיים QA Daily Practice 07:00 – 07:30 · UTC Olive Tree Studio QA": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "Welcome to QA",
+     "where": "P.text-[13px]"
+    },
+    {
+     "text": "QA Teacher",
+     "where": "H1.leading-[1.15]"
+    },
+    {
+     "text": "Tel Aviv QA",
+     "where": "P.text-[12.5px]"
+    },
+    {
+     "text": "QA quote one",
+     "where": "P.text-[20px]"
+    },
+    {
+     "text": "QA Reading One",
+     "where": "SPAN.text-[15px]"
+    },
+    {
+     "text": "QA Audio One",
+     "where": "SPAN.text-[15px]"
+    }
+   ],
+   "קריאה QA Reading One": [
+    {
+     "text": "QA Teacher",
+     "where": "SPAN.truncate"
+    },
+    {
+     "text": "Welcome to QA",
+     "where": "P.text-[13px]"
+    },
+    {
+     "text": "QA Teacher",
+     "where": "H1.leading-[1.15]"
+    },
+    {
+     "text": "Tel Aviv QA",
+     "where": "P.text-[12.5px]"
+    },
+    {
+     "text": "QA quote one",
+     "where": "P.text-[20px]"
+    },
+    {
+     "text": "QA Reading One",
+     "where": "SPAN.text-[15px]"
+    },
+    {
+     "text": "QA Audio One",
+     "where": "SPAN.text-[15px]"
+    }
+   ]
+  }
+ }
+}

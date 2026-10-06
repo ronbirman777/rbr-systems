@@ -88,11 +88,27 @@ for (const [product, tenant] of [["Flow", FLOW], ["Teach", TEACH]]) {
     if (!name) continue;
     await btn.click().catch(() => {});
     await page.waitForTimeout(450);
+    // Several editors keep their item panel closed, and the first pass of
+    // this audit therefore never looked inside one - which is where five
+    // more leaks were hiding ("Editing {name}"). So open the first row.
+    const opener = page.locator('[data-testid="studio-editor"] button').filter({ hasText: /^(edit|ערוך|עריכה)$/i }).first();
+    if (await opener.isVisible().catch(() => false)) {
+      await opener.click().catch(() => {});
+      await page.waitForTimeout(400);
+    }
     const hits = await collect();
     if (hits.length) report[product][name] = hits;
   }
-  await page.click('button:has-text("English")').catch(() => {});
-  await page.waitForTimeout(1500);
+  // The language card lives on the Identity step, so the Space has to be
+  // back there before English can be restored. Leaving the Space in
+  // Hebrew would quietly break every later harness.
+  await page.goto(`${BASE}/configurator/${path}/${tenant}`, { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle").catch(() => {});
+  await page.click('button:has-text("English")');
+  await page.waitForFunction(() =>
+    document.querySelector('div.contents[lang][dir], [data-testid="teach-studio"][lang][dir]')?.getAttribute("lang") === "en",
+    null, { timeout: 4000 });
+  await page.waitForTimeout(1800);
 }
 
 await browser.close();

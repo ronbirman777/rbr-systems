@@ -662,7 +662,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
         <aside className="hidden lg:block bg-[#EFE9DE] px-3 py-4 border-r border-[#E2DACD]">
           <div className="sticky top-20">{navList}</div>
         </aside>
-        <main ref={mainRef} className="min-w-0 px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-5">
+        <main ref={mainRef} className="min-w-0 px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-5" data-testid="studio-editor">
           {content}
         </main>
         <aside className="hidden lg:flex flex-col items-center gap-3 bg-[#E9E3D8] px-5 py-6 border-l border-[#E2DACD]">

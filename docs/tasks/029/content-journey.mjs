@@ -43,9 +43,36 @@ await page.fill('input[name="password"]', QA_PW);
 await page.click('button[type="submit"]');
 await page.waitForURL(/\/space/, { timeout: 45000 });
 
+/**
+ * The editor column, never the Live Draft Preview beside it. The preview
+ * is a real render of the Guest App, so it has accordions with
+ * aria-expanded and the organizer's own titles in it - an earlier version
+ * of this harness clicked one of those instead of an item row, and read
+ * a marker out of the preview instead of out of the editor.
+ */
+const EDITOR = '[data-testid="studio-editor"]';
+
 const studio = async () => {
   await page.goto(`${BASE}/configurator/retreat/${FLOW}`, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle").catch(() => {});
+};
+/**
+ * This journey addresses fields by their English aria-labels, so the
+ * Space has to be in English before it starts. Said out loud rather than
+ * assumed: an earlier run inherited Hebrew from the leak audit and failed
+ * on the first click.
+ */
+const forceEnglish = async () => {
+  await studio();
+  const en = page.locator('button:has-text("English")').first();
+  if (await en.isVisible().catch(() => false)) {
+    await en.click();
+    await page.waitForFunction(() =>
+      document.querySelector("div.contents[lang][dir]")?.getAttribute("lang") === "en",
+      null, { timeout: 4000 }).catch(() => {});
+    await page.waitForTimeout(1800);
+  }
+  return page.evaluate(() => document.querySelector("div.contents[lang][dir]")?.getAttribute("lang"));
 };
 const step = async (name) => {
   await page.locator("aside button, nav button").filter({ hasText: new RegExp(name, "i") }).first().click();
@@ -63,28 +90,84 @@ const save = async () => {
   ).catch(() => {});
   await page.waitForTimeout(900);
 };
-const setField = async (label, value) => {
-  const f = page.locator(`[aria-label="${label}"]`).first();
+/**
+ * Several editors keep an item's fields behind a row: Facilities and
+ * Facilitators have an "Edit" button, others a collapsible row. Opening
+ * one is part of editing them, not a workaround.
+ */
+const expandFirstRow = async () => {
+  for (const loc of [
+    page.locator(`${EDITOR} button[aria-expanded="false"]`).first(),
+    page.locator(`${EDITOR} button`).filter({ hasText: /^edit$/i }).first(),
+  ]) {
+    if (await loc.isVisible().catch(() => false)) {
+      await loc.click().catch(() => {});
+      await page.waitForTimeout(500);
+      break;
+    }
+  }
+  // The Schedule editor keeps a session's extra details in a native
+  // <details>, closed by default on purpose (the brief: they must not
+  // clutter the standard editor), so opening it is part of reaching them.
+  const summaries = page.locator(`${EDITOR} details:not([open]) summary`);
+  for (let i = 0; i < (await summaries.count()); i += 1) {
+    await summaries.nth(i).click().catch(() => {});
+    await page.waitForTimeout(250);
+  }
+};
+/**
+ * `which` matters. Editors that list their items inline (Guidelines)
+ * append a new row at the END, so filling the first one edits somebody
+ * else's row - which is what an earlier run of this harness did, and why
+ * a guideline saved as "Untitled".
+ */
+const setField = async (label, value, which = "first") => {
+  const pick = () => {
+    const all = page.locator(`${EDITOR} [aria-label="${label}"]`);
+    return which === "last" ? all.last() : all.first();
+  };
+  let f = pick();
+  if (!(await f.isVisible().catch(() => false))) {
+    await expandFirstRow();
+    f = pick();
+  }
   await f.waitFor({ state: "visible", timeout: 10000 });
   await f.fill(value);
 };
-const fieldValue = (label) => page.locator(`[aria-label="${label}"]`).first().inputValue();
+/**
+ * Reads back the LAST item in this editor the way an organizer would:
+ * reopen it and look at its title. Reading the column's text instead
+ * would be wrong twice over - the Live Draft Preview renders the same
+ * words, and most editors show a saved item only as a collapsed row.
+ */
+const lastItemTitle = async () => {
+  const edits = page.locator(`${EDITOR} button`).filter({ hasText: /^edit$/i });
+  const n = await edits.count();
+  if (n > 0) {
+    await edits.nth(n - 1).click().catch(() => {});
+    await page.waitForTimeout(600);
+  }
+  const titles = page.locator(`${EDITOR} [aria-label="Title"]`);
+  const m = await titles.count();
+  return m ? titles.nth(m - 1).inputValue() : "";
+};
+const fieldValue = (label) => page.locator(`${EDITOR} [aria-label="${label}"]`).first().inputValue();
 const dirty = () => page.evaluate(() =>
   [...document.querySelectorAll("button")].some((b) => /^\s*save\b/i.test(b.innerText) && !b.disabled));
 
 // ---------------------------------------------------------------- modules
-await studio();
+ok("the Space starts this journey in English", (await forceEnglish()) === "en");
 await step("Modules");
 const beforeSteps = await page.$$eval("aside button, nav button", (els) => els.map((e) => e.innerText.replace(/\s+/g, " ").trim()));
 for (const mod of ["Guidelines", "Readings", "Audio"]) {
   const on = await page.evaluate((m) => {
     const key = { Guidelines: "module_guidelines", Readings: "module_readings", Audio: "module_audio" }[m];
-    return document.querySelector(`input[name="${key}"]`)?.value === "true";
+    return document.querySelector(`input[name="${key}"]`)?.value === "on";
   }, mod);
   if (!on) await page.click(`button[aria-label="Toggle ${mod}"]`);
 }
 const allOn = await page.evaluate(() =>
-  ["module_guidelines", "module_readings", "module_audio"].every((k) => document.querySelector(`input[name="${k}"]`)?.value === "true"));
+  ["module_guidelines", "module_readings", "module_audio"].every((k) => document.querySelector(`input[name="${k}"]`)?.value === "on"));
 ok("Modules: Guidelines, Readings and Audio can be switched on", allOn);
 await save();
 await studio();
@@ -100,6 +183,13 @@ const EDITS = [
   ["Meals", [["Introduction (optional)", `${MARKER} meals intro`]], "Introduction (optional)"],
   ["Facilities", [["Short description", `${MARKER} facility short`]], "Short description"],
   ["Facilitators", [["Full biography (optional)", `${MARKER} long bio`]], "Full biography (optional)"],
+  // TASK 029 also added these, and they were missing from the first run
+  // of this journey - which is how a facilitator's longBio got as far as
+  // Staging while silently failing to save.
+  ["Treatments", [["Price", "700"], ["Currency", "THB"], ["Availability", `${MARKER} on request`]], "Availability"],
+  // Capitalised exactly as flow.whatToBring / flow.whatToExpect are -
+  // the Schedule editor reuses the Retreat Home keys.
+  ["Schedule", [["What to Bring", `${MARKER}-mat`], ["What to Expect", `${MARKER}-barefoot`]], "What to Bring"],
 ];
 
 for (const [name, fields, readBack] of EDITS) {
@@ -114,7 +204,7 @@ for (const [name, fields, readBack] of EDITS) {
   await studio();
   await step(name);
   let got = "";
-  try { got = await fieldValue(readBack); } catch { /* reported below */ }
+  try { await expandFirstRow(); got = await fieldValue(readBack); } catch { /* reported below */ }
   ok(`${name}: the edit survives a save and a reload`, got.includes(MARKER), `"${String(got).slice(0, 80)}"`);
 }
 
@@ -127,18 +217,23 @@ const ITEMS = [
 for (const [name, fields] of ITEMS) {
   await studio();
   await step(name);
-  const add = page.locator("main button").filter({ hasText: new RegExp(`add (a )?(${name.replace(/s$/, "")}|${name})`, "i") }).first();
+  const add = page.locator(`${EDITOR} button`).filter({ hasText: new RegExp(`add (a )?(${name.replace(/s$/, "")}|${name})`, "i") }).first();
   try { await add.click({ timeout: 8000 }); } catch (e) { ok(`${name}: there is an "Add" control`, false, String(e).slice(0, 120)); continue; }
   await page.waitForTimeout(400);
   for (const [label, value] of fields) {
-    try { await setField(label, value); }
+    try { await setField(label, value, "last"); }
     catch (e) { ok(`${name}: the field "${label}" exists`, false, String(e).slice(0, 160)); }
   }
   await save();
   await studio();
   await step(name);
-  const body = await page.locator("main").innerText();
-  ok(`${name}: a new item saves and comes back after a reload`, body.includes(`${MARKER}`), body.split("\n").find((l) => l.includes(MARKER)) || "(marker not found in step)");
+  // Scoped to the item rows, not the whole column: the Live Draft
+  // Preview also renders the marker, and an earlier version of this
+  // harness passed on that instead of on the editor.
+  const title = await lastItemTitle();
+  const where = await page.locator(`${EDITOR} h1, ${EDITOR} h2`).first().innerText().catch(() => "?");
+  ok(`${name}: a new item saves and comes back after a reload`,
+    title.includes(MARKER), `on "${where}": last item is "${title.slice(0, 80)}"`);
 }
 
 // --------------------------------------------------- the unsaved guard
@@ -167,12 +262,23 @@ ok("publish gating: a SAVED but unpublished edit is not visible to guests",
   !guestBefore.includes(MARKER), guestBefore.includes(MARKER) ? "marker leaked into the published Guest App" : "absent, as it must be");
 
 await studio();
-await page.locator("button").filter({ hasText: /republish|publish now/i }).first().click();
-await page.waitForTimeout(1200);
-const pubBtn = page.locator("button").filter({ hasText: /publish now|republish/i }).first();
-if (await pubBtn.isVisible().catch(() => false)) { await pubBtn.click().catch(() => {}); }
-await page.waitForFunction(() => /published/i.test(document.body.innerText), null, { timeout: 60000 }).catch(() => {});
-await page.waitForTimeout(2500);
+await page.locator("aside button, nav button").filter({ hasText: /Preview & Publish/i }).first().click();
+await page.waitForTimeout(900);
+const before = await page.locator('[data-testid="publish-status-card"]').innerText().catch(() => "");
+// The publish button is the submit of the form the status card sits in.
+const pubBtn = page.locator('form button[type="submit"]').filter({ hasText: /publish/i }).first();
+ok("the Preview & Publish step offers a publish control", await pubBtn.isVisible().catch(() => false));
+await pubBtn.click();
+await page.waitForFunction(
+  (was) => {
+    const card = document.querySelector('[data-testid="publish-status-card"]');
+    return card && card.innerText !== was && !/publishing/i.test(card.innerText);
+  },
+  before, { timeout: 90000 }
+).catch(() => {});
+await page.waitForTimeout(3000);
+const after = await page.locator('[data-testid="publish-status-card"]').innerText().catch(() => "");
+ok("publishing updates the status card", after !== before && after.length > 0, `${before.replace(/\n/g, " ").slice(0, 60)} -> ${after.replace(/\n/g, " ").slice(0, 60)}`);
 
 const guestAfter = await (await ctx.request.get(`${BASE}/s/qa-flow-1h8ve`)).text();
 ok("after publishing, the Guest App serves the new content", guestAfter.includes(MARKER),

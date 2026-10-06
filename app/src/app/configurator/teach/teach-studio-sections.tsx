@@ -1294,10 +1294,12 @@ export function ScheduleSection({ api }: Props) {
           {otherZoneClasses > 0 ? (
             <div className="flex flex-wrap items-center gap-3 px-3 py-2.5 rounded-lg bg-[#F4EFE6]" data-testid="apply-zone-to-classes">
               <p className="text-[12.5px] text-[#4A4843] flex-1 min-w-[200px]">
-                {otherZoneClasses === 1 ? "1 class uses" : `${otherZoneClasses} classes use`} a different time zone from your Space. Changing it keeps each class’s local date and time.
+                {otherZoneClasses === 1
+                  ? t("teach", "oneClassOtherZone")
+                  : t("teach", "manyClassesOtherZone", { count: otherZoneClasses })}
               </p>
               <StudioButton kind="outline" onClick={applyZoneToClasses}>
-                Use {api.timezone} for all classes
+                {t("teach", "useTimezoneForAll", { timezone: api.timezone })}
               </StudioButton>
             </div>
           ) : null}

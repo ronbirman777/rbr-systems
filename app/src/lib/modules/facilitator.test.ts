@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { facilitatorSchema } from "./facilitator";
+import { facilitatorSavePayload, facilitatorSchema } from "./facilitator";
 
 describe("facilitatorSchema", () => {
   it("accepts a complete facilitator with socialLinks and specialties", () => {
@@ -134,5 +134,42 @@ describe("facilitatorSchema", () => {
       });
       expect(result.success).toBe(true);
     }
+  });
+});
+
+describe("the Team save carries the whole facilitator", () => {
+  it("posts every field the server will parse", () => {
+    // TASK 029 found longBio missing from the Studio's save payload in
+    // real Staging QA: the editor wrote the field, the save dropped it,
+    // the server defaulted it back to null and nothing errored. The list
+    // of posted keys now lives in one place, and this asserts it covers
+    // the schema - so a new field added to facilitatorSchema without a
+    // matching line in facilitatorSavePayload fails here.
+    const schemaKeys = Object.keys(facilitatorSchema.shape).sort();
+    const [posted] = facilitatorSavePayload([
+      {
+        id: "f1",
+        name: "QA",
+        role: null,
+        bio: null,
+        longBio: "the long version",
+        imageRef: null,
+        specialties: [],
+        socialLinks: [],
+        imagePosition: null,
+      },
+    ]);
+    expect(Object.keys(posted).filter((k) => k !== "id").sort()).toEqual(schemaKeys);
+    expect(posted.longBio).toBe("the long version");
+    // And what is posted survives the server's own parse unchanged.
+    expect(facilitatorSchema.parse(posted).longBio).toBe("the long version");
+  });
+
+  it("keeps longBio when it is empty, rather than dropping the key", () => {
+    const [posted] = facilitatorSavePayload([
+      { id: "f2", name: "QA", role: null, bio: "short", longBio: null, imageRef: null, specialties: [], socialLinks: [], imagePosition: null },
+    ]);
+    expect("longBio" in posted).toBe(true);
+    expect(posted.longBio).toBeNull();
   });
 });

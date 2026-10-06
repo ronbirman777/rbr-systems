@@ -221,7 +221,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
         <div className="rounded-2xl border p-5" style={{ background: GUEST_BASE_PALETTE.parchmentDeep, borderColor: "rgba(45,74,62,0.15)" }}>
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
-              Editing {editing.name || "treatment"}
+              {t("studio", "editingItem", { name: editing.name || t("flow", "untitledTreatment") })}
             </h4>
             <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
