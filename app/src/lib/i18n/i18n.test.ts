@@ -19,7 +19,11 @@ import {
   studioMessages,
   untranslatedKeys,
 } from "./index";
+import { en } from "./dictionaries/en";
+import { de } from "./dictionaries/de";
+import { es } from "./dictionaries/es";
 import { fr } from "./dictionaries/fr";
+import { he } from "./dictionaries/he";
 import { validateAdditionalLinks } from "@/app/configurator/retreat/featuredValidation";
 import { DIRECTIONAL_ICONS, iconTransform, isDirectionalIcon } from "./direction";
 import { formatLongDateLocalized, formatNumberLocalized, formatShortDateLocalized, formatTimeLocalized, shortWeekdayName } from "./datetime";
@@ -30,6 +34,9 @@ import { guestAccessCopy } from "@/lib/spaceTypes/guestAccessCopy";
 import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
 import { parsePublishedTeachSpace } from "@/lib/teach/guestData";
 import { TeachGuestApp } from "@/components/teach/teach-guest-app";
+
+/** The dictionaries by locale, for the checks that iterate all five. */
+const DICTIONARY_FOR_TEST = { en, de, es, fr, he } as const;
 
 describe("supported locales", () => {
   it("is exactly en/de/es/fr/he, in selector order, with English as the fallback", () => {
@@ -101,6 +108,31 @@ describe("translation and fallback", () => {
     for (const locale of SUPPORTED_LOCALES) {
       expect(missingKeys(locale), locale).toEqual([]);
     }
+  });
+
+  it("carries every placeholder through, in every locale", () => {
+    // A bulk rewrite is the thing that breaks these: TASK 029 rewrote 208
+    // French strings in one pass, and a dropped {index} or a mangled
+    // {{teacher_name}} would reach a guest as a literal brace rather than
+    // failing anywhere. Asserted per key against English, so a translator
+    // cannot quietly lose one either.
+    const placeholders = (s: string) => (s.match(/\{\{?\w+\}?\}/g) ?? []).slice().sort();
+    const mismatches: string[] = [];
+    for (const [namespace, strings] of Object.entries(en)) {
+      for (const [key, value] of Object.entries(strings)) {
+        const expected = placeholders(value as string);
+        for (const locale of SUPPORTED_LOCALES) {
+          if (locale === "en") continue;
+          const got = placeholders(
+            (DICTIONARY_FOR_TEST[locale] as Record<string, Record<string, string>>)[namespace][key]
+          );
+          if (expected.join("|") !== got.join("|")) {
+            mismatches.push(`${locale} ${namespace}.${key}: expected ${expected.join(",")} got ${got.join(",")}`);
+          }
+        }
+      }
+    }
+    expect(mismatches).toEqual([]);
   });
 
   it("only repeats English where the word is genuinely the same", () => {
