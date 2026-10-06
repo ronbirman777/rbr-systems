@@ -78,15 +78,15 @@ export function CollapsibleItemRow({
         </button>
         {move ? (
           <span className="flex">
-            <button type="button" onClick={move.up} aria-label={t("studio", "moveUp")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5" disabled={move.upDisabled}>
+            <button type="button" onClick={move.up} aria-label={t("studio", "moveUp")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5 relative after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-11 after:h-11" disabled={move.upDisabled}>
               ↑
             </button>
-            <button type="button" onClick={move.down} aria-label={t("studio", "moveDown")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5" disabled={move.downDisabled}>
+            <button type="button" onClick={move.down} aria-label={t("studio", "moveDown")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5 relative after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-11 after:h-11" disabled={move.downDisabled}>
               ↓
             </button>
           </span>
         ) : null}
-        <button type="button" onClick={onToggle} aria-label={open ? t("studio", "collapse") : t("common", "edit")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5">
+        <button type="button" onClick={onToggle} aria-label={open ? t("studio", "collapse") : t("common", "edit")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5 relative after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-11 after:h-11">
           {open ? "▴" : "▾"}
         </button>
       </div>

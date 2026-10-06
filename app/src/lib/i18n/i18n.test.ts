@@ -19,6 +19,7 @@ import {
   studioMessages,
   untranslatedKeys,
 } from "./index";
+import { fr } from "./dictionaries/fr";
 import { validateAdditionalLinks } from "@/app/configurator/retreat/featuredValidation";
 import { DIRECTIONAL_ICONS, iconTransform, isDirectionalIcon } from "./direction";
 import { formatLongDateLocalized, formatNumberLocalized, formatShortDateLocalized, formatTimeLocalized, shortWeekdayName } from "./datetime";
@@ -194,6 +195,66 @@ describe("translation and fallback", () => {
   });
 });
 
+describe("the French dictionary speaks informally, like the German one", () => {
+  // Owner decision (TASK 029 final hardening): French moved from "vous"
+  // to "tu", aligning it with German's "du". InnerDweS is a personal
+  // wellness product, and a formal address puts corporate distance
+  // between a teacher and their students.
+  //
+  // This is asserted rather than remembered because a single reverted
+  // string reads as a different product. It checks the three ways French
+  // leaks formality: the pronouns, the possessives, and - the one a
+  // find-and-replace always misses - second-person-PLURAL verb forms,
+  // which look like ordinary words.
+  const values = Object.entries(fr).flatMap(([ns, strings]) =>
+    Object.entries(strings).map(([key, value]) => [`${ns}.${key}`, value] as const)
+  );
+
+  it("never addresses anyone as vous / votre / vos / veuillez", () => {
+    const formal = /\b(vous|votre|vos|veuillez)\b/i;
+    const found = values.filter(([, v]) => formal.test(v)).map(([k]) => k);
+    expect(found, "formal address").toEqual([]);
+  });
+
+  it("uses no second-person-plural verb form", () => {
+    // "chez", "assez" and "nez" end in -ez without being verbs; nothing
+    // else in this dictionary should.
+    const NOT_A_VERB = new Set(["chez", "assez", "nez"]);
+    const offenders: string[] = [];
+    for (const [key, value] of values) {
+      for (const word of value.match(/\b[A-Za-zÀ-ÿ’'-]+ez\b/g) ?? []) {
+        if (!NOT_A_VERB.has(word.toLowerCase())) offenders.push(`${key}: ${word}`);
+      }
+      for (const word of value.match(/\b(êtes|avez|pouvez|voulez|devez|soyez|ayez|voyez|savez|faites|dites)\b/g) ?? []) {
+        offenders.push(`${key}: ${word}`);
+      }
+    }
+    expect(offenders, "plural verb forms").toEqual([]);
+  });
+
+  it("still reads as French, not as a find-and-replace", () => {
+    // Spot checks on the shapes a bulk conversion gets wrong: elision
+    // before a vowel, and gender agreement on the possessive.
+    expect(fr.teach.aboutMeBody).toContain("Ton histoire");
+    expect(fr.flow.identityTitle).toContain("ta retraite");
+    expect(fr.studio.shareYourSpace).toBe("Partage ton Espace");
+    expect(fr.flow.addFacilitatorsBody).toContain("Ton équipe");
+    // And the organizer's gender is still never guessed.
+    expect(fr.flow.previewPublishBody).toContain("quand tout est prêt");
+  });
+
+  it("is informal for guests too, including the message a guest sends", () => {
+    // German does the same here ("Kannst du mir bestätigen"), so the two
+    // languages do not disagree about who the product is talking to.
+    expect(fr.teach.classWhatsappTemplate).toContain("Peux-tu");
+    expect(fr.flow.enterAccessCode).toContain("ton code");
+    // The template's variables must survive any rewording.
+    for (const v of ["{{teacher_name}}", "{{class_name}}", "{{date}}", "{{start_time}}", "{{space_url}}"]) {
+      expect(fr.teach.classWhatsappTemplate, v).toContain(v);
+    }
+  });
+});
+
 describe("country recommends a language but never locks it", () => {
   it("recommends Hebrew for Israel and German for the DACH countries", () => {
     expect(recommendedLocales("IL")).toEqual(["en", "he"]);
@@ -313,7 +374,7 @@ describe("the canvas Share Card's Hebrew fallback is deliberate", () => {
     // translate these two keys.
     expect(translate("de", "flow", "cardKicker")).toBe("DEIN RETREAT-BEGLEITER");
     expect(translate("es", "flow", "cardKicker")).toBe("TU COMPAÑERO DE RETIRO");
-    expect(translate("fr", "flow", "cardKicker")).toBe("VOTRE COMPAGNON DE RETRAITE");
+    expect(translate("fr", "flow", "cardKicker")).toBe("TON COMPAGNON DE RETRAITE");
     expect(translate("he", "flow", "cardKicker")).toBe(translate("en", "flow", "cardKicker"));
     expect(translate("he", "flow", "cardScanLabel")).toBe(translate("en", "flow", "cardScanLabel"));
   });
@@ -394,7 +455,7 @@ describe("Server Actions answer in the Space language", () => {
     expect(he("notLoggedInToSave")).toBe("צריך להתחבר כדי לשמור.");
     expect(de("notLoggedInToSave")).toBe("Du musst angemeldet sein, um zu speichern.");
     expect(studioMessages("es")("notLoggedInToSave")).toBe("Tienes que haber iniciado sesión para guardar.");
-    expect(studioMessages("fr")("notLoggedInToSave")).toBe("Vous devez vous connecter pour enregistrer.");
+    expect(studioMessages("fr")("notLoggedInToSave")).toBe("Tu dois te connecter pour enregistrer.");
     // English stays exactly as the action previously returned it.
     expect(studioMessages("en")("notLoggedInToSave")).toBe("You need to be logged in to save.");
   });
@@ -410,7 +471,7 @@ describe("Server Actions answer in the Space language", () => {
     expect(validateAdditionalLinks(tooMany, "en")).toBe("You can add up to 6 additional links.");
     expect(validateAdditionalLinks(tooMany, "he")).toBe("אפשר להוסיף עד 6 קישורים נוספים.");
     expect(validateAdditionalLinks(tooMany, "es")).toBe("Puedes añadir hasta 6 enlaces adicionales.");
-    expect(validateAdditionalLinks(tooMany, "fr")).toBe("Vous pouvez ajouter jusqu’à 6 liens supplémentaires.");
+    expect(validateAdditionalLinks(tooMany, "fr")).toBe("Tu peux ajouter jusqu’à 6 liens supplémentaires.");
     expect(validateAdditionalLinks([], "de")).toBeNull();
   });
 });

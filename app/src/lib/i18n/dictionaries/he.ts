@@ -825,6 +825,7 @@ export const he: Dictionary = {
 
     // ---- Studio: Preview & Publish step ----
     previewPublishBody: "עברו על השינויים ופרסמו כשאתם מוכנים. ה-Guest App החי מתעדכן רק כשאתם בוחרים לפרסם.",
+    publishedNow: "פורסם — האורחים רואים את הגרסה הזו עכשיו.",
     guestAppIsLive: "ה-Guest App שלכם באוויר",
     viewGuestApp: "צפייה ב-Guest App",
     viewLiveGuestApp: "צפייה ב-Guest App החי",
@@ -1390,6 +1391,15 @@ export const he: Dictionary = {
     couldNotRemoveImage: "לא ניתן להסיר את התמונה",
     hexHint: "השתמשו בקוד hex בן 6 ספרות, למשל #5B7A6E",
     openColorPicker: "{label} - פתיחת בוחר הצבעים",
+    linkLabelN: "תיאור לקישור {index}",
+    linkUrlN: "כתובת לקישור {index}",
+    accessCodeField: "קוד גישה בן 6 ספרות",
+    hexValueOf: "ערך hex: {label}",
+    socialPlatformN: "פלטפורמה לקישור {index}",
+    socialUrlN: "כתובת לקישור {index}",
+    timezoneField: "אזור זמן",
+    guestAddressField: "כתובת לאורחים",
+    chooseImageFile: "בחירת קובץ תמונה",
     usedOfMax: "{used} מתוך {max} בשימוש",
     uploadPhoto: "העלאת תמונה",
     replacePhoto: "החלפת התמונה",

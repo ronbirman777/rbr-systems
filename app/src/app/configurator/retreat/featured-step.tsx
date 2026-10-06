@@ -2,7 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { StudioHeading, StudioIntro, StudioLabel, STUDIO_INPUT_CLASS } from "./studio-ui";
+import { STUDIO_INPUT_CLASS, StudioField, StudioHeading, StudioIntro, StudioLabel } from "./studio-ui";
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import {
   submitFeaturedListing,
@@ -114,52 +114,56 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission,
 
         <div className="space-y-4">
           <div>
-            <StudioLabel>{t("common", "description")}</StudioLabel>
-            <textarea
-              name="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value.slice(0, 1000))}
-              rows={4}
-              maxLength={1000}
-              placeholder={t("flow", "featuredDescriptionPlaceholder")}
-              className={`${STUDIO_INPUT_CLASS} resize-none`}
-            />
+            <StudioField label={t("common", "description")}>
+              <textarea
+                name="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value.slice(0, 1000))}
+                rows={4}
+                maxLength={1000}
+                placeholder={t("flow", "featuredDescriptionPlaceholder")}
+                className={`${STUDIO_INPUT_CLASS} resize-none`}
+              />
+            </StudioField>
             <p className="text-[10px] mt-1" style={{ color: GUEST_BASE_PALETTE.mist }}>
               {description.length}/1000
             </p>
           </div>
 
           <div>
-            <StudioLabel>{t("common", "location")}</StudioLabel>
-            <input
-              name="location"
-              value={location}
-              onChange={(e) => setLocation(e.target.value.slice(0, 200))}
-              placeholder={t("flow", "featuredLocationPlaceholder")}
-              className={STUDIO_INPUT_CLASS}
-            />
+            <StudioField label={t("common", "location")}>
+              <input
+                name="location"
+                value={location}
+                onChange={(e) => setLocation(e.target.value.slice(0, 200))}
+                placeholder={t("flow", "featuredLocationPlaceholder")}
+                className={STUDIO_INPUT_CLASS}
+              />
+            </StudioField>
           </div>
 
           <div>
-            <StudioLabel>{t("common", "website")}</StudioLabel>
-            <input
-              name="website"
-              value={website}
-              onChange={(e) => setWebsite(e.target.value)}
-              placeholder="https://yourretreat.com"
-              className={STUDIO_INPUT_CLASS}
-            />
+            <StudioField label={t("common", "website")}>
+              <input
+                name="website"
+                value={website}
+                onChange={(e) => setWebsite(e.target.value)}
+                placeholder="https://yourretreat.com"
+                className={STUDIO_INPUT_CLASS}
+              />
+            </StudioField>
           </div>
 
           <div>
-            <StudioLabel>Instagram</StudioLabel>
-            <input
-              name="instagram"
-              value={instagram}
-              onChange={(e) => setInstagram(e.target.value)}
-              placeholder={t("flow", "instagramPlaceholder")}
-              className={STUDIO_INPUT_CLASS}
-            />
+            <StudioField label={"Instagram"}>
+              <input
+                name="instagram"
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value)}
+                placeholder={t("flow", "instagramPlaceholder")}
+                className={STUDIO_INPUT_CLASS}
+              />
+            </StudioField>
           </div>
 
           <div>
@@ -168,12 +172,14 @@ export function FeaturedStep({ tenantId, name, spaceImageUrl, initialSubmission,
               {links.map((link, i) => (
                 <div key={i} className="flex gap-2">
                   <input
+                    aria-label={t("studio", "linkLabelN", { index: i + 1 })}
                     value={link.label}
                     onChange={(e) => updateLink(i, { label: e.target.value.slice(0, 60) })}
                     placeholder={t("common", "label")}
                     className={`${STUDIO_INPUT_CLASS} w-28 shrink-0`}
                   />
                   <input
+                    aria-label={t("studio", "linkUrlN", { index: i + 1 })}
                     value={link.url}
                     onChange={(e) => updateLink(i, { url: e.target.value })}
                     placeholder="https://…"

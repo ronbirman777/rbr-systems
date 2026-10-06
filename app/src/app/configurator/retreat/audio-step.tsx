@@ -12,7 +12,7 @@ import { AUDIO_ALLOWED_TYPES, audioFileProblem } from "@/lib/media/audio";
 import { MEDIA_BUCKET } from "@/lib/media/path";
 import { detectAudioDuration, uploadAudioDraftObject } from "@/lib/media/audioUpload";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro, ForwardArrow } from "./studio-ui";
+import { ForwardArrow, STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, StudioHeading, StudioIntro, StudioLabel } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
 import {
   attachFlowAudio,
@@ -180,7 +180,7 @@ export function AudioStep({
                 <button
                   type="button"
                   onClick={() => setEditId(isEditing ? null : a.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
                   {t("common", "edit")}
@@ -188,7 +188,7 @@ export function AudioStep({
                 <button
                   type="button"
                   onClick={() => handleRemove(a.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
                   {t("common", "remove")}
@@ -223,7 +223,7 @@ export function AudioStep({
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }} dir="auto">
               {editing.title || t("flow", "untitledTrack")}
             </h4>
-            <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>

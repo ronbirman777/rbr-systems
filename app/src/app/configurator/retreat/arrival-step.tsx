@@ -3,7 +3,7 @@
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { ArrivalInfo } from "@/lib/modules/arrival";
 import { EmptyState } from "@/components/studio/empty-state";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, StudioIntro } from "./studio-ui";
+import { STUDIO_INPUT_CLASS, StudioField, StudioLabel, StudioSectionSub, StudioHeading, StudioIntro } from "./studio-ui";
 import { saveArrivalInfo, type SaveArrivalInfoState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
@@ -40,18 +40,19 @@ function Field({
 }) {
   return (
     <div>
-      <StudioLabel>{label}</StudioLabel>
-      {textarea ? (
-        <textarea
-          value={value ?? ""}
-          onChange={(e) => onChange(e.target.value || null)}
-          placeholder={placeholder}
-          rows={rows}
-          className={`${STUDIO_INPUT_CLASS} resize-none`}
-        />
-      ) : (
-        <input value={value ?? ""} onChange={(e) => onChange(e.target.value || null)} placeholder={placeholder} className={STUDIO_INPUT_CLASS} />
-      )}
+      <StudioField label={label}>
+        {textarea ? (
+          <textarea
+            value={value ?? ""}
+            onChange={(e) => onChange(e.target.value || null)}
+            placeholder={placeholder}
+            rows={rows}
+            className={`${STUDIO_INPUT_CLASS} resize-none`}
+          />
+        ) : (
+          <input value={value ?? ""} onChange={(e) => onChange(e.target.value || null)} placeholder={placeholder} className={STUDIO_INPUT_CLASS} />
+        )}
+      </StudioField>
     </div>
   );
 }

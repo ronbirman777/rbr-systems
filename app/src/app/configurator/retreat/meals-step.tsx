@@ -7,7 +7,7 @@ import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import { MEAL_TYPES, type EditableMeal, type MealType, mealTypeLabel } from "@/lib/modules/meal";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, StudioField, StudioHeading, StudioIntro, StudioLabel } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
 import { saveMeals, saveModuleIntros, type SaveMealsState } from "./actions";
 import { pruneModuleIntros, type ModuleIntros } from "@/lib/modules/moduleIntro";
@@ -225,7 +225,7 @@ export function MealsStep({
                 <button
                   type="button"
                   onClick={() => setEditId(isEditing ? null : m.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
                   {t("common", "edit")}
@@ -233,7 +233,7 @@ export function MealsStep({
                 <button
                   type="button"
                   onClick={() => handleRemove(m.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
                   {t("common", "remove")}
@@ -265,7 +265,7 @@ export function MealsStep({
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
               {t("studio", "editingItem", { name: editing.name || t("flow", "untitledMeal") })}
             </h4>
-            <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>
@@ -300,63 +300,69 @@ export function MealsStep({
             <div className="col-span-2 space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <StudioLabel>{t("flow", "mealType")}</StudioLabel>
-                  <select value={editing.mealType} onChange={(e) => update(editing.id, { mealType: e.target.value as MealType })} className={STUDIO_INPUT_CLASS}>
-                    {MEAL_TYPES.map((mealType) => (
-                      <option key={mealType} value={mealType}>
-                        {mealTypeLabel(mealType, locale)}
-                      </option>
-                    ))}
-                  </select>
+                  <StudioField label={t("flow", "mealType")}>
+                    <select value={editing.mealType} onChange={(e) => update(editing.id, { mealType: e.target.value as MealType })} className={STUDIO_INPUT_CLASS}>
+                      {MEAL_TYPES.map((mealType) => (
+                        <option key={mealType} value={mealType}>
+                          {mealTypeLabel(mealType, locale)}
+                        </option>
+                      ))}
+                    </select>
+                  </StudioField>
                 </div>
                 <div>
-                  <StudioLabel>{t("common", "time")}</StudioLabel>
-                  <input type="time" value={editing.startTime} onChange={(e) => update(editing.id, { startTime: e.target.value })} className={STUDIO_INPUT_CLASS} />
+                  <StudioField label={t("common", "time")}>
+                    <input type="time" value={editing.startTime} onChange={(e) => update(editing.id, { startTime: e.target.value })} className={STUDIO_INPUT_CLASS} />
+                  </StudioField>
                 </div>
               </div>
               <div>
-                <StudioLabel>{t("common", "title")}</StudioLabel>
-                <input
-                  value={editing.name}
-                  onChange={(e) => update(editing.id, { name: e.target.value })}
-                  placeholder={t("flow", "mealTitlePlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("common", "title")}>
+                  <input
+                    value={editing.name}
+                    onChange={(e) => update(editing.id, { name: e.target.value })}
+                    placeholder={t("flow", "mealTitlePlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
               <div>
-                <StudioLabel>{t("common", "location")}</StudioLabel>
-                <input
-                  value={editing.location ?? ""}
-                  onChange={(e) => update(editing.id, { location: e.target.value || null })}
-                  placeholder={t("flow", "mealLocationPlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("common", "location")}>
+                  <input
+                    value={editing.location ?? ""}
+                    onChange={(e) => update(editing.id, { location: e.target.value || null })}
+                    placeholder={t("flow", "mealLocationPlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
               <div>
-                <StudioLabel>{t("common", "description")}</StudioLabel>
-                <textarea
-                  value={editing.description ?? ""}
-                  onChange={(e) => update(editing.id, { description: e.target.value || null })}
-                  placeholder={t("flow", "mealDescriptionPlaceholder")}
-                  rows={2}
-                  className={`${STUDIO_INPUT_CLASS} resize-none`}
-                />
+                <StudioField label={t("common", "description")}>
+                  <textarea
+                    value={editing.description ?? ""}
+                    onChange={(e) => update(editing.id, { description: e.target.value || null })}
+                    placeholder={t("flow", "mealDescriptionPlaceholder")}
+                    rows={2}
+                    className={`${STUDIO_INPUT_CLASS} resize-none`}
+                  />
+                </StudioField>
               </div>
               <div>
-                <StudioLabel>{t("flow", "dietaryTags")}</StudioLabel>
-                <input
-                  value={editing.dietaryTags.join(", ")}
-                  onChange={(e) =>
-                    update(editing.id, {
-                      dietaryTags: e.target.value
-                        .split(",")
-                        .map((s) => s.trim())
-                        .filter(Boolean),
-                    })
-                  }
-                  placeholder={t("flow", "dietaryTagsPlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("flow", "dietaryTags")}>
+                  <input
+                    value={editing.dietaryTags.join(", ")}
+                    onChange={(e) =>
+                      update(editing.id, {
+                        dietaryTags: e.target.value
+                          .split(",")
+                          .map((s) => s.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                    placeholder={t("flow", "dietaryTagsPlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
             </div>
           </div>

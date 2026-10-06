@@ -148,6 +148,7 @@ export function GuestAccessPanel({ tenantId, initialSettings, locale = DEFAULT_L
               </p>
               <div className="flex gap-2">
                 <input
+                  aria-label={t("studio", "accessCodeField")}
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   inputMode="numeric"
@@ -202,6 +203,7 @@ export function GuestAccessPanel({ tenantId, initialSettings, locale = DEFAULT_L
               </p>
               <div className="flex gap-2">
                 <input
+                  aria-label={t("studio", "accessCodeField")}
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   inputMode="numeric"

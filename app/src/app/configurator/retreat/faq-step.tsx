@@ -4,7 +4,7 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import type { EditableFaqItem } from "@/lib/modules/faq";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { STUDIO_HIT_ROW_CLASS, STUDIO_HIT_SQUARE_CLASS, STUDIO_INPUT_CLASS, StudioField, StudioHeading, StudioIntro } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
 import { saveFaq, type SaveFaqState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
@@ -107,10 +107,10 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, on
               }}
             >
               <div className="flex flex-col gap-0.5 flex-shrink-0">
-                <button type="button" onClick={() => move(item.id, -1)} disabled={i === 0} className="text-[10px] disabled:opacity-20" style={{ color: GUEST_BASE_PALETTE.mist }}>
+                <button type="button" onClick={() => move(item.id, -1)} disabled={i === 0} className={`text-[10px] disabled:opacity-20 ${STUDIO_HIT_SQUARE_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
                   ▲
                 </button>
-                <button type="button" onClick={() => move(item.id, 1)} disabled={i === faq.length - 1} className="text-[10px] disabled:opacity-20" style={{ color: GUEST_BASE_PALETTE.mist }}>
+                <button type="button" onClick={() => move(item.id, 1)} disabled={i === faq.length - 1} className={`text-[10px] disabled:opacity-20 ${STUDIO_HIT_SQUARE_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
                   ▼
                 </button>
               </div>
@@ -156,18 +156,20 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, on
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
               {t("flow", "editQuestion")}
             </h4>
-            <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>
           <div className="space-y-3">
             <div>
-              <StudioLabel>{t("common", "question")}</StudioLabel>
-              <input value={editing.question} onChange={(e) => update(editing.id, { question: e.target.value })} placeholder={t("flow", "questionPlaceholder")} className={STUDIO_INPUT_CLASS} />
+              <StudioField label={t("common", "question")}>
+                <input value={editing.question} onChange={(e) => update(editing.id, { question: e.target.value })} placeholder={t("flow", "questionPlaceholder")} className={STUDIO_INPUT_CLASS} />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("common", "answer")}</StudioLabel>
-              <textarea value={editing.answer ?? ""} onChange={(e) => update(editing.id, { answer: e.target.value || null })} rows={3} className={`${STUDIO_INPUT_CLASS} resize-none`} />
+              <StudioField label={t("common", "answer")}>
+                <textarea value={editing.answer ?? ""} onChange={(e) => update(editing.id, { answer: e.target.value || null })} rows={3} className={`${STUDIO_INPUT_CLASS} resize-none`} />
+              </StudioField>
             </div>
             <label className="flex items-center gap-2 text-[12px]" style={{ color: GUEST_BASE_PALETTE.dusk }}>
               <input type="checkbox" checked={editing.enabled} onChange={(e) => update(editing.id, { enabled: e.target.checked })} />

@@ -832,6 +832,7 @@ export const en = {
 
     // ---- Studio: Preview & Publish step ----
     previewPublishBody: "Review your changes and publish when you’re ready. Your live guest app only updates when you choose to publish.",
+    publishedNow: "Published — your guests see this version now.",
     guestAppIsLive: "Your Guest App is live",
     viewGuestApp: "View Guest App",
     viewLiveGuestApp: "View live guest app",
@@ -1397,6 +1398,15 @@ export const en = {
     couldNotRemoveImage: "Couldn't remove the image",
     hexHint: "Use a 6-digit hex like #5B7A6E",
     openColorPicker: "{label} - open color picker",
+    linkLabelN: "Label for link {index}",
+    linkUrlN: "URL for link {index}",
+    accessCodeField: "6-digit access code",
+    hexValueOf: "{label} hex value",
+    socialPlatformN: "Platform for link {index}",
+    socialUrlN: "URL for link {index}",
+    timezoneField: "Time zone",
+    guestAddressField: "Guest address",
+    chooseImageFile: "Choose an image file",
     usedOfMax: "{used} of {max} used",
     uploadPhoto: "Upload photo",
     replacePhoto: "Replace photo",

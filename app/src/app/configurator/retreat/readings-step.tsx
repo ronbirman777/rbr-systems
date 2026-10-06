@@ -8,7 +8,7 @@ import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/mo
 import { blankFlowReading, FLOW_READINGS_KEY, type EditableFlowReading } from "@/lib/modules/flowLibrary";
 import { readingMinutes } from "@/lib/modules/library";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro, ForwardArrow } from "./studio-ui";
+import { ForwardArrow, STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, StudioHeading, StudioIntro, StudioLabel } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
 import { saveReadings, type SaveReadingsState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
@@ -161,7 +161,7 @@ export function ReadingsStep({
                 <button
                   type="button"
                   onClick={() => setEditId(isEditing ? null : r.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
                   {t("common", "edit")}
@@ -169,7 +169,7 @@ export function ReadingsStep({
                 <button
                   type="button"
                   onClick={() => handleRemove(r.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
                   {t("common", "remove")}
@@ -204,7 +204,7 @@ export function ReadingsStep({
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }} dir="auto">
               {editing.title || t("flow", "untitledReading")}
             </h4>
-            <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>

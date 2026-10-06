@@ -31,7 +31,7 @@ import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
 import { BrandImageField } from "./brand-image-field";
 import { PALETTES, GUEST_BASE_PALETTE, type AtmosphereKey, type PaletteKey } from "@/lib/theme/tokens";
 import { safeTextColor, meetsAA } from "@/lib/theme/contrast";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, StudioIntro, StudioEyebrowContext, ForwardArrow } from "./studio-ui";
+import { ForwardArrow, STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, StudioEyebrowContext, StudioField, StudioHeading, StudioIntro, StudioLabel, StudioSectionSub } from "./studio-ui";
 import { StudioTopBar } from "@/components/studio/studio-top-bar";
 import { saveStatusLabel, previewDraftLabel, previewDraftCaption, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
 import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
@@ -340,7 +340,8 @@ function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: 
           onChange={(e) => commit(e.target.value)}
           onBlur={() => setShowError(!isValid && draft.trim().length > 0)}
           aria-invalid={showError}
-          className="flex-1 min-w-0 text-[13px] outline-none font-mono"
+          aria-label={t("studio", "hexValueOf", { label })}
+          className="flex-1 min-w-0 py-2 text-[13px] outline-none font-mono"
           style={{ color: GUEST_BASE_PALETTE.forest }}
         />
         <span className="text-[10px] shrink-0" style={{ color: GUEST_BASE_PALETTE.mist }}>
@@ -594,7 +595,7 @@ function ScheduleEditor({
                 <button
                   type="button"
                   onClick={() => setEditId(isEditing ? null : item.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
                   {t("common", "edit")}
@@ -602,7 +603,7 @@ function ScheduleEditor({
                 <button
                   type="button"
                   onClick={() => handleRemove(item.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
                   {t("common", "remove")}
@@ -640,86 +641,94 @@ function ScheduleEditor({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <StudioLabel>{t("common", "startTime")}</StudioLabel>
-              <input
-                type="time"
-                value={editing.startTime}
-                onChange={(e) => updateScheduleItem(editing.id, { startTime: e.target.value })}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("common", "startTime")}>
+                <input
+                  type="time"
+                  value={editing.startTime}
+                  onChange={(e) => updateScheduleItem(editing.id, { startTime: e.target.value })}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("flow", "endTimeOptional")}</StudioLabel>
-              <input
-                type="time"
-                value={editing.endTime ?? ""}
-                onChange={(e) => updateScheduleItem(editing.id, { endTime: e.target.value || null })}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("flow", "endTimeOptional")}>
+                <input
+                  type="time"
+                  value={editing.endTime ?? ""}
+                  onChange={(e) => updateScheduleItem(editing.id, { endTime: e.target.value || null })}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div className="col-span-2">
-              <StudioLabel>{t("flow", "sessionTitle")}</StudioLabel>
-              <input
-                value={editing.title}
-                onChange={(e) => updateScheduleItem(editing.id, { title: e.target.value })}
-                placeholder={t("flow", "sessionTitlePlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("flow", "sessionTitle")}>
+                <input
+                  value={editing.title}
+                  onChange={(e) => updateScheduleItem(editing.id, { title: e.target.value })}
+                  placeholder={t("flow", "sessionTitlePlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("flow", "facilitator")}</StudioLabel>
-              <input
-                value={editing.facilitator ?? ""}
-                onChange={(e) => updateScheduleItem(editing.id, { facilitator: e.target.value || null })}
-                placeholder={t("flow", "facilitatorPlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("flow", "facilitator")}>
+                <input
+                  value={editing.facilitator ?? ""}
+                  onChange={(e) => updateScheduleItem(editing.id, { facilitator: e.target.value || null })}
+                  placeholder={t("flow", "facilitatorPlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("common", "location")}</StudioLabel>
-              <input
-                value={editing.location ?? ""}
-                onChange={(e) => updateScheduleItem(editing.id, { location: e.target.value || null })}
-                placeholder={t("flow", "locationPlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("common", "location")}>
+                <input
+                  value={editing.location ?? ""}
+                  onChange={(e) => updateScheduleItem(editing.id, { location: e.target.value || null })}
+                  placeholder={t("flow", "locationPlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("common", "date")}</StudioLabel>
-              <input
-                type="date"
-                value={editing.date}
-                onChange={(e) => {
-                  updateScheduleItem(editing.id, { date: e.target.value });
-                  setActiveDate(e.target.value);
-                }}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("common", "date")}>
+                <input
+                  type="date"
+                  value={editing.date}
+                  onChange={(e) => {
+                    updateScheduleItem(editing.id, { date: e.target.value });
+                    setActiveDate(e.target.value);
+                  }}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("common", "category")}</StudioLabel>
-              <select
-                value={editing.category ?? ""}
-                onChange={(e) => updateScheduleItem(editing.id, { category: e.target.value || null })}
-                className={STUDIO_INPUT_CLASS}
-              >
-                <option value="">{t("common", "none")}</option>
-                {SCHEDULE_CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {t("flow", c.key)}
-                  </option>
-                ))}
-              </select>
+              <StudioField label={t("common", "category")}>
+                <select
+                  value={editing.category ?? ""}
+                  onChange={(e) => updateScheduleItem(editing.id, { category: e.target.value || null })}
+                  className={STUDIO_INPUT_CLASS}
+                >
+                  <option value="">{t("common", "none")}</option>
+                  {SCHEDULE_CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {t("flow", c.key)}
+                    </option>
+                  ))}
+                </select>
+              </StudioField>
             </div>
             <div className="col-span-2">
-              <StudioLabel>{t("flow", "notesOptional")}</StudioLabel>
-              <input
-                value={editing.description ?? ""}
-                onChange={(e) => updateScheduleItem(editing.id, { description: e.target.value || null })}
-                placeholder={t("flow", "notesPlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-                dir="auto"
-              />
+              <StudioField label={t("flow", "notesOptional")}>
+                <input
+                  value={editing.description ?? ""}
+                  onChange={(e) => updateScheduleItem(editing.id, { description: e.target.value || null })}
+                  placeholder={t("flow", "notesPlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                  dir="auto"
+                />
+              </StudioField>
             </div>
             {/* TASK 029 (P5D): per-activity extras, COLLAPSED by default.
                 Most sessions never need them, and the brief is explicit
@@ -989,39 +998,42 @@ function TeamEditor({
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
               {t("studio", "editingItem", { name: editing.name || t("flow", "unnamed") })}
             </h4>
-            <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>
           <div className="space-y-3">
             <div>
-              <StudioLabel>{t("flow", "fullName")}</StudioLabel>
-              <input
-                value={editing.name}
-                onChange={(e) => updateFacilitator(editing.id, { name: e.target.value })}
-                placeholder={t("flow", "facilitatorPlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("flow", "fullName")}>
+                <input
+                  value={editing.name}
+                  onChange={(e) => updateFacilitator(editing.id, { name: e.target.value })}
+                  placeholder={t("flow", "facilitatorPlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("flow", "role")}</StudioLabel>
-              <input
-                value={editing.role ?? ""}
-                onChange={(e) => updateFacilitator(editing.id, { role: e.target.value || null })}
-                placeholder={t("flow", "rolePlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("flow", "role")}>
+                <input
+                  value={editing.role ?? ""}
+                  onChange={(e) => updateFacilitator(editing.id, { role: e.target.value || null })}
+                  placeholder={t("flow", "rolePlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("flow", "shortBiography")}</StudioLabel>
-              <textarea
-                value={editing.bio ?? ""}
-                onChange={(e) => updateFacilitator(editing.id, { bio: e.target.value || null })}
-                placeholder={t("flow", "bioPlaceholder")}
-                rows={3}
-                className={`${STUDIO_INPUT_CLASS} resize-none`}
-                dir="auto"
-              />
+              <StudioField label={t("flow", "shortBiography")}>
+                <textarea
+                  value={editing.bio ?? ""}
+                  onChange={(e) => updateFacilitator(editing.id, { bio: e.target.value || null })}
+                  placeholder={t("flow", "bioPlaceholder")}
+                  rows={3}
+                  className={`${STUDIO_INPUT_CLASS} resize-none`}
+                  dir="auto"
+                />
+              </StudioField>
             </div>
             {/* TASK 029 (D5): the long version, for this facilitator's
                 own screen. `bio` above keeps its meaning - the line on
@@ -1040,20 +1052,21 @@ function TeamEditor({
               />
             </div>
             <div>
-              <StudioLabel>{t("flow", "specialties")}</StudioLabel>
-              <input
-                defaultValue={editing.specialties.join(", ")}
-                onBlur={(e) =>
-                  updateFacilitator(editing.id, {
-                    specialties: e.target.value
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-                  })
-                }
-                placeholder={t("flow", "specialtiesPlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("flow", "specialties")}>
+                <input
+                  defaultValue={editing.specialties.join(", ")}
+                  onBlur={(e) =>
+                    updateFacilitator(editing.id, {
+                      specialties: e.target.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  placeholder={t("flow", "specialtiesPlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
               <StudioLabel>{t("flow", "socialLinksOptional")}</StudioLabel>
@@ -1074,6 +1087,7 @@ function TeamEditor({
                     <div key={i} className="rounded-xl border p-3" style={{ borderColor: `${GUEST_BASE_PALETTE.sand}80` }}>
                       <div className="flex items-center gap-2">
                         <select
+                          aria-label={t("studio", "socialPlatformN", { index: i + 1 })}
                           value={link.platform}
                           onChange={(e) =>
                             updateFacilitator(editing.id, {
@@ -1107,6 +1121,7 @@ function TeamEditor({
                         </button>
                       </div>
                       <input
+                        aria-label={t("studio", "socialUrlN", { index: i + 1 })}
                         value={link.url}
                         onChange={(e) =>
                           updateFacilitator(editing.id, {
@@ -1424,6 +1439,23 @@ export function RetreatConfigurator({
     publishedAt: initialPublishedAt,
   });
 
+  /**
+   * Publishing from the top bar needs its own feedback, because the
+   * organizer is not looking at the Preview & Publish step when they do
+   * it - the step's own error line and status card are not on screen. The
+   * publish itself is the same dispatch; only the place the result is
+   * announced is different.
+   */
+  const [topBarPublish, setTopBarPublish] = useState<"ok" | "error" | null>(null);
+  const topBarPublishInFlight = useRef(false);
+  useEffect(() => {
+    if (publishPending) return;
+    if (!topBarPublishInFlight.current) return;
+    topBarPublishInFlight.current = false;
+    setTopBarPublish(publishState.error ? "error" : "ok");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publishPending]);
+
   const [slugInput, setSlugInput] = useState(initialSlug ?? "");
   const [slugCheckState, setSlugCheckState] = useState<SlugCheckState>(slugCheckInitialState);
   const [slugCheckPending, setSlugCheckPending] = useState(false);
@@ -1708,9 +1740,74 @@ export function RetreatConfigurator({
         productBadge="Time to Flow"
         saveStatus={saveStatusLabel({ saving: publishPending, dirty: dirty.isDirtyAnywhere }, spaceLocale)}
         onBack={() => attemptNavigate(() => router.push("/space"))}
-        onPublish={() => attemptNavigate(() => setStep("publish"))}
-        publishLabel={currentPublishedAt ? t("studio", "republish") : t("studio", "publish")}
+        /**
+         * TASK 029 final hardening: this button used to be labelled
+         * "Republish" and only navigate to the publish step. A button that
+         * names an action has to perform it, so:
+         *
+         *   already published -> a real republish, through the SAME
+         *     dispatcher the Preview & Publish step submits
+         *     (publishFormAction from useActionState(publishSpace)), so
+         *     there is one publish implementation, one pending flag and
+         *     one error surface - not a second copy.
+         *   not published yet -> still navigates, and now says so
+         *     ("Preview & Publish"), because a first publish belongs next
+         *     to the readiness checklist and the guest address.
+         *
+         * Either way it goes through attemptNavigate first, so unsaved
+         * edits are resolved before anything is published - publishing
+         * publishes the SAVED draft, and silently omitting what the
+         * organizer just typed would be the worse bug.
+         */
+        onPublish={() =>
+          attemptNavigate(() => {
+            if (!currentPublishedAt) {
+              setStep("publish");
+              return;
+            }
+            if (publishPending) return;
+            const fd = new FormData();
+            fd.set("locale", spaceLocale);
+            fd.set("tenantId", tenantId ?? "");
+            topBarPublishInFlight.current = true;
+            setTopBarPublish(null);
+            publishFormAction(fd);
+          })
+        }
+        publishPending={publishPending}
+        publishLabel={
+          publishPending
+            ? t("studio", "publishingNow")
+            : currentPublishedAt
+              ? t("studio", "republish")
+              : t("studio", "navPreviewPublish")
+        }
       />
+      {topBarPublish ? (
+        <div
+          role={topBarPublish === "error" ? "alert" : "status"}
+          aria-live="polite"
+          className="flex items-start justify-between gap-3 px-4 sm:px-6 py-2.5 border-b text-[12.5px]"
+          style={
+            topBarPublish === "error"
+              ? { background: "#FBEFEF", borderColor: "#E7C9C9", color: "#8F3B3B" }
+              : { background: "#EDF3EE", borderColor: "#CBDFD0", color: "#2F5B3C" }
+          }
+        >
+          <span dir="auto">
+            {topBarPublish === "error"
+              ? (publishState.error ?? t("studio", "saveFailed"))
+              : t("flow", "publishedNow")}
+          </span>
+          <button
+            type="button"
+            onClick={() => setTopBarPublish(null)}
+            className="shrink-0 min-h-11 px-2 -my-2 font-semibold underline"
+          >
+            {t("common", "dismiss")}
+          </button>
+        </div>
+      ) : null}
       {/* Mobile Studio Navigation - the desktop sidebar below is
           `hidden lg:flex`, so below that breakpoint this topbar + drawer
           is the only way to switch sections. */}
@@ -1992,16 +2089,17 @@ export function RetreatConfigurator({
             <StudioSectionSub first>{t("flow", "retreatDetails")}</StudioSectionSub>
             <div className="space-y-4">
               <div>
-                <StudioLabel>{t("flow", "retreatName")}</StudioLabel>
-                <input
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    dirty.markDirty("identityAndBrand");
-                  }}
-                  placeholder={t("flow", "retreatNamePlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("flow", "retreatName")}>
+                  <input
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      dirty.markDirty("identityAndBrand");
+                    }}
+                    placeholder={t("flow", "retreatNamePlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
               <div>
                 <StudioLabel>{t("flow", "timezone")}</StudioLabel>
@@ -2009,6 +2107,7 @@ export function RetreatConfigurator({
                   {t("flow", "timezoneHelp")}
                 </p>
                 <select
+                  aria-label={t("studio", "timezoneField")}
                   value={timezoneSelectValue(timezone)}
                   onChange={(e) => {
                     setTimezone(e.target.value);
@@ -2034,6 +2133,7 @@ export function RetreatConfigurator({
               style={{ background: "white" }}
             >
               <input
+                aria-label={t("studio", "guestAddressField")}
                 value={slugInput}
                 onChange={(e) => {
                   setSlugInput(normalizeSlug(e.target.value));

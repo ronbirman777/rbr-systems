@@ -154,6 +154,7 @@ export function ModuleItemPhotoField({
         <input
           ref={fileInputRef}
           type="file"
+          aria-label={t("studio", "chooseImageFile")}
           accept="image/jpeg,image/png,image/webp"
           className="hidden"
           onChange={handleFileChange}
@@ -162,7 +163,7 @@ export function ModuleItemPhotoField({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploadPending}
-          className="text-xs font-semibold text-idw-forest underline disabled:opacity-50"
+          className="text-xs font-semibold text-idw-forest underline disabled:opacity-50 relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {uploadPending ? t("common", "uploading") : imageUrl ? t("studio", "replacePhoto") : t("studio", "uploadPhoto")}
         </button>
@@ -172,7 +173,7 @@ export function ModuleItemPhotoField({
             type="button"
             onClick={handleRemove}
             disabled={removePending}
-            className="text-xs text-idw-forest/40 hover:text-idw-forest disabled:opacity-50"
+            className="text-xs text-idw-forest/40 hover:text-idw-forest disabled:opacity-50 relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
           >
             {removePending ? "Removing…" : "Remove"}
           </button>

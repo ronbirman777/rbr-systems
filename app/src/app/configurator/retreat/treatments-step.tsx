@@ -7,7 +7,7 @@ import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import { CHARGE_TYPES, type ChargeType, type EditableTreatment } from "@/lib/modules/treatment";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, StudioField, StudioHeading, StudioIntro, StudioLabel } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
 import { saveTreatments, type SaveTreatmentsState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
@@ -183,7 +183,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                 <button
                   type="button"
                   onClick={() => setEditId(isEditing ? null : item.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
                   {t("common", "edit")}
@@ -191,7 +191,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                 <button
                   type="button"
                   onClick={() => handleRemove(item.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
                   {t("common", "remove")}
@@ -223,7 +223,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
               {t("studio", "editingItem", { name: editing.name || t("flow", "untitledTreatment") })}
             </h4>
-            <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>
@@ -258,61 +258,67 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
             </div>
             <div className="col-span-2 space-y-3">
               <div>
-                <StudioLabel>{t("flow", "treatmentName")}</StudioLabel>
-                <input
-                  value={editing.name}
-                  onChange={(e) => update(editing.id, { name: e.target.value })}
-                  placeholder={t("flow", "treatmentNamePlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("flow", "treatmentName")}>
+                  <input
+                    value={editing.name}
+                    onChange={(e) => update(editing.id, { name: e.target.value })}
+                    placeholder={t("flow", "treatmentNamePlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
               <div>
-                <StudioLabel>{t("flow", "shortDescription")}</StudioLabel>
-                <input
-                  value={editing.shortDescription ?? ""}
-                  onChange={(e) => update(editing.id, { shortDescription: e.target.value || null })}
-                  placeholder={t("flow", "shortDescriptionPlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("flow", "shortDescription")}>
+                  <input
+                    value={editing.shortDescription ?? ""}
+                    onChange={(e) => update(editing.id, { shortDescription: e.target.value || null })}
+                    placeholder={t("flow", "shortDescriptionPlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <StudioLabel>{t("flow", "durationMinutes")}</StudioLabel>
-                  <input
-                    type="number"
-                    min={1}
-                    value={editing.durationMinutes ?? ""}
-                    onChange={(e) => update(editing.id, { durationMinutes: e.target.value ? Number(e.target.value) : null })}
-                    placeholder="90"
-                    className={STUDIO_INPUT_CLASS}
-                  />
+                  <StudioField label={t("flow", "durationMinutes")}>
+                    <input
+                      type="number"
+                      min={1}
+                      value={editing.durationMinutes ?? ""}
+                      onChange={(e) => update(editing.id, { durationMinutes: e.target.value ? Number(e.target.value) : null })}
+                      placeholder="90"
+                      className={STUDIO_INPUT_CLASS}
+                    />
+                  </StudioField>
                 </div>
                 <div>
-                  <StudioLabel>{t("flow", "practitioner")}</StudioLabel>
-                  <input
-                    value={editing.provider ?? ""}
-                    onChange={(e) => update(editing.id, { provider: e.target.value || null })}
-                    placeholder={t("common", "optional")}
-                    className={STUDIO_INPUT_CLASS}
-                  />
+                  <StudioField label={t("flow", "practitioner")}>
+                    <input
+                      value={editing.provider ?? ""}
+                      onChange={(e) => update(editing.id, { provider: e.target.value || null })}
+                      placeholder={t("common", "optional")}
+                      className={STUDIO_INPUT_CLASS}
+                    />
+                  </StudioField>
                 </div>
                 <div>
-                  <StudioLabel>{t("common", "location")}</StudioLabel>
-                  <input
-                    value={editing.location ?? ""}
-                    onChange={(e) => update(editing.id, { location: e.target.value || null })}
-                    placeholder={t("flow", "treatmentLocationPlaceholder")}
-                    className={STUDIO_INPUT_CLASS}
-                  />
+                  <StudioField label={t("common", "location")}>
+                    <input
+                      value={editing.location ?? ""}
+                      onChange={(e) => update(editing.id, { location: e.target.value || null })}
+                      placeholder={t("flow", "treatmentLocationPlaceholder")}
+                      className={STUDIO_INPUT_CLASS}
+                    />
+                  </StudioField>
                 </div>
                 <div>
-                  <StudioLabel>{t("flow", "bookingInfo")}</StudioLabel>
-                  <input
-                    value={editing.bookingInfo ?? ""}
-                    onChange={(e) => update(editing.id, { bookingInfo: e.target.value || null })}
-                    placeholder={t("flow", "bookingInfoPlaceholder")}
-                    className={STUDIO_INPUT_CLASS}
-                  />
+                  <StudioField label={t("flow", "bookingInfo")}>
+                    <input
+                      value={editing.bookingInfo ?? ""}
+                      onChange={(e) => update(editing.id, { bookingInfo: e.target.value || null })}
+                      placeholder={t("flow", "bookingInfoPlaceholder")}
+                      className={STUDIO_INPUT_CLASS}
+                    />
+                  </StudioField>
                 </div>
               </div>
 
@@ -377,14 +383,15 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                 />
               </div>
               <div>
-                <StudioLabel>{t("flow", "fullDescription")}</StudioLabel>
-                <textarea
-                  value={editing.description ?? ""}
-                  onChange={(e) => update(editing.id, { description: e.target.value || null })}
-                  placeholder={t("flow", "fullDescriptionPlaceholder")}
-                  rows={2}
-                  className={`${STUDIO_INPUT_CLASS} resize-none`}
-                />
+                <StudioField label={t("flow", "fullDescription")}>
+                  <textarea
+                    value={editing.description ?? ""}
+                    onChange={(e) => update(editing.id, { description: e.target.value || null })}
+                    placeholder={t("flow", "fullDescriptionPlaceholder")}
+                    rows={2}
+                    className={`${STUDIO_INPUT_CLASS} resize-none`}
+                  />
+                </StudioField>
               </div>
             </div>
           </div>

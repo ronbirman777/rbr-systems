@@ -47,14 +47,46 @@ const scan = () => page.evaluate((sel) => {
     if (e.tagName === "INPUT" && e.placeholder && e.placeholder.trim()) return false; // a placeholder is not a name
     return false;
   };
-  const unnamed = [], small = [];
-  for (const e of controls) {
+  /**
+   * The real target, not the painted box. Two things make them differ,
+   * and both are deliberate in this Studio:
+   *   - a small control can carry an invisible ::after hit area, so the
+   *     pseudo-element's box counts;
+   *   - a checkbox inside its own <label> is hit by clicking the label,
+   *     so the label's box counts.
+   * Measuring only getBoundingClientRect() reported 82 controls as too
+   * small, most of which a finger could already hit.
+   */
+  const hitArea = (e) => {
     const r = e.getBoundingClientRect();
+    let w = r.width, hh = r.height;
+    const after = getComputedStyle(e, "::after");
+    if (after && after.content && after.content !== "none") {
+      const aw = parseFloat(after.width), ah = parseFloat(after.height);
+      if (Number.isFinite(aw)) w = Math.max(w, aw);
+      if (Number.isFinite(ah)) hh = Math.max(hh, ah);
+    }
+    const label = e.closest("label");
+    if (label && (e.type === "checkbox" || e.type === "radio")) {
+      const lr = label.getBoundingClientRect();
+      w = Math.max(w, lr.width);
+      hh = Math.max(hh, lr.height);
+    }
+    return { w, h: hh };
+  };
+
+  const unnamed = [], small = [], tiny = [];
+  for (const e of controls) {
+    const { w, h } = hitArea(e);
     const tag = `${e.tagName.toLowerCase()}${e.type ? `[${e.type}]` : ""}`;
+    const size = `${Math.round(w)}x${Math.round(h)}`;
     if (!named(e)) unnamed.push({ tag, cls: (e.className || "").toString().slice(0, 50) });
-    if (Math.min(r.width, r.height) < 24) small.push({ tag, size: `${Math.round(r.width)}x${Math.round(r.height)}` });
+    // 44x44 is the goal; 24x24 is the WCAG 2.2 AA floor. Reported apart so
+    // "not ideal" is never confused with "fails".
+    if (Math.min(w, h) < 44) small.push({ tag, size });
+    if (Math.min(w, h) < 24) tiny.push({ tag, size, cls: (e.className || "").toString().slice(0, 60) });
   }
-  return { controls: controls.length, unnamed, small };
+  return { controls: controls.length, unnamed, small, tiny };
 }, EDITOR);
 
 const report = {};
@@ -80,10 +112,13 @@ for (const space of SPACES) {
 }
 await browser.close();
 
-const totals = { controls: 0, unnamed: 0, small: 0 };
+const totals = { controls: 0, unnamed: 0, under44: 0, under24: 0 };
 for (const p of Object.values(report)) {
   for (const s of Object.values(p)) {
-    totals.controls += s.controls; totals.unnamed += s.unnamed.length; totals.small += s.small.length;
+    totals.controls += s.controls;
+    totals.unnamed += s.unnamed.length;
+    totals.under44 += s.small.length;
+    totals.under24 += s.tiny.length;
   }
 }
 console.log(JSON.stringify({ base: BASE, totals, report }, null, 1));

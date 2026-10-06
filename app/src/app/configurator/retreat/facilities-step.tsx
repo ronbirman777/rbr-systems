@@ -7,7 +7,7 @@ import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import type { EditableFacility } from "@/lib/modules/facility";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, StudioField, StudioHeading, StudioIntro, StudioLabel } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
 import { saveFacilities, type SaveFacilitiesState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
@@ -151,7 +151,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                 <button
                   type="button"
                   onClick={() => setEditId(isEditing ? null : f.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
                   {t("common", "edit")}
@@ -159,7 +159,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                 <button
                   type="button"
                   onClick={() => handleRemove(f.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
                   {t("common", "remove")}
@@ -191,7 +191,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
               {t("studio", "editingItem", { name: editing.name || t("flow", "untitledFacility") })}
             </h4>
-            <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>
@@ -225,32 +225,35 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
             </div>
             <div className="col-span-2 space-y-3">
               <div>
-                <StudioLabel>{t("flow", "facilityName")}</StudioLabel>
-                <input
-                  value={editing.name}
-                  onChange={(e) => update(editing.id, { name: e.target.value })}
-                  placeholder={t("flow", "facilityNamePlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("flow", "facilityName")}>
+                  <input
+                    value={editing.name}
+                    onChange={(e) => update(editing.id, { name: e.target.value })}
+                    placeholder={t("flow", "facilityNamePlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <StudioLabel>{t("flow", "openingHours")}</StudioLabel>
-                  <input
-                    value={editing.openingHours ?? ""}
-                    onChange={(e) => update(editing.id, { openingHours: e.target.value || null })}
-                    placeholder="e.g. 06:00 - 21:00"
-                    className={STUDIO_INPUT_CLASS}
-                  />
+                  <StudioField label={t("flow", "openingHours")}>
+                    <input
+                      value={editing.openingHours ?? ""}
+                      onChange={(e) => update(editing.id, { openingHours: e.target.value || null })}
+                      placeholder="e.g. 06:00 - 21:00"
+                      className={STUDIO_INPUT_CLASS}
+                    />
+                  </StudioField>
                 </div>
                 <div>
-                  <StudioLabel>{t("common", "location")}</StudioLabel>
-                  <input
-                    value={editing.location ?? ""}
-                    onChange={(e) => update(editing.id, { location: e.target.value || null })}
-                    placeholder={t("flow", "facilityLocationPlaceholder")}
-                    className={STUDIO_INPUT_CLASS}
-                  />
+                  <StudioField label={t("common", "location")}>
+                    <input
+                      value={editing.location ?? ""}
+                      onChange={(e) => update(editing.id, { location: e.target.value || null })}
+                      placeholder={t("flow", "facilityLocationPlaceholder")}
+                      className={STUDIO_INPUT_CLASS}
+                    />
+                  </StudioField>
                 </div>
               </div>
               {/* TASK 029 (D4): two descriptions, clearly distinct. The
@@ -270,24 +273,26 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                 />
               </div>
               <div>
-                <StudioLabel>{t("flow", "fullDescription")}</StudioLabel>
-                <textarea
-                  value={editing.description ?? ""}
-                  onChange={(e) => update(editing.id, { description: e.target.value || null })}
-                  placeholder={t("flow", "facilityDescriptionPlaceholder")}
-                  rows={3}
-                  className={`${STUDIO_INPUT_CLASS} resize-none`}
-                  dir="auto"
-                />
+                <StudioField label={t("flow", "fullDescription")}>
+                  <textarea
+                    value={editing.description ?? ""}
+                    onChange={(e) => update(editing.id, { description: e.target.value || null })}
+                    placeholder={t("flow", "facilityDescriptionPlaceholder")}
+                    rows={3}
+                    className={`${STUDIO_INPUT_CLASS} resize-none`}
+                    dir="auto"
+                  />
+                </StudioField>
               </div>
               <div>
-                <StudioLabel>{t("flow", "importantInfoOptional")}</StudioLabel>
-                <input
-                  value={editing.importantInfo ?? ""}
-                  onChange={(e) => update(editing.id, { importantInfo: e.target.value || null })}
-                  placeholder={t("flow", "importantInfoPlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("flow", "importantInfoOptional")}>
+                  <input
+                    value={editing.importantInfo ?? ""}
+                    onChange={(e) => update(editing.id, { importantInfo: e.target.value || null })}
+                    placeholder={t("flow", "importantInfoPlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
             </div>
           </div>

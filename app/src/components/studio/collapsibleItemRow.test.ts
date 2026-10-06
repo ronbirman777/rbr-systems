@@ -18,7 +18,20 @@ import { CollapsibleItemRow } from "./collapsible-item-row";
 
 const noop = () => {};
 
-/** app/configurator/teach/teach-studio-sections.tsx at d3f4bed, verbatim. */
+/**
+ * TASK 029 final hardening: the ONE deliberate departure from the
+ * pre-extraction markup. These three icon buttons were painted 36x36,
+ * below the WCAG 2.2 target-size floor, and the reorder arrows measured
+ * 10x15 in the Flow editors that do not use this component. The hit area
+ * is now 44x44 via an invisible ::after, so the painted box, the layout
+ * and the spacing are all still byte-identical to what Teach rendered -
+ * only the target grew. Declared here rather than hidden in a diff.
+ */
+const ROW_ICON_HIT_AREA =
+  "relative after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-11 after:h-11";
+
+/** app/configurator/teach/teach-studio-sections.tsx at d3f4bed, verbatim
+ *  apart from ROW_ICON_HIT_AREA above. */
 function preExtractionRow(opts: {
   locale: Locale;
   moduleKey: string;
@@ -63,7 +76,7 @@ function preExtractionRow(opts: {
                 type: "button",
                 onClick: noop,
                 "aria-label": t("studio", "moveUp"),
-                className: "w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5",
+                className: `w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5 ${ROW_ICON_HIT_AREA}`,
                 disabled: index === 0,
               },
               "↑"
@@ -74,7 +87,7 @@ function preExtractionRow(opts: {
                 type: "button",
                 onClick: noop,
                 "aria-label": t("studio", "moveDown"),
-                className: "w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5",
+                className: `w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5 ${ROW_ICON_HIT_AREA}`,
                 disabled: index === itemsLength - 1,
               },
               "↓"
@@ -87,7 +100,7 @@ function preExtractionRow(opts: {
           type: "button",
           onClick: noop,
           "aria-label": isOpen ? t("studio", "collapse") : t("common", "edit"),
-          className: "w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5",
+          className: `w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5 ${ROW_ICON_HIT_AREA}`,
         },
         isOpen ? "▴" : "▾"
       )

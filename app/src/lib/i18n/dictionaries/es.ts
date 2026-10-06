@@ -841,6 +841,7 @@ export const es: Dictionary = {
 
     // ---- Studio: Preview & Publish step ----
     previewPublishBody: "Revisa tus cambios y publica cuando todo esté listo. Tu app en directo solo se actualiza cuando decides publicar.",
+    publishedNow: "Publicado: tus invitados ya ven esta versión.",
     guestAppIsLive: "Tu app para invitados está en directo",
     viewGuestApp: "Ver la app para invitados",
     viewLiveGuestApp: "Ver la app en directo",
@@ -1396,6 +1397,15 @@ export const es: Dictionary = {
     couldNotRemoveImage: "No se ha podido quitar la imagen",
     hexHint: "Usa un hex de 6 dígitos, como #5B7A6E",
     openColorPicker: "{label}: abrir el selector de color",
+    linkLabelN: "Etiqueta del enlace {index}",
+    linkUrlN: "URL del enlace {index}",
+    accessCodeField: "Código de acceso de 6 dígitos",
+    hexValueOf: "Valor hex: {label}",
+    socialPlatformN: "Plataforma del enlace {index}",
+    socialUrlN: "URL del enlace {index}",
+    timezoneField: "Zona horaria",
+    guestAddressField: "Dirección para invitados",
+    chooseImageFile: "Elegir un archivo de imagen",
     usedOfMax: "{used} de {max} usados",
     uploadPhoto: "Subir foto",
     replacePhoto: "Reemplazar la foto",
