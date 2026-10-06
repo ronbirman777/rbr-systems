@@ -136,7 +136,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
               </div>
               <div className="flex-1 py-3 min-w-0 pr-3">
                 {f.openingHours && (
-                  <span className="text-[11px] font-medium" style={{ color: GUEST_BASE_PALETTE.clay }}>
+                  <span className="text-[11px] font-medium relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11" style={{ color: GUEST_BASE_PALETTE.clay }}>
                     {f.openingHours}
                   </span>
                 )}
@@ -324,7 +324,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
         <button
           type="button"
           onClick={onContinue}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>

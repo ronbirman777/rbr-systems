@@ -11,6 +11,7 @@
  * Usage: see locale-journey.mjs.
  */
 const { BASE, BYPASS, QA_EMAIL, QA_PW, PW } = process.env;
+const WIDTH = Number(process.argv[2] || 1280);
 const { chromium } = await import(PW);
 const EDITOR = '[data-testid="studio-editor"]';
 const SPACES = [
@@ -20,7 +21,8 @@ const SPACES = [
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({
-  viewport: { width: 1280, height: 950 },
+  viewport: { width: WIDTH, height: WIDTH <= 430 ? 844 : 950 },
+  deviceScaleFactor: WIDTH <= 430 ? 3 : 2,
   extraHTTPHeaders: { "x-vercel-protection-bypass": BYPASS, "x-vercel-set-bypass-cookie": "true" },
 });
 const page = await ctx.newPage();
@@ -93,10 +95,16 @@ const report = {};
 for (const space of SPACES) {
   await page.goto(`${BASE}/configurator/${space.path}/${space.tenant}`, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle").catch(() => {});
-  const steps = await page.$$eval("aside button", (els) => els.map((_, i) => i));
+  // Below lg the sidebar is hidden and the steps are in the mobile menu,
+  // so it has to be opened before the step list exists at all.
+  const menu = page.locator("button").filter({ hasText: /menu|תפריט|Menü|menú/i }).first();
+  if (await menu.isVisible().catch(() => false)) await menu.click().catch(() => {});
+  await page.waitForTimeout(400);
+  const navSel = (await page.locator("aside button").count()) > 0 ? "aside button" : "nav button";
+  const steps = await page.$$eval(navSel, (els) => els.map((_, i) => i));
   report[space.product] = {};
   for (const i of steps) {
-    const btns = page.locator("aside button");
+    const btns = page.locator(navSel);
     const name = (await btns.nth(i).innerText().catch(() => "")).replace(/\s+/g, " ").trim();
     if (!name) continue;
     await btns.nth(i).click().catch(() => {});
@@ -121,5 +129,5 @@ for (const p of Object.values(report)) {
     totals.under24 += s.tiny.length;
   }
 }
-console.log(JSON.stringify({ base: BASE, totals, report }, null, 1));
+console.log(JSON.stringify({ base: BASE, width: WIDTH, totals, report }, null, 1));
 process.exit(totals.unnamed === 0 ? 0 : 1);

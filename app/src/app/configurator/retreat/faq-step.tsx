@@ -171,7 +171,7 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, on
                 <textarea value={editing.answer ?? ""} onChange={(e) => update(editing.id, { answer: e.target.value || null })} rows={3} className={`${STUDIO_INPUT_CLASS} resize-none`} />
               </StudioField>
             </div>
-            <label className="flex items-center gap-2 text-[12px]" style={{ color: GUEST_BASE_PALETTE.dusk }}>
+            <label className="flex items-center gap-2 min-h-11 text-[12px]" style={{ color: GUEST_BASE_PALETTE.dusk }}>
               <input type="checkbox" checked={editing.enabled} onChange={(e) => update(editing.id, { enabled: e.target.checked })} />
               {t("studio", "visibleToGuests")}
             </label>
@@ -192,7 +192,7 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, on
         <button type="button" disabled={pending} onClick={handleSave} className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60">
           {pending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "faq") })}
         </button>
-        <button type="button" onClick={onContinue} className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest">
+        <button type="button" onClick={onContinue} className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11">
           {t("common", "next")} <ForwardArrow />
         </button>
       </div>

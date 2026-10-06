@@ -210,7 +210,7 @@ export function MealsStep({
                   <span className="text-[10px] tracking-widest uppercase font-semibold" style={{ color: GUEST_BASE_PALETTE.mist }}>
                     {m.mealType}
                   </span>
-                  <span className="text-[11px] font-medium" style={{ color: GUEST_BASE_PALETTE.clay }}>
+                  <span className="text-[11px] font-medium relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11" style={{ color: GUEST_BASE_PALETTE.clay }}>
                     {m.startTime}
                   </span>
                 </div>
@@ -394,7 +394,7 @@ export function MealsStep({
         <button
           type="button"
           onClick={onContinue}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>

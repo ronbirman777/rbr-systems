@@ -106,7 +106,7 @@ function MovedToHome({
       <button
         type="button"
         onClick={onOpenHome}
-        className="mt-2.5 text-[11px] font-semibold uppercase tracking-wide underline"
+        className="mt-2.5 text-[11px] font-semibold uppercase tracking-wide underline relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         style={{ color: GUEST_BASE_PALETTE.forest }}
       >
         {t("flow", "openRetreatHome")}
@@ -243,7 +243,7 @@ export function ArrivalStep({
         <button
           type="button"
           onClick={onContinue}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>

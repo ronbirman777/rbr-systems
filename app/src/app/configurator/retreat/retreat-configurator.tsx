@@ -237,6 +237,9 @@ const STEP_LABEL_KEYS: Record<
   stayConnected: "stayConnected",
 };
 
+/** The hidden form the top bar's Republish button submits. */
+const TOP_BAR_PUBLISH_FORM_ID = "studio-top-bar-publish";
+
 const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
 /**
@@ -635,7 +638,7 @@ function ScheduleEditor({
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
               {t("flow", "editSession")}
             </h4>
-            <button type="button" onClick={closePanel} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={closePanel} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>
@@ -738,7 +741,7 @@ function ScheduleEditor({
                 re-mounts whenever a different session is opened. */}
             <details className="col-span-2 group">
               <summary
-                className="cursor-pointer text-[11px] font-semibold uppercase tracking-[0.14em] py-1.5 list-none flex items-center gap-1.5"
+                className="cursor-pointer text-[11px] font-semibold uppercase tracking-[0.14em] py-1.5 list-none flex items-center gap-1.5 relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
                 style={{ color: GUEST_BASE_PALETTE.mist }}
               >
                 <span aria-hidden="true" className="group-open:rotate-90 transition-transform inline-block">
@@ -817,7 +820,7 @@ function ScheduleEditor({
         <button
           type="button"
           onClick={() => goToStep(1)}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>
@@ -988,7 +991,7 @@ function TeamEditor({
           <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ borderColor: `${GUEST_BASE_PALETTE.sand}b3` }}>
             +
           </div>
-          <span className="text-[11px] font-medium">{t("flow", "addFacilitator")}</span>
+          <span className="text-[11px] font-medium relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11">{t("flow", "addFacilitator")}</span>
         </button>
       </div>
 
@@ -1148,7 +1151,7 @@ function TeamEditor({
                       const next = SOCIAL_PLATFORMS.find((p) => !used.has(p)) ?? SOCIAL_PLATFORMS[0];
                       updateFacilitator(editing.id, { socialLinks: [...editing.socialLinks, { platform: next, url: "" }] });
                     }}
-                    className="text-[11px] font-medium"
+                    className="text-[11px] font-medium relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
                     style={{ color: GUEST_BASE_PALETTE.forest }}
                   >
                     + {t("flow", "addSocialLink")}
@@ -1185,7 +1188,7 @@ function TeamEditor({
         <button
           type="button"
           onClick={() => goToStep(1)}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>
@@ -1745,35 +1748,41 @@ export function RetreatConfigurator({
          * "Republish" and only navigate to the publish step. A button that
          * names an action has to perform it, so:
          *
-         *   already published -> a real republish, through the SAME
-         *     dispatcher the Preview & Publish step submits
-         *     (publishFormAction from useActionState(publishSpace)), so
-         *     there is one publish implementation, one pending flag and
-         *     one error surface - not a second copy.
+         *   already published -> a real republish. It SUBMITS the hidden
+         *     form below, whose action is the same publishFormAction the
+         *     Preview & Publish step submits: one implementation, one
+         *     pending flag, one error surface.
          *   not published yet -> still navigates, and now says so
          *     ("Preview & Publish"), because a first publish belongs next
          *     to the readiness checklist and the guest address.
          *
-         * Either way it goes through attemptNavigate first, so unsaved
-         * edits are resolved before anything is published - publishing
-         * publishes the SAVED draft, and silently omitting what the
-         * organizer just typed would be the worse bug.
+         * Unsaved edits are resolved first either way. Publishing
+         * publishes the SAVED draft, so silently leaving out what the
+         * organizer just typed would be the worse bug - when the draft is
+         * dirty the native submit is cancelled, the usual dialog decides,
+         * and its callback submits the form for real.
          */
-        onPublish={() =>
-          attemptNavigate(() => {
-            if (!currentPublishedAt) {
-              setStep("publish");
-              return;
-            }
-            if (publishPending) return;
-            const fd = new FormData();
-            fd.set("locale", spaceLocale);
-            fd.set("tenantId", tenantId ?? "");
-            topBarPublishInFlight.current = true;
-            setTopBarPublish(null);
-            publishFormAction(fd);
-          })
-        }
+        onPublish={(event) => {
+          if (!currentPublishedAt) {
+            event.preventDefault();
+            attemptNavigate(() => setStep("publish"));
+            return;
+          }
+          if (publishPending) {
+            event.preventDefault();
+            return;
+          }
+          topBarPublishInFlight.current = true;
+          setTopBarPublish(null);
+          if (dirty.isDirtyAnywhere) {
+            event.preventDefault();
+            attemptNavigate(() => {
+              const form = document.getElementById(TOP_BAR_PUBLISH_FORM_ID);
+              if (form instanceof HTMLFormElement) form.requestSubmit();
+            });
+          }
+        }}
+        publishFormId={currentPublishedAt ? TOP_BAR_PUBLISH_FORM_ID : undefined}
         publishPending={publishPending}
         publishLabel={
           publishPending
@@ -1783,6 +1792,14 @@ export function RetreatConfigurator({
               : t("studio", "navPreviewPublish")
         }
       />
+      {/* The top bar's Republish target. It lives here, outside the
+          Preview & Publish step, because the step is only mounted when
+          the organizer is looking at it - and the button is on every
+          step. Same action, same dispatcher, same pending flag. */}
+      <form id={TOP_BAR_PUBLISH_FORM_ID} action={publishFormAction} className="hidden">
+        <input type="hidden" name="tenantId" value={tenantId ?? ""} />
+        <input type="hidden" name="locale" value={spaceLocale} />
+      </form>
       {topBarPublish ? (
         <div
           role={topBarPublish === "error" ? "alert" : "status"}
@@ -2153,7 +2170,7 @@ export function RetreatConfigurator({
                 type="button"
                 onClick={handleCheckSlug}
                 disabled={slugCheckPending || !slugInput || localSlugStatus !== "ok"}
-                className="text-[11px] font-semibold uppercase tracking-wide underline disabled:opacity-40"
+                className="text-[11px] font-semibold uppercase tracking-wide underline disabled:opacity-40 relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
                 style={{ color: GUEST_BASE_PALETTE.forest }}
               >
                 {slugCheckPending ? t("studio", "checking") : t("studio", "checkAvailability")}
@@ -2464,7 +2481,7 @@ export function RetreatConfigurator({
                 <button
                   type="button"
                   onClick={() => setStep("modules")}
-                  className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+                  className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
                 >
                   {t("flow", "continueToModules")} <ForwardArrow />
                 </button>
@@ -2608,7 +2625,7 @@ export function RetreatConfigurator({
               <button
                 type="button"
                 onClick={() => goToStep(1)}
-                className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+                className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
               >
                 {t("common", "next")} <ForwardArrow />
               </button>

@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import Link from "next/link";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 
@@ -21,6 +21,7 @@ export function StudioTopBar({
   onPublish,
   publishLabel,
   publishPending = false,
+  publishFormId,
   trailing,
   backHref = "/space",
   backLabel,
@@ -31,7 +32,12 @@ export function StudioTopBar({
   productBadge: string;
   saveStatus: ReactNode;
   onBack?: () => void;
-  onPublish: () => void;
+  /**
+   * Receives the click. With `publishFormId` set the button is a real
+   * submit, so a handler that wants to stop it (an unsaved-changes guard,
+   * a publish already in flight) calls preventDefault.
+   */
+  onPublish: (event: MouseEvent<HTMLButtonElement>) => void;
   publishLabel?: string;
   /**
    * True while the publish this button triggered is in flight. The button
@@ -40,6 +46,15 @@ export function StudioTopBar({
    * from here rather than from a form the browser would disable.
    */
   publishPending?: boolean;
+  /**
+   * The id of a form whose action publishes. When given, this button
+   * SUBMITS that form rather than calling an action programmatically.
+   * That is not a style preference: dispatching a Server Action outside a
+   * form made Next navigate the route, show its loading.tsx and remount
+   * the Studio - which discarded the pending state and the confirmation
+   * the button had just set. A submit keeps the tree mounted.
+   */
+  publishFormId?: string;
   trailing?: ReactNode;
   backHref?: string;
   backLabel?: string;
@@ -81,7 +96,8 @@ export function StudioTopBar({
         </span>
         {trailing}
         <button
-          type="button"
+          type={publishFormId ? "submit" : "button"}
+          form={publishFormId}
           onClick={onPublish}
           disabled={publishPending}
           aria-busy={publishPending || undefined}

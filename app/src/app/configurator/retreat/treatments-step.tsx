@@ -167,7 +167,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
               <div className="flex-1 py-3 min-w-0 pr-3">
                 <div className="flex items-baseline gap-2 mb-0.5">
                   {item.durationMinutes && (
-                    <span className="text-[11px] font-medium" style={{ color: GUEST_BASE_PALETTE.clay }}>
+                    <span className="text-[11px] font-medium relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11" style={{ color: GUEST_BASE_PALETTE.clay }}>
                       {item.durationMinutes} min
                     </span>
                   )}
@@ -423,7 +423,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
         <button
           type="button"
           onClick={onContinue}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>
