@@ -5,7 +5,7 @@ import { ModuleItemPhotoField } from "@/components/module-item-photo-field";
 import { FocalPointPicker } from "@/components/focal-point-picker";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
-import type { EditableTreatment } from "@/lib/modules/treatment";
+import { CHARGE_TYPES, type ChargeType, type EditableTreatment } from "@/lib/modules/treatment";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
@@ -29,6 +29,10 @@ export function blankTreatment(): EditableTreatment {
     location: null,
     bookingInfo: null,
     imagePosition: null,
+    price: null,
+    currency: null,
+    chargeType: null,
+    availability: null,
   };
 }
 
@@ -89,6 +93,10 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
             location,
             bookingInfo,
             imagePosition,
+            price,
+            currency,
+            chargeType,
+            availability,
           }) => ({
             id,
             name,
@@ -100,6 +108,10 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
             location,
             bookingInfo,
             imagePosition,
+            price,
+            currency,
+            chargeType,
+            availability,
           })
         )
       )
@@ -124,7 +136,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
 
   return (
     <div className="max-w-2xl">
-      <StudioHeading>{t("flow", "treatmentsStepTitle")}</StudioHeading>
+      <StudioHeading>{t("flow", "treatmentsAndExtras")}</StudioHeading>
       <StudioIntro>
         {t("flow", "treatmentsStepBody")}
       </StudioIntro>
@@ -300,6 +312,63 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                     className={STUDIO_INPUT_CLASS}
                   />
                 </div>
+              </div>
+
+              {/* TASK 029 (D1) - what it costs and when it can be had.
+                  Retreat-item pricing only: nothing here is connected to
+                  InnerDweS billing, Stripe or any checkout. */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <StudioLabel>{t("flow", "price")}</StudioLabel>
+                  <input
+                    type="number"
+                    min={0}
+                    step="any"
+                    inputMode="decimal"
+                    value={editing.price ?? ""}
+                    onChange={(e) => update(editing.id, { price: e.target.value ? Number(e.target.value) : null })}
+                    placeholder={t("flow", "pricePlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </div>
+                <div>
+                  <StudioLabel>{t("flow", "currency")}</StudioLabel>
+                  <input
+                    value={editing.currency ?? ""}
+                    onChange={(e) => update(editing.id, { currency: e.target.value.toUpperCase() || null })}
+                    placeholder={t("flow", "currencyPlaceholder")}
+                    maxLength={8}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </div>
+                <div>
+                  <StudioLabel>{t("flow", "chargeType")}</StudioLabel>
+                  <select
+                    value={editing.chargeType ?? ""}
+                    onChange={(e) =>
+                      update(editing.id, { chargeType: (e.target.value || null) as ChargeType | null })
+                    }
+                    className={STUDIO_INPUT_CLASS}
+                  >
+                    <option value="">{t("flow", "chargeNotSet")}</option>
+                    {CHARGE_TYPES.map((value) => (
+                      <option key={value} value={value}>
+                        {value === "included" ? t("flow", "chargeIncluded") : t("flow", "chargeAdditional")}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div>
+                <StudioLabel>{t("flow", "availability")}</StudioLabel>
+                <input
+                  value={editing.availability ?? ""}
+                  onChange={(e) => update(editing.id, { availability: e.target.value || null })}
+                  placeholder={t("flow", "availabilityPlaceholder")}
+                  maxLength={200}
+                  className={STUDIO_INPUT_CLASS}
+                  dir="auto"
+                />
               </div>
               <div>
                 <StudioLabel>{t("flow", "fullDescription")}</StudioLabel>

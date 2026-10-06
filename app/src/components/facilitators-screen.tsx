@@ -113,7 +113,7 @@ export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCAL
                   )}
                 </div>
               </div>
-              {(f.bio || f.specialties.length > 0 || f.socialLinks.length > 0) && (
+              {(f.bio || f.longBio || f.specialties.length > 0 || f.socialLinks.length > 0) && (
                 <div className="p-5">
                   {f.specialties.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mb-3">
@@ -133,18 +133,24 @@ export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCAL
                     </div>
                   )}
 
-                  {f.bio && (
+                  {/* TASK 029 (D5): `bio` is the compact line, `longBio`
+                      is the profile. Collapsed shows the short one
+                      clamped; expanded shows the long one when it exists
+                      and the full short one otherwise - so a Space that
+                      never filled longBio in behaves exactly as before. */}
+                  {(f.bio || f.longBio) && (
                     <>
                       <p dir="auto"
-                        className={`text-[13px] leading-relaxed ${isOpen ? "" : "line-clamp-2"}`}
+                        className={`text-[13px] leading-relaxed whitespace-pre-line ${isOpen ? "" : "line-clamp-2"}`}
                         style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}
                       >
-                        {f.bio}
+                        {isOpen ? (f.longBio ?? f.bio) : (f.bio ?? f.longBio)}
                       </p>
                       <button
                         type="button"
                         onClick={() => setExpanded(isOpen ? null : idx)}
-                        className="mt-2 flex items-center gap-1.5 text-[12px] font-medium hover:opacity-70 transition-opacity"
+                        aria-expanded={isOpen}
+                        className="mt-2 flex items-center gap-1.5 text-[12px] font-medium hover:opacity-70 transition-opacity min-h-11"
                         style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text-muted)" }}
                       >
                         {isOpen ? t("flow", "showLess") : t("flow", "readMore")}
@@ -162,7 +168,7 @@ export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCAL
                   )}
 
                   {f.socialLinks.length > 0 && (
-                    <div className={`flex items-center gap-2.5 ${f.bio ? "mt-4" : ""}`}>
+                    <div className={`flex items-center gap-2.5 ${f.bio || f.longBio ? "mt-4" : ""}`}>
                       {f.socialLinks.map((link) => (
                         <a
                           key={link.platform}

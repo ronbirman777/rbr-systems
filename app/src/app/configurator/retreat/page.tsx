@@ -5,6 +5,8 @@ import { RetreatConfigurator } from "./retreat-configurator";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { EMPTY_ARRIVAL_INFO } from "@/lib/modules/arrival";
 import { EMPTY_STAY_CONNECTED } from "@/lib/modules/stayConnected";
+import { EMPTY_RETREAT_PROFILE } from "@/lib/modules/retreatProfile";
+import { EMPTY_MODULE_INTROS } from "@/lib/modules/moduleIntro";
 import { getSpaceSlotSummary } from "./lifecycleActions";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 
@@ -72,6 +74,11 @@ export default async function NewRetreatConfiguratorPage() {
         initialFaq={[]}
         initialCustomPages={[]}
         initialStayConnected={EMPTY_STAY_CONNECTED}
+        initialRetreatProfile={EMPTY_RETREAT_PROFILE}
+        initialModuleIntros={EMPTY_MODULE_INTROS}
+        initialGuidelines={[]}
+        initialReadings={[]}
+        initialAudio={[]}
         initialEnabledModules={[]}
         initialModuleCovers={{}}
         initialPublishedAt={null}

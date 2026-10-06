@@ -7,7 +7,8 @@ import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, Studi
 import { saveArrivalInfo, type SaveArrivalInfoState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
-import { createTranslator } from "@/lib/i18n";
+import { createTranslator, type Locale } from "@/lib/i18n";
+import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { ForwardArrow } from "./studio-ui";
 const initialState: SaveArrivalInfoState = { error: null };
 
@@ -15,6 +16,9 @@ export type ArrivalStepProps = {
   tenantId: string;
   info: ArrivalInfo;
   setInfo: Dispatch<SetStateAction<ArrivalInfo>>;
+  /** TASK 029 (decision B): takes the organizer to the canonical editor
+   * for the two fields this step no longer edits. */
+  onOpenHome: () => void;
   onBack: () => void;
   onContinue: () => void;
 } & StudioSectionEditorProps;
@@ -53,13 +57,82 @@ function Field({
 }
 
 /**
+ * TASK 029 (decision B): the two fields that moved to Retreat Home.
+ *
+ * This is deliberately NOT an input. Welcome and What to Bring are now
+ * owned by Retreat Home, and showing a second editable copy here is
+ * exactly the "two independent editors for one piece of content" D3
+ * forbids - an organizer would have no way to know which one a guest
+ * sees.
+ *
+ * What it does instead: say where the field lives now, show whatever
+ * this Space already has stored (read-only, so nothing looks lost), and
+ * link to the editor that owns it. The stored value is NOT deleted and
+ * NOT migrated - the Guest App still reads it as the fallback until the
+ * organizer saves a canonical one, which is what makes this safe to ship
+ * to Spaces that filled these in years ago.
+ */
+function MovedToHome({
+  label,
+  legacyValue,
+  onOpenHome,
+  locale,
+}: {
+  label: string;
+  legacyValue: string | null;
+  onOpenHome: () => void;
+  locale: Locale;
+}) {
+  const { t } = createTranslator(locale);
+  return (
+    <div
+      className="rounded-xl border px-3.5 py-3"
+      style={{ background: `${GUEST_BASE_PALETTE.sand}1f`, borderColor: `${GUEST_BASE_PALETTE.sand}99` }}
+    >
+      <StudioLabel>{label}</StudioLabel>
+      <p className="text-[12px] leading-relaxed" style={{ color: GUEST_BASE_PALETTE.forest }}>
+        {t("flow", "managedInRetreatHomeBody")}
+      </p>
+      {legacyValue ? (
+        <p
+          dir="auto"
+          className="text-[12.5px] mt-2 whitespace-pre-line rounded-lg bg-white/70 px-3 py-2"
+          style={{ color: GUEST_BASE_PALETTE.dusk }}
+        >
+          {legacyValue}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        onClick={onOpenHome}
+        className="mt-2.5 text-[11px] font-semibold uppercase tracking-wide underline"
+        style={{ color: GUEST_BASE_PALETTE.forest }}
+      >
+        {t("flow", "openRetreatHome")}
+      </button>
+    </div>
+  );
+}
+
+/**
  * Studio Completion pass - ported from the Figma Make source's
  * ArrivalEditorScreen: grouped sections (Arrival Basics / Location /
  * Preparing for Arrival / Contact) instead of one flat stack of fields.
  * Still a single structured form persisting to module_settings, exactly
  * as before - purely a visual restyle.
  */
-export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDirty, onSaved, registerSave, locale }: ArrivalStepProps) {
+export function ArrivalStep({
+  tenantId,
+  info,
+  setInfo,
+  onOpenHome,
+  onBack,
+  onContinue,
+  onDirty,
+  onSaved,
+  registerSave,
+  locale,
+}: ArrivalStepProps) {
   const { t } = createTranslator(locale);
   const [state, setState] = useState<SaveArrivalInfoState>(initialState);
   const [pending, setPending] = useState(false);
@@ -109,12 +182,11 @@ export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDir
         <Field label={t("flow", "checkIn")} value={info.checkInTime} onChange={(v) => set("checkInTime", v)} placeholder="e.g. 14:00" />
         <Field label={t("flow", "checkOut")} value={info.checkOutTime} onChange={(v) => set("checkOutTime", v)} placeholder="e.g. 11:00" />
         <div className="col-span-2">
-          <Field
+          <MovedToHome
             label={t("flow", "welcomeMessageOptional")}
-            value={info.welcomeMessage}
-            onChange={(v) => set("welcomeMessage", v)}
-            textarea
-            placeholder={t("flow", "welcomeMessagePlaceholder")}
+            legacyValue={info.welcomeMessage}
+            onOpenHome={onOpenHome}
+            locale={locale}
           />
         </div>
       </div>
@@ -129,7 +201,12 @@ export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDir
       <div className="space-y-4">
         <Field label={t("flow", "gettingHere")} value={info.transportationInfo} onChange={(v) => set("transportationInfo", v)} textarea rows={3} placeholder={t("flow", "gettingHerePlaceholder")} />
         <Field label={t("flow", "onArrival")} value={info.arrivalInstructions} onChange={(v) => set("arrivalInstructions", v)} textarea placeholder={t("flow", "onArrivalPlaceholder")} />
-        <Field label={t("flow", "whatToBring")} value={info.whatToBring} onChange={(v) => set("whatToBring", v)} textarea rows={3} placeholder={t("flow", "whatToBringPlaceholder")} />
+        <MovedToHome
+          label={t("flow", "whatToBring")}
+          legacyValue={info.whatToBring}
+          onOpenHome={onOpenHome}
+          locale={locale}
+        />
         <Field label={t("flow", "importantNotes")} value={info.importantNotes} onChange={(v) => set("importantNotes", v)} textarea rows={3} placeholder={t("flow", "importantNotesPlaceholder")} />
       </div>
 

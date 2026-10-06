@@ -102,7 +102,8 @@ export function TreatmentsScreen({ brand, treatments, locale = DEFAULT_LOCALE }:
                     <button
                       type="button"
                       onClick={() => setExpanded(isOpen ? null : i)}
-                      className="mt-1.5 flex items-center gap-1.5 text-[12px] font-medium hover:opacity-70 transition-opacity"
+                      aria-expanded={isOpen}
+                      className="mt-1.5 flex items-center gap-1.5 text-[12px] font-medium hover:opacity-70 transition-opacity min-h-11"
                       style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text-muted)" }}
                     >
                       {isOpen ? tr("flow", "showLess") : tr("flow", "readMore")}
@@ -117,6 +118,54 @@ export function TreatmentsScreen({ brand, treatments, locale = DEFAULT_LOCALE }:
                       </svg>
                     </button>
                   </>
+                )}
+                {/* TASK 029 (D1) - Treatments & Extras. Price and charge
+                    type read as one line because that is one fact: "700
+                    THB, extra". Understated on purpose - this is a
+                    retreat app, not a shop, and nothing here is a
+                    checkout. */}
+                {(t.price !== null || t.chargeType || t.availability) && (
+                  <div
+                    className="mt-3 pt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1"
+                    style={{ borderTop: "1px solid color-mix(in srgb, var(--rbr-sand) 50%, transparent)" }}
+                  >
+                    {t.price !== null && (
+                      <span
+                        className="text-[14px] font-medium tabular-nums"
+                        style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text)" }}
+                      >
+                        {/* Printed as the organizer typed it. No
+                            Intl.NumberFormat: that needs a real ISO-4217
+                            code, and `currency` here is deliberately
+                            free text (see treatment.ts) so an organizer
+                            in any country can name their own. */}
+                        {[String(t.price), t.currency].filter(Boolean).join(" ")}
+                      </span>
+                    )}
+                    {t.chargeType && (
+                      <span
+                        className="text-[10px] px-2.5 py-1 rounded-full font-medium tracking-wide"
+                        style={{
+                          fontFamily: "var(--rbr-font-ui)",
+                          background:
+                            t.chargeType === "included" ? "var(--rbr-primary-soft)" : "var(--rbr-parchment-deep)",
+                          color:
+                            t.chargeType === "included" ? "var(--rbr-text-on-primary-soft)" : "var(--rbr-text-muted)",
+                        }}
+                      >
+                        {t.chargeType === "included" ? tr("flow", "chargeIncluded") : tr("flow", "chargeAdditional")}
+                      </span>
+                    )}
+                    {t.availability && (
+                      <span
+                        dir="auto"
+                        className="text-[11.5px] w-full"
+                        style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}
+                      >
+                        {t.availability}
+                      </span>
+                    )}
+                  </div>
                 )}
                 {t.bookingInfo && (
                   <div

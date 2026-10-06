@@ -10,7 +10,11 @@ import { FocalPointPicker } from "@/components/focal-point-picker";
 import { objectPositionStyle, type ImagePosition } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import { persistNewScheduleItemStub, persistScheduleItemRemoval } from "@/lib/modules/persistSchedule";
+import { HomeStep } from "./home-step";
 import { MealsStep } from "./meals-step";
+import { GuidelinesStep } from "./guidelines-step";
+import { ReadingsStep } from "./readings-step";
+import { AudioStep } from "./audio-step";
 import { TreatmentsStep } from "./treatments-step";
 import { FacilitiesStep } from "./facilities-step";
 import { ArrivalStep } from "./arrival-step";
@@ -40,7 +44,7 @@ import { StatusPill } from "@/components/studio/status-pill";
 import { ReadinessChecklist, type ReadinessItem } from "@/components/studio/readiness-checklist";
 import { PublicLinkCard } from "@/components/studio/public-link-card";
 import { publicSpaceUrl, guestAppPath } from "@/lib/studio/publicLink";
-import type { EditableScheduleItem } from "@/lib/schedule/types";
+import { hasActivityExtras, type EditableScheduleItem } from "@/lib/schedule/types";
 import type { EditableFacilitator } from "@/lib/modules/facilitator";
 import type { EditableMeal } from "@/lib/modules/meal";
 import type { EditableTreatment } from "@/lib/modules/treatment";
@@ -49,6 +53,10 @@ import type { ArrivalInfo } from "@/lib/modules/arrival";
 import type { EditableFaqItem } from "@/lib/modules/faq";
 import type { EditableCustomPage } from "@/lib/modules/customPage";
 import type { StayConnected } from "@/lib/modules/stayConnected";
+import { listToText, textToList, type RetreatProfile } from "@/lib/modules/retreatProfile";
+import type { ModuleIntros } from "@/lib/modules/moduleIntro";
+import type { EditableGuideline } from "@/lib/modules/guideline";
+import type { EditableFlowReading, EditableFlowTrack } from "@/lib/modules/flowLibrary";
 import { SOCIAL_PLATFORMS, socialPlatformLabel, isLikelyValidUrl, type SocialPlatform } from "@/lib/modules/socialLinks";
 import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
 import { todayInTimezone, currentTimeInTimezone, timezoneOptions, timezoneSelectValue, DEFAULT_TIMEZONE } from "@/lib/timezone";
@@ -104,6 +112,13 @@ export type RetreatConfiguratorProps = {
   initialFaq: EditableFaqItem[];
   initialCustomPages: EditableCustomPage[];
   initialStayConnected: StayConnected;
+  /** TASK 029 - Retreat Home, the generic module intros, and the three
+   * new content modules. */
+  initialRetreatProfile: RetreatProfile;
+  initialModuleIntros: ModuleIntros;
+  initialGuidelines: EditableGuideline[];
+  initialReadings: EditableFlowReading[];
+  initialAudio: EditableFlowTrack[];
   initialEnabledModules: OptionalModuleKey[];
   initialModuleCovers: Record<string, { imageRef: string | null; imageUrl: string | null; imagePosition: ImagePosition }>;
   initialPublishedAt: string | null;
@@ -132,6 +147,8 @@ function blankScheduleItem(): EditableScheduleItem {
     location: null,
     description: null,
     category: null,
+    whatToBring: [],
+    whatToExpect: [],
   };
 }
 
@@ -141,6 +158,7 @@ function blankFacilitator(): EditableFacilitator {
     name: "",
     role: null,
     bio: null,
+    longBio: null,
     imageRef: null,
     imageUrl: null,
     specialties: [],
@@ -159,30 +177,60 @@ type StepKey =
   | "identity"
   | "brand"
   | "modules"
+  /** TASK 029 - always present: Retreat Home is not an optional module. */
+  | "home"
   | "schedule"
   | "facilitators"
   | "meals"
   | "treatments"
   | "facilities"
   | "arrivalInfo"
+  | "guidelines"
   | "faq"
+  | "readings"
+  | "audio"
   | "customPages"
   | "stayConnected"
   | "publish"
   | "share"
   | "featured";
 
-type ContentStepKey = Exclude<StepKey, "identity" | "brand" | "modules" | "publish" | "share" | "featured">;
+/**
+ * The content steps that are gated on their module being enabled.
+ *
+ * `home` is deliberately NOT in here: Retreat Home is the Space's own
+ * description, not an optional module an organizer switches off, so it
+ * is always offered (the same reasoning that keeps spaceSettings out of
+ * module_configs). It is pushed into the step list explicitly below.
+ */
+type ModuleStepKey = Exclude<StepKey, "identity" | "brand" | "modules" | "home" | "publish" | "share" | "featured">;
 
 /** Translation keys, not labels - resolved per render in the Space language. */
-const STEP_LABEL_KEYS: Record<ContentStepKey, "navSchedule" | "facilitators" | "meals" | "treatments" | "facilities" | "moduleArrivalInfo" | "faq" | "moduleCustomPages" | "stayConnected"> = {
+const STEP_LABEL_KEYS: Record<
+  ModuleStepKey,
+  | "navSchedule"
+  | "facilitators"
+  | "meals"
+  | "treatments"
+  | "facilities"
+  | "moduleArrivalInfo"
+  | "guidelines"
+  | "faq"
+  | "readings"
+  | "audioStepTitle"
+  | "moduleCustomPages"
+  | "stayConnected"
+> = {
   schedule: "navSchedule",
   facilitators: "facilitators",
   meals: "meals",
   treatments: "treatments",
   facilities: "facilities",
   arrivalInfo: "moduleArrivalInfo",
+  guidelines: "guidelines",
   faq: "faq",
+  readings: "readings",
+  audio: "audioStepTitle",
   customPages: "moduleCustomPages",
   stayConnected: "stayConnected",
 };
@@ -312,6 +360,9 @@ type ModuleDescriptionKey =
   | "moduleFaqDesc"
   | "moduleCustomPagesDesc"
   | "moduleStayConnectedDesc"
+  | "moduleGuidelinesDesc"
+  | "moduleReadingsDesc"
+  | "moduleAudioDesc"
   | "notYetAvailable";
 
 const MODULE_META: Record<OptionalModuleKey, { icon: string; descriptionKey: ModuleDescriptionKey }> = {
@@ -325,8 +376,10 @@ const MODULE_META: Record<OptionalModuleKey, { icon: string; descriptionKey: Mod
   faq: { icon: "?", descriptionKey: "moduleFaqDesc" },
   customPages: { icon: "▤", descriptionKey: "moduleCustomPagesDesc" },
   stayConnected: { icon: "@", descriptionKey: "moduleStayConnectedDesc" },
+  guidelines: { icon: "§", descriptionKey: "moduleGuidelinesDesc" },
+  readings: { icon: "❧", descriptionKey: "moduleReadingsDesc" },
+  audio: { icon: "♪", descriptionKey: "moduleAudioDesc" },
   resources: { icon: "◇", descriptionKey: "notYetAvailable" },
-  audio: { icon: "◇", descriptionKey: "notYetAvailable" },
   announcements: { icon: "◇", descriptionKey: "notYetAvailable" },
 };
 
@@ -346,6 +399,12 @@ const EXPLORE_CARD_MODULE_KEYS = new Set<OptionalModuleKey>([
   "arrivalInfo",
   "faq",
   "stayConnected",
+  // TASK 029 - the three new Explore cards. Each is in 0033's own
+  // moduleCovers allowlist too; the two lists have to agree or a cover
+  // an organizer can upload here would never publish.
+  "guidelines",
+  "readings",
+  "audio",
 ]);
 
 /**
@@ -652,8 +711,65 @@ function ScheduleEditor({
                 onChange={(e) => updateScheduleItem(editing.id, { description: e.target.value || null })}
                 placeholder={t("flow", "notesPlaceholder")}
                 className={STUDIO_INPUT_CLASS}
+                dir="auto"
               />
             </div>
+            {/* TASK 029 (P5D): per-activity extras, COLLAPSED by default.
+                Most sessions never need them, and the brief is explicit
+                that they must not clutter the standard editor. A native
+                <details> rather than custom state: it is keyboard- and
+                screen-reader-operable for free, and this panel already
+                re-mounts whenever a different session is opened. */}
+            <details className="col-span-2 group">
+              <summary
+                className="cursor-pointer text-[11px] font-semibold uppercase tracking-[0.14em] py-1.5 list-none flex items-center gap-1.5"
+                style={{ color: GUEST_BASE_PALETTE.mist }}
+              >
+                <span aria-hidden="true" className="group-open:rotate-90 transition-transform inline-block">
+                  ▸
+                </span>
+                {t("flow", "extraDetails")}
+                {hasActivityExtras(editing) ? (
+                  <span
+                    aria-hidden="true"
+                    className="w-1.5 h-1.5 rounded-full inline-block"
+                    style={{ background: GUEST_BASE_PALETTE.clay }}
+                  />
+                ) : null}
+              </summary>
+              <p className="text-[11px] mb-3 mt-1" style={{ color: GUEST_BASE_PALETTE.mist }}>
+                {t("flow", "extraDetailsHint")}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <StudioLabel>{t("flow", "whatToBring")}</StudioLabel>
+                  <textarea
+                    value={listToText(editing.whatToBring)}
+                    onChange={(e) => updateScheduleItem(editing.id, { whatToBring: textToList(e.target.value) })}
+                    placeholder={t("flow", "activityWhatToBringPlaceholder")}
+                    rows={3}
+                    maxLength={1000}
+                    className={`${STUDIO_INPUT_CLASS} resize-none`}
+                    dir="auto"
+                  />
+                </div>
+                <div>
+                  <StudioLabel>{t("flow", "whatToExpect")}</StudioLabel>
+                  <textarea
+                    value={listToText(editing.whatToExpect)}
+                    onChange={(e) => updateScheduleItem(editing.id, { whatToExpect: textToList(e.target.value) })}
+                    placeholder={t("flow", "activityWhatToExpectPlaceholder")}
+                    rows={3}
+                    maxLength={1000}
+                    className={`${STUDIO_INPUT_CLASS} resize-none`}
+                    dir="auto"
+                  />
+                </div>
+              </div>
+              <p className="text-[11px] mt-1.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
+                {t("flow", "onePerLine")}
+              </p>
+            </details>
           </div>
         </div>
       )}
@@ -893,6 +1009,22 @@ function TeamEditor({
                 placeholder={t("flow", "bioPlaceholder")}
                 rows={3}
                 className={`${STUDIO_INPUT_CLASS} resize-none`}
+                dir="auto"
+              />
+            </div>
+            {/* TASK 029 (D5): the long version, for this facilitator's
+                own screen. `bio` above keeps its meaning - the line on
+                the card - so neither replaces the other. */}
+            <div>
+              <StudioLabel>{t("flow", "fullBiography")}</StudioLabel>
+              <textarea
+                value={editing.longBio ?? ""}
+                onChange={(e) => updateFacilitator(editing.id, { longBio: e.target.value || null })}
+                placeholder={t("flow", "fullBiographyPlaceholder")}
+                rows={6}
+                maxLength={6000}
+                className={`${STUDIO_INPUT_CLASS} resize-none`}
+                dir="auto"
               />
             </div>
             <div>
@@ -1064,6 +1196,11 @@ export function RetreatConfigurator({
   initialFaq,
   initialCustomPages,
   initialStayConnected,
+  initialRetreatProfile,
+  initialModuleIntros,
+  initialGuidelines,
+  initialReadings,
+  initialAudio,
   initialEnabledModules,
   initialModuleCovers,
   initialPublishedAt,
@@ -1144,6 +1281,7 @@ export function RetreatConfigurator({
       Object.entries(moduleCovers).map(([key, v]) => [key, { imageUrl: v.imageUrl, imagePosition: v.imagePosition }])
     );
 
+
   /** TASK 020 - instant-persist a module cover's focal point (module
    * covers have no "Save" step of their own; see
    * updateModuleCoverPosition's own comment, actions.ts). Fire-and-forget
@@ -1169,6 +1307,30 @@ export function RetreatConfigurator({
   const [arrivalInfo, setArrivalInfo] = useState<ArrivalInfo>(initialArrivalInfo);
   const [faq, setFaq] = useState<EditableFaqItem[]>(initialFaq);
   const [customPages, setCustomPages] = useState<EditableCustomPage[]>(initialCustomPages);
+  // TASK 029 content state. Same shape as its siblings above: the parent
+  // owns it, each editor patches it, and each editor's own Save
+  // persists it.
+  const [retreatProfile, setRetreatProfile] = useState<RetreatProfile>(initialRetreatProfile);
+  const [moduleIntros, setModuleIntros] = useState<ModuleIntros>(initialModuleIntros);
+  const [guidelines, setGuidelines] = useState<EditableGuideline[]>(initialGuidelines);
+  const [readings, setReadings] = useState<EditableFlowReading[]>(initialReadings);
+  const [audioTracks, setAudioTracks] = useState<EditableFlowTrack[]>(initialAudio);
+  /**
+   * TASK 029: the editable Readings/Audio items as the Guest screens
+   * want them.
+   *
+   * The only difference is that `imageUrl`/`audioUrl` are OPTIONAL on
+   * the editable type (an item that has never been loaded has neither)
+   * and required on the display type. The preview is fed the draft
+   * signed URLs, which is the whole point of a draft preview - the
+   * published route feeds the same screens /api/media URLs instead.
+   */
+  const readingsForPreview = readings.map((r) => ({ ...r, imageUrl: r.imageUrl ?? null }));
+  const audioForPreview = audioTracks.map((a) => ({
+    ...a,
+    imageUrl: a.imageUrl ?? null,
+    audioUrl: a.audioUrl ?? null,
+  }));
   const [stayConnected, setStayConnected] = useState(initialStayConnected.links);
 
   const [draftState, draftAction, draftPending] = useActionState(saveDraft, {
@@ -1451,7 +1613,10 @@ export function RetreatConfigurator({
       { key: "brand", label: t("studio", "navBrand") },
       { key: "modules", label: t("studio", "navModules") },
     ];
-    (Object.keys(STEP_LABEL_KEYS) as ContentStepKey[]).forEach((key) => {
+    // Retreat Home is always offered - it is the Space's own
+    // description, not a module that can be switched off.
+    list.push({ key: "home", label: t("flow", "homeStepTitle") });
+    (Object.keys(STEP_LABEL_KEYS) as ModuleStepKey[]).forEach((key) => {
       if (enabledModules.has(key)) list.push({ key, label: t("flow", STEP_LABEL_KEYS[key]) });
     });
     list.push({ key: "publish", label: t("studio", "publish") });
@@ -2367,11 +2532,25 @@ export function RetreatConfigurator({
           />
         )}
 
+        {step === "home" && tenantId && (
+          <HomeStep
+            tenantId={tenantId}
+            profile={retreatProfile}
+            setProfile={setRetreatProfile}
+            arrivalInfo={arrivalInfo}
+            onBack={() => goToStep(-1)}
+            onContinue={() => goToStep(1)}
+            {...moduleSectionProps.home}
+          />
+        )}
+
         {step === "meals" && tenantId && (
           <MealsStep
             tenantId={tenantId}
             meals={meals}
             setMeals={setMeals}
+            moduleIntros={moduleIntros}
+            setModuleIntros={setModuleIntros}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}
             {...moduleSectionProps.meals}
@@ -2405,9 +2584,43 @@ export function RetreatConfigurator({
             tenantId={tenantId}
             info={arrivalInfo}
             setInfo={setArrivalInfo}
+            onOpenHome={() => attemptNavigate(() => setStep("home"))}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}
             {...moduleSectionProps.arrival}
+          />
+        )}
+
+        {step === "guidelines" && tenantId && (
+          <GuidelinesStep
+            tenantId={tenantId}
+            guidelines={guidelines}
+            setGuidelines={setGuidelines}
+            onBack={() => goToStep(-1)}
+            onContinue={() => goToStep(1)}
+            {...moduleSectionProps.guidelines}
+          />
+        )}
+
+        {step === "readings" && tenantId && (
+          <ReadingsStep
+            tenantId={tenantId}
+            readings={readings}
+            setReadings={setReadings}
+            onBack={() => goToStep(-1)}
+            onContinue={() => goToStep(1)}
+            {...moduleSectionProps.readings}
+          />
+        )}
+
+        {step === "audio" && tenantId && (
+          <AudioStep
+            tenantId={tenantId}
+            tracks={audioTracks}
+            setTracks={setAudioTracks}
+            onBack={() => goToStep(-1)}
+            onContinue={() => goToStep(1)}
+            {...moduleSectionProps.audio}
           />
         )}
 
@@ -2625,6 +2838,11 @@ export function RetreatConfigurator({
                     faq={faq.filter((f) => f.enabled)}
                     customPages={customPages.filter((p) => p.enabled).map((p) => ({ ...p, imageUrl: p.imageUrl ?? null }))}
                     stayConnected={{ links: stayConnected }}
+                    retreatProfile={retreatProfile}
+                    moduleIntros={moduleIntros}
+                    guidelines={guidelines}
+                    readings={readingsForPreview}
+                    audio={audioForPreview}
                     moduleCoverImages={moduleCoverImagesForPreview}
                   />
                 </div>
@@ -2711,6 +2929,11 @@ export function RetreatConfigurator({
             faq={faq.filter((f) => f.enabled)}
             customPages={customPages.filter((p) => p.enabled).map((p) => ({ ...p, imageUrl: p.imageUrl ?? null }))}
             stayConnected={{ links: stayConnected }}
+            retreatProfile={retreatProfile}
+            moduleIntros={moduleIntros}
+            guidelines={guidelines}
+            readings={readingsForPreview}
+            audio={audioForPreview}
             moduleCoverImages={moduleCoverImagesForPreview}
           />
         </div>

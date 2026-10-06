@@ -106,6 +106,12 @@ describe("translation and fallback", () => {
       "flow.checkIn",
       "flow.checkOut",
       "flow.mealBrunch",
+      // TASK 029: "Audio" is the German word, and German retreat and
+      // wellness pages write "Treatments & Extras" exactly like this -
+      // "Behandlungen & Zusatzleistungen" would be a translation nobody
+      // in the market actually uses.
+      "flow.audioStepTitle",
+      "flow.treatmentsAndExtras",
       // File format names, not words - the same in every language.
       "studio.imageFormats",
       // The canvas Share Card deliberately falls back to English for

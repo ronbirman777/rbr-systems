@@ -11,6 +11,8 @@ import type { ArrivalInfo } from "@/lib/modules/arrival";
 import type { DisplayFaqItem } from "@/lib/modules/faq";
 import type { DisplayCustomPage } from "@/lib/modules/customPage";
 import type { StayConnected } from "@/lib/modules/stayConnected";
+import type { DisplayGuideline } from "@/lib/modules/guideline";
+import { playableTracks, type DisplayFlowReading, type DisplayFlowTrack } from "@/lib/modules/flowLibrary";
 import { objectPositionStyle, type ImagePosition } from "@/lib/modules/imagePosition";
 import { MealsScreen } from "../meals-screen";
 import { TreatmentsScreen } from "../treatments-screen";
@@ -19,7 +21,20 @@ import { ArrivalScreen } from "../arrival-screen";
 import { FaqScreen } from "../faq-screen";
 import { StayConnectedScreen } from "../stay-connected-screen";
 import { CustomPageScreen } from "../custom-page-screen";
-import { ChevronLeftIcon, ChevronRightIcon, PinIcon, QuestionIcon, PagesIcon, WebsiteIcon } from "./icons";
+import { GuidelinesScreen } from "./guidelines-screen";
+import { ReadingsScreen } from "./readings-screen";
+import { AudioScreen } from "./audio-screen";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  PinIcon,
+  QuestionIcon,
+  PagesIcon,
+  WebsiteIcon,
+  GuidelinesIcon,
+  ReadingsIcon,
+  AudioIcon,
+} from "./icons";
 import type { CSSProperties, ReactElement } from "react";
 
 import { createTranslator, splitEmphasis, translate, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
@@ -35,6 +50,11 @@ export type ExploreScreenProps = {
   faq: DisplayFaqItem[];
   customPages: DisplayCustomPage[];
   stayConnected: StayConnected;
+  /** TASK 029 - the three new Explore modules, plus Meals' own intro. */
+  guidelines?: DisplayGuideline[];
+  readings?: DisplayFlowReading[];
+  audio?: DisplayFlowTrack[];
+  mealsIntro?: string | null;
   /** Explore module hero/cover images (added alongside Task 015) -
    * moduleKey -> resolved image URL + its own focal point (TASK 020).
    * Takes precedence over the existing per-item-derived fallback below
@@ -45,7 +65,16 @@ export type ExploreScreenProps = {
   locale?: Locale;
 };
 
-type FixedExplorePage = "meals" | "treatments" | "facilities" | "arrivalInfo" | "faq" | "stayConnected";
+type FixedExplorePage =
+  | "meals"
+  | "treatments"
+  | "facilities"
+  | "arrivalInfo"
+  | "guidelines"
+  | "faq"
+  | "readings"
+  | "audio"
+  | "stayConnected";
 type ExplorePage = FixedExplorePage | `customPage:${number}`;
 
 /** Which brand color a given Explore entry card/tile draws from - see
@@ -82,6 +111,13 @@ export const EXPLORE_COVER_SIZES: Record<string, string> = {
   arrivalInfo: FLOW_SIZES.tile,
   faq: FLOW_SIZES.tile,
   stayConnected: FLOW_SIZES.tile,
+  // TASK 029 - all three render as SolidTiles, so all three get a
+  // tile's box. Listed here, not guessed by the prefetcher: the
+  // prefetcher and the <img> must agree on the candidate or the visitor
+  // downloads two renders of one cover.
+  guidelines: FLOW_SIZES.tile,
+  readings: FLOW_SIZES.tile,
+  audio: FLOW_SIZES.tile,
 };
 
 /** Custom pages render as SolidTiles alongside the fixed modules. */
@@ -97,6 +133,10 @@ export function ExploreScreen({
   faq,
   customPages,
   stayConnected,
+  guidelines = [],
+  readings = [],
+  audio = [],
+  mealsIntro = null,
   moduleCoverImages = {},
   locale = DEFAULT_LOCALE,
 }: ExploreScreenProps) {
@@ -111,12 +151,22 @@ export function ExploreScreen({
   const hasFaq = enabledModules.includes("faq") && faq.length > 0;
   const hasStayConnected = enabledModules.includes("stayConnected") && stayConnected.links.length > 0;
   const hasCustomPages = enabledModules.includes("customPages") && customPages.length > 0;
+  // TASK 029: enabled AND non-empty, like FAQ above - an organizer who
+  // switched a module on but has not written anything yet gets no card,
+  // rather than a card that leads to an empty screen.
+  const hasGuidelines = enabledModules.includes("guidelines") && guidelines.length > 0;
+  const hasReadings = enabledModules.includes("readings") && readings.length > 0;
+  const playable = playableTracks(audio) as DisplayFlowTrack[];
+  const hasAudio = enabledModules.includes("audio") && playable.length > 0;
 
-  if (page === "meals") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><MealsScreen brand={brand} meals={meals} locale={locale} /></ExploreSubPage>;
+  if (page === "meals") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><MealsScreen brand={brand} meals={meals} intro={mealsIntro} locale={locale} /></ExploreSubPage>;
   if (page === "treatments") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><TreatmentsScreen brand={brand} treatments={treatments} locale={locale} /></ExploreSubPage>;
   if (page === "facilities") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><FacilitiesScreen brand={brand} facilities={facilities} locale={locale} /></ExploreSubPage>;
   if (page === "arrivalInfo") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><ArrivalScreen brand={brand} info={arrivalInfo} locale={locale} /></ExploreSubPage>;
   if (page === "faq") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><FaqScreen brand={brand} faq={faq} locale={locale} /></ExploreSubPage>;
+  if (page === "guidelines") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><GuidelinesScreen brand={brand} guidelines={guidelines} locale={locale} /></ExploreSubPage>;
+  if (page === "readings") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><ReadingsScreen brand={brand} readings={readings} locale={locale} /></ExploreSubPage>;
+  if (page === "audio") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><AudioScreen brand={brand} tracks={playable} locale={locale} /></ExploreSubPage>;
   if (page === "stayConnected") return <ExploreSubPage vars={vars} onBack={() => setPage(null)} locale={locale}><StayConnectedScreen brand={brand} stayConnected={stayConnected} locale={locale} /></ExploreSubPage>;
   if (page?.startsWith("customPage:")) {
     const idx = Number(page.slice("customPage:".length));
@@ -166,6 +216,25 @@ export function ExploreScreen({
   const faqImagePosition = moduleCoverImages.faq?.imagePosition ?? null;
   const stayConnectedImage = moduleCoverImages.stayConnected?.imageUrl ?? null;
   const stayConnectedImagePosition = moduleCoverImages.stayConnected?.imagePosition ?? null;
+  // TASK 029: the three new modules borrow a first item's own photo the
+  // same way meals/treatments/facilities always have - a reading's cover
+  // or a track's artwork is a real tenant image, so falling back to one
+  // is exactly as honest here as it is there. Guidelines have no items
+  // with photos, so a cover is their only image source.
+  const guidelinesImage = moduleCoverImages.guidelines?.imageUrl ?? null;
+  const guidelinesImagePosition = moduleCoverImages.guidelines?.imagePosition ?? null;
+  const readingsFallback = readings.find((r) => r.imageUrl);
+  const readingsCover = moduleCoverImages.readings;
+  const readingsImage = readingsCover?.imageUrl ?? readingsFallback?.imageUrl ?? null;
+  const readingsImagePosition = readingsCover?.imageUrl
+    ? readingsCover.imagePosition
+    : (readingsFallback?.metadata.imagePosition ?? null);
+  const audioFallback = playable.find((a) => a.imageUrl);
+  const audioCover = moduleCoverImages.audio;
+  const audioImage = audioCover?.imageUrl ?? audioFallback?.imageUrl ?? null;
+  const audioImagePosition = audioCover?.imageUrl
+    ? audioCover.imagePosition
+    : (audioFallback?.metadata.imagePosition ?? null);
 
   // Alternating Primary/Accent rhythm across every visible entry, in
   // render order, regardless of which modules are enabled - a tenant
@@ -214,7 +283,7 @@ export function ExploreScreen({
             heightClass="h-[200px]"
           />
         )}
-        {(hasFacilities || hasArrival || hasFaq || hasStayConnected || hasCustomPages) && (
+        {(hasFacilities || hasArrival || hasGuidelines || hasFaq || hasReadings || hasAudio || hasStayConnected || hasCustomPages) && (
           <div className="grid grid-cols-2 gap-3">
             {hasFacilities && (
               <EntryCard
@@ -239,6 +308,17 @@ export function ExploreScreen({
                 imagePosition={arrivalImagePosition}
               />
             )}
+            {hasGuidelines && (
+              <SolidTile
+                tone={nextTone()}
+                onClick={() => setPage("guidelines")}
+                icon={<GuidelinesIcon className="w-4 h-4" />}
+                eyebrow={t("flow", "eyebrowGuidelines")}
+                title={t("flow", "guidelines")}
+                imageUrl={guidelinesImage}
+                imagePosition={guidelinesImagePosition}
+              />
+            )}
             {hasFaq && (
               <SolidTile
                 tone={nextTone()}
@@ -248,6 +328,28 @@ export function ExploreScreen({
                 title={t("flow", "faq")}
                 imageUrl={faqImage}
                 imagePosition={faqImagePosition}
+              />
+            )}
+            {hasReadings && (
+              <SolidTile
+                tone={nextTone()}
+                onClick={() => setPage("readings")}
+                icon={<ReadingsIcon className="w-4 h-4" />}
+                eyebrow={t("flow", "eyebrowReadings")}
+                title={t("flow", "readings")}
+                imageUrl={readingsImage}
+                imagePosition={readingsImagePosition}
+              />
+            )}
+            {hasAudio && (
+              <SolidTile
+                tone={nextTone()}
+                onClick={() => setPage("audio")}
+                icon={<AudioIcon className="w-4 h-4" />}
+                eyebrow={t("flow", "eyebrowAudio")}
+                title={t("flow", "moduleAudio")}
+                imageUrl={audioImage}
+                imagePosition={audioImagePosition}
               />
             )}
             {hasStayConnected && (
@@ -276,11 +378,20 @@ export function ExploreScreen({
               ))}
           </div>
         )}
-        {!hasMeals && !hasTreatments && !hasFacilities && !hasArrival && !hasFaq && !hasStayConnected && !hasCustomPages && (
-          <div className="text-xs px-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-            {t("flow", "exploreEmpty")}
-          </div>
-        )}
+        {!hasMeals &&
+          !hasTreatments &&
+          !hasFacilities &&
+          !hasArrival &&
+          !hasGuidelines &&
+          !hasFaq &&
+          !hasReadings &&
+          !hasAudio &&
+          !hasStayConnected &&
+          !hasCustomPages && (
+            <div className="text-xs px-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
+              {t("flow", "exploreEmpty")}
+            </div>
+          )}
       </div>
     </div>
   );

@@ -13,7 +13,16 @@ import { imagePositionSchema } from "./imagePosition";
 export const facilitatorSchema = z.object({
   name: z.string().min(1),
   role: z.string().nullable(),
+  /** The short bio: the one shown on the card. Unchanged meaning. */
   bio: z.string().nullable(),
+  /**
+   * TASK 029 (D5): the full text, for the facilitator's own detail
+   * screen. Optional and defaulted for the same backward-compatibility
+   * reason as `specialties` below - an older published snapshot has no
+   * such key, and a required field would fail the whole array's parse.
+   * Stored in module_items.metadata, so no DDL.
+   */
+  longBio: z.string().nullable().catch(null).default(null),
   /** Durable Storage path (tenant-media bucket), e.g. "{tenantId}/facilitators/{itemId}.jpg" - never a temporary browser blob/object URL. */
   imageRef: z.string().nullable(),
   /** Tenant-authored tags, no fixed taxonomy - e.g. "Vinyasa Flow", "Sound Healing".

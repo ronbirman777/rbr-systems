@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { optionalFocalPointSchema } from "@/lib/media/focalPoint";
 import { isoDateString as isoDate, optText } from "@/lib/modules/fields";
-import { audioItemFields, audioNoteField, readingMetadataSchema } from "@/lib/modules/library";
+import { audioItemFields, audioNoteField, libraryItemFieldsSchema, parseLibraryItem, readingMetadataSchema } from "@/lib/modules/library";
 import { socialLinksSchema } from "@/lib/modules/socialLinks";
 import { BRAND_PRESET_KEYS } from "@/lib/brand/presets";
 
@@ -579,41 +579,26 @@ export type EditableTeachItem<K extends TeachEditableItemKey = TeachEditableItem
   audioUrl?: string | null;
 };
 
+/**
+ * The item envelope validator and its tolerant parse now live in
+ * lib/modules/library.ts, so Flow's Readings and Audio read the same
+ * stored shape through the same code rather than a second parser that
+ * would drift. Only the metadata schema and the title rule vary per key.
+ */
 export function teachItemFieldsSchema<K extends TeachEditableItemKey>(key: K) {
-  const title = TITLE_REQUIRED[key]
-    ? z.string().trim().min(1, "Every item needs a title.").max(160)
-    : z.string().trim().max(160).default("");
-  return z.object({
-    title,
-    subtitle: optText(160),
-    description: optText(20000),
-    externalLink: optText(800),
-    metadata: TEACH_ITEM_METADATA_SCHEMAS[key] as unknown as z.ZodType<TeachItemMetadata[K]>,
-  });
+  return libraryItemFieldsSchema(
+    TEACH_ITEM_METADATA_SCHEMAS[key] as unknown as z.ZodType<TeachItemMetadata[K]>,
+    TITLE_REQUIRED[key]
+  );
 }
 
 /** Tolerant parse of one stored/published row; returns null if unusable. */
 export function parseTeachItem<K extends TeachEditableItemKey>(key: K, raw: unknown): TeachItem<K> | null {
-  if (!raw || typeof raw !== "object") return null;
-  const r = raw as Record<string, unknown>;
-  const fields = teachItemFieldsSchema(key).safeParse({
-    title: typeof r.title === "string" ? r.title : "",
-    subtitle: r.subtitle ?? null,
-    description: r.description ?? null,
-    externalLink: r.externalLink ?? r.external_link ?? null,
-    metadata: r.metadata ?? {},
-  });
-  if (!fields.success || typeof r.id !== "string") return null;
-  const imageRef = typeof r.imageRef === "string" ? r.imageRef : typeof r.image_ref === "string" ? r.image_ref : null;
-  return {
-    id: r.id,
-    title: fields.data.title ?? "",
-    subtitle: fields.data.subtitle,
-    description: fields.data.description,
-    externalLink: fields.data.externalLink,
-    imageRef,
-    metadata: fields.data.metadata,
-  } as TeachItem<K>;
+  return parseLibraryItem(
+    raw,
+    TEACH_ITEM_METADATA_SCHEMAS[key] as unknown as z.ZodType<TeachItemMetadata[K]>,
+    TITLE_REQUIRED[key]
+  ) as TeachItem<K> | null;
 }
 
 export function parseTeachItems<K extends TeachEditableItemKey>(key: K, raw: unknown): TeachItem<K>[] {

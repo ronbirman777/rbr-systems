@@ -40,6 +40,8 @@ export const DEMO_SCHEDULE: PublicScheduleItem[] = [
     location: null,
     description: "Breathwork · 20 min",
     category: null,
+    whatToBring: [],
+    whatToExpect: [],
   },
   {
     date: DEMO_TODAY_ISO,
@@ -50,6 +52,8 @@ export const DEMO_SCHEDULE: PublicScheduleItem[] = [
     location: null,
     description: "Outdoor movement · 45 min",
     category: null,
+    whatToBring: [],
+    whatToExpect: [],
   },
   {
     date: DEMO_TODAY_ISO,
@@ -60,6 +64,8 @@ export const DEMO_SCHEDULE: PublicScheduleItem[] = [
     location: "Terrace",
     description: "Plant-based",
     category: null,
+    whatToBring: [],
+    whatToExpect: [],
   },
   {
     date: DEMO_TODAY_ISO,
@@ -70,6 +76,8 @@ export const DEMO_SCHEDULE: PublicScheduleItem[] = [
     location: "Studio A",
     description: "75 min · Rest",
     category: null,
+    whatToBring: [],
+    whatToExpect: [],
   },
   {
     date: DEMO_TODAY_ISO,
@@ -80,6 +88,8 @@ export const DEMO_SCHEDULE: PublicScheduleItem[] = [
     location: null,
     description: "90 min",
     category: null,
+    whatToBring: [],
+    whatToExpect: [],
   },
   {
     date: DEMO_TODAY_ISO,
@@ -90,14 +100,16 @@ export const DEMO_SCHEDULE: PublicScheduleItem[] = [
     location: "Open Fire Terrace",
     description: "Whole group",
     category: null,
+    whatToBring: [],
+    whatToExpect: [],
   },
 ];
 
 export const DEMO_FACILITATORS: DisplayFacilitator[] = [
-  { name: "Maya Rodriguez", role: "Lead Facilitator", bio: null, imageRef: null, imageUrl: null, specialties: [], socialLinks: [], imagePosition: null },
-  { name: "Tomás Vargas", role: "Yoga & Breathwork", bio: null, imageRef: null, imageUrl: null, specialties: [], socialLinks: [], imagePosition: null },
-  { name: "Asha Mehta", role: "Nutrition & Ayurveda", bio: null, imageRef: null, imageUrl: null, specialties: [], socialLinks: [], imagePosition: null },
-  { name: "James Liu", role: "Integration Support", bio: null, imageRef: null, imageUrl: null, specialties: [], socialLinks: [], imagePosition: null },
+  { name: "Maya Rodriguez", role: "Lead Facilitator", bio: null, longBio: null, imageRef: null, imageUrl: null, specialties: [], socialLinks: [], imagePosition: null },
+  { name: "Tomás Vargas", role: "Yoga & Breathwork", bio: null, longBio: null, imageRef: null, imageUrl: null, specialties: [], socialLinks: [], imagePosition: null },
+  { name: "Asha Mehta", role: "Nutrition & Ayurveda", bio: null, longBio: null, imageRef: null, imageUrl: null, specialties: [], socialLinks: [], imagePosition: null },
+  { name: "James Liu", role: "Integration Support", bio: null, longBio: null, imageRef: null, imageUrl: null, specialties: [], socialLinks: [], imagePosition: null },
 ];
 
 export const DEMO_MEALS: DisplayMeal[] = [
@@ -151,6 +163,10 @@ export const DEMO_TREATMENTS: DisplayTreatment[] = [
     location: "Treatment Room 2",
     bookingInfo: "Tomorrow · 14:00",
     imagePosition: null,
+    price: null,
+    currency: null,
+    chargeType: null,
+    availability: null,
   },
   {
     name: "Sound Bath",
@@ -163,6 +179,10 @@ export const DEMO_TREATMENTS: DisplayTreatment[] = [
     location: "Sala",
     bookingInfo: "Wednesday · 17:00",
     imagePosition: null,
+    price: null,
+    currency: null,
+    chargeType: null,
+    availability: null,
   },
   {
     name: "Private Ceremony",
@@ -175,6 +195,10 @@ export const DEMO_TREATMENTS: DisplayTreatment[] = [
     location: null,
     bookingInfo: "Enroll for an additional treatment",
     imagePosition: null,
+    price: null,
+    currency: null,
+    chargeType: null,
+    availability: null,
   },
 ];
 

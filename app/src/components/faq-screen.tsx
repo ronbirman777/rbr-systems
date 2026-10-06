@@ -46,9 +46,22 @@ export function FaqScreen({ brand, faq, locale = DEFAULT_LOCALE }: FaqScreenProp
       <div className="px-4 pb-10 space-y-3">
         {faq.map((item, i) => {
           const isOpen = openIndex === i;
+          // TASK 029 (P5E): the accordion was operable by keyboard
+          // already (it is a real <button>) but announced nothing. These
+          // three attributes are what make it an accordion to a screen
+          // reader rather than an unlabelled button next to some text.
+          const panelId = `faq-panel-${i}`;
+          const buttonId = `faq-button-${i}`;
           return (
             <div key={i} className="rounded-3xl overflow-hidden" style={{ background: "var(--rbr-cream)", border: "1px solid color-mix(in srgb, var(--rbr-sand) 40%, transparent)" }}>
-              <button type="button" onClick={() => setOpenIndex(isOpen ? null : i)} className="w-full flex items-center justify-between p-4 text-left gap-3">
+              <button
+                type="button"
+                id={buttonId}
+                onClick={() => setOpenIndex(isOpen ? null : i)}
+                aria-expanded={isOpen}
+                aria-controls={item.answer ? panelId : undefined}
+                className="w-full flex items-center justify-between p-4 text-start gap-3 min-h-11"
+              >
                 <span dir="auto" className="text-[14px] font-medium leading-snug" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text)" }}>
                   {item.question}
                 </span>
@@ -64,7 +77,7 @@ export function FaqScreen({ brand, faq, locale = DEFAULT_LOCALE }: FaqScreenProp
                 </svg>
               </button>
               {isOpen && item.answer && (
-                <div className="px-5 pb-4">
+                <div id={panelId} role="region" aria-labelledby={buttonId} className="px-5 pb-4">
                   <div className="w-full h-px mb-3" style={{ background: "color-mix(in srgb, var(--rbr-sand) 50%, transparent)" }} />
                   <p dir="auto" className="text-[13px] leading-relaxed whitespace-pre-line" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
                     {item.answer}

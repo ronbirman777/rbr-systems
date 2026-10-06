@@ -20,6 +20,7 @@ export function blankFacility(): EditableFacility {
   return {
     id: crypto.randomUUID(),
     name: "",
+    shortDescription: null,
     description: null,
     imageRef: null,
     imageUrl: null,
@@ -74,9 +75,10 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
     formData.set(
       "items",
       JSON.stringify(
-        facilities.map(({ id, name, description, imageRef, openingHours, location, importantInfo, imagePosition }) => ({
+        facilities.map(({ id, name, shortDescription, description, imageRef, openingHours, location, importantInfo, imagePosition }) => ({
           id,
           name,
+          shortDescription,
           description,
           imageRef,
           openingHours,
@@ -249,14 +251,30 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                   />
                 </div>
               </div>
+              {/* TASK 029 (D4): two descriptions, clearly distinct. The
+                  short one is the card line and is stored in the
+                  `subtitle` column; the long one is the detail text.
+                  There is no third field - see lib/modules/facility.ts. */}
               <div>
-                <StudioLabel>{t("common", "description")}</StudioLabel>
+                <StudioLabel>{t("flow", "shortDescription")}</StudioLabel>
+                <input
+                  value={editing.shortDescription ?? ""}
+                  onChange={(e) => update(editing.id, { shortDescription: e.target.value || null })}
+                  placeholder={t("flow", "facilityShortDescriptionPlaceholder")}
+                  maxLength={160}
+                  className={STUDIO_INPUT_CLASS}
+                  dir="auto"
+                />
+              </div>
+              <div>
+                <StudioLabel>{t("flow", "fullDescription")}</StudioLabel>
                 <textarea
                   value={editing.description ?? ""}
                   onChange={(e) => update(editing.id, { description: e.target.value || null })}
                   placeholder={t("flow", "facilityDescriptionPlaceholder")}
-                  rows={2}
+                  rows={3}
                   className={`${STUDIO_INPUT_CLASS} resize-none`}
+                  dir="auto"
                 />
               </div>
               <div>

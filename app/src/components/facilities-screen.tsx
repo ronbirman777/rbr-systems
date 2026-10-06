@@ -1,10 +1,11 @@
+"use client";
+
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
 import type { DisplayFacility } from "@/lib/modules/facility";
 import { PinIcon, ClockIcon } from "./guest/icons";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
-import type { CSSProperties } from "react";
-
+import { useState, type CSSProperties } from "react";
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "./flow-media-sizes";
@@ -26,6 +27,7 @@ export type FacilitiesScreenProps = {
 export function FacilitiesScreen({ brand, facilities, locale = DEFAULT_LOCALE }: FacilitiesScreenProps) {
   const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
+  const [expanded, setExpanded] = useState<number | null>(null);
 
   return (
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
@@ -90,11 +92,75 @@ export function FacilitiesScreen({ brand, facilities, locale = DEFAULT_LOCALE }:
                 )}
               </div>
             </div>
-            {f.description && (
+            {/* TASK 029 (D4): the short line is the card's own
+                summary; the long description opens below it. A facility
+                with only one of the two shows just that one, so a Space
+                written before 0033 looks exactly as it did. */}
+            {(f.shortDescription || f.description || f.importantInfo) && (
               <div className="px-4 py-3.5">
-                <p dir="auto" className="text-[12px] leading-relaxed" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
-                  {f.description}
-                </p>
+                {f.shortDescription && (
+                  <p
+                    dir="auto"
+                    className="text-[12.5px] leading-relaxed"
+                    style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text)" }}
+                  >
+                    {f.shortDescription}
+                  </p>
+                )}
+                {f.description &&
+                  (f.shortDescription ? (
+                    <>
+                      {expanded === i && (
+                        <p
+                          dir="auto"
+                          className="text-[12px] leading-relaxed mt-2 whitespace-pre-line"
+                          style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}
+                        >
+                          {f.description}
+                        </p>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => setExpanded(expanded === i ? null : i)}
+                        aria-expanded={expanded === i}
+                        className="mt-1.5 flex items-center gap-1.5 text-[12px] font-medium min-h-11"
+                        style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text-muted)" }}
+                      >
+                        {expanded === i ? t("flow", "showLess") : t("flow", "readMore")}
+                        <svg
+                          className={`w-3 h-3 transition-transform duration-200 ${expanded === i ? "rotate-180" : ""}`}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                          viewBox="0 0 24 24"
+                          aria-hidden="true"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+                    </>
+                  ) : (
+                    <p
+                      dir="auto"
+                      className="text-[12px] leading-relaxed whitespace-pre-line"
+                      style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}
+                    >
+                      {f.description}
+                    </p>
+                  ))}
+                {f.importantInfo && (
+                  <p
+                    dir="auto"
+                    className="text-[11.5px] leading-relaxed mt-2.5 rounded-xl px-3 py-2"
+                    style={{
+                      fontFamily: "var(--rbr-font-ui)",
+                      background: "var(--rbr-secondary-soft)",
+                      color: "var(--rbr-text)",
+                    }}
+                  >
+                    {f.importantInfo}
+                  </p>
+                )}
               </div>
             )}
           </div>

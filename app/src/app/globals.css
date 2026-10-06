@@ -118,6 +118,18 @@ body {
   transform: scaleX(-1);
 }
 
+/*
+ * The audio scrubber (TASK 029). `accent-color` is enough: it tints the
+ * native track and thumb in every engine this app supports, so the
+ * control keeps its platform behaviour - including keyboard arrows and
+ * the OS's own larger hit area - instead of being rebuilt as a div that
+ * would have to re-earn all of it. The height is a touch-target floor.
+ */
+.rbr-range {
+  accent-color: var(--rbr-primary);
+  height: 24px;
+}
+
 .guest-viewport {
   max-width: 100%;
 }

@@ -9,7 +9,8 @@ import { MEAL_TYPES, type EditableMeal, type MealType, mealTypeLabel } from "@/l
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
-import { saveMeals, type SaveMealsState } from "./actions";
+import { saveMeals, saveModuleIntros, type SaveMealsState } from "./actions";
+import { pruneModuleIntros, type ModuleIntros } from "@/lib/modules/moduleIntro";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
 import { createTranslator } from "@/lib/i18n";
@@ -36,6 +37,15 @@ export type MealsStepProps = {
   tenantId: string;
   meals: EditableMeal[];
   setMeals: Dispatch<SetStateAction<EditableMeal[]>>;
+  /**
+   * TASK 029 (P3A): the module-level introduction. It is NOT a property
+   * of any one meal, so it is not in `meals` - it lives in the generic
+   * `moduleIntros` settings object, which is why this prop is the whole
+   * record rather than a single string. Facilities or Treatments getting
+   * an introduction later needs no new prop here and no migration.
+   */
+  moduleIntros: ModuleIntros;
+  setModuleIntros: Dispatch<SetStateAction<ModuleIntros>>;
   onBack: () => void;
   onContinue: () => void;
 } & StudioSectionEditorProps;
@@ -50,7 +60,19 @@ export type MealsStepProps = {
  * persistNewItemStub, saveMeals via enqueueItemsOp) as before - a visual/
  * interaction restyle, not a data-model change.
  */
-export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDirty, onSaved, registerSave, locale }: MealsStepProps) {
+export function MealsStep({
+  tenantId,
+  meals,
+  setMeals,
+  moduleIntros,
+  setModuleIntros,
+  onBack,
+  onContinue,
+  onDirty,
+  onSaved,
+  registerSave,
+  locale,
+}: MealsStepProps) {
   const { t } = createTranslator(locale);
   const [state, setState] = useState<SaveMealsState>(initialState);
   const [pending, setPending] = useState(false);
@@ -97,6 +119,19 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
     );
     const ids = meals.map((m) => m.id);
     setPending(true);
+    // The intro is a separate settings row, so it is a separate write.
+    // It goes FIRST: if it fails, the items are left untouched and the
+    // section stays dirty, rather than half the step appearing to save.
+    const introForm = new FormData();
+    introForm.set("locale", locale);
+    introForm.set("tenantId", tenantId);
+    introForm.set("data", JSON.stringify(pruneModuleIntros(moduleIntros)));
+    const introResult = await saveModuleIntros({ error: null }, introForm);
+    if (introResult.error) {
+      setPending(false);
+      setState({ error: introResult.error });
+      return false;
+    }
     // Queued behind every currently-in-flight write for these items (a
     // stub create, an upload) so Save is always applied after anything
     // already requested for them, and becomes the new queue position so a
@@ -124,6 +159,27 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
       <StudioIntro>
         {t("flow", "mealsStepBody")}
       </StudioIntro>
+
+      {/* TASK 029 (P3A) - the module-level introduction, above the list
+          because that is where a guest reads it. */}
+      <div className="mb-6">
+        <StudioLabel>{t("flow", "mealsIntro")}</StudioLabel>
+        <textarea
+          value={moduleIntros.meals?.intro ?? ""}
+          onChange={(e) => {
+            onDirty();
+            setModuleIntros((prev) => ({ ...prev, meals: { intro: e.target.value || null } }));
+          }}
+          placeholder={t("flow", "mealsIntroPlaceholder")}
+          rows={2}
+          maxLength={1200}
+          className={`${STUDIO_INPUT_CLASS} resize-none`}
+          dir="auto"
+        />
+        <p className="text-[11px] mt-1.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
+          {t("flow", "mealsIntroHint")}
+        </p>
+      </div>
 
       <div className="space-y-3 mb-4">
         {meals.map((m) => {

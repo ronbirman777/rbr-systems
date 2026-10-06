@@ -14,6 +14,23 @@ import { arrivalInfoSchema } from "@/lib/modules/arrival";
 import { faqItemSchema } from "@/lib/modules/faq";
 import { customPageSchema } from "@/lib/modules/customPage";
 import { socialLinksSchema } from "@/lib/modules/socialLinks";
+import { retreatProfileSchema, RETREAT_PROFILE_KEY } from "@/lib/modules/retreatProfile";
+import { moduleIntrosSchema, pruneModuleIntros, MODULE_INTROS_KEY } from "@/lib/modules/moduleIntro";
+import { guidelineSchema, GUIDELINES_KEY } from "@/lib/modules/guideline";
+import {
+  FLOW_AUDIO_FOLDER_KEY,
+  FLOW_AUDIO_KEY,
+  FLOW_READINGS_KEY,
+  flowAudioMetadataSchema,
+} from "@/lib/modules/flowLibrary";
+import { libraryItemFieldsSchema, readingMetadataSchema } from "@/lib/modules/library";
+import {
+  AUDIO_ALLOWED_TYPES,
+  MAX_AUDIO_BYTES,
+  isAudioSizeAllowed,
+  normalizeMimeType,
+  parseAudioDraftRef,
+} from "@/lib/media/audio";
 import { imagePositionSchema } from "@/lib/modules/imagePosition";
 import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
@@ -32,11 +49,12 @@ import {
   newUploadId,
   isDraftMediaPathForTenant,
   collectMediaRefs,
+  versionedMediaPath,
 } from "@/lib/media/path";
-import { copyDraftToPublished } from "@/lib/media/publish";
+import { copyDraftToPublished, copyDraftAudioToPublished } from "@/lib/media/publish";
 import { cleanupStalePublishedMedia } from "@/lib/media/publishedCleanup";
 
-import { localeFromFormData, studioMessages, translate } from "@/lib/i18n";
+import { localeFromFormData, studioMessages, translate, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 /**
  * Best-effort removal of DRAFT objects only (TASK 023). Studio operations
  * never touch `published.*` objects - the live snapshot may still
@@ -211,6 +229,8 @@ type ScheduleItemUpsert = {
   location: string | null;
   description: string | null;
   category: string | null;
+  /** TASK 029 (P5D) - the one column 0033 added. */
+  metadata: Record<string, unknown>;
 };
 
 /**
@@ -253,6 +273,10 @@ export async function saveSchedule(
     location: item.location,
     description: item.description,
     category: item.category,
+    // Written whole on every save, for the same reason every module's
+    // metadata is (see saveFacilitators): PostgREST replaces the column,
+    // so a partial write would silently drop the other key.
+    metadata: { whatToBring: item.whatToBring, whatToExpect: item.whatToExpect },
   }));
 
   const incomingIds = new Set(rows.map((r) => r.id));
@@ -424,6 +448,13 @@ type ModuleItemUpsert = {
   description: string | null;
   sort_order: number;
   metadata: Record<string, unknown>;
+  /**
+   * TASK 029: Readings may link out instead of (or as well as) carrying
+   * their own text. Optional so the modules that have no such concept
+   * simply omit it - PostgREST's upsert only writes the keys present in
+   * the payload, and every save sends rows for one module at a time.
+   */
+  external_link?: string | null;
 };
 
 async function saveModuleItemsGeneric(
@@ -540,7 +571,13 @@ export async function saveFacilitators(
     subtitle: item.role,
     description: item.bio,
     sort_order: i,
-    metadata: { socialLinks: item.socialLinks, specialties: item.specialties, imagePosition: item.imagePosition },
+    metadata: {
+      socialLinks: item.socialLinks,
+      specialties: item.specialties,
+      imagePosition: item.imagePosition,
+      // TASK 029 (D5) - the long bio. `bio` keeps its meaning (short).
+      longBio: item.longBio,
+    },
   }));
   return saveModuleItemsGeneric(supabase, tenantId, "facilitators", rows);
 }
@@ -614,6 +651,12 @@ export async function saveTreatments(
       location: item.location,
       bookingInfo: item.bookingInfo,
       imagePosition: item.imagePosition,
+      // TASK 029 (D1) - Treatments & Extras. Retreat-item pricing only:
+      // nothing here is connected to space_entitlements or Stripe.
+      price: item.price,
+      currency: item.currency,
+      chargeType: item.chargeType,
+      availability: item.availability,
     },
   }));
   return saveModuleItemsGeneric(supabase, tenantId, "treatments", rows);
@@ -643,7 +686,10 @@ export async function saveFacilities(
     tenant_id: tenantId,
     module_key: "facilities",
     title: item.name,
-    subtitle: null,
+    // TASK 029 (D4): the short line goes in `subtitle`, the column
+    // treatments has always used for exactly this. There is deliberately
+    // no metadata.shortDescription - see lib/modules/facility.ts.
+    subtitle: item.shortDescription,
     description: item.description,
     sort_order: i,
     metadata: {
@@ -1413,7 +1459,18 @@ export async function deleteModuleItem(
 
 export type PublishState = { error: string | null; publishedAt: string | null };
 
-const MEDIA_MODULE_KEYS = ["facilitators", "meals", "treatments", "facilities", "customPages"];
+const MEDIA_MODULE_KEYS = [
+  "facilitators",
+  "meals",
+  "treatments",
+  "facilities",
+  "customPages",
+  // TASK 029 - Readings carry a cover image per item, Audio an artwork
+  // image AND an audio file (collected separately below, because it
+  // lives in metadata.audioRef rather than image_ref).
+  FLOW_READINGS_KEY,
+  FLOW_AUDIO_KEY,
+];
 
 /**
  * The only way anything reaches published_spaces. Calls the
@@ -1494,6 +1551,16 @@ export async function publishSpace(
     .eq("tenant_id", tenantId)
     .in("module_key", MEDIA_MODULE_KEYS);
 
+  // TASK 029 - audio files. A separate read because the ref lives in
+  // metadata.audioRef, and a separate COPY below because audio is copied
+  // byte-for-byte (copyDraftAudioToPublished) rather than through the
+  // image optimizer.
+  const { data: audioRows } = await supabase
+    .from("module_items")
+    .select("metadata")
+    .eq("tenant_id", tenantId)
+    .eq("module_key", FLOW_AUDIO_KEY);
+
   const { data: brandRow } = await supabase
     .from("brand_configs")
     .select("hero_image_ref, space_image_ref, logo_ref")
@@ -1521,8 +1588,17 @@ export async function publishSpace(
   // copy must never produce a "successful" Publish - Promise.all rejects on
   // the first failure and that rejection stops this function BEFORE the
   // publish_space() RPC. Nothing live has been modified at that point.
+  const audioDraftRefs = new Set<string>();
+  for (const row of audioRows ?? []) {
+    const ref = (row.metadata as { audioRef?: unknown } | null)?.audioRef;
+    if (typeof ref === "string" && isDraftMediaPathForTenant(tenantId, ref)) audioDraftRefs.add(ref);
+  }
+
   try {
-    await Promise.all([...draftRefs].map((ref) => copyDraftToPublished(supabase, ref)));
+    await Promise.all([
+      ...[...draftRefs].map((ref) => copyDraftToPublished(supabase, ref)),
+      ...[...audioDraftRefs].map((ref) => copyDraftAudioToPublished(supabase, ref)),
+    ]);
   } catch (err) {
     return {
       error: err instanceof Error ? t("couldNotPublishPhotosWhy", { reason: err.message }) : t("couldNotPublishPhotos"),
@@ -1651,6 +1727,409 @@ export async function reserveSlug(_prevState: ReserveSlugState, formData: FormDa
   }
 
   return { error: null, slug, tenantId };
+}
+
+// ---------------------------------------------------------------------
+// TASK 029 - Time to Flow content expansion
+//
+// Everything below writes through the same three patterns the rest of
+// this file already uses: module_settings for a singleton,
+// saveModuleItemsGeneric for a list, and the three-step audio lifecycle
+// Teach established in 0028. Nothing new is invented here.
+// ---------------------------------------------------------------------
+
+/**
+ * Re-verifies, from the database, that this tenant really is a Retreat.
+ *
+ * Every action below is reachable by any signed-in member of the tenant,
+ * and RLS proves they own it - but not that it is the right product. A
+ * Teach Space has its own editors and its own keys; writing Flow content
+ * into one would create rows nothing ever publishes.
+ */
+async function isRetreatTenant(supabase: SupabaseClient, tenantId: string): Promise<boolean> {
+  const { data } = await supabase.from("tenants").select("product_type").eq("id", tenantId).maybeSingle();
+  return data?.product_type === "retreat";
+}
+
+/** The signed-in user plus the client, or null - the preamble every action shares. */
+async function retreatActionContext(tenantId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { supabase, ok: false as const, reason: "notLoggedIn" as const };
+  if (!tenantId) return { supabase, ok: false as const, reason: "missingSpace" as const };
+  if (!(await isRetreatTenant(supabase, tenantId))) return { supabase, ok: false as const, reason: "spaceNotFound" as const };
+  return { supabase, ok: true as const };
+}
+
+export type SaveRetreatProfileState = { error: string | null };
+
+/**
+ * Retreat Home's own content - a module_settings singleton, exactly like
+ * arrivalInfo.
+ *
+ * It writes ONLY retreatProfile. The legacy arrivalInfo row is never
+ * touched here, which is what makes D3's precedence honest: saving the
+ * canonical copy does not delete the organizer's old text, it just stops
+ * being the one that is read.
+ */
+export async function saveRetreatProfile(
+  _prevState: SaveRetreatProfileState,
+  formData: FormData
+): Promise<SaveRetreatProfileState> {
+  const t = studioMessages(localeFromFormData(formData));
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const ctx = await retreatActionContext(tenantId);
+  if (!ctx.ok) return { error: t(ctx.reason) };
+
+  let data: unknown;
+  try {
+    data = JSON.parse(String(formData.get("data") ?? "{}"));
+  } catch {
+    return { error: t("couldNotReadList") };
+  }
+  const parsed = retreatProfileSchema.safeParse(data);
+  if (!parsed.success) return { error: t("someDetailsInvalid") };
+
+  const { error } = await ctx.supabase.from("module_settings").upsert(
+    {
+      tenant_id: tenantId,
+      module_key: RETREAT_PROFILE_KEY,
+      data: parsed.data,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "tenant_id,module_key" }
+  );
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
+export type SaveModuleIntrosState = { error: string | null };
+
+/**
+ * The generic module introductions (TASK 029, decision 2).
+ *
+ * Pruned before writing, so clearing the only intro stores `{}` - which
+ * publish_space() then does not emit at all, returning the published
+ * payload to exactly the shape it had before anyone typed anything.
+ */
+export async function saveModuleIntros(
+  _prevState: SaveModuleIntrosState,
+  formData: FormData
+): Promise<SaveModuleIntrosState> {
+  const t = studioMessages(localeFromFormData(formData));
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const ctx = await retreatActionContext(tenantId);
+  if (!ctx.ok) return { error: t(ctx.reason) };
+
+  let data: unknown;
+  try {
+    data = JSON.parse(String(formData.get("data") ?? "{}"));
+  } catch {
+    return { error: t("couldNotReadList") };
+  }
+  const parsed = moduleIntrosSchema.safeParse(data);
+  if (!parsed.success) return { error: t("someDetailsInvalid") };
+
+  const { error } = await ctx.supabase.from("module_settings").upsert(
+    {
+      tenant_id: tenantId,
+      module_key: MODULE_INTROS_KEY,
+      data: pruneModuleIntros(parsed.data),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "tenant_id,module_key" }
+  );
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
+export type SaveGuidelinesState = SaveModuleItemsState;
+
+export async function saveGuidelines(
+  _prevState: SaveGuidelinesState,
+  formData: FormData
+): Promise<SaveGuidelinesState> {
+  const t = studioMessages(localeFromFormData(formData));
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const ctx = await retreatActionContext(tenantId);
+  if (!ctx.ok) return { error: t(ctx.reason) };
+
+  const parsed = parseItemsWithIds(formData, guidelineSchema);
+  if ("error" in parsed) return { error: parsed.error };
+
+  const rows = parsed.data.map((item, i) => ({
+    id: item.id,
+    tenant_id: tenantId,
+    module_key: GUIDELINES_KEY,
+    title: item.title,
+    subtitle: null,
+    description: item.description,
+    sort_order: i,
+    metadata: {},
+  }));
+  return saveModuleItemsGeneric(ctx.supabase, tenantId, GUIDELINES_KEY, rows);
+}
+
+/** The envelope a Readings/Audio row is validated against on write. */
+const readingItemSchema = libraryItemFieldsSchema(readingMetadataSchema, true);
+const flowAudioItemSchema = libraryItemFieldsSchema(flowAudioMetadataSchema, true);
+
+export type SaveReadingsState = SaveModuleItemsState;
+
+export async function saveReadings(
+  _prevState: SaveReadingsState,
+  formData: FormData
+): Promise<SaveReadingsState> {
+  const t = studioMessages(localeFromFormData(formData));
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const ctx = await retreatActionContext(tenantId);
+  if (!ctx.ok) return { error: t(ctx.reason) };
+
+  const parsed = parseItemsWithIds(formData, readingItemSchema);
+  if ("error" in parsed) return { error: parsed.error };
+
+  const rows = parsed.data.map((item, i) => ({
+    id: item.id,
+    tenant_id: tenantId,
+    module_key: FLOW_READINGS_KEY,
+    title: item.title ?? "",
+    subtitle: item.subtitle,
+    description: item.description,
+    external_link: item.externalLink,
+    sort_order: i,
+    metadata: item.metadata as unknown as Record<string, unknown>,
+  }));
+  return saveModuleItemsGeneric(ctx.supabase, tenantId, FLOW_READINGS_KEY, rows);
+}
+
+export type SaveFlowAudioState = SaveModuleItemsState;
+
+/**
+ * Audio's text fields. The FILE is not written here, for the same reason
+ * Save never writes image_ref: an upload finishing mid-save must not be
+ * reverted by a stale client snapshot. `audioRef` and `durationSeconds`
+ * are owned by attachFlowAudio/detachFlowAudio and are carried over from
+ * the row that is already in the database.
+ */
+export async function saveFlowAudio(
+  _prevState: SaveFlowAudioState,
+  formData: FormData
+): Promise<SaveFlowAudioState> {
+  const t = studioMessages(localeFromFormData(formData));
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const ctx = await retreatActionContext(tenantId);
+  if (!ctx.ok) return { error: t(ctx.reason) };
+
+  const parsed = parseItemsWithIds(formData, flowAudioItemSchema);
+  if ("error" in parsed) return { error: parsed.error };
+
+  const { data: existing } = await ctx.supabase
+    .from("module_items")
+    .select("id, metadata")
+    .eq("tenant_id", tenantId)
+    .eq("module_key", FLOW_AUDIO_KEY);
+  const fileByItem = new Map<string, { audioRef: unknown; durationSeconds: unknown }>();
+  for (const row of existing ?? []) {
+    const meta = (row.metadata ?? {}) as Record<string, unknown>;
+    fileByItem.set(row.id, { audioRef: meta.audioRef ?? null, durationSeconds: meta.durationSeconds ?? null });
+  }
+
+  const rows = parsed.data.map((item, i) => {
+    const file = fileByItem.get(item.id);
+    return {
+      id: item.id,
+      tenant_id: tenantId,
+      module_key: FLOW_AUDIO_KEY,
+      title: item.title ?? "",
+      subtitle: item.subtitle,
+      description: item.description,
+      external_link: item.externalLink,
+      sort_order: i,
+      metadata: {
+        ...(item.metadata as unknown as Record<string, unknown>),
+        audioRef: file?.audioRef ?? null,
+        durationSeconds: file?.durationSeconds ?? null,
+      },
+    };
+  });
+  return saveModuleItemsGeneric(ctx.supabase, tenantId, FLOW_AUDIO_KEY, rows);
+}
+
+// ---------------------------------------------------------------------
+// Flow audio file lifecycle - the same three steps as Teach's (0028):
+//   1. prepareFlowAudioUpload: validate type/size, make sure the row
+//      exists BEFORE any bytes land, hand back a brand-new versioned
+//      path. The client uploads with upsert:false, so nothing is ever
+//      overwritten.
+//   2. attachFlowAudio: verify what actually landed from Storage's own
+//      metadata (the real server-side limit), point the row at it, and
+//      only THEN remove the one draft it replaced.
+//   3. detachFlowAudio: clear the reference, then remove that one draft.
+// published.* copies are never touched here - publish creates them and
+// the post-publish sweep removes the ones no longer referenced.
+// ---------------------------------------------------------------------
+
+async function loadFlowAudioRow(supabase: SupabaseClient, tenantId: string, itemId: string) {
+  const { data } = await supabase
+    .from("module_items")
+    .select("id, module_key, metadata")
+    .eq("tenant_id", tenantId)
+    .eq("id", itemId);
+  return (data?.[0] ?? null) as { id: string; module_key: string; metadata: Record<string, unknown> | null } | null;
+}
+
+const currentFlowAudioRef = (row: { metadata: Record<string, unknown> | null } | null): string | null => {
+  const ref = row?.metadata?.audioRef;
+  return typeof ref === "string" ? ref : null;
+};
+
+export type FlowAudioUploadState = { error: string | null; path: string | null };
+export type FlowAudioState = { error: string | null };
+
+export async function prepareFlowAudioUpload(
+  tenantId: string,
+  item: unknown,
+  sortOrder: number,
+  mimeType: string,
+  sizeBytes: number,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<FlowAudioUploadState> {
+  const t = studioMessages(locale);
+  const fail = (error: string): FlowAudioUploadState => ({ error, path: null });
+  const ctx = await retreatActionContext(tenantId);
+  if (!ctx.ok) return fail(t(ctx.reason));
+
+  const itemId = (item as { id?: unknown } | null)?.id;
+  if (typeof itemId !== "string" || !z.string().uuid().safeParse(itemId).success) return fail(t("missingItem"));
+  const ext = typeof mimeType === "string" ? AUDIO_ALLOWED_TYPES[normalizeMimeType(mimeType)] : undefined;
+  if (!ext) return fail(t("unsupportedAudio"));
+  if (!isAudioSizeAllowed(sizeBytes)) return fail(t("audioTooLarge", { limit: MAX_AUDIO_BYTES / (1024 * 1024) }));
+
+  const existing = await loadFlowAudioRow(ctx.supabase, tenantId, itemId);
+  if (existing && existing.module_key !== FLOW_AUDIO_KEY) return fail(t("missingItem"));
+  if (!existing) {
+    const raw = item as Record<string, unknown>;
+    const parsed = flowAudioItemSchema.safeParse({
+      ...raw,
+      title: String(raw.title ?? "").trim() || t("untitledAudio"),
+    });
+    if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? t("someDetailsInvalid"));
+    const { error } = await ctx.supabase.from("module_items").insert({
+      id: itemId,
+      tenant_id: tenantId,
+      module_key: FLOW_AUDIO_KEY,
+      title: parsed.data.title ?? t("untitledAudio"),
+      subtitle: parsed.data.subtitle,
+      description: parsed.data.description,
+      external_link: parsed.data.externalLink,
+      sort_order: Number.isFinite(sortOrder) ? sortOrder : 0,
+      // The file is not attached until attachFlowAudio confirms the upload.
+      metadata: { ...(parsed.data.metadata as unknown as Record<string, unknown>), audioRef: null, durationSeconds: null },
+    });
+    if (error) return fail(error.message);
+  }
+  return {
+    error: null,
+    path: versionedMediaPath("draft", {
+      tenantId,
+      moduleKey: FLOW_AUDIO_FOLDER_KEY,
+      itemId,
+      uploadId: newUploadId(),
+      ext,
+    }),
+  };
+}
+
+export async function attachFlowAudio(
+  tenantId: string,
+  itemId: string,
+  ref: string,
+  durationSeconds: number | null,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<FlowAudioState> {
+  const t = studioMessages(locale);
+  const ctx = await retreatActionContext(tenantId);
+  if (!ctx.ok) return { error: t(ctx.reason) };
+  if (!z.string().uuid().safeParse(itemId).success) return { error: t("missingItem") };
+
+  const parts = typeof ref === "string" ? parseAudioDraftRef(ref) : null;
+  if (!parts || parts.tenantId !== tenantId || parts.moduleKey !== FLOW_AUDIO_FOLDER_KEY || parts.itemId !== itemId) {
+    return { error: t("audioRefInvalid") };
+  }
+  const row = await loadFlowAudioRow(ctx.supabase, tenantId, itemId);
+  if (!row || row.module_key !== FLOW_AUDIO_KEY) return { error: t("missingItem") };
+  const previousRef = currentFlowAudioRef(row);
+  const duration =
+    typeof durationSeconds === "number" &&
+    Number.isFinite(durationSeconds) &&
+    durationSeconds >= 0 &&
+    durationSeconds <= 60 * 60 * 12
+      ? Math.round(durationSeconds)
+      : null;
+
+  // The upload went browser -> Storage, so the real limits are enforced
+  // here against what Storage actually holds. A rejected NEW upload is
+  // removed: it is unreferenced, so nothing else points at it.
+  const bucket = ctx.supabase.storage.from(MEDIA_BUCKET);
+  const reject = async (message: string): Promise<FlowAudioState> => {
+    if (ref !== previousRef) await removeDraftObjects(ctx.supabase, tenantId, [ref]);
+    return { error: message };
+  };
+  const { data: info, error: infoError } = await bucket.info(ref);
+  if (infoError || !info) return { error: t("uploadDidNotFinish") };
+  if (!isAudioSizeAllowed(Number(info.size))) {
+    return reject(t("audioTooLarge", { limit: MAX_AUDIO_BYTES / (1024 * 1024) }));
+  }
+  if (AUDIO_ALLOWED_TYPES[normalizeMimeType(String(info.contentType ?? ""))] !== parts.ext) {
+    return reject(t("unsupportedAudio"));
+  }
+
+  if (ref !== previousRef) {
+    // A published object already in this upload's folder means this is
+    // not a fresh upload; refuse the folder rather than risk replacing
+    // what the live snapshot may still reference.
+    const published = versionedMediaPath("published", { ...parts });
+    const { data: publishedExists } = await bucket.exists(published);
+    if (publishedExists) return { error: t("audioRefInvalidReupload") };
+  }
+
+  const { error } = await ctx.supabase
+    .from("module_items")
+    .update({ metadata: { ...(row.metadata ?? {}), audioRef: ref, durationSeconds: duration } })
+    .eq("tenant_id", tenantId)
+    .eq("id", itemId);
+  if (error) {
+    if (ref !== previousRef) await removeDraftObjects(ctx.supabase, tenantId, [ref]);
+    return { error: error.message };
+  }
+  if (previousRef && previousRef !== ref) await removeDraftObjects(ctx.supabase, tenantId, [previousRef]);
+  return { error: null };
+}
+
+export async function detachFlowAudio(
+  tenantId: string,
+  itemId: string,
+  locale: Locale = DEFAULT_LOCALE
+): Promise<FlowAudioState> {
+  const t = studioMessages(locale);
+  const ctx = await retreatActionContext(tenantId);
+  if (!ctx.ok) return { error: t(ctx.reason) };
+  if (!z.string().uuid().safeParse(itemId).success) return { error: t("missingItem") };
+
+  const row = await loadFlowAudioRow(ctx.supabase, tenantId, itemId);
+  if (!row) return { error: null };
+  if (row.module_key !== FLOW_AUDIO_KEY) return { error: t("missingItem") };
+  const previousRef = currentFlowAudioRef(row);
+  const { error } = await ctx.supabase
+    .from("module_items")
+    .update({ metadata: { ...(row.metadata ?? {}), audioRef: null, durationSeconds: null } })
+    .eq("tenant_id", tenantId)
+    .eq("id", itemId);
+  if (error) return { error: error.message };
+  await removeDraftObjects(ctx.supabase, tenantId, [previousRef]);
+  return { error: null };
 }
 
 export type { OptionalModuleKey };

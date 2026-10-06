@@ -128,3 +128,101 @@ export function itemCategories<T extends { metadata: { category: string | null }
 export function sortByDateDesc<T extends { metadata: { date: string | null } }>(items: readonly T[]): T[] {
   return [...items].sort((a, b) => (b.metadata.date ?? "").localeCompare(a.metadata.date ?? ""));
 }
+
+// ---------------------------------------------------------------------------
+// The item envelope
+// ---------------------------------------------------------------------------
+
+/**
+ * One module_items row as a product sees it: the six columns plus its
+ * module's own metadata object.
+ *
+ * Shared because Flow's Readings and Audio publish this exact envelope
+ * rather than the flattened shape Flow's older modules use - which is
+ * what lets one schema read both products (see the file header). The
+ * alternative was a second tolerant parser for Flow, and two tolerant
+ * parsers for one stored shape is precisely how the two drift.
+ */
+export type LibraryItem<M> = {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  description: string | null;
+  imageRef: string | null;
+  externalLink: string | null;
+  metadata: M;
+};
+
+/** Studio-side: plus the resolved display URLs, which are never persisted. */
+export type EditableLibraryItem<M> = LibraryItem<M> & {
+  imageUrl: string | null;
+  /** Resolved audio URL, for an item whose metadata carries an audioRef. */
+  audioUrl?: string | null;
+};
+
+/**
+ * The write/read validator for an item's own six fields.
+ *
+ * `titleRequired` is a parameter because the rule genuinely differs: a
+ * gallery caption or an availability window may be untitled, a reading
+ * may not. The caps (160 / 160 / 20000 / 800) are the ones Teach has
+ * used since 0028 and are shared so Flow cannot pick different ones.
+ */
+export function libraryItemFieldsSchema<M>(metadata: z.ZodType<M>, titleRequired: boolean) {
+  const title = titleRequired
+    ? z.string().trim().min(1, "Every item needs a title.").max(160)
+    : z.string().trim().max(160).default("");
+  return z.object({
+    title,
+    subtitle: optText(160),
+    description: optText(20000),
+    externalLink: optText(800),
+    metadata,
+  });
+}
+
+/**
+ * Tolerant parse of one stored or published row; null when unusable.
+ *
+ * Tolerant on purpose, and in two specific ways. It accepts either the
+ * camelCase published spelling or the snake_case column spelling for the
+ * two renamed fields, because the same function reads a published
+ * snapshot AND a row straight out of PostgREST. And one unusable item
+ * returns null for itself rather than throwing, so a single malformed
+ * row cannot blank a guest's whole screen.
+ */
+export function parseLibraryItem<M>(
+  raw: unknown,
+  metadata: z.ZodType<M>,
+  titleRequired = true
+): LibraryItem<M> | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const fields = libraryItemFieldsSchema(metadata, titleRequired).safeParse({
+    title: typeof r.title === "string" ? r.title : "",
+    subtitle: r.subtitle ?? null,
+    description: r.description ?? null,
+    externalLink: r.externalLink ?? r.external_link ?? null,
+    metadata: r.metadata ?? {},
+  });
+  if (!fields.success || typeof r.id !== "string") return null;
+  const imageRef = typeof r.imageRef === "string" ? r.imageRef : typeof r.image_ref === "string" ? r.image_ref : null;
+  return {
+    id: r.id,
+    title: fields.data.title ?? "",
+    subtitle: fields.data.subtitle,
+    description: fields.data.description,
+    externalLink: fields.data.externalLink,
+    imageRef,
+    metadata: fields.data.metadata,
+  } as LibraryItem<M>;
+}
+
+export function parseLibraryItems<M>(
+  raw: unknown,
+  metadata: z.ZodType<M>,
+  titleRequired = true
+): LibraryItem<M>[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.map((r) => parseLibraryItem(r, metadata, titleRequired)).filter((x): x is LibraryItem<M> => x !== null);
+}

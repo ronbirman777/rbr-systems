@@ -1,15 +1,38 @@
 import { loadStudioTenant } from "@/lib/configurator/studioTenant";
 import { RetreatConfigurator } from "../retreat-configurator";
 import type { AtmosphereKey, PaletteKey } from "@/lib/theme/tokens";
-import type { EditableScheduleItem } from "@/lib/schedule/types";
+import { activityExtrasSchema, type EditableScheduleItem } from "@/lib/schedule/types";
 import type { EditableFacilitator } from "@/lib/modules/facilitator";
 import type { EditableMeal, MealType } from "@/lib/modules/meal";
-import type { EditableTreatment } from "@/lib/modules/treatment";
+import { CHARGE_TYPES, type ChargeType, type EditableTreatment } from "@/lib/modules/treatment";
 import type { EditableFacility } from "@/lib/modules/facility";
 import { arrivalInfoSchema, EMPTY_ARRIVAL_INFO, type ArrivalInfo } from "@/lib/modules/arrival";
 import type { EditableFaqItem } from "@/lib/modules/faq";
 import type { EditableCustomPage } from "@/lib/modules/customPage";
 import { EMPTY_STAY_CONNECTED, type StayConnected } from "@/lib/modules/stayConnected";
+import {
+  retreatProfileSchema,
+  EMPTY_RETREAT_PROFILE,
+  RETREAT_PROFILE_KEY,
+  type RetreatProfile,
+} from "@/lib/modules/retreatProfile";
+import {
+  moduleIntrosSchema,
+  EMPTY_MODULE_INTROS,
+  MODULE_INTROS_KEY,
+  type ModuleIntros,
+} from "@/lib/modules/moduleIntro";
+import { GUIDELINES_KEY, type EditableGuideline } from "@/lib/modules/guideline";
+import {
+  FLOW_AUDIO_KEY,
+  FLOW_READINGS_KEY,
+  flowAudioMetadataSchema,
+  EMPTY_FLOW_AUDIO_METADATA,
+  EMPTY_READING_METADATA,
+  type EditableFlowReading,
+  type EditableFlowTrack,
+} from "@/lib/modules/flowLibrary";
+import { readingMetadataSchema } from "@/lib/modules/library";
 import { socialLinksSchema } from "@/lib/modules/socialLinks";
 import { parseImagePosition, type ImagePosition } from "@/lib/modules/imagePosition";
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
@@ -27,6 +50,10 @@ import { DEFAULT_LOCALE } from "@/lib/i18n";
 /** Signed preview URLs are resolved server-side, through the same
  * RLS-scoped session as everything else on this page - the organizer can
  * only ever get a signed URL for their own tenant's objects. */
+function parseChargeType(raw: unknown): ChargeType | null {
+  return typeof raw === "string" && (CHARGE_TYPES as readonly string[]).includes(raw) ? (raw as ChargeType) : null;
+}
+
 async function resolveImageUrl(supabase: SupabaseClient, imageRef: string | null): Promise<string | null> {
   if (!imageRef) return null;
   const { data: signed } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(imageRef, 3600);
@@ -75,6 +102,11 @@ export default async function ResumeRetreatConfiguratorPage({
     { data: moduleConfigRows },
     { data: published },
     { data: spaceSettingsRow },
+    { data: retreatProfileRow },
+    { data: moduleIntrosRow },
+    { data: guidelineRows },
+    { data: readingRows },
+    { data: audioRows },
   ] = await Promise.all([
     // PRE-MIGRATION WARNING: custom_surface (0032), custom_navigation/
     // custom_text (0015) and custom_secondary/hero_image_ref/
@@ -92,7 +124,7 @@ export default async function ResumeRetreatConfiguratorPage({
       .maybeSingle(),
     supabase
       .from("schedule_items")
-      .select("id, date, start_time, end_time, title, facilitator, location, description, category")
+      .select("id, date, start_time, end_time, title, facilitator, location, description, category, metadata")
       .eq("tenant_id", tenantId)
       .order("date")
       .order("start_time"),
@@ -116,7 +148,7 @@ export default async function ResumeRetreatConfiguratorPage({
       .order("sort_order"),
     supabase
       .from("module_items")
-      .select("id, title, description, image_ref, metadata")
+      .select("id, title, subtitle, description, image_ref, metadata")
       .eq("tenant_id", tenantId)
       .eq("module_key", "facilities")
       .order("sort_order"),
@@ -152,6 +184,39 @@ export default async function ResumeRetreatConfiguratorPage({
       .eq("tenant_id", tenantId)
       .eq("module_key", SPACE_SETTINGS_KEY)
       .maybeSingle(),
+    // TASK 029 - the five new content reads. Same shape as their
+    // siblings above, added to the same single parallel phase rather
+    // than a second serial one.
+    supabase
+      .from("module_settings")
+      .select("data")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", RETREAT_PROFILE_KEY)
+      .maybeSingle(),
+    supabase
+      .from("module_settings")
+      .select("data")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", MODULE_INTROS_KEY)
+      .maybeSingle(),
+    supabase
+      .from("module_items")
+      .select("id, title, description")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", GUIDELINES_KEY)
+      .order("sort_order"),
+    supabase
+      .from("module_items")
+      .select("id, title, subtitle, description, image_ref, external_link, metadata")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", FLOW_READINGS_KEY)
+      .order("sort_order"),
+    supabase
+      .from("module_items")
+      .select("id, title, subtitle, description, image_ref, external_link, metadata")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", FLOW_AUDIO_KEY)
+      .order("sort_order"),
   ]);
 
   // Share Your Space's Share Card needs the PUBLISHED Hero image, not the
@@ -163,17 +228,26 @@ export default async function ResumeRetreatConfiguratorPage({
   const publishedHeroImageRef = publishedBrandMediaParsed.success ? (publishedBrandMediaParsed.data.hero?.imageRef ?? null) : null;
   const publishedHeroImageUrl = publishedHeroImageRef ? publicMediaUrl(publishedHeroImageRef) : null;
 
-  const initialSchedule: EditableScheduleItem[] = (scheduleRows ?? []).map((r) => ({
-    id: r.id,
-    date: r.date,
-    startTime: (r.start_time ?? "").slice(0, 5),
-    endTime: r.end_time ? r.end_time.slice(0, 5) : null,
-    title: r.title,
-    facilitator: r.facilitator,
-    location: r.location,
-    description: r.description,
-    category: r.category,
-  }));
+  const initialSchedule: EditableScheduleItem[] = (scheduleRows ?? []).map((r) => {
+    // TASK 029 (P5D): the per-activity extra details live in the one
+    // column 0033 added. Parsed defensively through the same schema the
+    // Guest App reads, so a hand-edited value degrades to [] rather than
+    // breaking the whole Studio page.
+    const extras = activityExtrasSchema.safeParse(r.metadata ?? {});
+    return {
+      id: r.id,
+      date: r.date,
+      startTime: (r.start_time ?? "").slice(0, 5),
+      endTime: r.end_time ? r.end_time.slice(0, 5) : null,
+      title: r.title,
+      facilitator: r.facilitator,
+      location: r.location,
+      description: r.description,
+      category: r.category,
+      whatToBring: extras.success ? extras.data.whatToBring : [],
+      whatToExpect: extras.success ? extras.data.whatToExpect : [],
+    };
+  });
 
   // Task 011 (item C): these five module transforms are independent of
   // each other (each reads only its own already-fetched rows above) but
@@ -208,6 +282,7 @@ export default async function ResumeRetreatConfiguratorPage({
           name: r.title,
           role: r.subtitle,
           bio: r.description,
+          longBio: (meta.longBio as string | null) ?? null,
           imageRef: r.image_ref,
           imageUrl: await resolveImageUrl(supabase, r.image_ref),
           specialties: Array.isArray(meta.specialties) ? (meta.specialties as string[]) : [],
@@ -249,6 +324,11 @@ export default async function ResumeRetreatConfiguratorPage({
           location: (meta.location as string | null) ?? null,
           bookingInfo: (meta.bookingInfo as string | null) ?? null,
           imagePosition: parseImagePosition(meta.imagePosition),
+          // TASK 029 (D1) - Treatments & Extras.
+          price: typeof meta.price === "number" ? meta.price : null,
+          currency: (meta.currency as string | null) ?? null,
+          chargeType: parseChargeType(meta.chargeType),
+          availability: (meta.availability as string | null) ?? null,
         };
       })
     ),
@@ -258,6 +338,9 @@ export default async function ResumeRetreatConfiguratorPage({
         return {
           id: r.id,
           name: r.title,
+          // TASK 029 (D4): the short line is the `subtitle` column, the
+          // same place treatments keeps it. See lib/modules/facility.ts.
+          shortDescription: r.subtitle,
           description: r.description,
           imageRef: r.image_ref,
           imageUrl: await resolveImageUrl(supabase, r.image_ref),
@@ -283,6 +366,66 @@ export default async function ResumeRetreatConfiguratorPage({
       })
     ),
   ]);
+
+  const initialGuidelines: EditableGuideline[] = (guidelineRows ?? []).map((r) => ({
+    id: r.id,
+    title: r.title,
+    description: r.description,
+  }));
+
+  // Readings and Audio keep the item envelope rather than being
+  // flattened, so the Studio edits exactly the shape that publishes and
+  // exactly the shape the shared schemas read.
+  const [initialReadings, initialAudio]: [EditableFlowReading[], EditableFlowTrack[]] = await Promise.all([
+    Promise.all(
+      (readingRows ?? []).map(async (r) => {
+        const parsed = readingMetadataSchema.safeParse(r.metadata ?? {});
+        return {
+          id: r.id,
+          title: r.title,
+          subtitle: r.subtitle,
+          description: r.description,
+          imageRef: r.image_ref,
+          imageUrl: await resolveImageUrl(supabase, r.image_ref),
+          externalLink: r.external_link,
+          metadata: parsed.success ? parsed.data : { ...EMPTY_READING_METADATA },
+        };
+      })
+    ),
+    Promise.all(
+      (audioRows ?? []).map(async (r) => {
+        const parsed = flowAudioMetadataSchema.safeParse(r.metadata ?? {});
+        const metadata = parsed.success ? parsed.data : { ...EMPTY_FLOW_AUDIO_METADATA };
+        const [imageUrl, audioUrl] = await Promise.all([
+          resolveImageUrl(supabase, r.image_ref),
+          resolveImageUrl(supabase, metadata.audioRef),
+        ]);
+        return {
+          id: r.id,
+          title: r.title,
+          subtitle: r.subtitle,
+          description: r.description,
+          imageRef: r.image_ref,
+          imageUrl,
+          audioUrl,
+          externalLink: r.external_link,
+          metadata,
+        };
+      })
+    ),
+  ]);
+
+  const retreatProfileParsed = retreatProfileRow?.data
+    ? retreatProfileSchema.safeParse(retreatProfileRow.data)
+    : null;
+  const initialRetreatProfile: RetreatProfile = retreatProfileParsed?.success
+    ? retreatProfileParsed.data
+    : EMPTY_RETREAT_PROFILE;
+
+  const moduleIntrosParsed = moduleIntrosRow?.data ? moduleIntrosSchema.safeParse(moduleIntrosRow.data) : null;
+  const initialModuleIntros: ModuleIntros = moduleIntrosParsed?.success
+    ? moduleIntrosParsed.data
+    : EMPTY_MODULE_INTROS;
 
   const arrivalParsed = arrivalRow?.data ? arrivalInfoSchema.safeParse(arrivalRow.data) : null;
   const initialArrivalInfo: ArrivalInfo = arrivalParsed?.success ? arrivalParsed.data : EMPTY_ARRIVAL_INFO;
@@ -370,6 +513,11 @@ export default async function ResumeRetreatConfiguratorPage({
         initialFaq={initialFaq}
         initialCustomPages={initialCustomPages}
         initialStayConnected={initialStayConnected}
+        initialRetreatProfile={initialRetreatProfile}
+        initialModuleIntros={initialModuleIntros}
+        initialGuidelines={initialGuidelines}
+        initialReadings={initialReadings}
+        initialAudio={initialAudio}
         initialEnabledModules={initialEnabledModules}
         initialModuleCovers={initialModuleCovers}
         initialPublishedAt={published?.published_at ?? null}

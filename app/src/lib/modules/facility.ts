@@ -26,6 +26,16 @@ import { imagePositionSchema } from "./imagePosition";
  */
 export const facilitySchema = z.object({
   name: z.string().min(1),
+  /**
+   * The short line for the card. Stored in the `subtitle` COLUMN - see
+   * this file's header for why, and why there must never be a
+   * `metadata.shortDescription` beside it.
+   *
+   * Defaulted, not required: every facility published before 0033 has no
+   * such key, and a required field would fail the whole parse and blank
+   * an existing Space's Facilities screen.
+   */
+  shortDescription: z.string().nullable().catch(null).default(null),
   description: z.string().nullable(),
   imageRef: z.string().nullable(),
   openingHours: z.string().nullable(),

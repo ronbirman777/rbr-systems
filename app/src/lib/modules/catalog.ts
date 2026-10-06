@@ -20,9 +20,11 @@ export const OPTIONAL_MODULES = {
   arrivalInfo: { label: "Arrival Information", implemented: true },
   dailyInspiration: { label: "Daily Inspiration", implemented: true },
   faq: { label: "FAQ", implemented: true },
+  guidelines: { label: "Guidelines", implemented: true },
+  readings: { label: "Readings", implemented: true },
   customPages: { label: "Custom Pages", implemented: true },
   stayConnected: { label: "Stay Connected", implemented: true },
-  audio: { label: "Audio", implemented: false },
+  audio: { label: "Audio", implemented: true },
   announcements: { label: "Announcements", implemented: false },
 } as const;
 
@@ -50,6 +52,8 @@ export function moduleLabel(key: OptionalModuleKey, locale: Locale = DEFAULT_LOC
     arrivalInfo: "moduleArrivalInfo",
     dailyInspiration: "moduleDailyInspiration",
     faq: "faq",
+    guidelines: "guidelines",
+    readings: "readings",
     customPages: "moduleCustomPages",
     stayConnected: "stayConnected",
     audio: "moduleAudio",
