@@ -1,5 +1,5 @@
 {
- "base": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app",
+ "base": "https://innerdwes-47zfezgxc-inner-dwe-s.vercel.app",
  "widths": {
   "320": {
    "total": 64,
@@ -8,7 +8,7 @@
     {
      "name": "login: the QA owner reaches My Spaces through the normal form",
      "pass": true,
-     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+     "detail": "https://innerdwes-47zfezgxc-inner-dwe-s.vercel.app/space"
     },
     {
      "name": "Flow: the Studio loads for a Space this owner belongs to",
@@ -188,7 +188,7 @@
     {
      "name": "Teach/en: the shell switches language with no reload",
      "pass": true,
-     "detail": "he -> en, noReload=true"
+     "detail": "en -> en, noReload=true"
     },
     {
      "name": "Teach/en: the shell direction is ltr",
@@ -334,7 +334,7 @@
     {
      "name": "login: the QA owner reaches My Spaces through the normal form",
      "pass": true,
-     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+     "detail": "https://innerdwes-47zfezgxc-inner-dwe-s.vercel.app/space"
     },
     {
      "name": "Flow: the Studio loads for a Space this owner belongs to",
@@ -660,7 +660,7 @@
     {
      "name": "login: the QA owner reaches My Spaces through the normal form",
      "pass": true,
-     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+     "detail": "https://innerdwes-47zfezgxc-inner-dwe-s.vercel.app/space"
     },
     {
      "name": "Flow: the Studio loads for a Space this owner belongs to",
@@ -986,7 +986,7 @@
     {
      "name": "login: the QA owner reaches My Spaces through the normal form",
      "pass": true,
-     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+     "detail": "https://innerdwes-47zfezgxc-inner-dwe-s.vercel.app/space"
     },
     {
      "name": "Flow: the Studio loads for a Space this owner belongs to",
@@ -1312,7 +1312,7 @@
     {
      "name": "login: the QA owner reaches My Spaces through the normal form",
      "pass": true,
-     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+     "detail": "https://innerdwes-47zfezgxc-inner-dwe-s.vercel.app/space"
     },
     {
      "name": "Flow: the Studio loads for a Space this owner belongs to",
@@ -1638,7 +1638,7 @@
     {
      "name": "login: the QA owner reaches My Spaces through the normal form",
      "pass": true,
-     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+     "detail": "https://innerdwes-47zfezgxc-inner-dwe-s.vercel.app/space"
     },
     {
      "name": "Flow: the Studio loads for a Space this owner belongs to",
@@ -1964,7 +1964,7 @@
     {
      "name": "login: the QA owner reaches My Spaces through the normal form",
      "pass": true,
-     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+     "detail": "https://innerdwes-47zfezgxc-inner-dwe-s.vercel.app/space"
     },
     {
      "name": "Flow: the Studio loads for a Space this owner belongs to",

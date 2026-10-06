@@ -1,0 +1,90 @@
+/**
+ * Accessible names and target sizes, on the real Studio.
+ *
+ * The earlier phase's a11y pass ran against hydrated fixtures and
+ * reported 26 unnamed controls in the OLDER editors as a follow-up. This
+ * checks the real thing, every step, both products: every interactive
+ * control must have an accessible name, and every one must be at least
+ * 44x44 (or 24px with spacing, the WCAG 2.2 minimum - reported
+ * separately so the two are not conflated).
+ *
+ * Usage: see locale-journey.mjs.
+ */
+const { BASE, BYPASS, QA_EMAIL, QA_PW, PW } = process.env;
+const { chromium } = await import(PW);
+const EDITOR = '[data-testid="studio-editor"]';
+const SPACES = [
+  { product: "Flow", tenant: "3e6e4978-79a3-4912-98b5-c26d15d30155", path: "retreat" },
+  { product: "Teach", tenant: "cc51ee9a-9b39-4676-bc39-e20467180488", path: "teach" },
+];
+
+const browser = await chromium.launch();
+const ctx = await browser.newContext({
+  viewport: { width: 1280, height: 950 },
+  extraHTTPHeaders: { "x-vercel-protection-bypass": BYPASS, "x-vercel-set-bypass-cookie": "true" },
+});
+const page = await ctx.newPage();
+await page.goto(`${BASE}/log-in`, { waitUntil: "domcontentloaded" });
+await page.fill('input[name="email"]', QA_EMAIL);
+await page.fill('input[name="password"]', QA_PW);
+await page.click('button[type="submit"]');
+await page.waitForURL(/\/space/, { timeout: 45000 });
+
+const scan = () => page.evaluate((sel) => {
+  const col = document.querySelector(sel);
+  if (!col) return null;
+  const controls = [...col.querySelectorAll("button, a[href], input, select, textarea, [role=button], [tabindex='0']")]
+    .filter((e) => e.getClientRects().length && e.type !== "hidden");
+  const named = (e) => {
+    const aria = e.getAttribute("aria-label");
+    if (aria && aria.trim()) return true;
+    const labelledBy = e.getAttribute("aria-labelledby");
+    if (labelledBy && labelledBy.split(/\s+/).some((id) => document.getElementById(id)?.innerText.trim())) return true;
+    if (e.id && [...document.querySelectorAll(`label[for="${e.id}"]`)].some((l) => l.innerText.trim())) return true;
+    if (e.closest("label")?.innerText.trim()) return true;
+    if ((e.innerText || "").trim()) return true;
+    if (e.title && e.title.trim()) return true;
+    if (e.tagName === "INPUT" && e.placeholder && e.placeholder.trim()) return false; // a placeholder is not a name
+    return false;
+  };
+  const unnamed = [], small = [];
+  for (const e of controls) {
+    const r = e.getBoundingClientRect();
+    const tag = `${e.tagName.toLowerCase()}${e.type ? `[${e.type}]` : ""}`;
+    if (!named(e)) unnamed.push({ tag, cls: (e.className || "").toString().slice(0, 50) });
+    if (Math.min(r.width, r.height) < 24) small.push({ tag, size: `${Math.round(r.width)}x${Math.round(r.height)}` });
+  }
+  return { controls: controls.length, unnamed, small };
+}, EDITOR);
+
+const report = {};
+for (const space of SPACES) {
+  await page.goto(`${BASE}/configurator/${space.path}/${space.tenant}`, { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle").catch(() => {});
+  const steps = await page.$$eval("aside button", (els) => els.map((_, i) => i));
+  report[space.product] = {};
+  for (const i of steps) {
+    const btns = page.locator("aside button");
+    const name = (await btns.nth(i).innerText().catch(() => "")).replace(/\s+/g, " ").trim();
+    if (!name) continue;
+    await btns.nth(i).click().catch(() => {});
+    await page.waitForTimeout(450);
+    const opener = page.locator(`${EDITOR} button`).filter({ hasText: /^edit$/i }).first();
+    if (await opener.isVisible().catch(() => false)) {
+      await opener.click().catch(() => {});
+      await page.waitForTimeout(400);
+    }
+    const r = await scan();
+    if (r) report[space.product][name] = r;
+  }
+}
+await browser.close();
+
+const totals = { controls: 0, unnamed: 0, small: 0 };
+for (const p of Object.values(report)) {
+  for (const s of Object.values(p)) {
+    totals.controls += s.controls; totals.unnamed += s.unnamed.length; totals.small += s.small.length;
+  }
+}
+console.log(JSON.stringify({ base: BASE, totals, report }, null, 1));
+process.exit(totals.unnamed === 0 ? 0 : 1);

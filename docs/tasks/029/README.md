@@ -126,3 +126,88 @@ recorded here so the next person does not repeat them:
   match has to be case-insensitive. Getting that wrong stranded the
   journey inside the first sub-screen and produced six "failures" that
   were nothing of the kind.
+
+---
+
+# The authenticated harnesses (locale completion phase)
+
+The gap named above — "the Flow Studio was not driven through a real
+login" — is closed. The synthetic Staging QA owner's password was reset
+through the documented Auth Admin API, and everything below ran as that
+owner, in a real browser, against a real Staging deployment, through the
+normal login form. No service-role impersonation, no hand-minted
+session, no direct snapshot writes.
+
+All four scripts take the same environment:
+
+```sh
+BASE=https://<staging deployment>      # vercel deploy --target=staging
+BYPASS=<Vercel protection bypass>      # revoked after QA
+QA_EMAIL=<synthetic Staging QA owner>
+QA_PW=<reset for the session, never stored>
+PW=<path to playwright-core/index.mjs>
+LABELS=<labels.json, extracted from the dictionaries>
+```
+
+`LABELS` matters. Every expected string is read from the dictionaries
+rather than typed into the harness, because the earlier phase's
+`preview-journey.mjs` invented German labels and reported six failures
+that were nothing but wrong strings in the harness.
+
+## `locale-journey.json` — the reactivity claim, 7 widths × 5 locales
+
+This exists to prove one thing: choosing a language changes the Studio
+shell AND the Live Draft Preview immediately, with no reload. A unit test
+can only re-assert the hook; this asserts that the two surfaces actually
+turn over together in a running Studio, by marking `window` before the
+click and checking the mark survived.
+
+Per product, per locale: the shell's `lang`/`dir`, the step heading in
+that language, the preview's guest navigation in that language, and no
+horizontal overflow. Plus the selector's contract — exactly five
+options, in the fixed order, with a recommendation badging an option
+rather than reordering the list — and that the choice survives a reload.
+
+320 / 390 / 430 / 768 / 820 / 1024 / 1440, en/de/es/fr/he, Flow + Teach.
+
+## `content-journey.json` — the P3–P5 editors, for real
+
+Every editor this task added or changed: opened, typed into,
+dirty-checked, saved, reloaded and read back. Then the unsaved-changes
+guard and its discard path, a module turned on and its editor appearing,
+and publish gating both ways — a saved edit absent from the Guest App
+before publishing and present after.
+
+Two scoping rules are load-bearing, and both were learned the hard way.
+It reads only inside `[data-testid="studio-editor"]`, because the Live
+Draft Preview renders the same words and an earlier version passed on
+edits that had not saved. And it fills the LAST field of a list, because
+editors that list items inline append the new row at the end — filling
+the first one edited somebody else's row, which is how a guideline saved
+as "Untitled".
+
+This is the harness that found `longBio` being wiped on every save.
+
+## `guest-locale.json` — the last link
+
+Choose the language, publish, then fetch the public guest URL in a fresh
+context with no Studio session, and check the shell's `lang`/`dir` and
+the navigation labels. Both products, all five languages: 10 real
+publishes. A locale that only looks right in the Studio is not done.
+
+## `leak-audit.json` — English leakage, measured
+
+A dictionary audit only sees strings that reach `t()`. It is blind to
+copy that was never wired up, and grepping for that drowns in code
+comments and type literals. So this drives both Studios in Hebrew and
+reports every visible run of Latin prose, walking each step and opening
+the first editor panel. In a Hebrew Space, Latin is a brand name, a file
+format, a unit — or a leak.
+
+First run: 38. Final run: 0.
+
+Two of its own bugs are worth knowing about, because both produced fake
+findings rather than missed ones: its word pattern could not contain
+digits (so it scanned from the middle of fixture titles), and its
+allowlist held a bare `"X"` for the platform, which substring-stripped
+every string containing that letter.

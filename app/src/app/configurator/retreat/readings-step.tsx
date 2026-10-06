@@ -306,6 +306,7 @@ export function ReadingsStep({
                 <div>
                   <StudioLabel>{t("flow", "pasteLinkOf", { label: t("flow", "externalArticle") })}</StudioLabel>
                   <input
+                    aria-label={t("flow", "pasteLinkOf", { label: t("flow", "externalArticle") })}
                     value={editing.externalLink ?? ""}
                     onChange={(e) => update(editing.id, { externalLink: e.target.value || null })}
                     placeholder="https://"

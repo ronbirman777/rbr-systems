@@ -1,6 +1,6 @@
 {
- "base": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app",
- "total": 42,
+ "base": "https://innerdwes-47zfezgxc-inner-dwe-s.vercel.app",
+ "total": 44,
  "failed": 0,
  "results": [
   {
@@ -209,7 +209,17 @@
    "detail": "en"
   },
   {
+   "name": "Flow: and republished, so the live Guest App is English again",
+   "pass": true,
+   "detail": "en"
+  },
+  {
    "name": "Teach: restored to English for the next run",
+   "pass": true,
+   "detail": "en"
+  },
+  {
+   "name": "Teach: and republished, so the live Guest App is English again",
    "pass": true,
    "detail": "en"
   }

@@ -1,0 +1,765 @@
+{
+ "base": "https://innerdwes-g0jpzxnuc-inner-dwe-s.vercel.app",
+ "totals": {
+  "controls": 708,
+  "unnamed": 54,
+  "small": 82
+ },
+ "report": {
+  "Flow": {
+   "1 Identity": {
+    "controls": 15,
+    "unnamed": [
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "flex-1 min-w-0 px-3.5 py-2.5 text-[13px] outline-n"
+     }
+    ],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "116x17"
+     }
+    ]
+   },
+   "2 Brand": {
+    "controls": 64,
+    "unnamed": [
+     {
+      "tag": "input[text]",
+      "cls": "flex-1 min-w-0 text-[13px] outline-none font-mono"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "flex-1 min-w-0 text-[13px] outline-none font-mono"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "flex-1 min-w-0 text-[13px] outline-none font-mono"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "flex-1 min-w-0 text-[13px] outline-none font-mono"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "flex-1 min-w-0 text-[13px] outline-none font-mono"
+     }
+    ],
+    "small": [
+     {
+      "tag": "input[text]",
+      "size": "403x20"
+     },
+     {
+      "tag": "input[text]",
+      "size": "403x20"
+     },
+     {
+      "tag": "input[text]",
+      "size": "403x20"
+     },
+     {
+      "tag": "input[text]",
+      "size": "403x20"
+     },
+     {
+      "tag": "input[text]",
+      "size": "403x20"
+     }
+    ]
+   },
+   "3 Modules": {
+    "controls": 37,
+    "unnamed": [],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "110x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "41x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "110x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "41x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "110x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "41x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "110x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "41x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "110x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "41x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "88x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "88x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "110x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "41x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "88x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "4 Retreat Home": {
+    "controls": 9,
+    "unnamed": [],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "5 Schedule": {
+    "controls": 26,
+    "unnamed": [
+     {
+      "tag": "input[time]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[time]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[date]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     }
+    ],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "26x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "6 Facilitators": {
+    "controls": 18,
+    "unnamed": [
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "textarea[textarea]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     }
+    ],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "26x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "84x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "7 Meals": {
+    "controls": 17,
+    "unnamed": [
+     {
+      "tag": "input[time]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "textarea[textarea]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     }
+    ],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "26x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "77x16"
+     },
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "8 Treatments": {
+    "controls": 23,
+    "unnamed": [
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[number]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "textarea[textarea]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     }
+    ],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "26x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "77x16"
+     },
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "9 Facilities": {
+    "controls": 18,
+    "unnamed": [
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "textarea[textarea]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     }
+    ],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "26x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "77x16"
+     },
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "10 Arrival Info": {
+    "controls": 15,
+    "unnamed": [
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "textarea[textarea]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "textarea[textarea]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "textarea[textarea]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "textarea[textarea]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     }
+    ],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "121x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "121x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "11 Guidelines": {
+    "controls": 49,
+    "unnamed": [],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "12 Questions": {
+    "controls": 20,
+    "unnamed": [
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "textarea[textarea]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     }
+    ],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "10x15"
+     },
+     {
+      "tag": "button[button]",
+      "size": "10x15"
+     },
+     {
+      "tag": "button[button]",
+      "size": "10x15"
+     },
+     {
+      "tag": "button[button]",
+      "size": "10x15"
+     },
+     {
+      "tag": "button[button]",
+      "size": "10x15"
+     },
+     {
+      "tag": "button[button]",
+      "size": "10x15"
+     },
+     {
+      "tag": "button[button]",
+      "size": "26x17"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "13x13"
+     },
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "13 Readings": {
+    "controls": 27,
+    "unnamed": [],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "26x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "77x16"
+     },
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "14 Audio": {
+    "controls": 25,
+    "unnamed": [],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "26x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "77x16"
+     },
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "15 Custom Pages": {
+    "controls": 17,
+    "unnamed": [
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "textarea[textarea]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     }
+    ],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "10x15"
+     },
+     {
+      "tag": "button[button]",
+      "size": "10x15"
+     },
+     {
+      "tag": "button[button]",
+      "size": "10x15"
+     },
+     {
+      "tag": "button[button]",
+      "size": "10x15"
+     },
+     {
+      "tag": "button[button]",
+      "size": "26x17"
+     },
+     {
+      "tag": "button[button]",
+      "size": "77x16"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "13x13"
+     },
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "16 Stay connected": {
+    "controls": 9,
+    "unnamed": [
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     }
+    ],
+    "small": [
+     {
+      "tag": "button[button]",
+      "size": "10x15"
+     },
+     {
+      "tag": "button[button]",
+      "size": "10x15"
+     },
+     {
+      "tag": "button[button]",
+      "size": "48x16"
+     }
+    ]
+   },
+   "Preview & Publish": {
+    "controls": 10,
+    "unnamed": [],
+    "small": []
+   },
+   "Share your Space": {
+    "controls": 7,
+    "unnamed": [],
+    "small": []
+   },
+   "Featured on InnerDweS": {
+    "controls": 6,
+    "unnamed": [
+     {
+      "tag": "textarea[textarea]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     },
+     {
+      "tag": "input[text]",
+      "cls": "w-full bg-white border border-[#D4C5A9]/70 rounded"
+     }
+    ],
+    "small": []
+   }
+  },
+  "Teach": {
+   "Identity": {
+    "controls": 20,
+    "unnamed": [],
+    "small": [
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     }
+    ]
+   },
+   "Brand": {
+    "controls": 60,
+    "unnamed": [],
+    "small": [
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     }
+    ]
+   },
+   "Home": {
+    "controls": 14,
+    "unnamed": [],
+    "small": []
+   },
+   "Schedule": {
+    "controls": 14,
+    "unnamed": [],
+    "small": []
+   },
+   "About Me": {
+    "controls": 14,
+    "unnamed": [],
+    "small": []
+   },
+   "Modules": {
+    "controls": 39,
+    "unnamed": [],
+    "small": [
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     }
+    ]
+   },
+   "My Readings": {
+    "controls": 14,
+    "unnamed": [],
+    "small": []
+   },
+   "My Audio": {
+    "controls": 6,
+    "unnamed": [],
+    "small": []
+   },
+   "How to Contact Me": {
+    "controls": 25,
+    "unnamed": [],
+    "small": [
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     },
+     {
+      "tag": "input[checkbox]",
+      "size": "1x1"
+     }
+    ]
+   },
+   "Custom Pages": {
+    "controls": 6,
+    "unnamed": [],
+    "small": []
+   },
+   "Preview & Publish": {
+    "controls": 14,
+    "unnamed": [],
+    "small": []
+   },
+   "QA Teacher": {
+    "controls": 14,
+    "unnamed": [],
+    "small": []
+   },
+   "Explore": {
+    "controls": 14,
+    "unnamed": [],
+    "small": []
+   },
+   "See the schedule": {
+    "controls": 14,
+    "unnamed": [],
+    "small": []
+   },
+   "Q VINYASA · QA ENDED QA Daily Practice 07:00 – 07:30 · UTC Olive Tree Studio QA": {
+    "controls": 14,
+    "unnamed": [],
+    "small": []
+   },
+   "READING QA Reading One": {
+    "controls": 14,
+    "unnamed": [],
+    "small": []
+   }
+  }
+ }
+}

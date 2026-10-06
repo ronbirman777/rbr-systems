@@ -111,14 +111,31 @@ for (const space of SPACES) {
   }
 }
 
-// Leave both Spaces in English, published, for the next run.
+// Leave both Spaces in English AND republished, so the next harness does
+// not inherit a Hebrew published snapshot from the last loop iteration.
 for (const space of SPACES) {
   await page.goto(`${BASE}/configurator/${space.path}/${space.tenant}`, { waitUntil: "domcontentloaded" });
   await page.waitForLoadState("networkidle").catch(() => {});
   await page.click('button:has-text("English")').catch(() => {});
-  await page.waitForTimeout(1800);
+  await page.waitForTimeout(2000);
   const lang = await page.evaluate((sel) => document.querySelector(sel)?.getAttribute("lang"), SHELL);
   ok(`${space.product}: restored to English for the next run`, lang === "en", String(lang));
+  const navLabel = space.product === "Flow" ? L.en["studio.navPreviewPublish"] : L.en["teach.previewAndPublish"];
+  await page.locator("aside button, nav button").filter({ hasText: navLabel }).first().click().catch(() => {});
+  await page.waitForTimeout(1000);
+  for (const scope of ['form button[type="submit"]', "button"]) {
+    const btn = page.locator(scope).filter({ hasText: L.en["studio.republish"] }).first();
+    if (await btn.isVisible().catch(() => false)) { await btn.click(); break; }
+  }
+  await page.waitForFunction((busy) => ![...document.querySelectorAll("button")].some((b) => b.innerText.includes(busy)),
+    L.en["studio.publishingNow"], { timeout: 90000 }).catch(() => {});
+  await page.waitForTimeout(2500);
+  const fresh = await browser.newContext({ extraHTTPHeaders: { "x-vercel-protection-bypass": BYPASS, "x-vercel-set-bypass-cookie": "true" } });
+  const guest = await fresh.newPage();
+  await guest.goto(`${BASE}/s/${space.slug}`, { waitUntil: "domcontentloaded" });
+  const shellLang = await guest.evaluate(() => document.querySelector("[lang][dir]")?.getAttribute("lang"));
+  ok(`${space.product}: and republished, so the live Guest App is English again`, shellLang === "en", String(shellLang));
+  await fresh.close();
 }
 
 await browser.close();

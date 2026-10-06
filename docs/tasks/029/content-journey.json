@@ -1,0 +1,153 @@
+{
+ "base": "https://innerdwes-47zfezgxc-inner-dwe-s.vercel.app",
+ "marker": "qa029f",
+ "total": 29,
+ "failed": 0,
+ "results": [
+  {
+   "name": "the Space starts this journey in English",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Modules: Guidelines, Readings and Audio can be switched on",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Modules: enabling a module adds its editor to the step list",
+   "pass": true,
+   "detail": "gained Guidelines/Readings/Audio (was 25 steps, now 25)"
+  },
+  {
+   "name": "Retreat Home: typing makes the step dirty",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Retreat Home: the edit survives a save and a reload",
+   "pass": true,
+   "detail": "\"qa029f tagline\""
+  },
+  {
+   "name": "Meals: typing makes the step dirty",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Meals: the edit survives a save and a reload",
+   "pass": true,
+   "detail": "\"qa029f meals intro\""
+  },
+  {
+   "name": "Facilities: typing makes the step dirty",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Facilities: the edit survives a save and a reload",
+   "pass": true,
+   "detail": "\"qa029f facility short\""
+  },
+  {
+   "name": "Facilitators: typing makes the step dirty",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Facilitators: the edit survives a save and a reload",
+   "pass": true,
+   "detail": "\"qa029f long bio\""
+  },
+  {
+   "name": "Treatments: typing makes the step dirty",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Treatments: the edit survives a save and a reload",
+   "pass": true,
+   "detail": "\"qa029f on request\""
+  },
+  {
+   "name": "Schedule: typing makes the step dirty",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "Schedule: the edit survives a save and a reload",
+   "pass": true,
+   "detail": "\"qa029f-mat\""
+  },
+  {
+   "name": "Guidelines: a new item saves and comes back after a reload",
+   "pass": true,
+   "detail": "on \"Guidelines\": last item is \"qa029f quiet hours\""
+  },
+  {
+   "name": "Readings: a new item saves and comes back after a reload",
+   "pass": true,
+   "detail": "on \"Readings\": last item is \"qa029f on arriving\""
+  },
+  {
+   "name": "Audio: a new item saves and comes back after a reload",
+   "pass": true,
+   "detail": "on \"Audio\": last item is \"qa029f evening nidra\""
+  },
+  {
+   "name": "leaving a dirty step asks before discarding",
+   "pass": true,
+   "detail": "You have unsaved changes Your draft hasn’t been saved yet. What would you like to do? Cancel Leave without saving Save a"
+  },
+  {
+   "name": "discarding really discards - the unsaved probe is not in the draft",
+   "pass": true,
+   "detail": "qa029f tagline"
+  },
+  {
+   "name": "publish gating: a SAVED but unpublished edit is not visible to guests",
+   "pass": true,
+   "detail": "absent, as it must be"
+  },
+  {
+   "name": "the Preview & Publish step offers a publish control",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "publishing updates the status card",
+   "pass": true,
+   "detail": "Published Last published 2026-10-06 11:02 UTC  Guests won't  -> Published Last published 2026-10-06 11:50 UTC  Guests won't "
+  },
+  {
+   "name": "after publishing, the Guest App serves the new content",
+   "pass": true,
+   "detail": "present"
+  },
+  {
+   "name": "published Guest App contains a guideline",
+   "pass": true,
+   "detail": "qa029f quiet hours"
+  },
+  {
+   "name": "published Guest App contains a reading",
+   "pass": true,
+   "detail": "qa029f on arriving"
+  },
+  {
+   "name": "published Guest App contains an audio track",
+   "pass": true,
+   "detail": "qa029f evening nidra"
+  },
+  {
+   "name": "published Guest App contains the retreat tagline",
+   "pass": true,
+   "detail": "qa029f tagline"
+  },
+  {
+   "name": "no uncaught client errors during the whole journey",
+   "pass": true,
+   "detail": ""
+  }
+ ]
+}
