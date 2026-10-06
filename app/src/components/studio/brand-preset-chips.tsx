@@ -1,25 +1,8 @@
-import type { BrandPreset, BrandPresetKey } from "@/lib/brand/presets";
+import type { BrandPreset } from "@/lib/brand/presets";
+import { PRESET_LABEL } from "@/lib/brand/presetLabels";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 
-/**
- * The preset NAMES live in the dictionary, not in presets.ts. The preset
- * data is shared with the publish path and with brand.test.ts, which pins
- * the English labels, so the data keeps its `label` and the chip renders
- * the translation of the preset's key instead. A preset name is design
- * vocabulary, like the typography and corner options, so it is written in
- * the reader's own language rather than left in English.
- */
-const PRESET_LABEL: Record<BrandPresetKey, "presetSoftSky" | "presetSageLight" | "presetDeepNavy" | "presetWarmKhaki" | "presetEarthBrown" | "presetDustyRose" | "presetTerracotta" | "presetForest"> = {
-  softSky: "presetSoftSky",
-  sageLight: "presetSageLight",
-  deepNavy: "presetDeepNavy",
-  warmKhaki: "presetWarmKhaki",
-  earthBrown: "presetEarthBrown",
-  dustyRose: "presetDustyRose",
-  terracotta: "presetTerracotta",
-  forest: "presetForest",
-};
 /**
  * Shared Brand preset picker: a row of named starting looks. Applying a
  * preset is the caller's job (it just populates the product's existing

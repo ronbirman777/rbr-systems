@@ -107,7 +107,7 @@ export function FocalPointPicker({
         ref={containerRef}
         role="button"
         tabIndex={0}
-        aria-label={`${label} focus point`}
+        aria-label={t("studio", "focusPointOf", { label })}
         aria-describedby={instructionsId}
         onClick={handleClick}
         onKeyDown={handleKeyDown}

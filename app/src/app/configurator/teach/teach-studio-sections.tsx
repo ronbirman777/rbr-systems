@@ -73,6 +73,7 @@ import { CollapsibleItemRow } from "@/components/studio/collapsible-item-row";
 import { createTranslator, translate, type Locale, type TranslationKey } from "@/lib/i18n";
 import { formatShortDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime";
 import { formatPublishedAtUtc } from "@/lib/studio/status";
+import { PRESET_LABEL } from "@/lib/brand/presetLabels";
 import {
   Card,
   ColorField,
@@ -532,7 +533,7 @@ export function BrandSection({ api }: Props) {
                   <span className="w-6 h-6 rounded-full" style={{ background: p.accent }} />
                 </span>
                 <span className="text-[13px] font-semibold" style={{ color: p.text }}>
-                  {p.label}
+                  {t("studio", PRESET_LABEL[p.key])}
                 </span>
               </button>
             );
@@ -568,7 +569,7 @@ export function BrandSection({ api }: Props) {
             label={t("studio", "primaryColour")}
             value={api.colors.primary}
             checkWhiteText
-            swatches={presets.map((p) => ({ label: p.label, hex: p.primary }))}
+            swatches={presets.map((p) => ({ label: t("studio", PRESET_LABEL[p.key]), hex: p.primary }))}
             onChange={(hex) => {
               api.setColors({ ...api.colors, primary: hex });
               set({ preset: "custom" });
@@ -579,7 +580,7 @@ export function BrandSection({ api }: Props) {
             locale={api.locale}
             label={t("studio", "accentColour")}
             value={api.colors.accent}
-            swatches={presets.map((p) => ({ label: p.label, hex: p.accent }))}
+            swatches={presets.map((p) => ({ label: t("studio", PRESET_LABEL[p.key]), hex: p.accent }))}
             onChange={(hex) => {
               api.setColors({ ...api.colors, accent: hex });
               set({ preset: "custom" });

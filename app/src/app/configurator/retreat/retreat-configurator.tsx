@@ -35,6 +35,7 @@ import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, Studi
 import { StudioTopBar } from "@/components/studio/studio-top-bar";
 import { saveStatusLabel, previewDraftLabel, previewDraftCaption, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
 import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
+import { PRESET_LABEL, type PresetLabelKey } from "@/lib/brand/presetLabels";
 import { SpaceCountryCard } from "@/components/studio/space-country-card";
 import { SpaceLanguageCard } from "@/components/studio/space-language-card";
 import { BrandContrastFeedback } from "@/components/studio/brand-contrast-feedback";
@@ -238,9 +239,14 @@ const STEP_LABEL_KEYS: Record<
 
 const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
-/** One swatch per canonical preset for a colour role. */
+/**
+ * One swatch per canonical preset for a colour role. The preset's NAME is
+ * carried as a dictionary key (see lib/brand/presetLabels.ts) rather than
+ * the English label on the preset data, so the swatch reads in the
+ * Space's own language.
+ */
 function swatchesFor(role: "primary" | "accent" | "navigation" | "text" | "surface") {
-  return getBrandPresets("retreat").map((p) => ({ label: p.label, hex: p[role] }));
+  return getBrandPresets("retreat").map((p) => ({ labelKey: PRESET_LABEL[p.key], hex: p[role] }));
 }
 
 /**
@@ -255,7 +261,7 @@ function swatchesFor(role: "primary" | "accent" | "navigation" | "text" | "surfa
  * label was translated, which is exactly the class of bug localization
  * exposes - the first picker simply lost its spacing in he/de.
  */
-function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: { label: string; hint: string; value: string; swatches: readonly { label: string; hex: string }[]; onChange: (hex: string) => void; locale: Locale; first?: boolean }) {
+function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: { label: string; hint: string; value: string; swatches: readonly { labelKey: PresetLabelKey; hex: string }[]; onChange: (hex: string) => void; locale: Locale; first?: boolean }) {
   const { t } = createTranslator(locale);
   const [draft, setDraft] = useState(value);
   const [showError, setShowError] = useState(false);
@@ -291,10 +297,10 @@ function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: 
       <div className="grid grid-cols-4 gap-2 mb-3">
         {swatches.map((c) => (
           <button
-            key={`${c.label}-${c.hex}`}
+            key={`${c.labelKey}-${c.hex}`}
             type="button"
-            title={c.label}
-            aria-label={`${c.label} ${c.hex}`}
+            title={t("studio", c.labelKey)}
+            aria-label={`${t("studio", c.labelKey)} ${c.hex}`}
             onClick={() => commit(c.hex)}
             className="flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all"
             style={{ background: value.toLowerCase() === c.hex.toLowerCase() ? `${GUEST_BASE_PALETTE.forest}14` : "transparent" }}
@@ -304,7 +310,7 @@ function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: 
               style={{ background: c.hex, outline: value.toLowerCase() === c.hex.toLowerCase() ? `2px solid ${GUEST_BASE_PALETTE.forest}66` : "none", outlineOffset: 2 }}
             />
             <span className="text-[10px] font-medium" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-              {c.label}
+              {t("studio", c.labelKey)}
             </span>
           </button>
         ))}
@@ -325,7 +331,7 @@ function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: 
           type="color"
           value={isValid ? normalizedDraft : "#2D4A3E"}
           onChange={(e) => commit(e.target.value)}
-          aria-label={`${label} - open color picker`}
+          aria-label={t("studio", "openColorPicker", { label })}
           className="w-8 h-8 rounded-md shrink-0 border-0 p-0 cursor-pointer"
           style={{ background: "none" }}
         />
