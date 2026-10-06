@@ -154,14 +154,11 @@ export function durationMinutes(meta: ClassMetadata): number | null {
   return classEndDate(meta) === meta.startDate && mins > 0 ? mins : null;
 }
 
-export function formatDuration(totalSeconds: number | null | undefined): string | null {
-  if (totalSeconds == null || !Number.isFinite(totalSeconds) || totalSeconds <= 0) return null;
-  const s = Math.round(totalSeconds);
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  return h > 0 ? `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}` : `${m}:${String(sec).padStart(2, "0")}`;
-}
+/**
+ * Moved to lib/modules/duration.ts, which Flow's audio can import without
+ * depending on Teach. Re-exported unchanged for this file's callers.
+ */
+export { formatDuration } from "@/lib/modules/duration";
 
 /** "Teaching since 2014 · 11 years" and its localized equivalents. */
 export function teachingSinceLabel(since: number | null, todayIso: string, locale: Locale = DEFAULT_LOCALE): string | null {

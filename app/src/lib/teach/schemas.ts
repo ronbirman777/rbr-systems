@@ -1,5 +1,7 @@
 import { z } from "zod";
 import { optionalFocalPointSchema } from "@/lib/media/focalPoint";
+import { isoDateString as isoDate, optText } from "@/lib/modules/fields";
+import { audioItemFields, audioNoteField, readingMetadataSchema } from "@/lib/modules/library";
 import { socialLinksSchema } from "@/lib/modules/socialLinks";
 import { BRAND_PRESET_KEYS } from "@/lib/brand/presets";
 
@@ -80,19 +82,13 @@ export const TEACH_AUDIO_FOLDER_KEY = "teachAudioFile";
 // Primitives
 // ---------------------------------------------------------------------------
 
-/** Optional free text: trimmed, empty -> null, length-capped. */
-export const optText = (max: number) =>
-  z
-    .string()
-    .max(max)
-    .nullable()
-    .optional()
-    .transform((v) => {
-      const t = v?.trim();
-      return t ? t : null;
-    });
-
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+/**
+ * `optText` and `isoDate` now live in lib/modules/fields.ts, so that Flow's
+ * module schemas can validate a field exactly as Teach does without
+ * importing from lib/teach. Re-exported because callers of this file ask
+ * for them here.
+ */
+export { optText };
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 /** Temporal Instant string, e.g. "2025-10-14T04:30:00Z". */
@@ -490,23 +486,28 @@ export const availabilityMetadataSchema = z.object({
 });
 export type AvailabilityMetadata = z.infer<typeof availabilityMetadataSchema>;
 
-export const readingMetadataSchema = z.object({
-  excerpt: optText(500),
-  category: optText(60),
-  author: optText(100),
-  date: isoDate.nullable().catch(null).default(null),
-  imagePosition: optionalFocalPointSchema,
-});
+/**
+ * Readings are stored identically in both products, so the schema itself
+ * is shared (lib/modules/library.ts) and only the module_key differs -
+ * Teach writes `teachReadings`, Flow writes `readings`.
+ */
+export { readingMetadataSchema };
 export type ReadingMetadata = z.infer<typeof readingMetadataSchema>;
 
 export { AUDIO_ALLOWED_TYPES, AUDIO_MIME_BY_EXTENSION, MAX_AUDIO_BYTES } from "@/lib/media/audio";
 
+/**
+ * Assembled from the shared audio fields rather than re-declaring them,
+ * with Teach's own name for the note: `teacherNote` is live data in
+ * module_items and in every published snapshot, so it keeps its key.
+ * Flow's equivalent will be `note`; both are read by audioNote().
+ */
 export const audioMetadataSchema = z.object({
-  audioRef: z.string().max(400).nullable().catch(null).default(null),
-  durationSeconds: z.number().min(0).max(60 * 60 * 12).nullable().catch(null).default(null),
-  category: optText(60),
-  teacherNote: optText(800),
-  imagePosition: optionalFocalPointSchema,
+  audioRef: audioItemFields.audioRef,
+  durationSeconds: audioItemFields.durationSeconds,
+  category: audioItemFields.category,
+  teacherNote: audioNoteField,
+  imagePosition: audioItemFields.imagePosition,
 });
 export type AudioMetadata = z.infer<typeof audioMetadataSchema>;
 

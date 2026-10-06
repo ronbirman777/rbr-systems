@@ -3,7 +3,7 @@ import { makeFakeSupabase } from "@/lib/media/fakeSupabase.test-util";
 import { MAX_AUDIO_BYTES } from "@/lib/media/audio";
 import { copyDraftAudioToPublished } from "@/lib/media/publish";
 import { parseVersionedMediaPath } from "@/lib/media/path";
-import { uploadAudioDraftObject } from "@/lib/teach/audioUpload";
+import { uploadAudioDraftObject } from "@/lib/media/audioUpload";
 
 /**
  * Teach audio lifecycle on the versioned (uploadId) media model. Runs the

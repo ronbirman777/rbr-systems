@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { TeachGuestData } from "@/lib/teach/guestData";
 import type { TeachItem } from "@/lib/teach/schemas";
 import { contactEntries, safeHttpUrl, contactMethodLabel } from "@/lib/teach/links";
 import { createTranslator } from "@/lib/i18n";
 import { formatShortDateLocalized } from "@/lib/i18n/datetime";
-import { formatDuration } from "@/lib/teach/schedule";
+import { formatDuration } from "@/lib/modules/duration";
+import { audioNote, itemCategories, readingMinutes, sortByDateDesc } from "@/lib/modules/library";
+import { useAudioPlayer } from "@/components/shared/use-audio-player";
 import { TeachIcon, type TeachIconName } from "./teach-icons";
 import { TeachImage } from "./teach-image";
 import { TEACH_SIZES } from "./teach-media-sizes";
@@ -16,26 +18,14 @@ import { cardImage } from "@/lib/teach/cardImage";
 
 const media = (data: TeachGuestData, ref: string | null | undefined) => (ref ? (data.mediaUrls[ref] ?? null) : null);
 
-function readMinutes(item: TeachItem<"teachReadings">): number | null {
-  const words = (item.description ?? "").trim().split(/\s+/).filter(Boolean).length;
-  return words > 40 ? Math.max(1, Math.round(words / 200)) : null;
-}
-
-function categories<T extends { metadata: { category: string | null } }>(items: T[]): string[] {
-  return [...new Set(items.map((i) => i.metadata.category).filter((c): c is string => Boolean(c)))];
-}
-
 // ---------------------------------------------------------------------------
 // My Readings
 // ---------------------------------------------------------------------------
 
 export function ReadingsScreen({ data, onBack, onOpen, title }: { data: TeachGuestData; onBack: () => void; onOpen: (id: string) => void; title: string }) {
   const [cat, setCat] = useState<string | null>(null);
-  const sorted = useMemo(
-    () => [...data.readings].sort((a, b) => (b.metadata.date ?? "").localeCompare(a.metadata.date ?? "")),
-    [data.readings]
-  );
-  const cats = categories(sorted);
+  const sorted = useMemo(() => sortByDateDesc(data.readings), [data.readings]);
+  const cats = itemCategories(sorted);
   const list = cat ? sorted.filter((r) => r.metadata.category === cat) : sorted;
   const [featured, ...rest] = list;
   const { t } = createTranslator(data.locale);
@@ -70,8 +60,8 @@ export function ReadingsScreen({ data, onBack, onOpen, title }: { data: TeachGue
               <Eyebrow tone="primary">
                 {[
                   featured.metadata.category,
-                  readMinutes(featured)
-                    ? t("teach", "minutesRead", { count: readMinutes(featured)! })
+                  readingMinutes(featured.description)
+                    ? t("teach", "minutesRead", { count: readingMinutes(featured.description)! })
                     : featured.externalLink
                       ? t("teach", "externalArticle")
                       : null,
@@ -116,7 +106,7 @@ export function ReadingsScreen({ data, onBack, onOpen, title }: { data: TeachGue
 
 export function ReadingDetailScreen({ data, item, onBack }: { data: TeachGuestData; item: TeachItem<"teachReadings">; onBack: () => void }) {
   const external = safeHttpUrl(item.externalLink);
-  const mins = readMinutes(item);
+  const mins = readingMinutes(item.description);
   const { t } = createTranslator(data.locale);
   return (
     <article className="flex flex-col pb-8">
@@ -174,7 +164,7 @@ export function ReadingDetailScreen({ data, item, onBack }: { data: TeachGuestDa
 export function AudioListScreen({ data, onBack, onOpen, title }: { data: TeachGuestData; onBack: () => void; onOpen: (id: string) => void; title: string }) {
   const tracks = data.audio.filter((a) => a.metadata.audioRef && media(data, a.metadata.audioRef));
   const [cat, setCat] = useState<string | null>(null);
-  const cats = categories(tracks);
+  const cats = itemCategories(tracks);
   const list = cat ? tracks.filter((item) => item.metadata.category === cat) : tracks;
   const [featured, ...rest] = list;
   const { t } = createTranslator(data.locale);
@@ -248,35 +238,12 @@ export function AudioListScreen({ data, onBack, onOpen, title }: { data: TeachGu
 /** Simple, calm player: play/pause, scrub, -15/+15, time. No playlists/downloads (v1). */
 export function AudioPlayerScreen({ data, item, onBack }: { data: TeachGuestData; item: TeachItem<"teachAudio">; onBack: () => void }) {
   const src = media(data, item.metadata.audioRef);
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [playing, setPlaying] = useState(false);
-  const [time, setTime] = useState(0);
-  const [duration, setDuration] = useState(item.metadata.durationSeconds ?? 0);
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const { audioProps, playing, time, duration, status, toggle, skip, seek } = useAudioPlayer({
+    src,
+    storedDurationSeconds: item.metadata.durationSeconds,
+  });
   const { t } = createTranslator(data.locale);
-
-  useEffect(() => {
-    const a = audioRef.current;
-    return () => a?.pause();
-  }, []);
-
-  const toggle = async () => {
-    const a = audioRef.current;
-    if (!a) return;
-    if (a.paused) {
-      setStatus("loading");
-      try {
-        await a.play();
-        setStatus("idle");
-      } catch {
-        setStatus("error");
-      }
-    } else a.pause();
-  };
-  const skip = (s: number) => {
-    const a = audioRef.current;
-    if (a) a.currentTime = Math.min(Math.max(0, a.currentTime + s), a.duration || duration || 0);
-  };
+  const note = audioNote(item.metadata);
 
   return (
     <div className="flex flex-col pb-10">
@@ -304,17 +271,7 @@ export function AudioPlayerScreen({ data, item, onBack }: { data: TeachGuestData
           </div>
           {src ? (
             <>
-              <audio
-                ref={audioRef}
-                src={src}
-                preload="metadata"
-                onPlay={() => setPlaying(true)}
-                onPause={() => setPlaying(false)}
-                onEnded={() => setPlaying(false)}
-                onTimeUpdate={(e) => setTime(e.currentTarget.currentTime)}
-                onLoadedMetadata={(e) => Number.isFinite(e.currentTarget.duration) && setDuration(e.currentTarget.duration)}
-                onError={() => setStatus("error")}
-              />
+              <audio {...audioProps} />
               <div className="w-full flex flex-col gap-1.5">
                 <input
                   type="range"
@@ -322,10 +279,7 @@ export function AudioPlayerScreen({ data, item, onBack }: { data: TeachGuestData
                   max={Math.max(1, Math.round(duration))}
                   step={1}
                   value={Math.min(Math.round(time), Math.max(1, Math.round(duration)))}
-                  onChange={(e) => {
-                    const a = audioRef.current;
-                    if (a) a.currentTime = Number(e.target.value);
-                  }}
+                  onChange={(e) => seek(Number(e.target.value))}
                   aria-label={t("common", "seek")}
                   className="tt-range w-full"
                 />
@@ -364,14 +318,14 @@ export function AudioPlayerScreen({ data, item, onBack }: { data: TeachGuestData
           ) : (
             <EmptyState icon="headphones" title={t("teach", "audioUnavailable")} />
           )}
-          {item.metadata.teacherNote ? (
+          {note ? (
             <div className="w-full p-4 flex flex-col gap-2" style={{ background: "var(--rbr-secondary-soft)", borderRadius: "var(--tt-radius-card)" }}>
               <p className="flex items-center gap-2 text-[12.5px] font-semibold" style={{ color: "var(--rbr-text)" }}>
                 <TeachIcon name="leaf" size={15} />
                 {t("teach", "noteFrom", { name: data.teacherName.split(" ")[0] || t("teach", "yourTeacher") })}
               </p>
               <p dir="auto" className="text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
-                {item.metadata.teacherNote}
+                {note}
               </p>
             </div>
           ) : null}
