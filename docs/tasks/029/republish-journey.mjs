@@ -146,6 +146,33 @@ ok("the publish control is a real focusable submit button", reachable?.focused =
 ok("and it submits the shared publish form rather than its own action",
   reachable?.form === "studio-top-bar-publish", JSON.stringify(reachable));
 
+// ---- and operable by keyboard, not just focusable ----
+// A submit button activated with Enter is the one path a keyboard user
+// takes; asserting focusability alone would not prove the form submits.
+const beforeKeyboard = await page.locator(`${EDITOR} h1, ${EDITOR} h2`).first().innerText().catch(() => "");
+await page.locator(`${TOPBAR} button`).last().focus();
+await page.keyboard.press("Enter");
+const keyboardPublished = await page.waitForFunction(
+  (sel) => {
+    const list = [...document.querySelectorAll(`${sel} button`)];
+    const b = list[list.length - 1];
+    return !!b && (b.disabled || b.getAttribute("aria-busy") === "true");
+  },
+  TOPBAR, { timeout: 15000 }
+).then(() => true).catch(() => false);
+ok("pressing Enter on the focused button publishes, like a click", keyboardPublished);
+await page.waitForFunction(
+  (sel) => {
+    const list = [...document.querySelectorAll(`${sel} button`)];
+    const b = list[list.length - 1];
+    return !!b && !b.disabled && b.getAttribute("aria-busy") !== "true";
+  },
+  TOPBAR, { timeout: 120000 }
+).catch(() => {});
+const afterKeyboard = await page.locator(`${EDITOR} h1, ${EDITOR} h2`).first().innerText().catch(() => "");
+ok("and the keyboard path does not navigate either", afterKeyboard === beforeKeyboard,
+  `"${beforeKeyboard}" -> "${afterKeyboard}"`);
+
 ok("no uncaught client errors", pageErrors.length === 0, pageErrors.join(" ; "));
 await browser.close();
 const failed = results.filter((r) => !r.pass);

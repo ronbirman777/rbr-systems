@@ -211,3 +211,55 @@ findings rather than missed ones: its word pattern could not contain
 digits (so it scanned from the middle of fixture titles), and its
 allowlist held a bare `"X"` for the platform, which substring-stripped
 every string containing that letter.
+
+---
+
+# The final hardening harnesses
+
+## `media-journey.json` — the audio file
+
+A real 2-second MP3 (ffmpeg, not a renamed text file, because the server
+reads its duration) through the real file input: the control names the
+file and the detected duration, the attachment survives a save and a
+reload, publishing puts `published.mp3` beside `draft.mp3`, and an
+anonymous guest's `<audio>` fetches `200 audio/mpeg` from `/api/media`.
+
+Two of its own checks were wrong before they were right, and both are
+worth knowing: it read the whole editor column, where OTHER tracks say
+"no file yet"; and it asserted the control's text CHANGED on upload — a
+check that can only fail on a track that already has a file.
+
+## `republish-journey.json` — the top bar actually publishes
+
+The claim is behavioural, not cosmetic: from a step that is NOT Preview &
+Publish, pressing "Republish" makes a saved-but-unpublished edit visible
+to an anonymous guest, without navigating. Plus the things that stop it
+being a foot-gun — disabled and `aria-busy` while in flight, a second
+press refused, success announced on screen — and the label contract for a
+Space that has never been published, which navigates and says so.
+
+It also pins the mechanism: the button is `type="submit"` for
+`form="studio-top-bar-publish"`. That is not decoration. Dispatching the
+Server Action programmatically published correctly but made Next navigate
+the route, show its `loading.tsx` and remount the Studio, discarding the
+pending state and the confirmation. The two paths were measured side by
+side before the mechanism was chosen.
+
+## `a11y-names.json` — names and targets, measured
+
+Walks every step of both Studios and asks the two questions a keyboard
+and a thumb ask: does this control have an accessible name, and can it be
+hit?
+
+The name check counts `aria-label`, `aria-labelledby`, a `<label for>`, a
+wrapping `<label>`, and text content — and deliberately does NOT count a
+placeholder, which is not a name.
+
+The size check measures the EFFECTIVE target: the union of the box, an
+invisible `::after` hit area, and a wrapping `<label>` for a checkbox.
+Measuring `getBoundingClientRect()` alone reported 82 controls as too
+small, most of which a finger could already hit. It reports `under44`
+(the goal) apart from `under24` (the WCAG 2.2 AA floor), because
+conflating them hides which is which.
+
+Run per width: `node docs/tasks/029/a11y-names.mjs 390`.
