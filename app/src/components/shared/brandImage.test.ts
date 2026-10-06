@@ -1,0 +1,102 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import { BrandImage } from "./brand-image";
+import { MEDIA_WIDTHS } from "@/lib/media/cachePolicy";
+
+const html = (el: Parameters<typeof renderToStaticMarkup>[0]) => renderToStaticMarkup(el);
+const SRC = "/api/media/11111111-1111-4111-8111-111111111111/meals/a/up-A/published.webp";
+
+describe("BrandImage loading priority", () => {
+  it("is lazy by default - only the LCP candidate opts out", () => {
+    const out = html(createElement(BrandImage, { src: SRC, alt: "" }));
+    expect(out).toContain('loading="lazy"');
+    expect(out).toContain('decoding="async"');
+    expect(out).not.toContain("fetchPriority");
+  });
+
+  it("loads the priority image eagerly, at high fetch priority, decoded synchronously", () => {
+    const out = html(createElement(BrandImage, { src: SRC, alt: "", priority: true }));
+    expect(out).toContain('loading="eager"');
+    expect(out).toContain('fetchPriority="high"');
+    expect(out).toContain('decoding="sync"');
+  });
+});
+
+describe("BrandImage width-aware delivery", () => {
+  it("emits no srcset unless the caller asks for one", () => {
+    // Opt-in: a call site that has not thought about its box must not
+    // start advertising widths that do not match it.
+    expect(html(createElement(BrandImage, { src: SRC, alt: "" }))).not.toContain("srcset");
+  });
+
+  it("offers the whole ladder, and the sizes the caller declared", () => {
+    const out = html(createElement(BrandImage, { src: SRC, alt: "", sizes: "100vw" }));
+    for (const w of MEDIA_WIDTHS) expect(out, String(w)).toContain(`?w=${w} ${w}w`);
+    expect(out).toContain('sizes="100vw"');
+  });
+
+  it("never rewrites a URL it did not recognise", () => {
+    // It parameterises a /api/media URL; anything else is passed through
+    // untouched, because only that route validates `w`.
+    const out = html(createElement(BrandImage, { src: "https://cdn.example/x.jpg", alt: "", sizes: "100vw" }));
+    expect(out).not.toContain("srcset");
+    expect(out).toContain("https://cdn.example/x.jpg");
+  });
+});
+
+describe("BrandImage preserves what the rollout must not change", () => {
+  it("applies the organizer's focal point as object-position", () => {
+    const out = html(createElement(BrandImage, { src: SRC, alt: "", focal: { x: 20, y: 80 } }));
+    expect(out).toContain("object-position:20% 80%");
+  });
+
+  it("lets a caller override the focal point, for a product with its own default", () => {
+    // Flow's facilitator photos anchor to the top so faces stay in frame.
+    const out = html(
+      createElement(BrandImage, { src: SRC, alt: "", focal: { x: 50, y: 50 }, style: { objectPosition: "50% 15%" } })
+    );
+    expect(out).toContain("object-position:50% 15%");
+  });
+
+  it("renders the branded fallback surface, not a hole, when there is no image", () => {
+    const out = html(createElement(BrandImage, { src: null, alt: "Pool", fallback: "var(--rbr-sand)" }));
+    expect(out).toContain("var(--rbr-sand)");
+    expect(out).toContain('aria-label="Pool"');
+    expect(out).not.toContain("<img");
+  });
+});
+
+describe("BrandImage LCP preload hint", () => {
+  // renderToStaticMarkup does not hoist, so the hint appears inline
+  // here; under the streaming renderer Next actually uses it lands at
+  // the top of <head>, which is the point of it (verified in 028D's own
+  // measurement, and the reason the hint is worth 310ms).
+  it("hints only for the LCP candidate", () => {
+    expect(html(createElement(BrandImage, { src: SRC, alt: "", sizes: "100vw" }))).not.toContain('rel="preload"');
+  });
+
+  it("hints with the same candidate set the <img> carries, and no href", () => {
+    const out = html(createElement(BrandImage, { src: SRC, alt: "", priority: true, sizes: "100vw" }));
+    expect(out).toContain('rel="preload"');
+    expect(out).toContain('as="image"');
+    expect(out).toContain('fetchPriority="high"');
+    expect(out).toContain('imageSizes="100vw"');
+    for (const w of MEDIA_WIDTHS) expect(out, String(w)).toContain(`?w=${w} ${w}w`);
+    // An href next to imageSrcSet would make the browser fetch a second,
+    // unused candidate - the opposite of what the hint is for.
+    const link = out.slice(out.indexOf("<link"), out.indexOf(">", out.indexOf("<link")));
+    expect(link).not.toContain("href=");
+  });
+
+  it("hints by href when the caller declared no box", () => {
+    const out = html(createElement(BrandImage, { src: SRC, alt: "", priority: true }));
+    const link = out.slice(out.indexOf("<link"), out.indexOf(">", out.indexOf("<link")));
+    expect(link).toContain(`href="${SRC}"`);
+    expect(link).not.toContain("imageSrcSet");
+  });
+
+  it("never hints for a surface that has no image", () => {
+    expect(html(createElement(BrandImage, { src: null, alt: "", priority: true }))).not.toContain("preload");
+  });
+});

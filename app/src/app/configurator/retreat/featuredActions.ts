@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { validateAdditionalLinks } from "./featuredValidation";
 
+import { localeFromFormData, studioMessages } from "@/lib/i18n";
 export type FeaturedStatus = "not_submitted" | "submitted" | "approved" | "rejected";
 
 export type FeaturedSubmission = {
@@ -70,14 +71,15 @@ export async function submitFeaturedListing(
   _prevState: SubmitFeaturedListingState,
   formData: FormData
 ): Promise<SubmitFeaturedListingState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in.", submission: EMPTY_SUBMISSION };
+  if (!user) return { error: t("notLoggedIn"), submission: EMPTY_SUBMISSION };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space.", submission: EMPTY_SUBMISSION };
+  if (!tenantId) return { error: t("missingSpace"), submission: EMPTY_SUBMISSION };
 
   const description = String(formData.get("description") ?? "").trim() || null;
   const location = String(formData.get("location") ?? "").trim() || null;
@@ -85,25 +87,25 @@ export async function submitFeaturedListing(
   const instagram = String(formData.get("instagram") ?? "").trim() || null;
 
   if (description && description.length > 1000) {
-    return { error: "Description is too long (max 1000 characters).", submission: await getFeaturedSubmissionForOwner(tenantId) };
+    return { error: t("descriptionTooLong"), submission: await getFeaturedSubmissionForOwner(tenantId) };
   }
   if (location && location.length > 200) {
-    return { error: "Location is too long (max 200 characters).", submission: await getFeaturedSubmissionForOwner(tenantId) };
+    return { error: t("locationTooLong"), submission: await getFeaturedSubmissionForOwner(tenantId) };
   }
   if (website && (website.length > 500 || !/^https?:\/\//i.test(website))) {
-    return { error: "Website must be a full link starting with http:// or https://.", submission: await getFeaturedSubmissionForOwner(tenantId) };
+    return { error: t("websiteMustBeHttp"), submission: await getFeaturedSubmissionForOwner(tenantId) };
   }
   if (instagram && !/^(https?:\/\/(www\.)?instagram\.com\/[A-Za-z0-9._]{1,30}\/?|@?[A-Za-z0-9._]{1,30})$/i.test(instagram)) {
-    return { error: "Instagram should be a profile link or handle (e.g. @yourretreat).", submission: await getFeaturedSubmissionForOwner(tenantId) };
+    return { error: t("instagramInvalid"), submission: await getFeaturedSubmissionForOwner(tenantId) };
   }
 
   let additionalLinks: { label: string; url: string }[] = [];
   try {
     additionalLinks = JSON.parse(String(formData.get("additionalLinks") ?? "[]"));
   } catch {
-    return { error: "Could not read your additional links.", submission: await getFeaturedSubmissionForOwner(tenantId) };
+    return { error: t("couldNotReadAdditionalLinks"), submission: await getFeaturedSubmissionForOwner(tenantId) };
   }
-  const linksError = validateAdditionalLinks(additionalLinks);
+  const linksError = validateAdditionalLinks(additionalLinks, localeFromFormData(formData));
   if (linksError) return { error: linksError, submission: await getFeaturedSubmissionForOwner(tenantId) };
 
   const { error } = await supabase.rpc("submit_featured_listing", {
@@ -117,7 +119,7 @@ export async function submitFeaturedListing(
 
   if (error) {
     if (isTableMissingError(error) || error.message?.includes("Could not find the function")) {
-      return { error: "Featured on InnerDweS isn't available in this environment yet.", submission: EMPTY_SUBMISSION };
+      return { error: t("featuredUnavailable"), submission: EMPTY_SUBMISSION };
     }
     return { error: error.message, submission: await getFeaturedSubmissionForOwner(tenantId) };
   }

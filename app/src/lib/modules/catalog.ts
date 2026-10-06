@@ -1,4 +1,5 @@
-/**
+
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";/**
  * The Time to Flow module catalog. Home/Today is mandatory - it's not in
  * this list, it always exists. Everything here is optional and organizer-
  * controlled: which ones are enabled decides what's in guest navigation,
@@ -30,3 +31,29 @@ export type OptionalModuleKey = keyof typeof OPTIONAL_MODULES;
 export const IMPLEMENTED_OPTIONAL_MODULES = (
   Object.keys(OPTIONAL_MODULES) as OptionalModuleKey[]
 ).filter((k) => OPTIONAL_MODULES[k].implemented);
+
+/**
+ * The module's name as a person reads it, in the Space's language.
+ *
+ * The catalog's own `label` stays English: it is the canonical,
+ * code-facing name used in comments, tests and logs. This is the display
+ * path, and it is the only one a Studio should render.
+ */
+export function moduleLabel(key: OptionalModuleKey, locale: Locale = DEFAULT_LOCALE): string {
+  const keys: Record<OptionalModuleKey, Parameters<typeof translate<"flow">>[2]> = {
+    schedule: "navSchedule",
+    facilitators: "moduleFacilitatorsLabel",
+    meals: "meals",
+    treatments: "treatments",
+    facilities: "facilities",
+    resources: "moduleResources",
+    arrivalInfo: "moduleArrivalInfo",
+    dailyInspiration: "moduleDailyInspiration",
+    faq: "faq",
+    customPages: "moduleCustomPages",
+    stayConnected: "stayConnected",
+    audio: "moduleAudio",
+    announcements: "moduleAnnouncements",
+  };
+  return translate(locale, "flow", keys[key]);
+}

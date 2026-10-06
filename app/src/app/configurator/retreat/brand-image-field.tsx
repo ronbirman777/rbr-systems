@@ -6,6 +6,7 @@ import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { validateImageFile, classifyServerImageError } from "@/lib/media/clientValidation";
 import { ImageUploadErrorDialog } from "@/components/image-upload-error-dialog";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 const uploadInitialState: UploadBrandImageState = { error: null, imageRef: null, imageUrl: null };
 const removeInitialState: RemoveBrandImageState = { error: null };
 
@@ -18,10 +19,11 @@ const removeInitialState: RemoveBrandImageState = { error: null };
  * represents the Space itself, shown on its My Spaces card - not the
  * Today hero, and not (yet) reused by other InnerDweS surfaces.
  */
-const RATIO_HINT: Record<BrandImageKind, string> = {
-  hero: "Recommended: landscape photo, about 7:5 (e.g. 1600×1140px) - shown full-width behind the Today greeting.",
-  space: "Recommended: landscape photo, about 3:2 - shown on this Space's card in My Spaces.",
-  logo: "Recommended: square mark, transparent PNG - shown subtly next to your retreat name on Today.",
+/** Translation keys, resolved per render in the Space language. */
+const RATIO_HINT_KEY: Record<BrandImageKind, "heroImageHint" | "spaceImageHint" | "logoImageHint"> = {
+  hero: "heroImageHint",
+  space: "spaceImageHint",
+  logo: "logoImageHint",
 };
 
 /** Preview box classes per kind - hero matches its real guest-app crop
@@ -47,6 +49,8 @@ export type BrandImageFieldProps = {
   imageRef: string | null;
   imageUrl: string | null;
   onChange: (patch: { imageRef: string | null; imageUrl: string | null }) => void;
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
 /**
@@ -57,7 +61,8 @@ export type BrandImageFieldProps = {
  * via uploadBrandImage/removeBrandImage. Requires migration 0014 to
  * actually persist against Production - see those actions' own comments.
  */
-export function BrandImageField({ tenantId, kind, label, hint, imageRef, imageUrl, onChange }: BrandImageFieldProps) {
+export function BrandImageField({ tenantId, kind, label, hint, imageRef, imageUrl, onChange, locale = DEFAULT_LOCALE }: BrandImageFieldProps) {
+  const { t } = createTranslator(locale);
   const [uploadPending, setUploadPending] = useState(false);
   const [removeState, setRemoveState] = useState<RemoveBrandImageState>(removeInitialState);
   const [removePending, setRemovePending] = useState(false);
@@ -79,6 +84,8 @@ export function BrandImageField({ tenantId, kind, label, hint, imageRef, imageUr
     }
 
     const formData = new FormData();
+
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set("kind", kind);
     formData.set("previousRef", imageRef ?? "");
@@ -97,6 +104,7 @@ export function BrandImageField({ tenantId, kind, label, hint, imageRef, imageUr
   async function handleRemove() {
     if (!imageRef) return;
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set("kind", kind);
     formData.set("imageRef", imageRef);
@@ -111,7 +119,7 @@ export function BrandImageField({ tenantId, kind, label, hint, imageRef, imageUr
   return (
     <div>
       <p className="text-[11px] mb-2" style={{ color: GUEST_BASE_PALETTE.mist }}>
-        {RATIO_HINT[kind]}
+        {t("studio", RATIO_HINT_KEY[kind])}
       </p>
       <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
       {imageUrl ? (
@@ -129,7 +137,7 @@ export function BrandImageField({ tenantId, kind, label, hint, imageRef, imageUr
               className="text-[11px] font-medium px-3 py-1.5 rounded-full bg-white/90 disabled:opacity-50"
               style={{ color: GUEST_BASE_PALETTE.forest }}
             >
-              {uploadPending ? "Uploading…" : "Replace"}
+              {uploadPending ? t("common", "uploading") : t("common", "replace")}
             </button>
             <button
               type="button"
@@ -138,7 +146,7 @@ export function BrandImageField({ tenantId, kind, label, hint, imageRef, imageUr
               className="text-[11px] font-medium px-3 py-1.5 rounded-full bg-white/90 disabled:opacity-50"
               style={{ color: GUEST_BASE_PALETTE.dusk }}
             >
-              {removePending ? "Removing…" : "Remove"}
+              {removePending ? t("common", "removing") : t("common", "remove")}
             </button>
           </div>
         </div>
@@ -150,7 +158,7 @@ export function BrandImageField({ tenantId, kind, label, hint, imageRef, imageUr
           className={`${PREVIEW_BOX_CLASS[kind]} rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-2 transition-all disabled:opacity-60`}
           style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, color: GUEST_BASE_PALETTE.mist }}
         >
-          <span className="text-[13px] font-medium">{uploadPending ? "Uploading…" : label}</span>
+          <span className="text-[13px] font-medium">{uploadPending ? t("common", "uploading") : label}</span>
           <span className="text-[11px]">{hint}</span>
         </button>
       )}

@@ -12,6 +12,7 @@ import {
   type TeachSettings,
 } from "./schemas";
 import { expandClassesForWindow, guestWindow } from "./recurrence";
+import { DEFAULT_LOCALE, resolveLocale, translate, type Locale } from "@/lib/i18n";
 
 /**
  * Everything the Time to Teach Guest App renders. Built from the published
@@ -25,6 +26,14 @@ import { expandClassesForWindow, guestWindow } from "./recurrence";
  */
 export type TeachGuestData = {
   teacherName: string;
+  /**
+   * The Space's system language, read ONLY from the published snapshot
+   * (modules.spaceSettings, published by migration 0031). A guest never
+   * triggers a private module_settings read, and a device language never
+   * overrides it. Absent/unknown resolves to English, which is exactly
+   * how every Space published before this renders.
+   */
+  locale: Locale;
   timezone: string;
   todayIso: string;
   nowTime: string;
@@ -52,17 +61,19 @@ export type PublishedTeachRow = {
   modules: unknown;
 };
 
-export function brandFromPublishedTheme(name: string, theme: unknown): BrandConfig {
+export function brandFromPublishedTheme(name: string, theme: unknown, locale: Locale = DEFAULT_LOCALE): BrandConfig {
   const parsed = publishedThemeSchema.safeParse(theme);
   const t = parsed.success ? parsed.data : DEFAULT_PUBLISHED_THEME;
   return {
-    name: name || "Teacher",
+    // Defensive only - a published Space always has a name.
+    name: name || translate(locale, "teach", "teacherFallback"),
     logoRef: null,
     palette: t.palette as PaletteKey,
     customPrimary: t.customPrimary ?? null,
     customSecondary: t.customSecondary ?? null,
     customNavigation: t.customNavigation ?? null,
     customText: t.customText ?? null,
+    customSurface: t.customSurface ?? undefined,
     atmosphere: t.atmosphere as AtmosphereKey,
     imageStyle: t.imageStyle ?? "rounded",
   };
@@ -92,9 +103,12 @@ export function parsePublishedTeachSpace(space: PublishedTeachRow): TeachGuestDa
   const heroImageRef = brandMedia.success ? (brandMedia.data.hero?.imageRef ?? null) : null;
 
   const timezone = space.timezone || DEFAULT_TIMEZONE;
+  const spaceSettings = (modules.spaceSettings ?? {}) as { locale?: unknown };
+  const locale = resolveLocale(spaceSettings.locale);
 
   const data: Omit<TeachGuestData, "mediaUrls"> = {
     teacherName: space.name,
+    locale,
     timezone,
     todayIso: todayInTimezone(timezone),
     nowTime: currentTimeInTimezone(timezone),

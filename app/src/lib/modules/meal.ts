@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { imagePositionSchema } from "./imagePosition";
 
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
 /**
  * The explicit schema for the "meals" module_key. Reuses module_items'
  * common columns (name->title, description, imageRef, sort_order) plus a
@@ -29,3 +30,22 @@ export const mealSchema = z.object({
 export type PublicMeal = z.infer<typeof mealSchema>;
 export type EditableMeal = PublicMeal & { id: string; imageUrl?: string | null };
 export type DisplayMeal = PublicMeal & { imageUrl: string | null };
+
+/**
+ * The meal kind as a person reads it, in the Space's language.
+ *
+ * The stored value stays the canonical English enum ("breakfast"); only
+ * the label is translated. Both the Studio's picker and the Guest meals
+ * screen read it from here, so the two cannot disagree.
+ */
+export function mealTypeLabel(type: MealType, locale: Locale = DEFAULT_LOCALE): string {
+  const keys = {
+    breakfast: "mealBreakfast",
+    brunch: "mealBrunch",
+    lunch: "mealLunch",
+    dinner: "mealDinner",
+    special: "mealSpecial",
+    other: "sessionMeal",
+  } as const;
+  return translate(locale, "flow", keys[type]);
+}

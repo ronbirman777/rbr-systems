@@ -1,21 +1,31 @@
 /**
  * Shared Studio status vocabulary, used by every product's Studio so the
- * same state always reads the same way. Pure strings/functions - no
- * publication architecture here: "published" simply means the Space has a
- * published_at stamp.
+ * same state always reads the same way. No publication architecture
+ * here: "published" simply means the Space has a published_at stamp.
+ *
+ * These are functions of the Space locale rather than constants. They
+ * were constants, and browser QA caught the consequence: this module is
+ * shared infrastructure rather than a product surface, so it sat outside
+ * the string audit's roots and kept returning English into an otherwise
+ * fully translated Hebrew and German Studio.
  */
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
 
 export type StudioPublishState = "draft" | "published";
 
-export const STUDIO_STATUS_LABEL: Record<StudioPublishState, string> = {
-  draft: "Draft",
-  published: "Published",
-};
+export function studioStatusLabel(
+  state: StudioPublishState,
+  locale: Locale = DEFAULT_LOCALE
+): string {
+  return translate(locale, "studio", state === "published" ? "published" : "draft");
+}
 
-export const PREVIEW_DRAFT_LABEL = "Previewing current draft";
-export const PREVIEW_DRAFT_CAPTION = "Updates as you edit · guests see it after you publish";
-export const SAVED_LABEL = "All changes saved";
-export const UNSAVED_LABEL = "Unsaved changes";
+export function previewDraftLabel(locale: Locale = DEFAULT_LOCALE): string {
+  return translate(locale, "studio", "previewingDraft");
+}
+export function previewDraftCaption(locale: Locale = DEFAULT_LOCALE): string {
+  return translate(locale, "studio", "previewDraftCaption");
+}
 
 export function studioPublishState(publishedAt: string | null | undefined): StudioPublishState {
   return publishedAt ? "published" : "draft";
@@ -29,7 +39,10 @@ export function formatPublishedAtUtc(publishedAt: string | null | undefined): st
   return `${d.toISOString().slice(0, 16).replace("T", " ")} UTC`;
 }
 
-export function saveStatusLabel(opts: { saving: boolean; dirty: boolean }): string {
-  if (opts.saving) return "Saving…";
-  return opts.dirty ? UNSAVED_LABEL : SAVED_LABEL;
+export function saveStatusLabel(
+  opts: { saving: boolean; dirty: boolean },
+  locale: Locale = DEFAULT_LOCALE
+): string {
+  if (opts.saving) return translate(locale, "common", "savingNow");
+  return translate(locale, "studio", opts.dirty ? "unsavedChangesShort" : "allChangesSaved");
 }

@@ -1,0 +1,108 @@
+{
+ "cells": 42,
+ "assertionsFailed": 0,
+ "failures": [],
+ "sample": [
+  {
+   "engine": "webkit",
+   "product": "teach",
+   "locale": "en",
+   "width": 320,
+   "dpr": 3,
+   "steps": {
+    "home#1": {
+     "overflowX": 0,
+     "navGap": 0,
+     "navButtons": 4,
+     "dir": "ltr",
+     "lang": "en",
+     "dirAuto": 5,
+     "images": 3,
+     "firstBtnCentre": 46,
+     "viewportWidth": 320,
+     "broken": [],
+     "undersized": [],
+     "oversized": []
+    },
+    "about#1": {
+     "overflowX": 0,
+     "navGap": 0,
+     "navButtons": 4,
+     "dir": "ltr",
+     "lang": "en",
+     "dirAuto": 1,
+     "images": 1,
+     "firstBtnCentre": 46,
+     "viewportWidth": 320,
+     "broken": [],
+     "undersized": [],
+     "oversized": []
+    },
+    "explore#1": {
+     "overflowX": 0,
+     "navGap": 0,
+     "navButtons": 4,
+     "dir": "ltr",
+     "lang": "en",
+     "dirAuto": 0,
+     "images": 3,
+     "firstBtnCentre": 46,
+     "viewportWidth": 320,
+     "broken": [],
+     "undersized": [],
+     "oversized": []
+    },
+    "home#2": {
+     "overflowX": 0,
+     "navGap": 0,
+     "navButtons": 4,
+     "dir": "ltr",
+     "lang": "en",
+     "dirAuto": 5,
+     "images": 3,
+     "firstBtnCentre": 46,
+     "viewportWidth": 320,
+     "broken": [],
+     "undersized": [],
+     "oversized": []
+    },
+    "about#2": {
+     "overflowX": 0,
+     "navGap": 0,
+     "navButtons": 4,
+     "dir": "ltr",
+     "lang": "en",
+     "dirAuto": 1,
+     "images": 1,
+     "firstBtnCentre": 46,
+     "viewportWidth": 320,
+     "broken": [],
+     "undersized": [],
+     "oversized": []
+    },
+    "explore#2": {
+     "overflowX": 0,
+     "navGap": 0,
+     "navButtons": 4,
+     "dir": "ltr",
+     "lang": "en",
+     "dirAuto": 0,
+     "images": 3,
+     "firstBtnCentre": 46,
+     "viewportWidth": 320,
+     "broken": [],
+     "undersized": [],
+     "oversized": []
+    },
+    "landscape": {
+     "overflowX": 0,
+     "navGap": 264
+    },
+    "back-to-portrait": {
+     "overflowX": 0,
+     "navGap": 0
+    }
+   }
+  }
+ ]
+}

@@ -4,7 +4,10 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import { TodayScreen } from "./today-screen";
 import { ScheduleScreen } from "./schedule-screen";
 import { FacilitatorsScreen } from "./facilitators-screen";
-import { ExploreScreen } from "./guest/explore-screen";
+import { ExploreScreen, EXPLORE_COVER_SIZES, EXPLORE_CUSTOM_PAGE_SIZES } from "./guest/explore-screen";
+import { FLOW_SIZES } from "./flow-media-sizes";
+import { MediaPrefetch } from "./shared/media-prefetch";
+import type { MediaPrefetchItem } from "@/lib/media/prefetch";
 import { TodayIcon, ScheduleIcon, TeamIcon, ExploreIcon } from "./guest/icons";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
@@ -20,6 +23,7 @@ import type { DisplayCustomPage } from "@/lib/modules/customPage";
 import { EMPTY_STAY_CONNECTED, type StayConnected } from "@/lib/modules/stayConnected";
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
 import { getDailyQuote } from "@/lib/content/dailyQuotes";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import type { ImagePosition } from "@/lib/modules/imagePosition";
 
 export type GuestAppProps = {
@@ -52,6 +56,9 @@ export type GuestAppProps = {
    * absent/null meaning "no cover set, use the existing fallback" (see
    * ExploreScreen). */
   moduleCoverImages?: Record<string, { imageUrl: string | null; imagePosition: ImagePosition }>;
+  /** The Space's system language. Defaults to English so the Studio
+   * preview and every caller written before CP3 keep working. */
+  locale?: Locale;
 };
 
 /**
@@ -76,7 +83,7 @@ const EXPLORE_MODULE_KEYS: OptionalModuleKey[] = [
 
 type TabDef = {
   key: TabKey;
-  label: string;
+  labelKey: "navToday" | "navSchedule" | "navTeam" | "navExplore";
   Icon: (props: { active?: boolean }) => ReactNode;
   render: (props: GuestAppProps, goTo: (key: TabKey) => void) => ReactNode;
 };
@@ -84,7 +91,7 @@ type TabDef = {
 const GUEST_TABS: TabDef[] = [
   {
     key: "today",
-    label: "Today",
+    labelKey: "navToday",
     Icon: TodayIcon,
     render: (props, goTo) => (
       <TodayScreen
@@ -97,26 +104,35 @@ const GUEST_TABS: TabDef[] = [
         nowTime={props.nowTime}
         onViewSchedule={props.enabledModules.includes("schedule") ? () => goTo("schedule") : undefined}
         dailyQuote={props.enabledModules.includes("dailyInspiration") ? getDailyQuote(props.todayIso) : null}
+        locale={props.locale ?? DEFAULT_LOCALE}
       />
     ),
   },
   {
     key: "schedule",
-    label: "Schedule",
+    labelKey: "navSchedule",
     Icon: ScheduleIcon,
     render: (props) => (
-      <ScheduleScreen brand={props.brand} schedule={props.schedule} todayIso={props.todayIso} nowTime={props.nowTime} />
+      <ScheduleScreen
+        brand={props.brand}
+        schedule={props.schedule}
+        todayIso={props.todayIso}
+        nowTime={props.nowTime}
+        locale={props.locale ?? DEFAULT_LOCALE}
+      />
     ),
   },
   {
     key: "facilitators",
-    label: "Team",
+    labelKey: "navTeam",
     Icon: TeamIcon,
-    render: (props) => <FacilitatorsScreen brand={props.brand} facilitators={props.facilitators} />,
+    render: (props) => (
+      <FacilitatorsScreen brand={props.brand} facilitators={props.facilitators} locale={props.locale ?? DEFAULT_LOCALE} />
+    ),
   },
   {
     key: "explore",
-    label: "Explore",
+    labelKey: "navExplore",
     Icon: ExploreIcon,
     render: (props) => (
       <ExploreScreen
@@ -130,48 +146,53 @@ const GUEST_TABS: TabDef[] = [
         customPages={props.customPages ?? []}
         stayConnected={props.stayConnected ?? EMPTY_STAY_CONNECTED}
         moduleCoverImages={props.moduleCoverImages ?? {}}
+        locale={props.locale ?? DEFAULT_LOCALE}
       />
     ),
   },
 ];
 
-function StatusBar() {
-  return (
-    <div className="flex-shrink-0 h-11 flex items-center justify-between px-7">
-      <span
-        style={{ color: "var(--rbr-forest)", fontFamily: "var(--rbr-font-ui)" }}
-        className="text-[13px] font-semibold tracking-tight"
-      >
-        9:41
-      </span>
-      <div className="flex items-center gap-1.5">
-        <svg className="w-4 h-3" viewBox="0 0 17 12" fill="var(--rbr-forest)">
-          <rect x="0" y="4" width="3" height="8" rx="0.5" opacity="0.25" />
-          <rect x="4.5" y="2.5" width="3" height="9.5" rx="0.5" opacity="0.5" />
-          <rect x="9" y="1" width="3" height="11" rx="0.5" opacity="0.75" />
-          <rect x="13.5" y="0" width="3" height="12" rx="0.5" />
-        </svg>
-        <svg className="w-4 h-3" viewBox="0 0 20 14" fill="none" stroke="var(--rbr-forest)" strokeWidth="1.5">
-          <path d="M1 5C4.5 2 8.5 0.5 10 0.5C11.5 0.5 15.5 2 19 5" strokeLinecap="round" />
-          <path d="M3.5 7.5C6.2 5 8.5 4 10 4C11.5 4 13.8 5 16.5 7.5" strokeLinecap="round" />
-          <path d="M6.5 10C8 8.5 9.2 7.8 10 7.8C10.8 7.8 12 8.5 13.5 10" strokeLinecap="round" />
-          <circle cx="10" cy="12.5" r="1" fill="var(--rbr-forest)" stroke="none" />
-        </svg>
-        <div className="flex items-center">
-          <div
-            className="w-[22px] h-[11px] rounded-[2.5px] p-px"
-            style={{ border: "1px solid color-mix(in srgb, var(--rbr-forest) 60%, transparent)" }}
-          >
-            <div className="w-[16px] h-full rounded-[1.5px]" style={{ background: "var(--rbr-forest)" }} />
-          </div>
-          <div
-            className="w-[2px] h-[5px] rounded-r-sm ml-px"
-            style={{ background: "color-mix(in srgb, var(--rbr-forest) 50%, transparent)" }}
-          />
-        </div>
-      </div>
-    </div>
-  );
+
+/**
+ * The media on the tabs the visitor is NOT looking at, in the order the
+ * bottom nav offers them - so the tab they are most likely to press next
+ * is warmed first, and the prefetcher's cap falls on the least likely.
+ *
+ * Only images that will actually be rendered are listed: a module the
+ * organizer has not enabled contributes nothing even if a stale cover
+ * survives in the snapshot. Each entry carries the SAME `sizes` its
+ * screen will use, imported from that screen rather than retyped here,
+ * because a mismatch would warm the wrong render and cost two
+ * downloads instead of one.
+ *
+ * Deliberately omitted: Schedule, which has no images, and the Explore
+ * SUB-screens (Meals, Treatments, Facilities, each item's own photo).
+ * Those are two presses deep, so warming them would be speculation on
+ * speculation - the kind of "preload the whole media library" the brief
+ * rules out.
+ */
+export function guestPrefetchItems(props: GuestAppProps, activeTab: TabKey): MediaPrefetchItem[] {
+  const { enabledModules } = props;
+  const items: MediaPrefetchItem[] = [];
+
+  if (activeTab !== "facilitators" && enabledModules.includes("facilitators")) {
+    for (const f of props.facilitators) items.push({ src: f.imageUrl, sizes: FLOW_SIZES.frame });
+  }
+
+  if (activeTab !== "explore") {
+    for (const [moduleKey, sizes] of Object.entries(EXPLORE_COVER_SIZES)) {
+      if (!enabledModules.includes(moduleKey as OptionalModuleKey)) continue;
+      const cover = props.moduleCoverImages?.[moduleKey];
+      if (cover?.imageUrl) items.push({ src: cover.imageUrl, sizes });
+    }
+    if (enabledModules.includes("customPages")) {
+      for (const page of props.customPages ?? []) {
+        items.push({ src: page.imageUrl, sizes: EXPLORE_CUSTOM_PAGE_SIZES });
+      }
+    }
+  }
+
+  return items;
 }
 
 /**
@@ -189,25 +210,37 @@ function StatusBar() {
 export function GuestApp(props: GuestAppProps) {
   const { enabledModules, brand } = props;
   const vars = deriveThemeVars(brand) as CSSProperties;
+  const { t } = createTranslator(props.locale ?? DEFAULT_LOCALE);
 
   const hasExplore = EXPLORE_MODULE_KEYS.some((k) => enabledModules.includes(k));
-  const visibleTabs = GUEST_TABS.filter((t) => {
-    if (t.key === "today") return true;
-    if (t.key === "explore") return hasExplore;
-    return enabledModules.includes(t.key as OptionalModuleKey);
+  const visibleTabs = GUEST_TABS.filter((tab) => {
+    if (tab.key === "today") return true;
+    if (tab.key === "explore") return hasExplore;
+    return enabledModules.includes(tab.key as OptionalModuleKey);
   });
 
   const [active, setActive] = useState<TabKey>("today");
-  const current = visibleTabs.find((t) => t.key === active) ?? visibleTabs[0];
+  const current = visibleTabs.find((tab) => tab.key === active) ?? visibleTabs[0];
 
   return (
     <div
-      style={{ ...vars, background: "var(--rbr-background)" }}
+      style={{
+        ...vars,
+        background: "var(--rbr-background)",
+        // The real inset, not a drawn status bar. On a device with a
+        // notch this keeps content clear of it; inside the Studio's
+        // preview frame, and on any screen without one, it is 0 and the
+        // layout is unchanged.
+        paddingTop: "env(safe-area-inset-top)",
+      }}
       className="relative w-full h-full flex flex-col overflow-hidden"
     >
-      <StatusBar />
-
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{current.render(props, setActive)}</div>
+
+      {/* Step 4 of the loading ladder - renders nothing, and starts only
+          once this screen has finished loading and the main thread is
+          idle, so it can never delay the hero above. */}
+      <MediaPrefetch items={guestPrefetchItems(props, active)} />
 
       {visibleTabs.length > 1 && (
         <div
@@ -219,16 +252,16 @@ export function GuestApp(props: GuestAppProps) {
           }}
         >
           <div className="flex items-stretch">
-            {visibleTabs.map((t) => {
-              const isActive = current.key === t.key;
+            {visibleTabs.map((tab) => {
+              const isActive = current.key === tab.key;
               return (
                 <button
-                  key={t.key}
+                  key={tab.key}
                   type="button"
-                  onClick={() => setActive(t.key)}
+                  onClick={() => setActive(tab.key)}
                   className="flex-1 flex flex-col items-center gap-1 pt-2.5 pb-1 transition-opacity active:opacity-60"
                 >
-                  <t.Icon active={isActive} />
+                  <tab.Icon active={isActive} />
                   <span
                     style={{
                       color: isActive ? "var(--rbr-navigation)" : "var(--rbr-text-muted)",
@@ -236,7 +269,7 @@ export function GuestApp(props: GuestAppProps) {
                     }}
                     className="text-[10px] tracking-wide font-medium transition-colors"
                   >
-                    {t.label}
+                    {t("flow", tab.labelKey)}
                   </span>
                   <div
                     className="w-4 h-[2px] rounded-full transition-all"
@@ -246,7 +279,10 @@ export function GuestApp(props: GuestAppProps) {
               );
             })}
           </div>
-          <div className="h-4" />
+          {/* The home-indicator gap, measured rather than assumed: a
+              floor of 16px keeps the tab row off the very edge on a
+              device that reports no inset at all. */}
+          <div style={{ height: "max(env(safe-area-inset-bottom), 16px)" }} />
         </div>
       )}
     </div>

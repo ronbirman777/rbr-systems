@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Fraunces, DM_Serif_Display, DM_Sans } from "next/font/google";
 import { SITE_URL } from "@/lib/site-url";
 import "./globals.css";
@@ -41,6 +41,28 @@ const dmSans = DM_Sans({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600"],
 });
+
+/**
+ * `viewportFit: "cover"` is what makes env(safe-area-inset-*) resolve to
+ * anything other than zero.
+ *
+ * Without it the page is laid out inside the notch-safe rectangle and
+ * every inset reads 0, which is why the Guest App's existing
+ * `pb-[max(env(safe-area-inset-bottom),14px)]` had been silently
+ * collapsing to a flat 14px on every device since it was written. Opting
+ * in means the page now extends under the notch and the home indicator,
+ * so everything that sits against an edge has to pad itself with the real
+ * inset - which the Guest shells now do.
+ *
+ * `interactiveWidget: "resizes-content"` keeps the on-screen keyboard
+ * from floating a fixed bottom bar over the field being typed into.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
+};
 
 export const metadata: Metadata = {
   // Required so page-level openGraph/twitter image paths (see the

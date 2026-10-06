@@ -12,6 +12,8 @@ import { EmptyState } from "@/components/studio/empty-state";
 import { saveTreatments, type SaveTreatmentsState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
+import { createTranslator } from "@/lib/i18n";
+import { ForwardArrow } from "./studio-ui";
 const initialState: SaveTreatmentsState = { error: null };
 
 export function blankTreatment(): EditableTreatment {
@@ -44,7 +46,8 @@ export type TreatmentsStepProps = {
  * names Treatments as reusing this exact structure). Same underlying
  * state/persistence as before.
  */
-export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, onContinue, onDirty, onSaved, registerSave }: TreatmentsStepProps) {
+export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, onContinue, onDirty, onSaved, registerSave, locale }: TreatmentsStepProps) {
+  const { t } = createTranslator(locale);
   const [state, setState] = useState<SaveTreatmentsState>(initialState);
   const [pending, setPending] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -69,6 +72,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
 
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set(
       "items",
@@ -100,7 +104,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
         )
       )
     );
-    const ids = treatments.map((t) => t.id);
+    const ids = treatments.map((item) => item.id);
     setPending(true);
     const result = await enqueueItemsOp(ids, () => saveTreatments(initialState, formData));
     setPending(false);
@@ -115,22 +119,22 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
 
   useRegisteredSave(registerSave, handleSave);
 
-  const editing = editId ? (treatments.find((t) => t.id === editId) ?? null) : null;
+  const editing = editId ? (treatments.find((item) => item.id === editId) ?? null) : null;
   const editIdx = editing ? treatments.indexOf(editing) : -1;
 
   return (
     <div className="max-w-2xl">
-      <StudioHeading>Present your treatments</StudioHeading>
+      <StudioHeading>{t("flow", "treatmentsStepTitle")}</StudioHeading>
       <StudioIntro>
-        What&apos;s available, and how to access it. Not a booking system yet - guests are told how to book.
+        {t("flow", "treatmentsStepBody")}
       </StudioIntro>
 
       <div className="space-y-3 mb-4">
-        {treatments.map((t) => {
-          const isEditing = editId === t.id;
+        {treatments.map((item) => {
+          const isEditing = editId === item.id;
           return (
             <div
-              key={t.id}
+              key={item.id}
               className="group flex items-center gap-4 rounded-2xl border overflow-hidden bg-white transition-all"
               style={{
                 borderColor: isEditing ? `${GUEST_BASE_PALETTE.forest}4d` : `${GUEST_BASE_PALETTE.sand}80`,
@@ -138,47 +142,47 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
               }}
             >
               <div className="w-20 h-20 flex-shrink-0" style={{ background: GUEST_BASE_PALETTE.parchmentDeep }}>
-                {t.imageUrl ? (
+                {item.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={t.imageUrl}
-                    alt={t.name}
+                    src={item.imageUrl}
+                    alt={item.name}
                     className="w-full h-full object-cover"
-                    style={{ objectPosition: objectPositionStyle(t.imagePosition) }}
+                    style={{ objectPosition: objectPositionStyle(item.imagePosition) }}
                   />
                 ) : null}
               </div>
               <div className="flex-1 py-3 min-w-0 pr-3">
                 <div className="flex items-baseline gap-2 mb-0.5">
-                  {t.durationMinutes && (
+                  {item.durationMinutes && (
                     <span className="text-[11px] font-medium" style={{ color: GUEST_BASE_PALETTE.clay }}>
-                      {t.durationMinutes} min
+                      {item.durationMinutes} min
                     </span>
                   )}
                 </div>
                 <p className="text-[13px] font-medium truncate" style={{ color: GUEST_BASE_PALETTE.forest }}>
-                  {t.name || "Untitled treatment"}
+                  {item.name || t("flow", "untitledTreatment")}
                 </p>
                 <p className="text-[11px] mt-0.5 truncate" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                  {[t.location, t.bookingInfo].filter(Boolean).join(" · ")}
+                  {[item.location, item.bookingInfo].filter(Boolean).join(" · ")}
                 </p>
               </div>
               <div className="flex flex-col gap-1.5 pr-4 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                 <button
                   type="button"
-                  onClick={() => setEditId(isEditing ? null : t.id)}
+                  onClick={() => setEditId(isEditing ? null : item.id)}
                   className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
-                  Edit
+                  {t("common", "edit")}
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleRemove(t.id)}
+                  onClick={() => handleRemove(item.id)}
                   className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
-                  Remove
+                  {t("common", "remove")}
                 </button>
               </div>
             </div>
@@ -188,7 +192,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
 
       {treatments.length === 0 && (
         <div className="mb-4">
-          <EmptyState title="No treatments yet" body="Add the treatments or sessions guests can book, with duration and a short description. Use + Add Treatment below to start." />
+          <EmptyState title={t("flow", "noTreatmentsYet")} body={t("flow", "noTreatmentsBody")} />
         </div>
       )}
 
@@ -208,7 +212,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
               Editing {editing.name || "treatment"}
             </h4>
             <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-              Done
+              {t("common", "done")}
             </button>
           </div>
           <div className="grid grid-cols-3 gap-4">
@@ -226,7 +230,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                 onChange={(patch) => update(editing.id, { ...patch, imagePosition: null })}
                 previewAspect="39/20"
                 previewPosition={objectPositionStyle(editing.imagePosition)}
-                ratioHint="Recommended: landscape photo, about 2:1."
+                ratioHint={t("studio", "photoLandscape2to1")}
               />
               {editing.imageUrl && (
                 <FocalPointPicker
@@ -234,32 +238,32 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                   position={editing.imagePosition}
                   onChange={(imagePosition) => update(editing.id, { imagePosition })}
                   aspect="39/20"
-                  label={`${editing.name || "Treatment"} photo`}
+                  label={t("studio", "coverImage")}
                 />
               )}
             </div>
             <div className="col-span-2 space-y-3">
               <div>
-                <StudioLabel>Treatment name</StudioLabel>
+                <StudioLabel>{t("flow", "treatmentName")}</StudioLabel>
                 <input
                   value={editing.name}
                   onChange={(e) => update(editing.id, { name: e.target.value })}
-                  placeholder="e.g. Traditional Thai Massage"
+                  placeholder={t("flow", "treatmentNamePlaceholder")}
                   className={STUDIO_INPUT_CLASS}
                 />
               </div>
               <div>
-                <StudioLabel>Short description</StudioLabel>
+                <StudioLabel>{t("flow", "shortDescription")}</StudioLabel>
                 <input
                   value={editing.shortDescription ?? ""}
                   onChange={(e) => update(editing.id, { shortDescription: e.target.value || null })}
-                  placeholder="One line for the entry card"
+                  placeholder={t("flow", "shortDescriptionPlaceholder")}
                   className={STUDIO_INPUT_CLASS}
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <StudioLabel>Duration (minutes)</StudioLabel>
+                  <StudioLabel>{t("flow", "durationMinutes")}</StudioLabel>
                   <input
                     type="number"
                     min={1}
@@ -270,39 +274,39 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                   />
                 </div>
                 <div>
-                  <StudioLabel>Practitioner / provider</StudioLabel>
+                  <StudioLabel>{t("flow", "practitioner")}</StudioLabel>
                   <input
                     value={editing.provider ?? ""}
                     onChange={(e) => update(editing.id, { provider: e.target.value || null })}
-                    placeholder="Optional"
+                    placeholder={t("common", "optional")}
                     className={STUDIO_INPUT_CLASS}
                   />
                 </div>
                 <div>
-                  <StudioLabel>Location</StudioLabel>
+                  <StudioLabel>{t("common", "location")}</StudioLabel>
                   <input
                     value={editing.location ?? ""}
                     onChange={(e) => update(editing.id, { location: e.target.value || null })}
-                    placeholder="e.g. Spa Room 2"
+                    placeholder={t("flow", "treatmentLocationPlaceholder")}
                     className={STUDIO_INPUT_CLASS}
                   />
                 </div>
                 <div>
-                  <StudioLabel>Booking info</StudioLabel>
+                  <StudioLabel>{t("flow", "bookingInfo")}</StudioLabel>
                   <input
                     value={editing.bookingInfo ?? ""}
                     onChange={(e) => update(editing.id, { bookingInfo: e.target.value || null })}
-                    placeholder="e.g. Book at reception"
+                    placeholder={t("flow", "bookingInfoPlaceholder")}
                     className={STUDIO_INPUT_CLASS}
                   />
                 </div>
               </div>
               <div>
-                <StudioLabel>Full description</StudioLabel>
+                <StudioLabel>{t("flow", "fullDescription")}</StudioLabel>
                 <textarea
                   value={editing.description ?? ""}
                   onChange={(e) => update(editing.id, { description: e.target.value || null })}
-                  placeholder="What this treatment involves…"
+                  placeholder={t("flow", "fullDescriptionPlaceholder")}
                   rows={2}
                   className={`${STUDIO_INPUT_CLASS} resize-none`}
                 />
@@ -324,7 +328,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
           onClick={onBack}
           className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3"
         >
-          Back
+          {t("common", "back")}
         </button>
         <button
           type="button"
@@ -332,14 +336,14 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
           onClick={handleSave}
           className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
         >
-          {pending ? "Saving…" : "Save Treatments"}
+          {pending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "treatments") })}
         </button>
         <button
           type="button"
           onClick={onContinue}
           className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
         >
-          Continue →
+          {t("common", "next")} <ForwardArrow />
         </button>
       </div>
     </div>

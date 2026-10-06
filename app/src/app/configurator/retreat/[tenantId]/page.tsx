@@ -22,6 +22,8 @@ import { getGuestAccessSettingsForOwner } from "../guestAccessActions";
 import { getFeaturedSubmissionForOwner } from "../featuredActions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { SPACE_SETTINGS_KEY, parseSpaceSettings } from "@/lib/spaceSettings";
+import { DEFAULT_LOCALE } from "@/lib/i18n";
 /** Signed preview URLs are resolved server-side, through the same
  * RLS-scoped session as everything else on this page - the organizer can
  * only ever get a signed URL for their own tenant's objects. */
@@ -42,12 +44,13 @@ export default async function ResumeRetreatConfiguratorPage({
   const { step } = await searchParams;
   const { supabase, tenant } = await loadStudioTenant(tenantId, "retreat");
 
-  // PRE-MIGRATION WARNING: custom_navigation/custom_text (0015) and
-  // custom_secondary/hero_image_ref/space_image_ref/logo_ref (0014) must
-  // all exist on the same database this code runs against - this select
-  // will error for every tenant, breaking this entire page, otherwise.
-  // Intentional coupling, not an oversight - do not deploy this code
-  // ahead of whichever of those migrations hasn't applied yet.
+  // PRE-MIGRATION WARNING: custom_surface (0032), custom_navigation/
+  // custom_text (0015) and custom_secondary/hero_image_ref/
+  // space_image_ref/logo_ref (0014) must all exist on the same database
+  // this code runs against - this select will error for every tenant,
+  // breaking this entire page, otherwise. Intentional coupling, not an
+  // oversight - do not deploy this code ahead of whichever of those
+  // migrations hasn't applied yet.
   // Task 011 (item C, Space-opening performance): these 12 reads are all
   // independent of one another - every one of them is filtered by
   // tenantId alone, none consumes another's result - so there is no
@@ -71,17 +74,19 @@ export default async function ResumeRetreatConfiguratorPage({
     { data: stayConnectedRow },
     { data: moduleConfigRows },
     { data: published },
+    { data: spaceSettingsRow },
   ] = await Promise.all([
-    // PRE-MIGRATION WARNING: custom_navigation/custom_text (0015) and
-    // custom_secondary/hero_image_ref/space_image_ref/logo_ref (0014) must
-    // all exist on the same database this code runs against - this select
-    // will error for every tenant, breaking this entire page, otherwise.
-    // Intentional coupling, not an oversight - do not deploy this code
-    // ahead of whichever of those migrations hasn't applied yet.
+    // PRE-MIGRATION WARNING: custom_surface (0032), custom_navigation/
+    // custom_text (0015) and custom_secondary/hero_image_ref/
+    // space_image_ref/logo_ref (0014) must all exist on the same database
+    // this code runs against - this select will error for every tenant,
+    // breaking this entire page, otherwise. Intentional coupling, not an
+    // oversight - do not deploy this code ahead of whichever of those
+    // migrations hasn't applied yet.
     supabase
       .from("brand_configs")
       .select(
-        "palette, atmosphere, custom_primary, custom_secondary, custom_navigation, custom_text, hero_image_ref, space_image_ref, logo_ref"
+        "palette, atmosphere, custom_primary, custom_secondary, custom_navigation, custom_text, custom_surface, hero_image_ref, space_image_ref, logo_ref"
       )
       .eq("tenant_id", tenantId)
       .maybeSingle(),
@@ -141,6 +146,12 @@ export default async function ResumeRetreatConfiguratorPage({
       .maybeSingle(),
     supabase.from("module_configs").select("module_key, enabled, image_ref, image_position").eq("tenant_id", tenantId),
     supabase.from("published_spaces").select("published_at, modules").eq("tenant_id", tenantId).maybeSingle(),
+    supabase
+      .from("module_settings")
+      .select("data")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", SPACE_SETTINGS_KEY)
+      .maybeSingle(),
   ]);
 
   // Share Your Space's Share Card needs the PUBLISHED Hero image, not the
@@ -336,11 +347,13 @@ export default async function ResumeRetreatConfiguratorPage({
         initialSlug={tenant.slug ?? null}
         initialStep={step === "publish" ? "publish" : undefined}
         initialTimezone={tenant.timezone ?? DEFAULT_TIMEZONE}
+        initialLocale={parseSpaceSettings(spaceSettingsRow?.data).locale ?? DEFAULT_LOCALE}
         initialPalette={brandInitial.initialPalette as PaletteKey}
         initialAtmosphere={brandInitial.initialAtmosphere as AtmosphereKey}
         initialCustomPrimary={brandInitial.initialCustomPrimary}
         initialCustomSecondary={brandInitial.initialCustomSecondary}
         initialCustomNavigation={brandInitial.initialCustomNavigation}
+        initialCustomSurface={brandInitial.initialCustomSurface}
         initialCustomText={brandInitial.initialCustomText}
         initialHeroImageRef={brandInitial.initialHeroImageRef}
         initialHeroImageUrl={initialHeroImageUrl}

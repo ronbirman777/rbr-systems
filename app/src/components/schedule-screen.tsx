@@ -6,12 +6,14 @@ import type { BrandConfig } from "@/lib/theme/tokens";
 import type { PublicScheduleItem } from "@/lib/schedule/types";
 import type { CSSProperties } from "react";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type ScheduleScreenProps = {
   brand: BrandConfig;
   schedule: PublicScheduleItem[];
   todayIso: string;
   /** "HH:MM" in the Space timezone, for "now" / "up next" context. */
   nowTime: string;
+  locale?: Locale;
 };
 
 // Every category chip derives from the organizer's own Primary/Accent -
@@ -49,7 +51,8 @@ function weekdayLabel(dateIso: string): { weekday: string; day: string } {
  * published_spaces.modules.schedule for guests) - there is no second
  * source of schedule truth, only a second way of looking at the same one.
  */
-export function ScheduleScreen({ brand, schedule, todayIso, nowTime }: ScheduleScreenProps) {
+export function ScheduleScreen({ brand, schedule, todayIso, nowTime, locale = DEFAULT_LOCALE }: ScheduleScreenProps) {
+  const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
 
   const dates = useMemo(() => {
@@ -83,7 +86,7 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime }: ScheduleS
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-8 pb-5">
         <h1 className="text-[26px] font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Schedule
+          {t("flow", "navSchedule")}
         </h1>
       </div>
 
@@ -129,7 +132,7 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime }: ScheduleS
       <div className="px-4 pb-10">
         {items.length === 0 && (
           <div className="text-xs px-1 py-2" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-            Nothing scheduled for this day.
+            {t("flow", "nothingScheduledDay")}
           </div>
         )}
         <div className="flex flex-col">
@@ -145,7 +148,7 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime }: ScheduleS
             const chip = item.category ? (CATEGORY_CHIP_STYLE[item.category] ?? DEFAULT_CHIP_STYLE) : null;
 
             return (
-              <div key={`${item.date}-${item.startTime}-${item.title}`} className={`flex gap-3 ${isPast ? "opacity-40" : ""}`}>
+              <div dir="auto" key={`${item.date}-${item.startTime}-${item.title}`} className={`flex gap-3 ${isPast ? "opacity-40" : ""}`}>
                 <div className="w-11 flex-shrink-0 pt-4 text-right">
                   <span
                     className="text-[11px] font-medium tabular-nums leading-none"
@@ -182,20 +185,20 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime }: ScheduleS
                         className="text-[9px] tracking-[0.22em] uppercase font-semibold"
                         style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-on-primary)", opacity: 0.85 }}
                       >
-                        Now
+                        {t("flow", "now")}
                       </span>
                     </div>
                   )}
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0">
-                      <h3
+                      <h3 dir="auto"
                         className="text-[16px] leading-snug"
                         style={{ fontFamily: "var(--rbr-font-display)", color: isNow ? "var(--rbr-on-primary)" : "var(--rbr-text)" }}
                       >
                         {item.title}
                       </h3>
                       {item.facilitator && (
-                        <p
+                        <p dir="auto"
                           className="text-[11px] mt-0.5"
                           style={{ fontFamily: "var(--rbr-font-ui)", color: isNow ? "color-mix(in srgb, var(--rbr-on-primary) 55%, transparent)" : "var(--rbr-dusk)" }}
                         >
@@ -207,13 +210,13 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime }: ScheduleS
                           className="flex items-center gap-2 mt-2 flex-wrap text-[10px]"
                           style={{ fontFamily: "var(--rbr-font-ui)", color: isNow ? "color-mix(in srgb, var(--rbr-on-primary) 45%, transparent)" : "var(--rbr-mist)" }}
                         >
-                          {item.location && <span>{item.location}</span>}
+                          {item.location && <span dir="auto">{item.location}</span>}
                           {item.endTime && <span>· until {item.endTime}</span>}
                         </div>
                       )}
                     </div>
                     {item.category && chip && (
-                      <span
+                      <span dir="auto"
                         className="flex-shrink-0 text-[9px] px-2.5 py-0.5 rounded-full tracking-widest font-medium uppercase mt-0.5"
                         style={{
                           fontFamily: "var(--rbr-font-ui)",

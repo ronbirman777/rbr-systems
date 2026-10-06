@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { copyTextToClipboard, displayPublicUrl, shareOnWhatsAppUrl } from "@/lib/studio/publicLink";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 /**
  * Public link row shared by every Studio's Publish & Share surface: the
  * canonical URL, Copy link and Open Guest App. The link only counts as
@@ -13,10 +14,11 @@ export function PublicLinkCard({
   url,
   openHref,
   published,
-  title = "Guest App link",
-  openLabel = "Open Guest App",
+  title,
+  openLabel,
   shareName,
   shareRole = null,
+  locale = DEFAULT_LOCALE,
 }: {
   url: string;
   openHref: string;
@@ -26,7 +28,9 @@ export function PublicLinkCard({
   /** Space/teacher name used in the WhatsApp share text. Omit to hide that action. */
   shareName?: string | null;
   shareRole?: string | null;
+  locale?: Locale;
 }) {
+  const { t } = createTranslator(locale);
   const whatsapp = shareName ? shareOnWhatsAppUrl(shareName, shareRole, url) : null;
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -42,7 +46,7 @@ export function PublicLinkCard({
 
   return (
     <div className="rounded-2xl border border-[#E2DACD] bg-white p-4 sm:p-5" data-testid="public-link-card">
-      <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84]">{title}</p>
+      <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84]">{title ?? t("studio", "guestAppLink")}</p>
       <div className="mt-2 flex flex-col gap-3">
         <p className="min-w-0 text-[14px] text-[#192B21] break-all" data-testid="public-link-url">
           {displayPublicUrl(url)}
@@ -54,7 +58,7 @@ export function PublicLinkCard({
             aria-live="polite"
             className="min-h-10 px-4 rounded-full border border-[#192B21]/20 text-[12.5px] font-semibold text-[#192B21]"
           >
-            {copied ? "Copied" : "Copy link"}
+            {copied ? t("common", "copied") : t("common", "copy")}
           </button>
           {published && whatsapp ? (
             <a
@@ -64,8 +68,8 @@ export function PublicLinkCard({
               className="inline-flex items-center min-h-10 px-4 rounded-full border border-[#192B21]/20 text-[12.5px] font-semibold text-[#192B21]"
               data-testid="share-whatsapp"
             >
-              Share on WhatsApp
-              <span className="sr-only"> (opens in a new tab)</span>
+              {t("studio", "shareOnWhatsapp")}
+              <span className="sr-only"> {t("studio", "opensInNewTab")}</span>
             </a>
           ) : null}
           {published ? (
@@ -75,14 +79,14 @@ export function PublicLinkCard({
               rel="noopener noreferrer"
               className="inline-flex items-center min-h-10 px-4 rounded-full bg-[#192B21] text-white text-[12.5px] font-semibold"
             >
-              {openLabel} ↗
-              <span className="sr-only"> (opens in a new tab)</span>
+              {openLabel ?? t("studio", "openGuestApp")} <span aria-hidden="true" className="rtl-mirror">↗</span>
+              <span className="sr-only"> {t("studio", "opensInNewTab")}</span>
             </a>
           ) : null}
         </div>
       </div>
       {!published ? (
-        <p className="mt-2 text-[12px] text-[#8C8A84]">This link goes live when you publish. Until then guests cannot open it.</p>
+        <p className="mt-2 text-[12px] text-[#8C8A84]">{t("studio", "linkGoesLiveOnPublish")}</p>
       ) : null}
     </div>
   );

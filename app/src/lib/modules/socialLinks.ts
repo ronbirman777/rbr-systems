@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
 /**
  * Shared platform vocabulary for both Stay Connected (Space-level) and
  * Facilitator social links (person-level). A single source of truth so
@@ -11,14 +12,21 @@ import { z } from "zod";
 export const SOCIAL_PLATFORMS = ["instagram", "facebook", "youtube", "tiktok", "linkedin", "website"] as const;
 export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
 
-export const SOCIAL_PLATFORM_LABEL: Record<SocialPlatform, string> = {
-  instagram: "Instagram",
-  facebook: "Facebook",
-  youtube: "YouTube",
-  tiktok: "TikTok",
-  linkedin: "LinkedIn",
-  website: "Website",
-};
+/**
+ * Platform names are brands and never translate; "website" is an
+ * ordinary noun and does, so this is a function of the locale rather
+ * than a constant.
+ */
+export function socialPlatformLabel(locale: Locale = DEFAULT_LOCALE): Record<SocialPlatform, string> {
+  return {
+    instagram: "Instagram",
+    facebook: "Facebook",
+    youtube: "YouTube",
+    tiktok: "TikTok",
+    linkedin: "LinkedIn",
+    website: translate(locale, "common", "website"),
+  };
+}
 
 export const socialLinkSchema = z.object({
   platform: z.enum(SOCIAL_PLATFORMS),

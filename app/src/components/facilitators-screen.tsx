@@ -5,10 +5,13 @@ import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
 import type { DisplayFacilitator } from "@/lib/modules/facilitator";
 import { SocialIcon } from "./guest/social-icon";
-import { SOCIAL_PLATFORM_LABEL } from "@/lib/modules/socialLinks";
+import { socialPlatformLabel } from "@/lib/modules/socialLinks";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
+import { BrandImage } from "@/components/shared/brand-image";
 
+import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { FLOW_SIZES } from "./flow-media-sizes";
 /** Facilitators' own established default - the exact numeric equivalent
  * of the CSS keyword "center top" (50% 0%) this replaces, preserved
  * deliberately rather than the shared component's true-center default
@@ -24,6 +27,7 @@ const FACILITATOR_DEFAULT_POSITION = { x: 50, y: 0 };
 export type FacilitatorsScreenProps = {
   brand: BrandConfig;
   facilitators: DisplayFacilitator[];
+  locale?: Locale;
 };
 
 /**
@@ -44,7 +48,8 @@ export type FacilitatorsScreenProps = {
  * `facilitator` is free text, not a relation) - inventing a session list
  * here would be fabricated, not derived, data.
  */
-export function FacilitatorsScreen({ brand, facilitators }: FacilitatorsScreenProps) {
+export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCALE }: FacilitatorsScreenProps) {
+  const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
   const [expanded, setExpanded] = useState<number | null>(null);
 
@@ -52,16 +57,18 @@ export function FacilitatorsScreen({ brand, facilitators }: FacilitatorsScreenPr
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-8 pb-6">
         <p className="text-[10px] tracking-[0.22em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Your Guides
+          {t("flow", "yourGuides")}
         </p>
         <h1 className="text-[28px] leading-tight font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Meet the <em>Facilitators</em>
+          {splitEmphasis(t("flow", "facilitatorsHeading"), t("flow", "facilitatorsHeadingEm")).map((part, i) =>
+            i === 1 ? <em key={i}>{part}</em> : part
+          )}
         </h1>
       </div>
 
       {facilitators.length === 0 && (
         <div className="px-6 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          No facilitators added yet.
+          {t("flow", "noFacilitators")}
         </div>
       )}
 
@@ -78,30 +85,29 @@ export function FacilitatorsScreen({ brand, facilitators }: FacilitatorsScreenPr
               }}
             >
               <div className="relative h-[300px]" style={{ background: "var(--rbr-parchment-deep)" }}>
-                {f.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={f.imageUrl}
-                    alt={f.name}
-                    className="w-full h-full object-cover"
-                    style={{ objectPosition: objectPositionStyle(f.imagePosition, FACILITATOR_DEFAULT_POSITION) }}
-                  />
-                ) : (
-                  <div
-                    className="w-full h-full"
-                    style={{ background: `linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))` }}
-                  />
-                )}
+                {/* 028B: Flow's first adopter of the shared image primitive.
+                    Same crop and same default focal point as before - the
+                    object-position string is still produced by this
+                    product's own objectPositionStyle, so no published
+                    image moves. */}
+                <BrandImage
+                  src={f.imageUrl}
+                  alt={f.name}
+                  className="w-full h-full"
+                  sizes={FLOW_SIZES.frame}
+                  style={{ objectPosition: objectPositionStyle(f.imagePosition, FACILITATOR_DEFAULT_POSITION) }}
+                  fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
+                />
                 <div
                   className="absolute inset-0"
                   style={{ background: "linear-gradient(to top, color-mix(in srgb, var(--rbr-primary-dark) 75%, transparent), color-mix(in srgb, var(--rbr-primary-dark) 10%, transparent) 60%, transparent)" }}
                 />
                 <div className="absolute bottom-0 left-0 right-0 p-5">
-                  <h2 className="text-white text-[22px] leading-tight" style={{ fontFamily: "var(--rbr-font-display)" }}>
+                  <h2 dir="auto" className="text-white text-[22px] leading-tight" style={{ fontFamily: "var(--rbr-font-display)" }}>
                     {f.name}
                   </h2>
                   {f.role && (
-                    <p className="text-white/65 text-[10px] tracking-[0.16em] uppercase font-medium mt-0.5" style={{ fontFamily: "var(--rbr-font-ui)" }}>
+                    <p dir="auto" className="text-white/65 text-[10px] tracking-[0.16em] uppercase font-medium mt-0.5" style={{ fontFamily: "var(--rbr-font-ui)" }}>
                       {f.role}
                     </p>
                   )}
@@ -129,7 +135,7 @@ export function FacilitatorsScreen({ brand, facilitators }: FacilitatorsScreenPr
 
                   {f.bio && (
                     <>
-                      <p
+                      <p dir="auto"
                         className={`text-[13px] leading-relaxed ${isOpen ? "" : "line-clamp-2"}`}
                         style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}
                       >
@@ -141,7 +147,7 @@ export function FacilitatorsScreen({ brand, facilitators }: FacilitatorsScreenPr
                         className="mt-2 flex items-center gap-1.5 text-[12px] font-medium hover:opacity-70 transition-opacity"
                         style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text-muted)" }}
                       >
-                        {isOpen ? "Show less" : "Read more"}
+                        {isOpen ? t("flow", "showLess") : t("flow", "readMore")}
                         <svg
                           className={`w-3 h-3 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
                           fill="none"
@@ -163,7 +169,7 @@ export function FacilitatorsScreen({ brand, facilitators }: FacilitatorsScreenPr
                           href={link.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          aria-label={SOCIAL_PLATFORM_LABEL[link.platform]}
+                          aria-label={socialPlatformLabel(locale)[link.platform]}
                           className="w-8 h-8 rounded-full flex items-center justify-center transition-opacity hover:opacity-70"
                           style={{ background: "var(--rbr-parchment-deep)" }}
                         >

@@ -1,0 +1,179 @@
+/**
+ * Regenerates src/lib/countries/data.ts.
+ *
+ *   node scripts/generate-countries.mjs            # rewrite the dataset
+ *   node scripts/generate-countries.mjs --check    # fail if it is stale
+ *
+ * Names come from CLDR via Intl.DisplayNames at GENERATION time and are
+ * committed as literals, so nothing in the running app depends on the
+ * host's ICU version (see the header of data.ts for why that matters).
+ *
+ * Calling codes are maintained here, in DIAL_CODES, because no ICU/Intl
+ * API exposes them. Every edit is validated below before anything is
+ * written: unknown region codes, malformed codes and codes CLDR does not
+ * recognise all fail the run rather than silently shipping.
+ */
+import { writeFileSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "lib", "countries", "data.ts");
+
+/**
+ * ITU-T E.164 COUNTRY calling codes, keyed by ISO 3166-1 alpha-2.
+ * Country codes only - never a national area/NPA prefix. Every NANP
+ * territory is "+1".
+ */
+const DIAL_CODES = {
+  AD: "+376", AE: "+971", AF: "+93", AG: "+1", AI: "+1", AL: "+355", AM: "+374", AO: "+244",
+  AQ: "+672", AR: "+54", AS: "+1", AT: "+43", AU: "+61", AW: "+297", AX: "+358", AZ: "+994",
+  BA: "+387", BB: "+1", BD: "+880", BE: "+32", BF: "+226", BG: "+359", BH: "+973", BI: "+257",
+  BJ: "+229", BL: "+590", BM: "+1", BN: "+673", BO: "+591", BQ: "+599", BR: "+55", BS: "+1",
+  BT: "+975", BV: "+47", BW: "+267", BY: "+375", BZ: "+501",
+  CA: "+1", CC: "+61", CD: "+243", CF: "+236", CG: "+242", CH: "+41", CI: "+225", CK: "+682",
+  CL: "+56", CM: "+237", CN: "+86", CO: "+57", CR: "+506", CU: "+53", CV: "+238", CW: "+599",
+  CX: "+61", CY: "+357", CZ: "+420",
+  DE: "+49", DJ: "+253", DK: "+45", DM: "+1", DO: "+1", DZ: "+213",
+  EC: "+593", EE: "+372", EG: "+20", EH: "+212", ER: "+291", ES: "+34", ET: "+251",
+  FI: "+358", FJ: "+679", FK: "+500", FM: "+691", FO: "+298", FR: "+33",
+  GA: "+241", GB: "+44", GD: "+1", GE: "+995", GF: "+594", GG: "+44", GH: "+233", GI: "+350",
+  GL: "+299", GM: "+220", GN: "+224", GP: "+590", GQ: "+240", GR: "+30", GS: "+500", GT: "+502",
+  GU: "+1", GW: "+245", GY: "+592",
+  HK: "+852", HM: "+672", HN: "+504", HR: "+385", HT: "+509", HU: "+36",
+  ID: "+62", IE: "+353", IL: "+972", IM: "+44", IN: "+91", IO: "+246", IQ: "+964", IR: "+98",
+  IS: "+354", IT: "+39",
+  JE: "+44", JM: "+1", JO: "+962", JP: "+81",
+  KE: "+254", KG: "+996", KH: "+855", KI: "+686", KM: "+269", KN: "+1", KP: "+850", KR: "+82",
+  KW: "+965", KY: "+1", KZ: "+7",
+  LA: "+856", LB: "+961", LC: "+1", LI: "+423", LK: "+94", LR: "+231", LS: "+266", LT: "+370",
+  LU: "+352", LV: "+371", LY: "+218",
+  MA: "+212", MC: "+377", MD: "+373", ME: "+382", MF: "+590", MG: "+261", MH: "+692", MK: "+389",
+  ML: "+223", MM: "+95", MN: "+976", MO: "+853", MP: "+1", MQ: "+596", MR: "+222", MS: "+1",
+  MT: "+356", MU: "+230", MV: "+960", MW: "+265", MX: "+52", MY: "+60", MZ: "+258",
+  NA: "+264", NC: "+687", NE: "+227", NF: "+672", NG: "+234", NI: "+505", NL: "+31", NO: "+47",
+  NP: "+977", NR: "+674", NU: "+683", NZ: "+64",
+  OM: "+968",
+  PA: "+507", PE: "+51", PF: "+689", PG: "+675", PH: "+63", PK: "+92", PL: "+48", PM: "+508",
+  PN: "+64", PR: "+1", PS: "+970", PT: "+351", PW: "+680", PY: "+595",
+  QA: "+974",
+  RE: "+262", RO: "+40", RS: "+381", RU: "+7", RW: "+250",
+  SA: "+966", SB: "+677", SC: "+248", SD: "+249", SE: "+46", SG: "+65", SH: "+290", SI: "+386",
+  SJ: "+47", SK: "+421", SL: "+232", SM: "+378", SN: "+221", SO: "+252", SR: "+597", SS: "+211",
+  ST: "+239", SV: "+503", SX: "+1", SY: "+963", SZ: "+268",
+  TC: "+1", TD: "+235", TF: "+262", TG: "+228", TH: "+66", TJ: "+992", TK: "+690", TL: "+670",
+  TM: "+993", TN: "+216", TO: "+676", TR: "+90", TT: "+1", TV: "+688", TW: "+886", TZ: "+255",
+  UA: "+380", UG: "+256", UM: "+1", US: "+1", UY: "+598", UZ: "+998",
+  VA: "+39", VC: "+1", VE: "+58", VG: "+1", VI: "+1", VN: "+84", VU: "+678",
+  WF: "+681", WS: "+685",
+  YE: "+967", YT: "+262",
+  ZA: "+27", ZM: "+260", ZW: "+263",
+};
+
+/**
+ * Supported exceptions: entries that are NOT officially assigned ISO
+ * 3166-1 alpha-2 codes but that the product deliberately supports.
+ *
+ * XK is the user-assigned code the EU, IMF, SWIFT and most platforms use
+ * for Kosovo. CLDR does carry a name for it, so the display name is
+ * generated like every other entry - but ISO 3166-1 has never officially
+ * assigned XK, which is why it lives here instead of in DIAL_CODES. The
+ * ISO set therefore stays exactly the ISO set, and nothing can describe
+ * the dataset as a 250-country ISO list.
+ *
+ * `name` below is only a fallback for a runtime whose CLDR lacks XK.
+ */
+const SUPPORTED_EXCEPTIONS = [{ code: "XK", name: "Kosovo", dialCode: "+383" }];
+
+const displayNames = new Intl.DisplayNames(["en"], { type: "region" });
+
+const problems = [];
+for (const [code, dial] of Object.entries(DIAL_CODES)) {
+  if (!/^[A-Z]{2}$/.test(code)) problems.push(`${code}: not an alpha-2 code`);
+  if (!/^\+\d{1,4}$/.test(dial)) problems.push(`${code}: malformed calling code ${dial}`);
+  const name = displayNames.of(code);
+  if (!name || name === code) problems.push(`${code}: not recognised by CLDR`);
+}
+for (const entry of SUPPORTED_EXCEPTIONS) {
+  if (!/^[A-Z]{2}$/.test(entry.code)) problems.push(`${entry.code}: not an alpha-2 code`);
+  if (!/^\+\d{1,4}$/.test(entry.dialCode)) problems.push(`${entry.code}: malformed calling code`);
+  if (DIAL_CODES[entry.code]) problems.push(`${entry.code}: is an ISO code, not an exception`);
+}
+
+if (problems.length) {
+  console.error("Country data is invalid:\n  " + problems.join("\n  "));
+  process.exit(1);
+}
+
+const isoRows = Object.keys(DIAL_CODES).map((code) => ({
+  code,
+  name: displayNames.of(code),
+  dialCode: DIAL_CODES[code],
+  iso: true,
+}));
+const rows = [
+  ...isoRows,
+  // Prefer CLDR's name when this runtime has one, so an exception reads
+  // exactly like every other entry; fall back to the literal above.
+  ...SUPPORTED_EXCEPTIONS.map((e) => {
+    const cldr = displayNames.of(e.code);
+    return { ...e, name: cldr && cldr !== e.code ? cldr : e.name, iso: false };
+  }),
+].sort((a, b) => a.name.localeCompare(b.name, "en"));
+
+const file = `/**
+ * ISO 3166-1 alpha-2 country/territory data - the single dataset every
+ * product and surface reads. GENERATED by scripts/generate-countries.mjs,
+ * then committed as literals; edit the generator, never this file.
+ *
+ * Why literals rather than calling Intl.DisplayNames at runtime: CLDR
+ * names move between ICU versions, so server and browser can disagree and
+ * produce a hydration mismatch. This repository already avoids runtime
+ * Intl for display for exactly that reason (see lib/teach/links.ts
+ * formatShortDate). Generating once and committing keeps the names
+ * authoritative AND deterministic.
+ *
+ * \`name\` is the English display name and is the CP3 translation key
+ * source; \`code\` is what gets stored, never the name, so translating a
+ * label never migrates data.
+ *
+ * Coverage: ${isoRows.length} officially assigned ISO 3166-1 alpha-2 entries,
+ * plus ${SUPPORTED_EXCEPTIONS.length} explicitly documented supported exception
+ * (Kosovo, XK). XK is user-assigned, NOT ISO-assigned - \`isoAssigned\`
+ * marks the difference so no caller can mistake the total for an ISO count.
+ * Deliberately excluded: CLDR non-ISO groupings (EU, EZ, UN, QO, XA, XB,
+ * ZZ), exceptional reservations (AC, CP, DG, EA, IC, TA, UK) and withdrawn
+ * historical codes (AN, BU, CS, DD, SU, YU, ZR and similar). XK (Kosovo)
+ * is NOT excluded: it is carried as a supported exception, flagged with
+ * isoAssigned: false.
+ *
+ * Dial codes are ITU-T E.164 COUNTRY calling codes only.
+ */
+export type Country = {
+  /** ISO 3166-1 alpha-2. The stored value. */
+  code: string;
+  /** English display name (CLDR). */
+  name: string;
+  /** ITU-T E.164 country calling code, "+" prefixed. Not unique - every
+   * NANP territory shares "+1" - so never use it as a country identifier. */
+  dialCode: string;
+  /** False only for a documented supported exception (today: Kosovo). */
+  isoAssigned: boolean;
+};
+
+/** Sorted by English name, which is the order the picker renders. */
+export const COUNTRIES: readonly Country[] = [
+${rows.map((r) => `  { code: ${JSON.stringify(r.code)}, name: ${JSON.stringify(r.name)}, dialCode: ${JSON.stringify(r.dialCode)}, isoAssigned: ${r.iso} },`).join("\n")}
+] as const;
+`;
+
+if (process.argv.includes("--check")) {
+  const current = readFileSync(OUT, "utf8");
+  if (current !== file) {
+    console.error("src/lib/countries/data.ts is stale - run: node scripts/generate-countries.mjs");
+    process.exit(1);
+  }
+  console.log(`country data up to date (${isoRows.length} ISO + ${SUPPORTED_EXCEPTIONS.length} exception)`);
+} else {
+  writeFileSync(OUT, file);
+  console.log(`wrote ${rows.length} entries (${isoRows.length} ISO + ${SUPPORTED_EXCEPTIONS.length} supported exception) to ${OUT}`);
+}

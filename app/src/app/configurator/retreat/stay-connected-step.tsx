@@ -2,13 +2,15 @@
 
 import { useState, type Dispatch, type SetStateAction } from "react";
 import type { SocialLink } from "@/lib/modules/socialLinks";
-import { SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL } from "@/lib/modules/socialLinks";
+import { SOCIAL_PLATFORMS, socialPlatformLabel } from "@/lib/modules/socialLinks";
 import { SocialIcon } from "@/components/guest/social-icon";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioHeading, StudioIntro } from "./studio-ui";
 import { saveStayConnected, type SaveStayConnectedState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
+import { createTranslator } from "@/lib/i18n";
+import { ForwardArrow } from "./studio-ui";
 const initialState: SaveStayConnectedState = { error: null };
 
 export type StayConnectedStepProps = {
@@ -25,7 +27,8 @@ export type StayConnectedStepProps = {
  * Zero or more links, only configured ones ever render to guests. Same
  * shared platform vocabulary/icons as Facilitator social links.
  */
-export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinue, onDirty, onSaved, registerSave }: StayConnectedStepProps) {
+export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinue, onDirty, onSaved, registerSave, locale }: StayConnectedStepProps) {
+  const { t } = createTranslator(locale);
   const [state, setState] = useState<SaveStayConnectedState>(initialState);
   const [pending, setPending] = useState(false);
 
@@ -59,6 +62,7 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
 
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set("links", JSON.stringify(links.filter((l) => l.url.trim().length > 0)));
     setPending(true);
@@ -77,8 +81,8 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
 
   return (
     <div className="max-w-2xl">
-      <StudioHeading>Stay Connected</StudioHeading>
-      <StudioIntro>Add the platforms your guests can find you on. Only links with a URL are shown.</StudioIntro>
+      <StudioHeading>{t("flow", "stayConnected")}</StudioHeading>
+      <StudioIntro>{t("flow", "stayConnectedStepBody")}</StudioIntro>
 
       <div className="space-y-3 mb-4">
         {links.map((link, i) => (
@@ -120,7 +124,7 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
             >
               {SOCIAL_PLATFORMS.map((p) => (
                 <option key={p} value={p}>
-                  {SOCIAL_PLATFORM_LABEL[p]}
+                  {socialPlatformLabel(locale)[p]}
                 </option>
               ))}
             </select>
@@ -147,13 +151,13 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
               className="shrink-0 text-[11px] px-2 sm:px-2.5 py-1.5 rounded-lg border whitespace-nowrap"
               style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
             >
-              Remove
+              {t("common", "remove")}
             </button>
           </div>
         ))}
         {links.length === 0 && (
           <p className="text-[13px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-            No links yet.
+            {t("flow", "noLinksYet")}
           </p>
         )}
       </div>
@@ -176,13 +180,13 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
 
       <div className="mt-8 flex gap-3 items-center">
         <button type="button" onClick={onBack} className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3">
-          Back
+          {t("common", "back")}
         </button>
         <button type="button" disabled={pending} onClick={handleSave} className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60">
-          {pending ? "Saving…" : "Save Links"}
+          {pending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "stayConnected") })}
         </button>
         <button type="button" onClick={onContinue} className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest">
-          Continue →
+          {t("common", "next")} <ForwardArrow />
         </button>
       </div>
     </div>

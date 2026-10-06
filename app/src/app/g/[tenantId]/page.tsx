@@ -10,6 +10,7 @@ import { resolveGuestAccess } from "@/lib/guestAccess/effectiveAccess";
 import { GuestAccessScreen } from "@/components/guest/guest-access-screen";
 import { extractPublishedGuestIdentity } from "@/lib/guestAccess/publishedIdentity";
 
+import { localeFromPublishedModules } from "@/lib/spaceSettings";
 /**
  * The genuinely unauthenticated guest route, looked up by tenant id. No
  * cookies, no session, no Supabase auth of any kind - it queries
@@ -70,7 +71,10 @@ export default async function GuestSpacePage({
   if (access === "unavailable") notFound();
   if (access === "code-required") {
     const identity = extractPublishedGuestIdentity(space);
-    return <GuestAccessScreen tenantId={tenantId} {...identity} copy={guestAccessCopy(space.product_type)} />;
+    // The gate speaks the Space's own language; a visitor's device locale
+    // is never consulted, here or anywhere else in a Guest surface.
+    const gateLocale = localeFromPublishedModules(space.modules);
+    return <GuestAccessScreen tenantId={tenantId} {...identity} copy={guestAccessCopy(space.product_type, gateLocale)} locale={gateLocale} />;
   }
 
 

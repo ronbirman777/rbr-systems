@@ -1,6 +1,6 @@
 import "server-only";
 import { isSpacePubliclyAvailable } from "@/lib/entitlements/isSpacePubliclyAvailable";
-import { getGuestAccessMode } from "./mode";
+import { getGuestAccessMode, type GuestAccessMode } from "./mode";
 import { hasValidGuestAccessCookie } from "./checkCookie";
 
 /**
@@ -25,11 +25,31 @@ import { hasValidGuestAccessCookie } from "./checkCookie";
  */
 export type GuestAccessState = "unavailable" | "code-required" | "granted";
 
-export async function resolveGuestAccess(tenantId: string): Promise<GuestAccessState> {
-  if (!(await isSpacePubliclyAvailable(tenantId))) return "unavailable";
+/**
+ * The same answer, plus the Space's access mode.
+ *
+ * "granted" alone cannot distinguish a genuinely public Space from a
+ * code-protected one whose visitor holds a valid cookie, and /api/media
+ * must tell them apart to decide whether a response may be cached
+ * publicly. The mode is already read here, so returning it costs nothing
+ * - asking for it again afterwards would be an extra database round trip
+ * per image, which is the opposite of what CP4 is for.
+ */
+export type GuestAccessDetail = {
+  state: GuestAccessState;
+  /** Null only when the Space is unavailable, where mode is not consulted. */
+  mode: GuestAccessMode | null;
+};
+
+export async function resolveGuestAccessDetailed(tenantId: string): Promise<GuestAccessDetail> {
+  if (!(await isSpacePubliclyAvailable(tenantId))) return { state: "unavailable", mode: null };
 
   const mode = await getGuestAccessMode(tenantId);
-  if (mode === "code" && !(await hasValidGuestAccessCookie(tenantId))) return "code-required";
+  if (mode === "code" && !(await hasValidGuestAccessCookie(tenantId))) return { state: "code-required", mode };
 
-  return "granted";
+  return { state: "granted", mode };
+}
+
+export async function resolveGuestAccess(tenantId: string): Promise<GuestAccessState> {
+  return (await resolveGuestAccessDetailed(tenantId)).state;
 }

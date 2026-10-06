@@ -66,7 +66,10 @@ describe.each(STUDIO_MODULE_SECTIONS)("Studio module editor: %s", (section) => {
   });
 
   it("destructures onDirty, onSaved and registerSave", () => {
-    expect(src).toMatch(/onDirty,\s*onSaved,\s*registerSave\s*\}/);
+    // `locale` joined the same shared contract in CP3, so it may follow
+    // registerSave in the destructuring - the three guard props are what
+    // this asserts.
+    expect(src).toMatch(/onDirty,\s*onSaved,\s*registerSave\s*[,}]/);
   });
 
   it("marks the section dirty on a user edit", () => {

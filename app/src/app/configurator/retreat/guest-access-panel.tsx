@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS } from "./studio-ui";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import {
   setGuestAccessCode,
   disableGuestAccessCode,
@@ -14,6 +15,8 @@ import {
 export type GuestAccessPanelProps = {
   tenantId: string;
   initialSettings: GuestAccessSettings;
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
 function randomSixDigitCode(): string {
@@ -38,7 +41,8 @@ function randomSixDigitCode(): string {
  * in local state, never re-derived from the database (which only ever
  * stores the hash).
  */
-export function GuestAccessPanel({ tenantId, initialSettings }: GuestAccessPanelProps) {
+export function GuestAccessPanel({ tenantId, initialSettings, locale = DEFAULT_LOCALE }: GuestAccessPanelProps) {
+  const { t } = createTranslator(locale);
   const [settings, setSettings] = useState(initialSettings);
   const [codeInput, setCodeInput] = useState("");
   const [revealedCode, setRevealedCode] = useState<string | null>(null);
@@ -96,10 +100,10 @@ export function GuestAccessPanel({ tenantId, initialSettings }: GuestAccessPanel
   return (
     <div className="mt-6 rounded-2xl border p-5" style={{ borderColor: "rgba(45,74,62,0.12)" }}>
       <div className="text-[10px] font-semibold uppercase tracking-wide mb-1" style={{ color: GUEST_BASE_PALETTE.mist }}>
-        Guest Access
+        {t("studio", "guestAccess")}
       </div>
       <p className="text-[13px] leading-relaxed mb-4" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-        Choose who can open your Guest App with the link above.
+        {t("studio", "guestAccessBody")}
       </p>
 
       <div className="flex gap-2 mb-4">
@@ -113,7 +117,7 @@ export function GuestAccessPanel({ tenantId, initialSettings }: GuestAccessPanel
               : { color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }
           }
         >
-          Anyone with the link
+          {t("studio", "anyoneWithLink")}
         </button>
         <button
           type="button"
@@ -125,13 +129,13 @@ export function GuestAccessPanel({ tenantId, initialSettings }: GuestAccessPanel
               : { color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }
           }
         >
-          Require a 6-digit code
+          {t("studio", "requireCode")}
         </button>
       </div>
 
       {!wantsCode && settings.hasCode === false && (
         <p className="text-[12px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-          Guests can open your app with just the link - no code required.
+          {t("studio", "noCodeNeeded")}
         </p>
       )}
 
@@ -140,14 +144,14 @@ export function GuestAccessPanel({ tenantId, initialSettings }: GuestAccessPanel
           {settings.hasCode && !revealedCode ? (
             <>
               <p className="text-[12px] mb-3" style={{ color: GUEST_BASE_PALETTE.forest }}>
-                A code is set. It isn&apos;t stored in a form we can show you again - generate a new one if guests need it.
+                {t("studio", "codeIsSet")}
               </p>
               <div className="flex gap-2">
                 <input
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   inputMode="numeric"
-                  placeholder="New 6-digit code"
+                  placeholder={t("studio", "newCodePlaceholder")}
                   className={STUDIO_INPUT_CLASS}
                 />
                 <button
@@ -156,7 +160,7 @@ export function GuestAccessPanel({ tenantId, initialSettings }: GuestAccessPanel
                   className="shrink-0 text-[11px] font-medium px-3 py-1.5 rounded-full border"
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
-                  Generate
+                  {t("common", "generate")}
                 </button>
               </div>
               <form action={setFormAction} className="mt-3">
@@ -168,14 +172,14 @@ export function GuestAccessPanel({ tenantId, initialSettings }: GuestAccessPanel
                   className="text-[12px] font-semibold px-4 py-2 rounded-full disabled:opacity-50"
                   style={{ background: GUEST_BASE_PALETTE.forest, color: "white" }}
                 >
-                  {setPending ? "Saving…" : "Change Code"}
+                  {setPending ? t("common", "savingNow") : t("studio", "changeCode")}
                 </button>
               </form>
             </>
           ) : revealedCode ? (
             <>
               <p className="text-[12px] mb-2" style={{ color: GUEST_BASE_PALETTE.forest }}>
-                Your access code - copy it now, it won&apos;t be shown again:
+                {t("studio", "yourAccessCode")}
               </p>
               <div className="flex items-center gap-2">
                 <span className="text-[22px] font-semibold tracking-[0.2em]" style={{ color: GUEST_BASE_PALETTE.forest }}>
@@ -187,21 +191,21 @@ export function GuestAccessPanel({ tenantId, initialSettings }: GuestAccessPanel
                   className="text-[11px] font-medium px-3 py-1.5 rounded-full border"
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
-                  {copied ? "Copied!" : "Copy Code"}
+                  {copied ? t("studio", "copiedExclaim") : t("studio", "copyCode")}
                 </button>
               </div>
             </>
           ) : (
             <>
               <p className="text-[12px] mb-3" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-                Choose a 6-digit code, or generate one.
+                {t("studio", "chooseOrGenerateCode")}
               </p>
               <div className="flex gap-2">
                 <input
                   value={codeInput}
                   onChange={(e) => setCodeInput(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   inputMode="numeric"
-                  placeholder="6-digit code"
+                  placeholder={t("studio", "codePlaceholder")}
                   className={STUDIO_INPUT_CLASS}
                 />
                 <button
@@ -210,7 +214,7 @@ export function GuestAccessPanel({ tenantId, initialSettings }: GuestAccessPanel
                   className="shrink-0 text-[11px] font-medium px-3 py-1.5 rounded-full border"
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
-                  Generate
+                  {t("common", "generate")}
                 </button>
               </div>
               <form action={setFormAction} className="mt-3">
@@ -222,7 +226,7 @@ export function GuestAccessPanel({ tenantId, initialSettings }: GuestAccessPanel
                   className="text-[12px] font-semibold px-4 py-2 rounded-full disabled:opacity-50"
                   style={{ background: GUEST_BASE_PALETTE.forest, color: "white" }}
                 >
-                  {setPending ? "Saving…" : "Enable Code"}
+                  {setPending ? t("common", "savingNow") : t("studio", "enableCode")}
                 </button>
               </form>
             </>
@@ -243,7 +247,7 @@ export function GuestAccessPanel({ tenantId, initialSettings }: GuestAccessPanel
                 className="text-[11px] font-medium disabled:opacity-50"
                 style={{ color: GUEST_BASE_PALETTE.mist }}
               >
-                {disablePending ? "Disabling…" : "Disable Code - make Space public again"}
+                {disablePending ? t("studio", "disabling") : t("studio", "disableCode")}
               </button>
             </form>
           )}

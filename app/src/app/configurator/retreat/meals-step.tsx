@@ -5,13 +5,15 @@ import { ModuleItemPhotoField } from "@/components/module-item-photo-field";
 import { FocalPointPicker } from "@/components/focal-point-picker";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
-import { MEAL_TYPES, type EditableMeal, type MealType } from "@/lib/modules/meal";
+import { MEAL_TYPES, type EditableMeal, type MealType, mealTypeLabel } from "@/lib/modules/meal";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
 import { saveMeals, type SaveMealsState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
+import { createTranslator } from "@/lib/i18n";
+import { ForwardArrow } from "./studio-ui";
 const initialState: SaveMealsState = { error: null };
 
 export function blankMeal(): EditableMeal {
@@ -48,7 +50,8 @@ export type MealsStepProps = {
  * persistNewItemStub, saveMeals via enqueueItemsOp) as before - a visual/
  * interaction restyle, not a data-model change.
  */
-export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDirty, onSaved, registerSave }: MealsStepProps) {
+export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDirty, onSaved, registerSave, locale }: MealsStepProps) {
+  const { t } = createTranslator(locale);
   const [state, setState] = useState<SaveMealsState>(initialState);
   const [pending, setPending] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -73,6 +76,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
 
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set(
       "items",
@@ -116,9 +120,9 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
 
   return (
     <div className="max-w-2xl">
-      <StudioHeading>Plan your meals</StudioHeading>
+      <StudioHeading>{t("flow", "mealsStepTitle")}</StudioHeading>
       <StudioIntro>
-        Good food photography and clear dietary information make a real difference for your guests.
+        {t("flow", "mealsStepBody")}
       </StudioIntro>
 
       <div className="space-y-3 mb-4">
@@ -154,7 +158,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
                   </span>
                 </div>
                 <p className="text-[13px] font-medium truncate" style={{ color: GUEST_BASE_PALETTE.forest }}>
-                  {m.name || "Untitled meal"}
+                  {m.name || t("flow", "untitledMeal")}
                 </p>
                 <p className="text-[11px] mt-0.5 truncate" style={{ color: GUEST_BASE_PALETTE.mist }}>
                   {[m.location, m.dietaryTags.join(", ")].filter(Boolean).join(" · ")}
@@ -167,7 +171,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
                   className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
-                  Edit
+                  {t("common", "edit")}
                 </button>
                 <button
                   type="button"
@@ -175,7 +179,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
                   className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
-                  Remove
+                  {t("common", "remove")}
                 </button>
               </div>
             </div>
@@ -185,7 +189,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
 
       {meals.length === 0 && (
         <div className="mb-4">
-          <EmptyState title="No meals yet" body="Add the meals guests will be served - breakfast, lunch, dinner - with times and dietary notes. Use + Add Meal below to start." />
+          <EmptyState title={t("flow", "noMealsYet")} body={t("flow", "noMealsBody")} />
         </div>
       )}
 
@@ -205,7 +209,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
               Editing {editing.name || "meal"}
             </h4>
             <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-              Done
+              {t("common", "done")}
             </button>
           </div>
           <div className="grid grid-cols-3 gap-4">
@@ -222,7 +226,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
                 onChange={(patch) => update(editing.id, { ...patch, imagePosition: null })}
                 previewAspect="39/16"
                 previewPosition={objectPositionStyle(editing.imagePosition)}
-                ratioHint="This photo appears both as a small square thumbnail and a wide banner, depending on position - keep the subject centered."
+                ratioHint={t("studio", "photoThumbAndBanner")}
               />
               {editing.imageUrl && (
                 <FocalPointPicker
@@ -230,57 +234,57 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
                   position={editing.imagePosition}
                   onChange={(imagePosition) => update(editing.id, { imagePosition })}
                   aspect="39/16"
-                  label={`${editing.name || "Meal"} photo`}
+                  label={`${editing.name || t("flow", "sessionMeal")} photo`}
                 />
               )}
             </div>
             <div className="col-span-2 space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <StudioLabel>Meal type</StudioLabel>
+                  <StudioLabel>{t("flow", "mealType")}</StudioLabel>
                   <select value={editing.mealType} onChange={(e) => update(editing.id, { mealType: e.target.value as MealType })} className={STUDIO_INPUT_CLASS}>
-                    {MEAL_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t[0].toUpperCase() + t.slice(1)}
+                    {MEAL_TYPES.map((mealType) => (
+                      <option key={mealType} value={mealType}>
+                        {mealTypeLabel(mealType, locale)}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <StudioLabel>Time</StudioLabel>
+                  <StudioLabel>{t("common", "time")}</StudioLabel>
                   <input type="time" value={editing.startTime} onChange={(e) => update(editing.id, { startTime: e.target.value })} className={STUDIO_INPUT_CLASS} />
                 </div>
               </div>
               <div>
-                <StudioLabel>Title</StudioLabel>
+                <StudioLabel>{t("common", "title")}</StudioLabel>
                 <input
                   value={editing.name}
                   onChange={(e) => update(editing.id, { name: e.target.value })}
-                  placeholder="e.g. Morning Vitality Bowl"
+                  placeholder={t("flow", "mealTitlePlaceholder")}
                   className={STUDIO_INPUT_CLASS}
                 />
               </div>
               <div>
-                <StudioLabel>Location</StudioLabel>
+                <StudioLabel>{t("common", "location")}</StudioLabel>
                 <input
                   value={editing.location ?? ""}
                   onChange={(e) => update(editing.id, { location: e.target.value || null })}
-                  placeholder="e.g. Garden Restaurant"
+                  placeholder={t("flow", "mealLocationPlaceholder")}
                   className={STUDIO_INPUT_CLASS}
                 />
               </div>
               <div>
-                <StudioLabel>Description</StudioLabel>
+                <StudioLabel>{t("common", "description")}</StudioLabel>
                 <textarea
                   value={editing.description ?? ""}
                   onChange={(e) => update(editing.id, { description: e.target.value || null })}
-                  placeholder="What guests can expect…"
+                  placeholder={t("flow", "mealDescriptionPlaceholder")}
                   rows={2}
                   className={`${STUDIO_INPUT_CLASS} resize-none`}
                 />
               </div>
               <div>
-                <StudioLabel>Dietary tags (comma-separated)</StudioLabel>
+                <StudioLabel>{t("flow", "dietaryTags")}</StudioLabel>
                 <input
                   value={editing.dietaryTags.join(", ")}
                   onChange={(e) =>
@@ -291,7 +295,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
                         .filter(Boolean),
                     })
                   }
-                  placeholder="Vegan, Gluten-free"
+                  placeholder={t("flow", "dietaryTagsPlaceholder")}
                   className={STUDIO_INPUT_CLASS}
                 />
               </div>
@@ -312,7 +316,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
           onClick={onBack}
           className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3"
         >
-          Back
+          {t("common", "back")}
         </button>
         <button
           type="button"
@@ -320,14 +324,14 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
           onClick={handleSave}
           className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
         >
-          {pending ? "Saving…" : "Save Meals"}
+          {pending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "meals") })}
         </button>
         <button
           type="button"
           onClick={onContinue}
           className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
         >
-          Continue →
+          {t("common", "next")} <ForwardArrow />
         </button>
       </div>
     </div>

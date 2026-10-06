@@ -73,9 +73,20 @@ describe("no alternate Flow palette", () => {
 });
 
 describe("brand preset application", () => {
-  it("a Flow preset click applies primary, accent, navigation and text (Flow's background stays fixed)", () => {
-    for (const p of getBrandPresets("retreat")) {
-      expect(presetColorUpdate("retreat", p)).toEqual({ primary: p.primary, accent: p.accent, navigation: p.navigation, text: p.text });
+  it("a preset click applies all five roles for every product (028B: Flow persists a surface too)", () => {
+    // Before 028B, Flow had nowhere to store a surface, so a preset click
+    // wrote four roles there and five in Teach. brand_configs.custom_surface
+    // (0032) closed that gap, so the write is now identical everywhere.
+    for (const product of ["retreat", "teach"] as const) {
+      for (const p of getBrandPresets(product)) {
+        expect(presetColorUpdate(product, p)).toEqual({
+          primary: p.primary,
+          accent: p.accent,
+          navigation: p.navigation,
+          text: p.text,
+          surface: p.surface,
+        });
+      }
     }
   });
   it("a Teach preset click applies all five roles including the surface tint", () => {

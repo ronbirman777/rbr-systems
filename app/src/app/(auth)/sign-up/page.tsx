@@ -5,7 +5,8 @@ import Link from "next/link";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { BackToHomeLink } from "@/components/back-to-home-link";
 import { signUp, resendConfirmationEmail, type SignUpState } from "../actions";
-import { COUNTRIES } from "@/lib/countries";
+import { CountrySelect } from "@/components/forms/country-select";
+import { PhoneField, type PhoneFieldValue } from "@/components/forms/phone-field";
 
 const initialState: SignUpState = { error: null, checkEmail: false, email: null };
 const INPUT_CLASS =
@@ -69,7 +70,7 @@ export default function SignUpPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [confirmTouched, setConfirmTouched] = useState(false);
   const [country, setCountry] = useState("");
-  const [dialCode, setDialCode] = useState("");
+  const [phone, setPhone] = useState<PhoneFieldValue>({ country: "", number: "" });
 
   const passwordsMismatch = confirmTouched && confirmPassword.length > 0 && password !== confirmPassword;
   const canSubmit = password.length > 0 && confirmPassword.length > 0 && password === confirmPassword;
@@ -137,62 +138,33 @@ export default function SignUpPage() {
             )}
           </div>
 
-          {/* 5. Country */}
+          {/* 5. Country - searchable, valid-only; the stored value is the
+              ISO code, never the typed text. */}
           <div>
-            <label className={LABEL_CLASS}>Country</label>
-            <select
+            <CountrySelect
               name="country"
+              label="Country"
               required
               value={country}
-              onChange={(e) => {
-                setCountry(e.target.value);
-                const match = COUNTRIES.find((c) => c.code === e.target.value);
-                if (match) setDialCode(match.dialCode);
-              }}
-              className={INPUT_CLASS}
-            >
-              <option value="" disabled>
-                Select your country
-              </option>
-              {COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+              onChange={setCountry}
+              placeholder="Search countries"
+            />
           </div>
 
-          {/* 6. Phone Number - structured international calling code + national number */}
+          {/* 6. Phone Number - the phone country is an ISO code, not a
+              calling code: "+1" is 26 territories, so a dial code cannot
+              identify one. The Space/profile country only suggests it. */}
           <div>
-            <label className={LABEL_CLASS}>Phone Number</label>
-            <div className="mt-1 flex gap-2">
-              <select
-                name="dialCode"
-                required
-                value={dialCode}
-                onChange={(e) => setDialCode(e.target.value)}
-                aria-label="Calling code"
-                className="w-24 rounded-lg border border-idw-forest/15 bg-white px-2 py-2.5 text-sm outline-none focus:border-idw-sage"
-              >
-                <option value="" disabled>
-                  Code
-                </option>
-                {COUNTRIES.map((c) => (
-                  <option key={c.code} value={c.dialCode}>
-                    {c.dialCode}
-                  </option>
-                ))}
-              </select>
-              <input
-                name="phoneNumber"
-                type="tel"
-                required
-                autoComplete="tel-national"
-                placeholder="501234567"
-                aria-label="Phone number"
-                className="flex-1 rounded-lg border border-idw-forest/15 bg-white px-3 py-2.5 text-sm outline-none focus:border-idw-sage"
-              />
-            </div>
+            <PhoneField
+              countryName="phoneCountry"
+              numberName="phoneNumber"
+              label="Phone Number"
+              countryLabel="Phone country"
+              required
+              value={phone}
+              onChange={setPhone}
+              suggestedCountry={country}
+            />
           </div>
 
           {/* 7. Optional: Business / Retreat / Practice Name - visually

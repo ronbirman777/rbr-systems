@@ -11,6 +11,7 @@ import { CARD_WIDTH, CARD_HEIGHT, drawShareCard, canvasToPngBlob } from "./share
 import { GuestAccessPanel } from "./guest-access-panel";
 import type { GuestAccessSettings } from "./guestAccessActions";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type ShareSpaceStatus = "live" | "draft" | "inactive";
 
 export type ShareSpaceStepProps = {
@@ -24,24 +25,22 @@ export type ShareSpaceStepProps = {
   secondaryHex: string;
   status: ShareSpaceStatus;
   initialGuestAccessSettings: GuestAccessSettings;
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
-const STATUS_COPY: Record<ShareSpaceStatus, { label: string; pill: "draft" | "published"; detail: string }> = {
-  live: {
-    label: "Published",
-    pill: "published",
-    detail: "Guests can open your app at this link right now.",
-  },
-  draft: {
-    label: "Draft",
-    pill: "draft",
-    detail: "Publish your Space first - this link won't work for guests until then.",
-  },
-  inactive: {
-    label: "Inactive",
-    pill: "draft",
-    detail: "This Space was published, but isn't currently publicly available. Check your commercial access.",
-  },
+/** Translation keys, resolved per render in the Space language. */
+const STATUS_COPY: Record<
+  ShareSpaceStatus,
+  {
+    labelKey: "published" | "draft" | "statusInactive";
+    pill: "draft" | "published";
+    detailKey: "statusPublishedBody" | "statusDraftBody" | "statusInactiveBody";
+  }
+> = {
+  live: { labelKey: "published", pill: "published", detailKey: "statusPublishedBody" },
+  draft: { labelKey: "draft", pill: "draft", detailKey: "statusDraftBody" },
+  inactive: { labelKey: "statusInactive", pill: "draft", detailKey: "statusInactiveBody" },
 };
 
 /**
@@ -52,7 +51,7 @@ const STATUS_COPY: Record<ShareSpaceStatus, { label: string; pill: "draft" | "pu
  * (buildGuestSpaceUrl) - no second URL system. `status` is computed
  * server-side in the page component from published_spaces +
  * isSpacePubliclyAvailable, the same authority the guest routes
- * themselves gate on, so this can never claim "Live" for a Space guests
+ * themselves gate on, so this can never claim t("common", "live") for a Space guests
  * can't actually reach - and Share/Save Image are disabled whenever
  * status isn't "live", so Share can never imply an inactive/unpublished
  * Space is publicly accessible.
@@ -68,7 +67,9 @@ export function ShareSpaceStep({
   secondaryHex,
   status,
   initialGuestAccessSettings,
+  locale = DEFAULT_LOCALE,
 }: ShareSpaceStepProps) {
+  const { t } = createTranslator(locale);
   const [previewReady, setPreviewReady] = useState(false);
   const [busy, setBusy] = useState<"share" | "save" | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -78,7 +79,7 @@ export function ShareSpaceStep({
   const copy = STATUS_COPY[status];
   const canShareOrSave = status === "live";
 
-  const cardOptions = { name, logoUrl, heroImageUrl, qrUrl: qrSrc, primaryHex, secondaryHex };
+  const cardOptions = { name, logoUrl, heroImageUrl, qrUrl: qrSrc, primaryHex, secondaryHex, locale };
 
   useEffect(() => {
     const visible = previewRef.current;
@@ -140,7 +141,7 @@ export function ShareSpaceStep({
       const blob = await renderFullCard();
       downloadBlob(blob);
     } catch {
-      setActionError("Could not generate the Share Card. Try again.");
+      setActionError(t("studio", "shareCardFailed"));
     } finally {
       setBusy(null);
     }
@@ -152,7 +153,7 @@ export function ShareSpaceStep({
     try {
       const blob = await renderFullCard();
       const file = new File([blob], `${slug ?? tenantId}-share-card.png`, { type: "image/png" });
-      const shareText = "Scan to open the retreat app";
+      const shareText = t("flow", "scanToOpen");
 
       if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
         try {
@@ -177,7 +178,7 @@ export function ShareSpaceStep({
       // download the card instead of failing silently.
       downloadBlob(blob);
     } catch {
-      setActionError("Could not share the Share Card. Try again.");
+      setActionError(t("studio", "shareFailed"));
     } finally {
       setBusy(null);
     }
@@ -185,8 +186,8 @@ export function ShareSpaceStep({
 
   return (
     <div className="max-w-3xl">
-      <StudioHeading>Share Your Space</StudioHeading>
-      <StudioIntro>Everything you need to send your retreat app to guests, in one place.</StudioIntro>
+      <StudioHeading>{t("studio", "shareYourSpace")}</StudioHeading>
+      <StudioIntro>{t("studio", "shareStepBody")}</StudioIntro>
 
       <div className="rounded-2xl border border-[#E2DACD] bg-white p-5 flex items-center gap-4" data-testid="share-status-card">
         <div
@@ -201,18 +202,18 @@ export function ShareSpaceStep({
         <div className="min-w-0 flex-1">
           <p className="text-[15px] font-medium truncate text-[#192B21]">{name}</p>
           <div className="mt-1.5">
-            <StatusPill state={copy.pill} label={copy.label} />
+            <StatusPill state={copy.pill} label={t("studio", copy.labelKey)} locale={locale} />
           </div>
         </div>
       </div>
-      <p className="text-xs mt-2 leading-relaxed text-[#6F6C66]">{copy.detail}</p>
+      <p className="text-xs mt-2 leading-relaxed text-[#6F6C66]">{t("studio", copy.detailKey)}</p>
 
       <div className="mt-6 flex flex-col gap-4">
-        <PublicLinkCard url={url} openHref={guestAppPath(tenantId, slug)} published={status !== "draft"} />
-        <QrCodeCard tenantId={tenantId} slug={slug} published={status === "live"} />
+        <PublicLinkCard url={url} openHref={guestAppPath(tenantId, slug)} published={status !== "draft"} locale={locale} />
+        <QrCodeCard tenantId={tenantId} slug={slug} published={status === "live"} locale={locale} />
       </div>
 
-      <GuestAccessPanel tenantId={tenantId} initialSettings={initialGuestAccessSettings} />
+      <GuestAccessPanel tenantId={tenantId} initialSettings={initialGuestAccessSettings} locale={locale} />
 
       <div className="mt-6 flex flex-col sm:flex-row gap-6 items-start">
         <div className="shrink-0 mx-auto sm:mx-0">
@@ -223,26 +224,25 @@ export function ShareSpaceStep({
             <canvas ref={previewRef} style={{ width: 300, height: 375, display: previewReady ? "block" : "none" }} />
             {!previewReady && (
               <div className="absolute inset-0 flex items-center justify-center text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                Rendering preview…
+                {t("studio", "renderingPreview")}
               </div>
             )}
           </div>
           <p className="text-[10px] text-center mt-2" style={{ color: GUEST_BASE_PALETTE.mist }}>
-            Share Card preview
+            {t("studio", "shareCardPreview")}
           </p>
         </div>
 
         <div className="flex-1 min-w-0">
           <p className="text-[13px] leading-relaxed" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-            A finished, branded invitation card for guests - your retreat name, logo, and a large scannable QR code,
-            ready to send directly.
+            {t("studio", "shareCardBody")}
           </p>
 
           {!canShareOrSave && (
             <p className="text-xs mt-3 rounded-xl px-3 py-2" style={{ background: `${GUEST_BASE_PALETTE.sand}40`, color: GUEST_BASE_PALETTE.dusk }}>
               {status === "draft"
-                ? "Publish your Space before sharing this card - the QR won't work for guests until then."
-                : "This Space isn't currently publicly available, so sharing this card would be misleading. Check your commercial access."}
+                ? t("studio", "publishBeforeSharing")
+                : t("studio", "notPubliclyAvailableShare")}
             </p>
           )}
 
@@ -254,7 +254,7 @@ export function ShareSpaceStep({
               className="text-[13px] font-semibold uppercase tracking-wide px-5 py-2.5 rounded-full disabled:opacity-50"
               style={{ background: GUEST_BASE_PALETTE.forest, color: "white" }}
             >
-              {busy === "share" ? "Preparing…" : "Share"}
+              {busy === "share" ? t("common", "preparing") : t("common", "share")}
             </button>
             <button
               type="button"
@@ -263,7 +263,7 @@ export function ShareSpaceStep({
               className="text-[13px] font-semibold uppercase tracking-wide px-5 py-2.5 rounded-full border disabled:opacity-50"
               style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
             >
-              {busy === "save" ? "Preparing…" : "Save Image"}
+              {busy === "save" ? t("common", "preparing") : t("common", "saveImage")}
             </button>
           </div>
           {actionError && (

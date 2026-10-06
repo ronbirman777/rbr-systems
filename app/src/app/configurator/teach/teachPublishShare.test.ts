@@ -88,9 +88,9 @@ describe("Teach Publish & Share section", () => {
   });
 
   it("renders the opt-in on only when previously saved as on", () => {
-    const on = renderToStaticMarkup(createElement(DirectoryOptInCard, { tenantId: "t", initialListed: true }));
+    const on = renderToStaticMarkup(createElement(DirectoryOptInCard, { tenantId: "t", initialListed: true, locale: "en" as const }));
     expect(on).toMatch(/aria-checked="true"/);
-    const off = renderToStaticMarkup(createElement(DirectoryOptInCard, { tenantId: "t", initialListed: false }));
+    const off = renderToStaticMarkup(createElement(DirectoryOptInCard, { tenantId: "t", initialListed: false, locale: "en" as const }));
     expect(off).toMatch(/aria-checked="false"/);
     expect(off).toContain("Not listed");
   });

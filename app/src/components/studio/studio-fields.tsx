@@ -8,6 +8,7 @@ import { validateImageFile, classifyServerImageError } from "@/lib/media/clientV
 import { focalPointToObjectPosition, type FocalPoint } from "@/lib/media/focalPoint";
 import { meetsAA } from "@/lib/theme/contrast";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 /** Shared Studio form primitives (platform chrome, not guest theme) - used by the Time to Teach and Time to Flow Studios. */
 
 export const INPUT =
@@ -219,6 +220,7 @@ export function ColorField({
   swatches,
   hint,
   checkWhiteText = false,
+  locale = DEFAULT_LOCALE
 }: {
   label: string;
   value: string;
@@ -226,7 +228,9 @@ export function ColorField({
   swatches?: readonly { label: string; hex: string }[];
   hint?: string;
   checkWhiteText?: boolean;
+  locale?: Locale;
 }) {
+  const { t } = createTranslator(locale);
   const id = useId();
   const [draft, setDraft] = useState(value);
   const [lastValue, setLastValue] = useState(value);
@@ -275,13 +279,13 @@ export function ColorField({
           aria-invalid={!valid}
           className={`${INPUT} font-mono uppercase max-w-[140px]`}
         />
-        {!valid ? <span className="text-[11.5px] text-[#8F3B3B]">Use a 6-digit hex like #5B7A6E</span> : null}
+        {!valid ? <span className="text-[11.5px] text-[#8F3B3B]">{t("studio", "hexHint")}</span> : null}
       </div>
       {checkWhiteText && valid ? (
         meetsAA(draft, "#FFFFFF") ? (
-          <p className="text-[11.5px] text-[#4E7A5B]">✓ Buttons stay readable with white text (WCAG AA).</p>
+          <p className="text-[11.5px] text-[#4E7A5B]">{t("studio", "buttonsReadableWhite")}</p>
         ) : (
-          <p className="text-[11.5px] text-[#A8643C]">This colour is light — buttons will switch to dark text automatically to stay readable.</p>
+          <p className="text-[11.5px] text-[#A8643C]">{t("studio", "lightColourDarkText")}</p>
         )
       ) : null}
       {hint ? <Hint>{hint}</Hint> : null}
@@ -305,6 +309,7 @@ export function ImageField({
   hint,
   previewClassName = "w-[120px] h-[120px] rounded-xl",
   disabled,
+  locale = DEFAULT_LOCALE
 }: {
   label: string;
   imageUrl: string | null;
@@ -315,7 +320,9 @@ export function ImageField({
   hint?: string;
   previewClassName?: string;
   disabled?: boolean;
+  locale?: Locale;
 }) {
+  const { t } = createTranslator(locale);
   const inputRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState<"upload" | "remove" | null>(null);
   const [errorDialog, setErrorDialog] = useState<{ title: string; body: string } | null>(null);
@@ -339,7 +346,7 @@ export function ImageField({
     setBusy("remove");
     const err = await onRemove();
     setBusy(null);
-    if (err) setErrorDialog({ title: "Couldn't remove the image", body: err });
+    if (err) setErrorDialog({ title: t("studio", "couldNotRemoveImage"), body: err });
   }
 
   return (
@@ -349,20 +356,20 @@ export function ImageField({
         {imageUrl ? (
           <img src={imageUrl} alt="" className={`${previewClassName} object-cover border border-[#E2DACD]`} style={{ objectPosition: focalPointToObjectPosition(focal) }} />
         ) : (
-          <div className={`${previewClassName} border border-dashed border-[#D4C5A9] bg-[#FBF8F2] flex items-center justify-center text-[11px] text-[#8C8A84] text-center px-2`}>No image yet</div>
+          <div className={`${previewClassName} border border-dashed border-[#D4C5A9] bg-[#FBF8F2] flex items-center justify-center text-[11px] text-[#8C8A84] text-center px-2`}>{t("teach", "noImageYet")}</div>
         )}
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap gap-2">
             <StudioButton kind="outline" onClick={() => inputRef.current?.click()} disabled={disabled || busy !== null}>
-              {busy === "upload" ? "Uploading…" : imageUrl ? "Replace" : "Upload image"}
+              {busy === "upload" ? t("common", "uploading") : imageUrl ? t("common", "replace") : t("studio", "uploadImage")}
             </StudioButton>
             {imageUrl ? (
               <StudioButton kind="outline" onClick={handleRemove} disabled={disabled || busy !== null}>
-                {busy === "remove" ? "Removing…" : "Remove"}
+                {busy === "remove" ? t("common", "removing") : t("common", "remove")}
               </StudioButton>
             ) : null}
           </div>
-          <Hint>{hint ?? "JPG, PNG or WebP up to 8 MB."}</Hint>
+          <Hint>{hint ?? t("studio", "imageFormats8mb")}</Hint>
           <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFile} aria-label={`${label} file`} />
         </div>
       </div>

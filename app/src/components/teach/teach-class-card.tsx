@@ -2,12 +2,15 @@
 
 import { useId } from "react";
 import type { TeachContact, TeachItem } from "@/lib/teach/schemas";
-import { buildRegistrationCta, venueLinks, safeHttpUrl, availabilityCtas, formatShortDate } from "@/lib/teach/links";
+import { buildRegistrationCta, venueLinks, safeHttpUrl, availabilityCtas } from "@/lib/teach/links";
+import { createTranslator, type Locale } from "@/lib/i18n";
+import { formatShortDateLocalized } from "@/lib/i18n/datetime";
 import { durationMinutes, describeAvailability } from "@/lib/teach/schedule";
 import { recurrenceSummary, validRule } from "@/lib/teach/recurrenceText";
 import { TeachIcon, type TeachIconName } from "./teach-icons";
 import { TeachImage } from "./teach-image";
 import { DisplayHeading, Eyebrow, PillLink } from "./teach-ui";
+import { TEACH_SIZES } from "./teach-media-sizes";
 
 const VENUE_ICON: Record<string, TeachIconName> = {
   website: "globe",
@@ -52,6 +55,7 @@ export function TeachClassCard({
   onToggle,
   past = false,
   timezoneLabel,
+  locale,
 }: {
   item: TeachItem<"teachClasses">;
   imageUrl: string | null;
@@ -60,18 +64,25 @@ export function TeachClassCard({
   onToggle: () => void;
   past?: boolean;
   timezoneLabel?: string | null;
+  locale: Locale;
 }) {
   const regionId = useId();
+  const { t } = createTranslator(locale);
   const m = item.metadata;
-  const cta = past ? null : buildRegistrationCta(teacherName, item.title, m);
-  const venue = venueLinks(m.venue);
+  const cta = past ? null : buildRegistrationCta(teacherName, item.title, m, null, locale);
+  const venue = venueLinks(m.venue, locale);
   const mins = durationMinutes(m);
   const directions = safeHttpUrl(m.venue.enabled ? m.venue.mapUrl : null);
-  const time = `${m.startTime}${m.endTime ? ` – ${m.endTime}` : ""}${m.endDate && m.endDate !== m.startDate ? ` · until ${formatShortDate(m.endDate)}` : ""}`;
+  const until =
+    m.endDate && m.endDate !== m.startDate
+      ? ` · ${t("teach", "untilDate", { date: formatShortDateLocalized(m.endDate, locale) })}`
+      : "";
+  const time = `${m.startTime}${m.endTime ? ` – ${m.endTime}` : ""}${until}`;
   const facts: { icon: TeachIconName; label: string; value: string }[] = [];
-  if (m.price) facts.push({ icon: "tag", label: "Price", value: m.price });
-  if (m.maxParticipants) facts.push({ icon: "users", label: "Spots", value: `Max ${m.maxParticipants}` });
-  if (mins) facts.push({ icon: "clock", label: "Length", value: `${mins} min` });
+  if (m.price) facts.push({ icon: "tag", label: t("teach", "price"), value: m.price });
+  if (m.maxParticipants)
+    facts.push({ icon: "users", label: t("teach", "spots"), value: t("teach", "maxParticipants", { count: m.maxParticipants }) });
+  if (mins) facts.push({ icon: "clock", label: t("teach", "length"), value: t("teach", "minutes", { count: mins }) });
 
   return (
     <article
@@ -89,26 +100,27 @@ export function TeachClassCard({
         onClick={onToggle}
         aria-expanded={expanded}
         aria-controls={regionId}
-        className="w-full flex items-center gap-3.5 p-3 text-left"
+        className="w-full flex items-center gap-3.5 p-3 text-start"
       >
         <TeachImage
           src={imageUrl}
           focal={m.imagePosition}
           alt=""
           fallbackLabel={item.title}
+          sizes={TEACH_SIZES.classCardThumb}
           className="w-[76px] h-[90px] shrink-0"
           style={{ borderRadius: "var(--tt-radius-image)" }}
         />
         <span className="flex-1 min-w-0 flex flex-col gap-1">
-          <span className="flex items-center gap-2">
+          <span dir="auto" className="flex items-center gap-2">
             {item.subtitle ? <Eyebrow tone="primary">{item.subtitle}</Eyebrow> : null}
             {past ? (
               <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded" style={{ background: "var(--tt-line)", color: "var(--rbr-text-muted)" }}>
-                Ended
+                {t("teach", "ended")}
               </span>
             ) : null}
           </span>
-          <DisplayHeading as="h3" size={18} className="line-clamp-2">
+          <DisplayHeading userContent as="h3" size={18} className="line-clamp-2">
             {item.title}
           </DisplayHeading>
           <MetaRow icon="clock">
@@ -130,18 +142,20 @@ export function TeachClassCard({
         </span>
       </button>
 
-      <div id={regionId} role="region" aria-label={`${item.title} details`} hidden={!expanded}>
+      <div id={regionId} role="region" aria-label={t("teach", "classDetails", { title: item.title })} hidden={!expanded}>
         {expanded ? (
           <div className="tt-expand px-4 pb-4 flex flex-col gap-4">
             <div className="h-px" style={{ background: "var(--tt-line)" }} />
             {m.occurrence && validRule(m) ? (
               <p className="flex items-center gap-2 text-[12.5px] font-medium" style={{ color: "var(--rbr-primary)" }} data-testid="class-repeats">
                 <TeachIcon name="calendar" size={15} />
-                Repeats {recurrenceSummary(validRule(m)!, m.occurrence.originalDate, { withEnd: false }).replace(/^Every/, "every")}
+                {t("teach", "repeatsSummary", {
+                  summary: recurrenceSummary(validRule(m)!, m.occurrence.originalDate, { withEnd: false, locale, lowercase: true }),
+                })}
               </p>
             ) : null}
             {item.description ? (
-              <p className="text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
+              <p dir="auto" className="text-[13.5px] leading-[1.55] whitespace-pre-line" style={{ color: "var(--rbr-text-muted)" }}>
                 {item.description}
               </p>
             ) : null}
@@ -164,7 +178,7 @@ export function TeachClassCard({
             ) : null}
             {m.howToRegister ? (
               <div className="flex flex-col gap-1.5">
-                <Eyebrow>How to register</Eyebrow>
+                <Eyebrow>{t("teach", "howToRegister")}</Eyebrow>
                 <p className="text-[13px] leading-[1.5] whitespace-pre-line" style={{ color: "var(--rbr-text)" }}>
                   {m.howToRegister}
                 </p>
@@ -172,7 +186,7 @@ export function TeachClassCard({
             ) : null}
             {m.howToGetThere ? (
               <div className="flex flex-col gap-1.5">
-                <Eyebrow>How to get there</Eyebrow>
+                <Eyebrow>{t("teach", "howToGetThere")}</Eyebrow>
                 <p className="text-[13px] leading-[1.5] whitespace-pre-line" style={{ color: "var(--rbr-text)" }}>
                   {m.howToGetThere}
                 </p>
@@ -183,7 +197,7 @@ export function TeachClassCard({
                 {m.venue.name ? (
                   <p className="flex items-center gap-2 text-[13px] font-semibold" style={{ color: "var(--rbr-text)" }}>
                     <TeachIcon name="leaf" size={15} />
-                    Hosted at {m.venue.name}
+                    {t("teach", "hostedAt", { venue: m.venue.name })}
                   </p>
                 ) : null}
                 {venue.length > 0 ? (
@@ -212,7 +226,7 @@ export function TeachClassCard({
             ) : null}
             {directions ? (
               <PillLink href={directions} kind="outline" icon="map" className="w-full">
-                Directions
+                {t("common", "map")}
               </PillLink>
             ) : null}
           </div>
@@ -227,13 +241,16 @@ export function TeachAvailabilityCard({
   dateIso,
   teacherName,
   contact,
+  locale,
 }: {
   item: TeachItem<"teachAvailability">;
   dateIso: string;
   teacherName: string;
   contact: TeachContact;
+  locale: Locale;
 }) {
-  const ctas = availabilityCtas(teacherName, dateIso, item.metadata, contact);
+  const { t } = createTranslator(locale);
+  const ctas = availabilityCtas(teacherName, dateIso, item.metadata, contact, locale);
   return (
     <article
       className="tt-reveal p-4 flex flex-col gap-3"
@@ -248,14 +265,14 @@ export function TeachAvailabilityCard({
           <TeachIcon name="user" size={18} />
         </span>
         <div className="min-w-0">
-          <Eyebrow tone="primary">{item.title || "Available for private session"}</Eyebrow>
+          <Eyebrow tone="primary">{item.title || t("teach", "availableForPrivate")}</Eyebrow>
           <DisplayHeading as="h3" size={18}>
-            {formatShortDate(dateIso)} · {item.metadata.from} – {item.metadata.to}
+            {formatShortDateLocalized(dateIso, locale)} · {item.metadata.from} – {item.metadata.to}
           </DisplayHeading>
         </div>
       </div>
       {item.description ? (
-        <p className="text-[13px] leading-[1.5]" style={{ color: "var(--rbr-text-muted)" }}>
+        <p dir="auto" className="text-[13px] leading-[1.5]" style={{ color: "var(--rbr-text-muted)" }}>
           {item.description}
         </p>
       ) : null}
@@ -268,7 +285,7 @@ export function TeachAvailabilityCard({
           ))}
         </div>
       ) : null}
-      <p className="sr-only">{describeAvailability(item.metadata)}</p>
+      <p className="sr-only">{describeAvailability(item.metadata, { locale })}</p>
     </article>
   );
 }

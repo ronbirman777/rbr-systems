@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { Locale } from "@/lib/i18n";
 
 /**
  * Shared contract that wires every Studio module editor into the single
@@ -49,6 +50,10 @@ export type StudioSectionEditorProps = {
   /** Publish this editor's save so the Unsaved Changes dialog's
    * "Save and continue" can run it; pass null to withdraw it. */
   registerSave: (save: (() => Promise<boolean>) | null) => void;
+  /** The Space's system language. Every module editor renders its own
+   * labels, so the locale travels with the same contract rather than
+   * being threaded through seven separate prop lists. */
+  locale: Locale;
 };
 
 /**

@@ -1,0 +1,35 @@
+{
+ "cells": 147,
+ "surfaces": [
+  "flow-guest",
+  "flow-studio",
+  "teach-guest-about",
+  "teach-guest-explore",
+  "teach-guest-home",
+  "teach-guest-schedule",
+  "teach-studio"
+ ],
+ "locales": [
+  "de",
+  "en",
+  "he"
+ ],
+ "widths": [
+  320,
+  360,
+  390,
+  430,
+  768,
+  820,
+  1440
+ ],
+ "horizontalPageOverflow": 0,
+ "elementsWiderThanViewport": 0,
+ "clippedTextNodes": 0,
+ "englishLeaksInHeDe": 0,
+ "latinProseInHebrewRenders": 0,
+ "langDirCorrectEveryCell": true,
+ "directionalIconsFlipOnlyUnderRtl": true,
+ "organizerBlocksWithDirAuto": 231,
+ "note": "Touch targets below 44px appear with identical counts in all three locales, so they are the existing Studio/Guest design and not a localization regression; globals.css is unchanged since the CP3 base."
+}

@@ -167,6 +167,18 @@ export function isDraftMediaPathForTenant(tenantId: string, path: string): boole
   return /\/draft\.[a-zA-Z0-9]+$/.test(path);
 }
 
+/**
+ * True for ANY draft object, whoever owns it - versioned or legacy.
+ *
+ * The tenant-scoped isDraftMediaPathForTenant above answers "may this
+ * caller delete this?"; this answers the different and simpler question
+ * "is this a draft at all?", which is what the guest delivery route
+ * needs in order to refuse one outright.
+ */
+export function isDraftMediaPath(path: string): boolean {
+  return /(?:^|\/)draft\.[a-zA-Z0-9]+$/.test(path);
+}
+
 /** True for a published-copy object (`.../published.<ext>`). */
 export function isPublishedMediaPath(path: string): boolean {
   return /\/published\.[a-zA-Z0-9]+$/.test(path);

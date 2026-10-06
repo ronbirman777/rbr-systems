@@ -55,6 +55,7 @@ export default async function NewRetreatConfiguratorPage() {
         initialCustomPrimary={null}
         initialCustomSecondary={null}
         initialCustomNavigation={null}
+        initialCustomSurface={null}
         initialCustomText={null}
         initialHeroImageRef={null}
         initialHeroImageUrl={null}

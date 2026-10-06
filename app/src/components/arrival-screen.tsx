@@ -6,17 +6,22 @@ import type { BrandConfig } from "@/lib/theme/tokens";
 import type { ArrivalInfo } from "@/lib/modules/arrival";
 import { PinIcon } from "./guest/icons";
 import type { CSSProperties } from "react";
+import { telUrl } from "@/lib/phone";
+import { whatsappUrl } from "@/lib/share/whatsapp";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type ArrivalScreenProps = {
   brand: BrandConfig;
   info: ArrivalInfo;
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
-const ACCORDION_SECTIONS: { key: keyof ArrivalInfo; label: string }[] = [
-  { key: "transportationInfo", label: "Getting Here" },
-  { key: "arrivalInstructions", label: "On Arrival" },
-  { key: "whatToBring", label: "What to Bring" },
-  { key: "importantNotes", label: "Important Notes" },
+const ACCORDION_SECTIONS: { key: keyof ArrivalInfo; labelKey: "gettingHere" | "onArrival" | "whatToBring" | "importantNotes" }[] = [
+  { key: "transportationInfo", labelKey: "gettingHere" },
+  { key: "arrivalInstructions", labelKey: "onArrival" },
+  { key: "whatToBring", labelKey: "whatToBring" },
+  { key: "importantNotes", labelKey: "importantNotes" },
 ];
 
 /**
@@ -29,10 +34,16 @@ const ACCORDION_SECTIONS: { key: keyof ArrivalInfo; label: string }[] = [
  * matched screen, confirmed in the audit), so this is a pure visual
  * port, not a data-model change.
  */
-export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
+export function ArrivalScreen({ brand, info, locale = DEFAULT_LOCALE }: ArrivalScreenProps) {
+  const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
   const [open, setOpen] = useState<string | null>(null);
-  const hasContact = info.contactPhone || info.contactWhatsapp;
+  // Links go through the shared builders (lib/phone, lib/share/whatsapp)
+  // rather than being assembled here: a stored value that cannot produce
+  // a working link now renders no button at all, instead of a dead one.
+  const callHref = telUrl(info.contactPhone);
+  const whatsappHref = whatsappUrl(info.contactWhatsapp);
+  const hasContact = callHref || whatsappHref;
   const hasStats = info.checkInTime || info.checkOutTime;
   const hasAddress = info.address || info.mapUrl;
   const visibleSections = ACCORDION_SECTIONS.filter((s) => info[s.key]);
@@ -44,23 +55,23 @@ export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-7 pb-5">
         <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Practical Information
+          {t("flow", "practicalInformation")}
         </p>
         <h1 className="text-[24px] font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Arrival
+          {t("flow", "arrivalInfo")}
         </h1>
       </div>
 
       {!hasAnyContent && (
         <div className="px-6 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Nothing here yet.
+          {t("flow", "nothingYet")}
         </div>
       )}
 
       <div className="px-4 pb-10 space-y-3">
         {info.welcomeMessage && (
           <div className="rounded-2xl p-4" style={{ background: "var(--rbr-primary)" }}>
-            <p className="text-sm leading-relaxed" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-on-primary)" }}>
+            <p dir="auto" className="text-sm leading-relaxed" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-on-primary)" }}>
               {info.welcomeMessage}
             </p>
           </div>
@@ -74,7 +85,7 @@ export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
                   className="text-[9px] tracking-[0.2em] uppercase font-medium"
                   style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-on-primary)", opacity: 0.75 }}
                 >
-                  Check-in
+                  {t("flow", "checkIn")}
                 </p>
                 <p className="text-[22px] font-light mt-1" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-on-primary)" }}>
                   {info.checkInTime}
@@ -87,7 +98,7 @@ export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
                   className="text-[9px] tracking-[0.2em] uppercase font-medium"
                   style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-on-primary)", opacity: 0.75 }}
                 >
-                  Check-out
+                  {t("flow", "checkOut")}
                 </p>
                 <p className="text-[22px] font-light mt-1" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-on-primary)" }}>
                   {info.checkOutTime}
@@ -105,7 +116,7 @@ export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
               </div>
               <div className="flex-1">
                 {info.address && (
-                  <p className="text-[12px] leading-relaxed whitespace-pre-line" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
+                  <p dir="auto" className="text-[12px] leading-relaxed whitespace-pre-line" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
                     {info.address}
                   </p>
                 )}
@@ -117,7 +128,7 @@ export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
                     className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] px-3 py-1.5 rounded-full font-medium"
                     style={{ fontFamily: "var(--rbr-font-ui)", background: "var(--rbr-primary)", color: "var(--rbr-on-primary)" }}
                   >
-                    Open in Maps
+                    {t("flow", "openInMaps")}
                   </a>
                 )}
               </div>
@@ -128,17 +139,17 @@ export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
         {hasContact && (
           <div className="rounded-3xl p-4" style={{ background: "var(--rbr-cream)", border: "1px solid color-mix(in srgb, var(--rbr-sand) 40%, transparent)" }}>
             <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-              Contact
+              {t("common", "contact")}
             </p>
             {info.contactName && (
-              <p className="text-[12px] mb-2.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
+              <p dir="auto" className="text-[12px] mb-2.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
                 {info.contactName}
               </p>
             )}
             <div className="flex gap-2">
-              {info.contactPhone && (
+              {callHref && (
                 <a
-                  href={`tel:${info.contactPhone}`}
+                  href={callHref}
                   className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-2.5"
                   style={{ background: "var(--rbr-parchment-deep)" }}
                 >
@@ -150,13 +161,13 @@ export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
                     />
                   </svg>
                   <span className="text-[12px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text)" }}>
-                    Call
+                    {t("flow", "call")}
                   </span>
                 </a>
               )}
-              {info.contactWhatsapp && (
+              {whatsappHref && (
                 <a
-                  href={`https://wa.me/${info.contactWhatsapp.replace(/[^\d]/g, "")}`}
+                  href={whatsappHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex-1 flex items-center justify-center gap-2 rounded-2xl py-2.5"
@@ -180,7 +191,7 @@ export function ArrivalScreen({ brand, info }: ArrivalScreenProps) {
             <div key={s.key} className="rounded-3xl overflow-hidden" style={{ background: "var(--rbr-cream)", border: "1px solid color-mix(in srgb, var(--rbr-sand) 40%, transparent)" }}>
               <button type="button" onClick={() => setOpen(isOpen ? null : s.key)} className="w-full flex items-center justify-between p-4">
                 <span className="text-[14px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text)" }}>
-                  {s.label}
+                  {t("flow", s.labelKey)}
                 </span>
                 <svg
                   className={`w-4 h-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}

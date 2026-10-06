@@ -4,15 +4,15 @@ import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 import {
   MEDIA_BUCKET,
-  MEDIA_SIGNED_URL_TTL_SECONDS,
   collectMediaRefs,
+  isDraftMediaPath,
   isWellFormedMediaPath,
-  parseVersionedMediaPath,
 } from "@/lib/media/path";
-import { AUDIO_EXTENSIONS, parseAudioDraftRef } from "@/lib/media/audio";
+import { parseAudioDraftRef } from "@/lib/media/audio";
 import { isReferencedDraftAudio } from "@/lib/media/draftAuthorization";
-import { resolveGuestAccess } from "@/lib/guestAccess/effectiveAccess";
+import { resolveGuestAccessDetailed } from "@/lib/guestAccess/effectiveAccess";
 import { publishedIdentityImageRefs } from "@/lib/guestAccess/publishedIdentity";
+import { mediaCacheDecision, parseMediaWidth, DEFAULT_SIGNED_TTL_SECONDS } from "@/lib/media/cachePolicy";
 
 /**
  * The ONLY way an anonymous guest can ever reach a file in the private
@@ -62,7 +62,7 @@ function notFound() {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   const { path } = await params;
@@ -84,34 +84,92 @@ export async function GET(
 
   const publishedRefs = collectMediaRefs(space.modules);
   if (!publishedRefs.has(objectPath)) return notFound();
-  const versioned = parseVersionedMediaPath(objectPath);
-  if (versioned && AUDIO_EXTENSIONS.has(versioned.ext) && versioned.kind !== "published") return notFound();
+
+  // A guest is served PUBLISHED objects only, whatever the snapshot
+  // claims. publish_space() derives every published ref from its draft
+  // sibling, so a `draft.*` path in a snapshot is impossible today - but
+  // membership in the snapshot is the authorization here, and a snapshot
+  // is written by SQL, so this does not rely on that staying impossible.
+  // Audio already had this guard; CP4's audit found images did not, and
+  // the asymmetry was the only thing standing between a malformed
+  // snapshot and a draft image being served.
+  //
+  // Draft audio for a signed-in member returned above, before this, so
+  // nothing legitimate is caught here.
+  if (isDraftMediaPath(objectPath)) return notFound();
 
   let access;
   try {
-    access = await resolveGuestAccess(tenantId);
+    access = await resolveGuestAccessDetailed(tenantId);
   } catch {
     return new NextResponse("Service unavailable", { status: 503, headers: NO_STORE });
   }
 
-  if (access === "unavailable") return notFound();
-  if (access === "code-required") {
+  if (access.state === "unavailable") return notFound();
+  if (access.state === "code-required") {
     const { heroImageRef, logoImageRef } = publishedIdentityImageRefs(space.modules);
     if (objectPath !== heroImageRef && objectPath !== logoImageRef) return notFound();
   }
 
-  return signAndRedirect(objectPath);
+  // Authorization is settled above. Everything below only chooses how
+  // the allowed bytes are delivered: how wide, and how long the answer
+  // may be reused.
+  //
+  // The mode comes back with the access decision rather than from a
+  // second lookup: "granted" alone covers both a public Space and a
+  // code-protected one whose visitor holds a cookie, and only the former
+  // may be cached publicly. An absent mode fails closed.
+  const decision = mediaCacheDecision({ objectPath, accessMode: access.mode ?? "code" });
+  const width = parseMediaWidth(new URL(request.url).searchParams.get("w"));
+  return signAndRedirect(objectPath, decision.signedTtlSeconds, decision.cacheControl, width, decision.vary);
 }
 
-async function signAndRedirect(objectPath: string) {
+async function signAndRedirect(
+  objectPath: string,
+  ttlSeconds: number = DEFAULT_SIGNED_TTL_SECONDS,
+  cacheControl: string = NO_STORE["Cache-Control"],
+  width: number | null = null,
+  // Defaults to declaring the cookie dependency, so the one caller that
+  // does not go through mediaCacheDecision - draft audio, which is
+  // authorized by the member's own session - keeps it.
+  vary: string | null = "Cookie"
+) {
   const admin = createAdminClient();
-  const { data: signed, error } = await admin.storage
-    .from(MEDIA_BUCKET)
-    .createSignedUrl(objectPath, MEDIA_SIGNED_URL_TTL_SECONDS);
 
-  if (error || !signed) return notFound();
+  // A width-limited render instead of the full-resolution original: the
+  // difference between a multi-hundred-KB hero and a card-sized fetch on
+  // a phone.
+  //
+  // `resize: "contain"` is load-bearing, not a default being restated.
+  // Supabase's default is "cover", and with a width but no height it
+  // takes the height from the SOURCE - so asking a 1200x800 original for
+  // width 320 returns a 320x800 CENTRE CROP, a narrow vertical slice of
+  // the organizer's photo, not the same picture made smaller. Verified
+  // against real Staging objects on the deployed Preview: the response
+  // matched a centre crop to within 0.06 mean pixel difference while
+  // differing from a proportional downscale by 8.11. "contain" fits the
+  // whole image inside the box instead, which is what every call site
+  // here means by a width.
+  //
+  // A project without Storage transformations falls back to the plain
+  // object rather than failing - the same two-step the Share Card
+  // pipeline already uses. When no width is asked for, createSignedUrl is
+  // called with exactly the two arguments it has always had, so the
+  // un-transformed request is byte-for-byte the call it was before CP4.
+  const attempts: ({ transform: { width: number; resize: "contain" } } | undefined)[] = width
+    ? [{ transform: { width, resize: "contain" } }, undefined]
+    : [undefined];
 
-  return NextResponse.redirect(signed.signedUrl, { headers: NO_STORE });
+  for (const options of attempts) {
+    const { data: signed, error } = options
+      ? await admin.storage.from(MEDIA_BUCKET).createSignedUrl(objectPath, ttlSeconds, options)
+      : await admin.storage.from(MEDIA_BUCKET).createSignedUrl(objectPath, ttlSeconds);
+    if (error || !signed) continue;
+    return NextResponse.redirect(signed.signedUrl, {
+      headers: { "Cache-Control": cacheControl, ...(vary ? { Vary: vary } : null) },
+    });
+  }
+  return notFound();
 }
 
 async function serveDraftAudio(objectPath: string, tenantId: string) {

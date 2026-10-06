@@ -62,3 +62,20 @@ export function StudioHeading({ children, eyebrow }: { children: ReactNode; eyeb
 export function StudioIntro({ children }: { children: ReactNode }) {
   return <p className={`${SECTION_INTRO_CLASS} mt-1.5 mb-8`}>{children}</p>;
 }
+
+/**
+ * The "→" that trails a forward action ("Continue →").
+ *
+ * It is NOT part of the translated string, and it is not a decoration
+ * either: it means "onward", so it is one of the few glyphs that must
+ * mirror in Hebrew. `rtl-mirror` (globals.css) flips it under
+ * [dir="rtl"], which keeps the arrow pointing the way the reader is
+ * going without every call site having to think about it.
+ */
+export function ForwardArrow() {
+  return (
+    <span aria-hidden="true" className="rtl-mirror">
+      →
+    </span>
+  );
+}

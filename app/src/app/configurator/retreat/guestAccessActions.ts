@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 
+import { localeFromFormData, studioMessages } from "@/lib/i18n";
 export type GuestAccessSettings = {
   mode: "public" | "code";
   hasCode: boolean;
@@ -42,25 +43,26 @@ export async function setGuestAccessCode(
   _prevState: SetGuestAccessCodeState,
   formData: FormData
 ): Promise<SetGuestAccessCodeState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in.", settings: DEFAULT_SETTINGS };
+  if (!user) return { error: t("notLoggedIn"), settings: DEFAULT_SETTINGS };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space.", settings: DEFAULT_SETTINGS };
+  if (!tenantId) return { error: t("missingSpace"), settings: DEFAULT_SETTINGS };
 
   const code = String(formData.get("code") ?? "");
   if (!/^[0-9]{6}$/.test(code)) {
-    return { error: "The code must be exactly 6 digits.", settings: await getGuestAccessSettingsForOwner(tenantId) };
+    return { error: t("codeMustBe6Digits"), settings: await getGuestAccessSettingsForOwner(tenantId) };
   }
 
   const { error } = await supabase.rpc("set_guest_access_code", { p_tenant_id: tenantId, p_code: code });
   if (error) {
     if (isFunctionMissingError(error)) {
       return {
-        error: "Guest Access isn't available in this environment yet.",
+        error: t("guestAccessUnavailable"),
         settings: DEFAULT_SETTINGS,
       };
     }
@@ -76,19 +78,20 @@ export async function disableGuestAccessCode(
   _prevState: DisableGuestAccessCodeState,
   formData: FormData
 ): Promise<DisableGuestAccessCodeState> {
+  const t = studioMessages(localeFromFormData(formData));
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return { error: "You need to be logged in.", settings: DEFAULT_SETTINGS };
+  if (!user) return { error: t("notLoggedIn"), settings: DEFAULT_SETTINGS };
 
   const tenantId = String(formData.get("tenantId") ?? "");
-  if (!tenantId) return { error: "Missing space.", settings: DEFAULT_SETTINGS };
+  if (!tenantId) return { error: t("missingSpace"), settings: DEFAULT_SETTINGS };
 
   const { error } = await supabase.rpc("disable_guest_access_code", { p_tenant_id: tenantId });
   if (error) {
     if (isFunctionMissingError(error)) {
-      return { error: "Guest Access isn't available in this environment yet.", settings: DEFAULT_SETTINGS };
+      return { error: t("guestAccessUnavailable"), settings: DEFAULT_SETTINGS };
     }
     return { error: error.message, settings: await getGuestAccessSettingsForOwner(tenantId) };
   }

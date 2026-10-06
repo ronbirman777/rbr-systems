@@ -1,34 +1,38 @@
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
 import type { StayConnected } from "@/lib/modules/stayConnected";
-import { SOCIAL_PLATFORM_LABEL } from "@/lib/modules/socialLinks";
+import { socialPlatformLabel } from "@/lib/modules/socialLinks";
 import { SocialIcon } from "./guest/social-icon";
 import type { CSSProperties } from "react";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type StayConnectedScreenProps = {
   brand: BrandConfig;
   stayConnected: StayConnected;
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
 /** Only configured links ever reach this screen - the Studio editor never
  * saves an empty-url row (see stay-connected-step.tsx's handleSave). */
-export function StayConnectedScreen({ brand, stayConnected }: StayConnectedScreenProps) {
+export function StayConnectedScreen({ brand, stayConnected, locale = DEFAULT_LOCALE }: StayConnectedScreenProps) {
+  const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
 
   return (
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-7 pb-5">
         <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Keep in Touch
+          {t("flow", "eyebrowStayConnected")}
         </p>
         <h1 className="text-[24px] font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Stay Connected
+          {t("flow", "stayConnected")}
         </h1>
       </div>
 
       {stayConnected.links.length === 0 && (
         <div className="px-6 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Nothing here yet.
+          {t("flow", "nothingYet")}
         </div>
       )}
 
@@ -46,7 +50,7 @@ export function StayConnectedScreen({ brand, stayConnected }: StayConnectedScree
               <SocialIcon platform={link.platform} style={{ color: "var(--rbr-text)" }} />
             </div>
             <span className="text-[14px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text)" }}>
-              {SOCIAL_PLATFORM_LABEL[link.platform]}
+              {socialPlatformLabel(locale)[link.platform]}
             </span>
           </a>
         ))}

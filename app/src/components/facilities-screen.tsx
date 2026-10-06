@@ -5,9 +5,14 @@ import { PinIcon, ClockIcon } from "./guest/icons";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { BrandImage } from "@/components/shared/brand-image";
+import { FLOW_SIZES } from "./flow-media-sizes";
 export type FacilitiesScreenProps = {
   brand: BrandConfig;
   facilities: DisplayFacility[];
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
 /**
@@ -17,23 +22,25 @@ export type FacilitiesScreenProps = {
  * generalized the same way as MealsScreen (first item featured, not a
  * fixed 4-item layout).
  */
-export function FacilitiesScreen({ brand, facilities }: FacilitiesScreenProps) {
+
+export function FacilitiesScreen({ brand, facilities, locale = DEFAULT_LOCALE }: FacilitiesScreenProps) {
+  const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
 
   return (
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-7 pb-5">
         <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Spaces & Amenities
+          {t("flow", "spacesAmenities")}
         </p>
         <h1 className="text-[24px] font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Facilities
+          {t("flow", "facilities")}
         </h1>
       </div>
 
       {facilities.length === 0 && (
         <div className="px-6 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Nothing added yet.
+          {t("flow", "nothingAddedYet")}
         </div>
       )}
 
@@ -46,12 +53,13 @@ export function FacilitiesScreen({ brand, facilities }: FacilitiesScreenProps) {
           >
             <div className={`relative ${i === 0 ? "h-[220px]" : "h-[160px]"}`}>
               {f.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <BrandImage
                   src={f.imageUrl}
                   alt={f.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full"
+                  sizes={FLOW_SIZES.frame}
                   style={{ objectPosition: objectPositionStyle(f.imagePosition) }}
+                  fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                 />
               ) : (
                 <div className="w-full h-full" style={{ background: `linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))` }} />
@@ -59,7 +67,7 @@ export function FacilitiesScreen({ brand, facilities }: FacilitiesScreenProps) {
               <div className="absolute inset-0" style={{ background: "linear-gradient(to top, color-mix(in srgb, var(--rbr-primary-dark) 70%, transparent), transparent 60%)" }} />
               <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between gap-3">
                 <div className="min-w-0">
-                  <h3 className="text-white text-[20px] leading-snug" style={{ fontFamily: "var(--rbr-font-display)" }}>
+                  <h3 dir="auto" className="text-white text-[20px] leading-snug" style={{ fontFamily: "var(--rbr-font-display)" }}>
                     {f.name}
                   </h3>
                   {f.location && (
@@ -75,7 +83,7 @@ export function FacilitiesScreen({ brand, facilities }: FacilitiesScreenProps) {
                     style={{ background: "rgba(0,0,0,0.2)", backdropFilter: "blur(4px)" }}
                   >
                     <ClockIcon style={{ color: "rgba(255,255,255,0.7)" }} />
-                    <span className="text-white text-[10px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)" }}>
+                    <span dir="auto" className="text-white text-[10px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)" }}>
                       {f.openingHours}
                     </span>
                   </div>
@@ -84,7 +92,7 @@ export function FacilitiesScreen({ brand, facilities }: FacilitiesScreenProps) {
             </div>
             {f.description && (
               <div className="px-4 py-3.5">
-                <p className="text-[12px] leading-relaxed" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
+                <p dir="auto" className="text-[12px] leading-relaxed" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
                   {f.description}
                 </p>
               </div>

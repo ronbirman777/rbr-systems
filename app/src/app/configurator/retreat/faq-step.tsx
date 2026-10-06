@@ -9,6 +9,8 @@ import { EmptyState } from "@/components/studio/empty-state";
 import { saveFaq, type SaveFaqState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
+import { createTranslator } from "@/lib/i18n";
+import { ForwardArrow } from "./studio-ui";
 const initialState: SaveFaqState = { error: null };
 
 export function blankFaqItem(): EditableFaqItem {
@@ -30,7 +32,8 @@ export type FaqStepProps = {
  * writing to the same client-held item, so it round-trips through Save
  * exactly like every other field (see saveFaq's own comment).
  */
-export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, onSaved, registerSave }: FaqStepProps) {
+export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, onSaved, registerSave, locale }: FaqStepProps) {
+  const { t } = createTranslator(locale);
   const [state, setState] = useState<SaveFaqState>(initialState);
   const [pending, setPending] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -66,6 +69,7 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, on
 
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set("items", JSON.stringify(faq));
     const ids = faq.map((f) => f.id);
@@ -87,8 +91,8 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, on
 
   return (
     <div className="max-w-2xl">
-      <StudioHeading>Answer common questions</StudioHeading>
-      <StudioIntro>Guests see these as an accordion inside Explore. Disabled questions stay saved but stop appearing.</StudioIntro>
+      <StudioHeading>{t("flow", "faqStepTitle")}</StudioHeading>
+      <StudioIntro>{t("flow", "faqStepBody")}</StudioIntro>
 
       <div className="space-y-2 mb-4">
         {faq.map((item, i) => {
@@ -111,19 +115,19 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, on
                 </button>
               </div>
               <p className="flex-1 min-w-0 text-[13px] font-medium truncate" style={{ color: GUEST_BASE_PALETTE.forest }}>
-                {item.question || "Untitled question"}
+                {item.question || t("flow", "untitledQuestion")}
               </p>
               {!item.enabled && (
                 <span className="text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wide font-medium flex-shrink-0" style={{ background: `${GUEST_BASE_PALETTE.sand}80`, color: GUEST_BASE_PALETTE.dusk }}>
-                  Disabled
+                  {t("common", "disabled")}
                 </span>
               )}
               <div className="flex items-center gap-1.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button type="button" onClick={() => setEditId(isEditing ? null : item.id)} className="text-[11px] px-2.5 py-1 rounded-lg border" style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}>
-                  Edit
+                  {t("common", "edit")}
                 </button>
                 <button type="button" onClick={() => handleRemove(item.id)} className="text-[11px] px-2.5 py-1 rounded-lg border" style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}>
-                  Remove
+                  {t("common", "remove")}
                 </button>
               </div>
             </div>
@@ -133,7 +137,7 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, on
 
       {faq.length === 0 && (
         <div className="mb-4">
-          <EmptyState title="No questions yet" body="Answer the questions guests ask most, such as wifi, check-out or what to bring. Use + Add Question below to start." />
+          <EmptyState title={t("flow", "noQuestionsYet")} body={t("flow", "noQuestionsBody")} />
         </div>
       )}
 
@@ -150,24 +154,24 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, on
         <div className="rounded-2xl border p-5" style={{ background: GUEST_BASE_PALETTE.parchmentDeep, borderColor: "rgba(45,74,62,0.15)" }}>
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
-              Edit Question
+              {t("flow", "editQuestion")}
             </h4>
             <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-              Done
+              {t("common", "done")}
             </button>
           </div>
           <div className="space-y-3">
             <div>
-              <StudioLabel>Question</StudioLabel>
-              <input value={editing.question} onChange={(e) => update(editing.id, { question: e.target.value })} placeholder="e.g. What should I pack?" className={STUDIO_INPUT_CLASS} />
+              <StudioLabel>{t("common", "question")}</StudioLabel>
+              <input value={editing.question} onChange={(e) => update(editing.id, { question: e.target.value })} placeholder={t("flow", "questionPlaceholder")} className={STUDIO_INPUT_CLASS} />
             </div>
             <div>
-              <StudioLabel>Answer</StudioLabel>
+              <StudioLabel>{t("common", "answer")}</StudioLabel>
               <textarea value={editing.answer ?? ""} onChange={(e) => update(editing.id, { answer: e.target.value || null })} rows={3} className={`${STUDIO_INPUT_CLASS} resize-none`} />
             </div>
             <label className="flex items-center gap-2 text-[12px]" style={{ color: GUEST_BASE_PALETTE.dusk }}>
               <input type="checkbox" checked={editing.enabled} onChange={(e) => update(editing.id, { enabled: e.target.checked })} />
-              Visible to guests
+              {t("studio", "visibleToGuests")}
             </label>
           </div>
         </div>
@@ -181,13 +185,13 @@ export function FaqStep({ tenantId, faq, setFaq, onBack, onContinue, onDirty, on
 
       <div className="mt-8 flex gap-3 items-center">
         <button type="button" onClick={onBack} className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3">
-          Back
+          {t("common", "back")}
         </button>
         <button type="button" disabled={pending} onClick={handleSave} className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60">
-          {pending ? "Saving…" : "Save FAQ"}
+          {pending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "faq") })}
         </button>
         <button type="button" onClick={onContinue} className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest">
-          Continue →
+          {t("common", "next")} <ForwardArrow />
         </button>
       </div>
     </div>

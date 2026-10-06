@@ -1,4 +1,5 @@
 import type { SVGProps } from "react";
+import { isDirectionalIcon } from "@/lib/i18n/direction";
 
 /** Line icons for Time to Teach (24px grid, 1.7 stroke, currentColor). */
 const PATHS = {
@@ -38,17 +39,25 @@ const PATHS = {
 
 export type TeachIconName = keyof typeof PATHS | "play" | "pause";
 
-export function TeachIcon({ name, size = 18, strokeWidth = 1.7, ...rest }: { name: TeachIconName; size?: number; strokeWidth?: number } & SVGProps<SVGSVGElement>) {
+/**
+ * Directional icons get a marker class; globals.css flips exactly those
+ * in RTL. Done here, once, rather than threading `dir` through every call
+ * site - and driven by the shared allowlist, so "play" never becomes a
+ * rewind button in Hebrew.
+ */
+export function TeachIcon({ name, size = 18, strokeWidth = 1.7, className, ...rest }: { name: TeachIconName; size?: number; strokeWidth?: number } & SVGProps<SVGSVGElement>) {
+  const directionalClass = isDirectionalIcon(name) ? "rtl-mirror" : "";
+  const mergedClassName = [directionalClass, className].filter(Boolean).join(" ") || undefined;
   if (name === "play") {
     return (
-      <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" {...rest}>
+      <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className={mergedClassName} {...rest}>
         <path d="M8 5.5v13l11-6.5z" fill="currentColor" />
       </svg>
     );
   }
   if (name === "pause") {
     return (
-      <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" {...rest}>
+      <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" className={mergedClassName} {...rest}>
         <rect x="6.5" y="5" width="3.6" height="14" rx="1.2" fill="currentColor" />
         <rect x="13.9" y="5" width="3.6" height="14" rx="1.2" fill="currentColor" />
       </svg>
@@ -59,7 +68,7 @@ export function TeachIcon({ name, size = 18, strokeWidth = 1.7, ...rest }: { nam
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
+      fill="none" className={mergedClassName}
       stroke="currentColor"
       strokeWidth={strokeWidth}
       strokeLinecap="round"

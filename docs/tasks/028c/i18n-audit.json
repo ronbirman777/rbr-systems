@@ -1,0 +1,1217 @@
+{
+ "teachStudio": {
+  ", update: (patch: Patch": [
+   "app/configurator/teach/teach-studio-sections.tsx:138:jsx-text"
+  ],
+  "EditableTeachItem": [
+   "app/configurator/teach/teach-studio-sections.tsx:140:jsx-text"
+  ],
+  "(keys: readonly T[], labels: Record": [
+   "app/configurator/teach/teach-studio-sections.tsx:519:jsx-text"
+  ],
+  "void; fallback: string; previewValues: Parameters": [
+   "app/configurator/teach/teach-studio-sections.tsx:695:jsx-text"
+  ],
+  "; update: (p: Patch": [
+   "app/configurator/teach/teach-studio-sections.tsx:1091:jsx-text",
+   "app/configurator/teach/teach-studio-sections.tsx:1241:jsx-text",
+   "app/configurator/teach/teach-studio-sections.tsx:1644:jsx-text"
+  ],
+  "Instagram": [
+   "app/configurator/teach/teach-studio-sections.tsx:1214:attr:label",
+   "app/configurator/teach/teach-studio-sections.tsx:1214:quoted"
+  ],
+  "Facebook": [
+   "app/configurator/teach/teach-studio-sections.tsx:1215:attr:label",
+   "app/configurator/teach/teach-studio-sections.tsx:1215:quoted"
+  ],
+  "item-${moduleKey}": [
+   "app/configurator/teach/teach-studio-sections.tsx:185:template"
+  ],
+  "${items.length} of ${max} used": [
+   "app/configurator/teach/teach-studio-sections.tsx:230:template"
+  ],
+  "${res.slug}.innerdwes.com": [
+   "app/configurator/teach/teach-studio-sections.tsx:381:template"
+  ],
+  "${api.slug}.innerdwes.com": [
+   "app/configurator/teach/teach-studio-sections.tsx:421:template",
+   "app/configurator/teach/teach-studio-sections.tsx:1898:template"
+  ],
+  "${INPUT} italic": [
+   "app/configurator/teach/teach-studio-sections.tsx:453:template"
+  ],
+  "${INPUT} leading-relaxed": [
+   "app/configurator/teach/teach-studio-sections.tsx:710:template"
+  ],
+  "${cancelledCount} dates are cancelled": [
+   "app/configurator/teach/teach-studio-sections.tsx:984:template"
+  ],
+  "${m.startTime}${m.endTime ?": [
+   "app/configurator/teach/teach-studio-sections.tsx:1070:template"
+  ],
+  ": \"\"}${subtitle ?": [
+   "app/configurator/teach/teach-studio-sections.tsx:1070:template"
+  ],
+  "${item.title} (copy)": [
+   "app/configurator/teach/teach-studio-sections.tsx:1229:template"
+  ],
+  "${otherZoneClasses} classes use": [
+   "app/configurator/teach/teach-studio-sections.tsx:1308:template"
+  ],
+  "${id}-list": [
+   "app/configurator/teach/teach-studio-sections.tsx:1565:template",
+   "app/configurator/teach/teach-studio-sections.tsx:1566:template"
+  ],
+  "cat-${item.id}": [
+   "app/configurator/teach/teach-studio-sections.tsx:1593:template"
+  ],
+  "acat-${item.id}": [
+   "app/configurator/teach/teach-studio-sections.tsx:1756:template"
+  ],
+  "${api.items.teachClasses.length} classes · ${api.items.teachAvailability.length} private windows": [
+   "app/configurator/teach/teach-studio-sections.tsx:1900:template"
+  ],
+  "${noRegistration.length} class(es) have no working registration method — no join button will show": [
+   "app/configurator/teach/teach-studio-sections.tsx:1901:template"
+  ],
+  "Enter": [
+   "app/configurator/teach/teach-studio-sections.tsx:468:quoted"
+  ],
+  "Custom": [
+   "app/configurator/teach/teach-studio-sections.tsx:760:quoted"
+  ],
+  "WhatsApp": [
+   "app/configurator/teach/teach-studio-sections.tsx:1268:quoted"
+  ],
+  "(key: K, patch: Patch": [
+   "app/configurator/teach/teach-studio.tsx:148:jsx-text"
+  ],
+  "(key: K, next: ListUpdate": [
+   "app/configurator/teach/teach-studio.tsx:151:jsx-text"
+  ],
+  "Promise": [
+   "app/configurator/teach/teach-studio.tsx:152:jsx-text",
+   "app/configurator/teach/teach-studio.tsx:157:jsx-text",
+   "app/configurator/teach/teach-studio.tsx:158:jsx-text",
+   "app/configurator/teach/teach-studio.tsx:159:jsx-text",
+   "app/configurator/teach/teach-studio.tsx:160:jsx-text",
+   "app/configurator/teach/teach-studio.tsx:161:jsx-text",
+   "app/configurator/teach/teach-studio.tsx:162:jsx-text",
+   "app/configurator/teach/teach-studio.tsx:163:jsx-text",
+   "app/configurator/teach/teach-studio.tsx:164:jsx-text",
+   "app/configurator/teach/teach-studio.tsx:167:jsx-text",
+   "app/configurator/teach/teach-studio.tsx:175:jsx-text",
+   "components/studio/studio-fields.tsx:318:jsx-text",
+   "components/studio/studio-fields.tsx:319:jsx-text"
+  ],
+  "(key: K, item: EditableTeachItem": [
+   "app/configurator/teach/teach-studio.tsx:159:jsx-text",
+   "app/configurator/teach/teach-studio.tsx:160:jsx-text"
+  ],
+  "(list: EditableTeachItem": [
+   "app/configurator/teach/teach-studio.tsx:266:jsx-text"
+  ],
+  "TIME TO TEACH": [
+   "app/configurator/teach/teach-studio.tsx:625:jsx-text"
+  ],
+  "= Partial": [
+   "app/configurator/teach/studioStateUpdates.ts:8:jsx-text"
+  ],
+  "Partial": [
+   "app/configurator/teach/studioStateUpdates.ts:8:jsx-text"
+  ],
+  "(patch: Patch": [
+   "app/configurator/teach/studioStateUpdates.ts:10:jsx-text"
+  ],
+  ", current: T): Partial": [
+   "app/configurator/teach/studioStateUpdates.ts:10:jsx-text"
+  ],
+  "(list: T[], id: string, patch: Patch": [
+   "app/configurator/teach/studioStateUpdates.ts:15:jsx-text"
+  ],
+  "(update: ListUpdate": [
+   "app/configurator/teach/studioStateUpdates.ts:27:jsx-text"
+  ],
+  "(slice: S, key: K, patch: Partial": [
+   "app/configurator/teach/studioStateUpdates.ts:53:jsx-text"
+  ],
+  "): Pick": [
+   "app/configurator/teach/studioStateUpdates.ts:53:jsx-text"
+  ],
+  "= 0 && durationSeconds": [
+   "app/configurator/teach/actions.ts:662:jsx-text"
+  ],
+  "[r.module_key as string, r.data as Record": [
+   "app/configurator/teach/actions.ts:781:jsx-text"
+  ],
+  "Colours must be 6-digit hex values like #5B7A6E.": [
+   "app/configurator/teach/actions.ts:222:key:error",
+   "app/configurator/teach/actions.ts:222:quoted"
+  ],
+  "{tenant}/teachAudioFile/{item}/{uploadId}/draft.<ext>": [
+   "app/configurator/teach/actions.ts:577:template"
+  ],
+  "Opening your studio…": [
+   "app/configurator/teach/[tenantId]/loading.tsx:9:quoted"
+  ],
+  "${d.toISOString().slice(0, 16).replace(\"T\", \" \")} UTC": [
+   "lib/studio/status.ts:39:template"
+  ],
+  "${safe}-qr.png": [
+   "lib/studio/publicLink.ts:26:template"
+  ],
+  "${safe}-share-card.png": [
+   "lib/studio/publicLink.ts:31:template"
+  ],
+  "Share on WhatsApp": [
+   "lib/studio/publicLink.ts:45:quoted"
+  ],
+  "Recommended": [
+   "components/studio/space-language-card.tsx:15:quoted"
+  ],
+  "Ready to publish?": [
+   "components/studio/readiness-checklist.tsx:5:quoted"
+  ],
+  "class-${classId.slice(0, 8)}-whatsapp-qr.png": [
+   "components/studio/class-whatsapp-qr.tsx:54:template"
+  ],
+  "${s.label} ${s.hex}": [
+   "components/studio/studio-fields.tsx:258:attr:aria-label"
+  ],
+  "${label} visual picker": [
+   "components/studio/studio-fields.tsx:268:attr:aria-label",
+   "components/studio/studio-fields.tsx:268:template"
+  ],
+  "${label} file": [
+   "components/studio/studio-fields.tsx:373:attr:aria-label",
+   "components/studio/studio-fields.tsx:373:template"
+  ],
+  "${INPUT} leading-relaxed resize-y": [
+   "components/studio/studio-fields.tsx:93:template"
+  ],
+  "color-field-${label}": [
+   "components/studio/studio-fields.tsx:248:template"
+  ],
+  "image-field-${label}": [
+   "components/studio/studio-fields.tsx:353:template"
+  ],
+  "Custom colors": [
+   "components/studio/brand-preset-chips.tsx:22:quoted"
+  ],
+  "Calm": [
+   "lib/teach/style.ts:23:key:label",
+   "lib/teach/style.ts:23:quoted"
+  ],
+  "Earth": [
+   "lib/teach/style.ts:24:key:label",
+   "lib/teach/style.ts:24:quoted"
+  ],
+  "Sage": [
+   "lib/teach/style.ts:25:key:label",
+   "lib/teach/style.ts:25:quoted"
+  ],
+  "Sunrise": [
+   "lib/teach/style.ts:26:key:label",
+   "lib/teach/style.ts:26:quoted"
+  ],
+  "Mediterranean": [
+   "lib/teach/style.ts:27:key:label",
+   "lib/teach/style.ts:27:quoted"
+  ],
+  "Deep Forest": [
+   "lib/teach/style.ts:28:key:label",
+   "lib/teach/style.ts:28:quoted"
+  ],
+  "Light": [
+   "lib/teach/style.ts:29:key:label",
+   "lib/teach/style.ts:29:quoted"
+  ],
+  "Sacred": [
+   "lib/teach/style.ts:30:key:label",
+   "lib/teach/style.ts:30:quoted"
+  ],
+  "Minimal": [
+   "lib/teach/style.ts:31:key:label",
+   "lib/teach/style.ts:31:quoted",
+   "lib/teach/style.ts:51:quoted"
+  ],
+  "Classic": [
+   "lib/teach/style.ts:50:quoted"
+  ],
+  "Editorial": [
+   "lib/teach/style.ts:50:quoted"
+  ],
+  "Serene": [
+   "lib/teach/style.ts:50:quoted"
+  ],
+  "Modern": [
+   "lib/teach/style.ts:50:quoted"
+  ],
+  "Soft": [
+   "lib/teach/style.ts:51:quoted",
+   "lib/teach/style.ts:54:quoted"
+  ],
+  "Rounded": [
+   "lib/teach/style.ts:51:quoted"
+  ],
+  "Arched window": [
+   "lib/teach/style.ts:52:quoted"
+  ],
+  "Portrait circle": [
+   "lib/teach/style.ts:52:quoted"
+  ],
+  "Full-bleed": [
+   "lib/teach/style.ts:52:quoted"
+  ],
+  "Editorial serif": [
+   "lib/teach/style.ts:53:quoted"
+  ],
+  "Card": [
+   "lib/teach/style.ts:53:quoted"
+  ],
+  "Minimal line": [
+   "lib/teach/style.ts:53:quoted"
+  ],
+  "None": [
+   "lib/teach/style.ts:54:quoted",
+   "lib/teach/style.ts:56:quoted",
+   "lib/teach/style.ts:57:quoted"
+  ],
+  "Rich": [
+   "lib/teach/style.ts:54:quoted"
+  ],
+  "Compact": [
+   "lib/teach/style.ts:55:quoted"
+  ],
+  "Balanced": [
+   "lib/teach/style.ts:55:quoted"
+  ],
+  "Airy": [
+   "lib/teach/style.ts:55:quoted"
+  ],
+  "Paper grain": [
+   "lib/teach/style.ts:56:quoted"
+  ],
+  "Linen": [
+   "lib/teach/style.ts:56:quoted"
+  ],
+  "Breath line": [
+   "lib/teach/style.ts:57:quoted"
+  ],
+  "Wave": [
+   "lib/teach/style.ts:57:quoted"
+  ],
+  "Leaf dot": [
+   "lib/teach/style.ts:57:quoted"
+  ],
+  "= start && dateIso": [
+   "lib/teach/schedule.ts:55:jsx-text"
+  ],
+  "days - 1": [
+   "lib/teach/schedule.ts:106:template"
+  ],
+  "withWhen: false": [
+   "lib/teach/schedule.ts:130:template"
+  ],
+  "YYYY-MM-DD": [
+   "lib/teach/schedule.ts:7:quoted",
+   "lib/teach/recurrenceText.ts:16:quoted"
+  ],
+  "HH:MM": [
+   "lib/teach/schedule.ts:7:quoted"
+  ],
+  "Every Tuesday · 10:00 – 13:00": [
+   "lib/teach/schedule.ts:126:quoted"
+  ],
+  "Every Tuesday · 09:00 – 11:00": [
+   "lib/teach/schedule.ts:128:quoted"
+  ],
+  "Every": [
+   "lib/teach/schedule.ts:131:quoted",
+   "lib/teach/recurrenceText.ts:56:quoted"
+  ],
+  "Teaching since 2014 · 11 years": [
+   "lib/teach/schedule.ts:166:quoted"
+  ],
+  "): Record": [
+   "lib/teach/recurrenceText.ts:96:jsx-text"
+  ],
+  "Repeats every week on Sun, Wed": [
+   "lib/teach/recurrenceText.ts:12:quoted"
+  ],
+  "Every week on Sun, Wed · No end date": [
+   "lib/teach/recurrenceText.ts:50:quoted"
+  ],
+  "Repeats every week": [
+   "lib/teach/recurrenceText.ts:55:quoted"
+  ]
+ },
+ "flowStudio": {
+  "${STUDIO_INPUT_CLASS} resize-none": [
+   "app/configurator/retreat/faq-step.tsx:170:template",
+   "app/configurator/retreat/custom-pages-step.tsx:235:template",
+   "app/configurator/retreat/treatments-step.tsx:311:template",
+   "app/configurator/retreat/facilities-step.tsx:259:template",
+   "app/configurator/retreat/featured-step.tsx:129:template",
+   "app/configurator/retreat/meals-step.tsx:283:template",
+   "app/configurator/retreat/retreat-configurator.tsx:895:template",
+   "app/configurator/retreat/arrival-step.tsx:46:template"
+  ],
+  "could not remove Space media": [
+   "app/configurator/retreat/lifecycleActions.ts:219:key:message"
+  ],
+  "slots_used": [
+   "app/configurator/retreat/lifecycleActions.ts:25:template"
+  ],
+  "slots_available": [
+   "app/configurator/retreat/lifecycleActions.ts:25:template"
+  ],
+  "auth.getUser()": [
+   "app/configurator/retreat/lifecycleActions.ts:42:template",
+   "app/configurator/retreat/lifecycleActions.ts:43:template"
+  ],
+  "My space": [
+   "app/configurator/retreat/studio-ui.tsx:42:quoted"
+  ],
+  "Content": [
+   "app/configurator/retreat/studio-ui.tsx:42:quoted",
+   "app/configurator/retreat/retreat-configurator.tsx:1463:quoted",
+   "app/configurator/retreat/retreat-configurator.tsx:1693:quoted"
+  ],
+  "Publishing": [
+   "app/configurator/retreat/studio-ui.tsx:43:quoted"
+  ],
+  "Continue →": [
+   "app/configurator/retreat/studio-ui.tsx:67:quoted"
+  ],
+  "${editing.title || t(\"flow\", \"pageLabel\")} photo": [
+   "app/configurator/retreat/custom-pages-step.tsx:224:template"
+  ],
+  "What to Bring": [
+   "app/configurator/retreat/custom-pages-step.tsx:33:quoted"
+  ],
+  "Community Guidelines": [
+   "app/configurator/retreat/custom-pages-step.tsx:34:quoted"
+  ],
+  "Could not find the table": [
+   "app/configurator/retreat/featuredActions.ts:38:quoted"
+  ],
+  "Could not find the function": [
+   "app/configurator/retreat/featuredActions.ts:121:quoted",
+   "app/configurator/retreat/guestAccessActions.ts:20:quoted"
+  ],
+  "credentials: \"include\"": [
+   "app/configurator/retreat/shareCard.ts:67:template"
+  ],
+  "Access-Control-Allow-Origin: *": [
+   "app/configurator/retreat/shareCard.ts:72:template"
+  ],
+  "fetch(signedUrl, {credentials:\"include\"})": [
+   "app/configurator/retreat/shareCard.ts:74:template"
+  ],
+  "Could not load image: ${url}": [
+   "app/configurator/retreat/shareCard.ts:77:template"
+  ],
+  "400 ${px}px \"DM Serif Display\", serif": [
+   "app/configurator/retreat/shareCard.ts:141:template"
+  ],
+  "400 ${minPx}px \"DM Serif Display\", serif": [
+   "app/configurator/retreat/shareCard.ts:147:template"
+  ],
+  "object-fit: cover": [
+   "app/configurator/retreat/shareCard.ts:152:template",
+   "lib/modules/facilitator.ts:30:template"
+  ],
+  "400 ${titlePx}px \"DM Serif Display\", serif": [
+   "app/configurator/retreat/shareCard.ts:317:template"
+  ],
+  "Your Guides": [
+   "app/configurator/retreat/shareCard.ts:23:quoted"
+  ],
+  "Meet the Facilitators": [
+   "app/configurator/retreat/shareCard.ts:23:quoted"
+  ],
+  "Happening Now": [
+   "app/configurator/retreat/shareCard.ts:31:quoted"
+  ],
+  "Failed to fetch": [
+   "app/configurator/retreat/shareCard.ts:75:quoted"
+  ],
+  "Good morning.": [
+   "app/configurator/retreat/shareCard.ts:130:quoted",
+   "app/configurator/retreat/shareCard.ts:314:quoted"
+  ],
+  "DM Serif Display": [
+   "app/configurator/retreat/shareCard.ts:141:quoted",
+   "app/configurator/retreat/shareCard.ts:147:quoted",
+   "app/configurator/retreat/shareCard.ts:225:quoted",
+   "app/configurator/retreat/shareCard.ts:226:quoted",
+   "app/configurator/retreat/shareCard.ts:317:quoted"
+  ],
+  "DM Sans": [
+   "app/configurator/retreat/shareCard.ts:227:quoted",
+   "app/configurator/retreat/shareCard.ts:308:quoted",
+   "app/configurator/retreat/shareCard.ts:335:quoted",
+   "app/configurator/retreat/shareCard.ts:380:quoted",
+   "app/configurator/retreat/shareCard.ts:396:quoted"
+  ],
+  "TIME TO FLOW": [
+   "app/configurator/retreat/shareCard.ts:310:quoted"
+  ],
+  "POWERED BY INNERDWES": [
+   "app/configurator/retreat/shareCard.ts:397:quoted"
+  ],
+  "Could not export image": [
+   "app/configurator/retreat/shareCard.ts:404:quoted"
+  ],
+  "${slug ?? tenantId}-share-card.png": [
+   "app/configurator/retreat/share-space-step.tsx:130:template",
+   "app/configurator/retreat/share-space-step.tsx:155:template"
+  ],
+  "View live guest app": [
+   "app/configurator/retreat/share-space-step.tsx:50:quoted"
+  ],
+  "AbortError": [
+   "app/configurator/retreat/share-space-step.tsx:163:quoted",
+   "app/configurator/retreat/share-space-step.tsx:173:quoted"
+  ],
+  "${editing.name || t(\"flow\", \"facilityName\")} photo": [
+   "app/configurator/retreat/facilities-step.tsx:218:template"
+  ],
+  "LifecycleActionState": [
+   "app/configurator/retreat/lifecycleActionsState.ts:2:template"
+  ],
+  "next build": [
+   "app/configurator/retreat/lifecycleActionsState.ts:10:template",
+   "app/configurator/retreat/featuredValidation.ts:7:template"
+  ],
+  "Instagram": [
+   "app/configurator/retreat/featured-step.tsx:159:jsx-text",
+   "lib/modules/socialLinks.ts:22:quoted"
+  ],
+  "published.*": [
+   "app/configurator/retreat/actions.ts:42:template"
+  ],
+  "module_${key}": [
+   "app/configurator/retreat/actions.ts:373:template",
+   "app/configurator/retreat/retreat-configurator.tsx:1390:template",
+   "app/configurator/retreat/retreat-configurator.tsx:2204:template"
+  ],
+  "tenantMediaPath(tenantId, moduleKey, itemId, ext)": [
+   "app/configurator/retreat/actions.ts:1004:template"
+  ],
+  "Add Space / upgrade required": [
+   "app/configurator/retreat/actions.ts:88:quoted"
+  ],
+  "SAVE MODULES": [
+   "app/configurator/retreat/actions.ts:1073:quoted"
+  ],
+  "Save": [
+   "app/configurator/retreat/actions.ts:1143:quoted",
+   "app/configurator/retreat/retreat-configurator.tsx:1148:quoted"
+  ],
+  "${editing.name || t(\"flow\", \"sessionMeal\")} photo": [
+   "app/configurator/retreat/meals-step.tsx:237:template"
+  ],
+  "Promise": [
+   "app/configurator/retreat/unsaved-changes-dialog.tsx:13:jsx-text",
+   "app/configurator/retreat/retreat-configurator.tsx:1344:jsx-text",
+   "app/configurator/retreat/retreat-configurator.tsx:1356:jsx-text",
+   "app/configurator/retreat/studioSection.ts:52:jsx-text",
+   "app/configurator/retreat/studioSection.ts:67:jsx-text",
+   "components/studio/studio-fields.tsx:318:jsx-text",
+   "components/studio/studio-fields.tsx:319:jsx-text",
+   "lib/modules/persistItem.ts:45:jsx-text",
+   "lib/modules/persistItem.ts:57:jsx-text"
+  ],
+  "Escape": [
+   "app/configurator/retreat/unsaved-changes-dialog.tsx:49:quoted"
+  ],
+  "No available Space slots": [
+   "app/configurator/retreat/page.tsx:29:jsx-text"
+  ],
+  "Go to My Spaces": [
+   "app/configurator/retreat/page.tsx:38:jsx-text"
+  ],
+  "Enter a hex color like #2D4A3E (or pick one from the swatch).": [
+   "app/configurator/retreat/retreat-configurator.tsx:296:jsx-text"
+  ],
+  "Aa": [
+   "app/configurator/retreat/retreat-configurator.tsx:2125:jsx-text"
+  ],
+  "${c.label} ${c.hex}": [
+   "app/configurator/retreat/retreat-configurator.tsx:248:attr:aria-label"
+  ],
+  "${label} - open color picker": [
+   "app/configurator/retreat/retreat-configurator.tsx:279:attr:aria-label",
+   "app/configurator/retreat/retreat-configurator.tsx:279:template"
+  ],
+  "Yoga": [
+   "app/configurator/retreat/retreat-configurator.tsx:360:key:value",
+   "app/configurator/retreat/retreat-configurator.tsx:360:quoted"
+  ],
+  "Meditation": [
+   "app/configurator/retreat/retreat-configurator.tsx:361:key:value",
+   "app/configurator/retreat/retreat-configurator.tsx:361:quoted"
+  ],
+  "Breathwork": [
+   "app/configurator/retreat/retreat-configurator.tsx:362:key:value",
+   "app/configurator/retreat/retreat-configurator.tsx:362:quoted"
+  ],
+  "Sound": [
+   "app/configurator/retreat/retreat-configurator.tsx:363:key:value",
+   "app/configurator/retreat/retreat-configurator.tsx:363:quoted"
+  ],
+  "Meal": [
+   "app/configurator/retreat/retreat-configurator.tsx:364:key:value",
+   "app/configurator/retreat/retreat-configurator.tsx:364:quoted"
+  ],
+  "Community": [
+   "app/configurator/retreat/retreat-configurator.tsx:365:key:value",
+   "app/configurator/retreat/retreat-configurator.tsx:365:quoted"
+  ],
+  "Other": [
+   "app/configurator/retreat/retreat-configurator.tsx:366:key:value",
+   "app/configurator/retreat/retreat-configurator.tsx:366:quoted"
+  ],
+  "label === \"Primary Color\"": [
+   "app/configurator/retreat/retreat-configurator.tsx:204:template"
+  ],
+  "<input type=\"color\">": [
+   "app/configurator/retreat/retreat-configurator.tsx:217:template",
+   "app/configurator/retreat/retreat-configurator.tsx:267:template"
+  ],
+  "2px solid ${GUEST_BASE_PALETTE.forest}66": [
+   "app/configurator/retreat/retreat-configurator.tsx:255:template"
+  ],
+  "commit()": [
+   "app/configurator/retreat/retreat-configurator.tsx:270:template"
+  ],
+  "primary-${presetNonce}": [
+   "app/configurator/retreat/retreat-configurator.tsx:2036:template"
+  ],
+  "accent-${presetNonce}": [
+   "app/configurator/retreat/retreat-configurator.tsx:2048:template"
+  ],
+  "navigation-${presetNonce}": [
+   "app/configurator/retreat/retreat-configurator.tsx:2060:template"
+  ],
+  "surface-${presetNonce}": [
+   "app/configurator/retreat/retreat-configurator.tsx:2072:template"
+  ],
+  "3px solid ${GUEST_BASE_PALETTE.forest}": [
+   "app/configurator/retreat/retreat-configurator.tsx:2598:template",
+   "app/configurator/retreat/retreat-configurator.tsx:2684:template"
+  ],
+  "Primary Color": [
+   "app/configurator/retreat/retreat-configurator.tsx:204:quoted"
+  ],
+  "My Space": [
+   "app/configurator/retreat/retreat-configurator.tsx:1463:quoted",
+   "app/configurator/retreat/retreat-configurator.tsx:1693:quoted"
+  ],
+  "Back": [
+   "app/configurator/retreat/retreat-configurator.tsx:1466:quoted"
+  ],
+  "Time to Flow": [
+   "app/configurator/retreat/retreat-configurator.tsx:1532:quoted",
+   "lib/spaceTypes/registry.ts:73:key:name",
+   "lib/spaceTypes/registry.ts:73:quoted"
+  ],
+  "My Spaces": [
+   "app/configurator/retreat/retreat-configurator.tsx:1555:quoted"
+  ],
+  "Save and continue": [
+   "app/configurator/retreat/studioSection.ts:51:quoted"
+  ],
+  "Manage Space": [
+   "app/configurator/retreat/[tenantId]/loading.tsx:7:quoted"
+  ],
+  "Preview": [
+   "app/configurator/retreat/[tenantId]/loading.tsx:7:quoted"
+  ],
+  "Opening your space…": [
+   "app/configurator/retreat/[tenantId]/loading.tsx:13:quoted"
+  ],
+  "${d.toISOString().slice(0, 16).replace(\"T\", \" \")} UTC": [
+   "lib/studio/status.ts:39:template"
+  ],
+  "${safe}-qr.png": [
+   "lib/studio/publicLink.ts:26:template"
+  ],
+  "${safe}-share-card.png": [
+   "lib/studio/publicLink.ts:31:template"
+  ],
+  "Share on WhatsApp": [
+   "lib/studio/publicLink.ts:45:quoted"
+  ],
+  "Recommended": [
+   "components/studio/space-language-card.tsx:15:quoted"
+  ],
+  "Ready to publish?": [
+   "components/studio/readiness-checklist.tsx:5:quoted"
+  ],
+  "class-${classId.slice(0, 8)}-whatsapp-qr.png": [
+   "components/studio/class-whatsapp-qr.tsx:54:template"
+  ],
+  "${s.label} ${s.hex}": [
+   "components/studio/studio-fields.tsx:258:attr:aria-label"
+  ],
+  "${label} visual picker": [
+   "components/studio/studio-fields.tsx:268:attr:aria-label",
+   "components/studio/studio-fields.tsx:268:template"
+  ],
+  "${label} file": [
+   "components/studio/studio-fields.tsx:373:attr:aria-label",
+   "components/studio/studio-fields.tsx:373:template"
+  ],
+  "${INPUT} leading-relaxed resize-y": [
+   "components/studio/studio-fields.tsx:93:template"
+  ],
+  "color-field-${label}": [
+   "components/studio/studio-fields.tsx:248:template"
+  ],
+  "image-field-${label}": [
+   "components/studio/studio-fields.tsx:353:template"
+  ],
+  "Custom colors": [
+   "components/studio/brand-preset-chips.tsx:22:quoted"
+  ],
+  "Vinyasa Flow": [
+   "lib/modules/facilitator.ts:19:quoted"
+  ],
+  "Sound Healing": [
+   "lib/modules/facilitator.ts:19:quoted"
+  ],
+  "Facebook": [
+   "lib/modules/socialLinks.ts:23:quoted"
+  ],
+  "YouTube": [
+   "lib/modules/socialLinks.ts:24:quoted"
+  ],
+  "TikTok": [
+   "lib/modules/socialLinks.ts:25:quoted"
+  ],
+  "LinkedIn": [
+   "lib/modules/socialLinks.ts:26:quoted"
+  ],
+  "): Promise": [
+   "lib/modules/persistItem.ts:45:jsx-text",
+   "lib/modules/persistItem.ts:57:jsx-text"
+  ],
+  "HH:MM": [
+   "lib/modules/meal.ts:18:quoted"
+  ],
+  "Schedule": [
+   "lib/modules/catalog.ts:14:key:label",
+   "lib/modules/catalog.ts:14:quoted"
+  ],
+  "Facilitators / Teachers": [
+   "lib/modules/catalog.ts:15:key:label",
+   "lib/modules/catalog.ts:15:quoted"
+  ],
+  "Meals": [
+   "lib/modules/catalog.ts:16:key:label",
+   "lib/modules/catalog.ts:16:quoted"
+  ],
+  "Treatments": [
+   "lib/modules/catalog.ts:17:key:label",
+   "lib/modules/catalog.ts:17:quoted"
+  ],
+  "Facilities": [
+   "lib/modules/catalog.ts:18:key:label",
+   "lib/modules/catalog.ts:18:quoted"
+  ],
+  "Resources": [
+   "lib/modules/catalog.ts:19:key:label",
+   "lib/modules/catalog.ts:19:quoted"
+  ],
+  "Arrival Information": [
+   "lib/modules/catalog.ts:20:key:label",
+   "lib/modules/catalog.ts:20:quoted"
+  ],
+  "Daily Inspiration": [
+   "lib/modules/catalog.ts:21:key:label",
+   "lib/modules/catalog.ts:21:quoted"
+  ],
+  "Custom Pages": [
+   "lib/modules/catalog.ts:23:key:label",
+   "lib/modules/catalog.ts:23:quoted"
+  ],
+  "Stay Connected": [
+   "lib/modules/catalog.ts:24:key:label",
+   "lib/modules/catalog.ts:24:quoted"
+  ],
+  "Audio": [
+   "lib/modules/catalog.ts:25:key:label",
+   "lib/modules/catalog.ts:25:quoted"
+  ],
+  "Announcements": [
+   "lib/modules/catalog.ts:26:key:label",
+   "lib/modules/catalog.ts:26:quoted"
+  ],
+  "create or replace function public.<name>(": [
+   "lib/spaceTypes/migrationInspect.ts:25:template"
+  ],
+  "create\\\\s+or\\\\s+replace\\\\s+function\\\\s+public\\\\.${fnName}\\\\s*\\\\(": [
+   "lib/spaceTypes/migrationInspect.ts:30:template"
+  ],
+  "drop\\\\s+function\\\\s+(if\\\\s+exists\\\\s+)?public\\\\.${fnName}\\\\b": [
+   "lib/spaceTypes/migrationInspect.ts:55:template"
+  ],
+  "if v_tenant.product_type = '${typeId.toLowerCase()}' then": [
+   "lib/spaceTypes/migrationInspect.ts:64:template"
+  ],
+  "public.${builder.toLowerCase()}(p_tenant_id)": [
+   "lib/spaceTypes/migrationInspect.ts:69:template"
+  ],
+  "tenants.product_type": [
+   "lib/spaceTypes/migrationInspect.ts:72:template"
+  ],
+  "Publishing for ${resolved.type.product.name} isn't available yet.": [
+   "lib/spaceTypes/publishAvailability.ts:27:template"
+  ],
+  "Publish / Republish": [
+   "lib/spaceTypes/publishAvailability.ts:6:quoted"
+  ],
+  "Private Retreat": [
+   "lib/spaceTypes/registry.ts:82:key:title",
+   "lib/spaceTypes/registry.ts:82:quoted"
+  ],
+  "Time to Heal": [
+   "lib/spaceTypes/registry.ts:89:key:name",
+   "lib/spaceTypes/registry.ts:89:quoted"
+  ],
+  "Private Space": [
+   "lib/spaceTypes/registry.ts:98:key:title",
+   "lib/spaceTypes/registry.ts:119:key:title",
+   "lib/spaceTypes/registry.ts:98:quoted",
+   "lib/spaceTypes/registry.ts:119:quoted"
+  ],
+  "Time to Teach": [
+   "lib/spaceTypes/registry.ts:105:key:name",
+   "lib/spaceTypes/registry.ts:105:quoted"
+  ],
+  "Your classes, private sessions, readings, audio and how to reach you — a beautiful home for your teaching.": [
+   "lib/spaceTypes/registry.ts:109:key:description",
+   "lib/spaceTypes/registry.ts:109:quoted"
+  ],
+  "guest.renderer": [
+   "lib/spaceTypes/registry.ts:10:template",
+   "lib/spaceTypes/guestRenderers.tsx:8:template"
+  ],
+  "product_type": [
+   "lib/spaceTypes/registry.ts:13:template"
+  ],
+  "tenants_product_type_check": [
+   "lib/spaceTypes/registry.ts:16:template"
+  ],
+  "For retreats and wellness programs.": [
+   "lib/spaceTypes/registry.ts:73:quoted"
+  ],
+  "Untitled Retreat": [
+   "lib/spaceTypes/registry.ts:81:quoted"
+  ],
+  "Open Retreat": [
+   "lib/spaceTypes/registry.ts:82:quoted"
+  ],
+  "Ask your retreat organizer for the access code.": [
+   "lib/spaceTypes/registry.ts:82:quoted"
+  ],
+  "Coming Soon": [
+   "lib/spaceTypes/registry.ts:86:quoted"
+  ],
+  "For practitioners and their clients.": [
+   "lib/spaceTypes/registry.ts:89:quoted"
+  ],
+  "Untitled Space": [
+   "lib/spaceTypes/registry.ts:97:quoted"
+  ],
+  "Open": [
+   "lib/spaceTypes/registry.ts:98:quoted",
+   "lib/spaceTypes/registry.ts:119:quoted"
+  ],
+  "Ask your practitioner for the access code.": [
+   "lib/spaceTypes/registry.ts:98:quoted"
+  ],
+  "For independent teachers.": [
+   "lib/spaceTypes/registry.ts:106:quoted"
+  ],
+  "My Teaching Space": [
+   "lib/spaceTypes/registry.ts:118:quoted"
+  ],
+  "Ask your teacher for the access code.": [
+   "lib/spaceTypes/registry.ts:119:quoted"
+  ]
+ },
+ "teachGuest": {
+  "leading-[1.15] ${className}": [
+   "components/teach/teach-ui.tsx:46:template"
+  ],
+  "calc(${size}px * var(--tt-display-scale, 1))": [
+   "components/teach/teach-ui.tsx:49:template"
+  ],
+  "${data.teacherName}": [
+   "components/teach/teach-guest-app.tsx:339:attr:alt",
+   "components/teach/teach-guest-app.tsx:361:attr:alt"
+  ],
+  "WhatsApp": [
+   "components/teach/teach-guest-app.tsx:824:key:label",
+   "components/teach/teach-guest-app.tsx:824:quoted",
+   "lib/teach/links.ts:289:attr:label",
+   "lib/teach/links.ts:153:quoted",
+   "lib/teach/links.ts:289:quoted",
+   "lib/teach/links.ts:311:quoted"
+  ],
+  "shrink-0 @min-[40rem]:order-last ${imgClass}": [
+   "components/teach/teach-guest-app.tsx:361:template"
+  ],
+  "${pad} @4xl:pe-0 @4xl:flex @4xl:flex-col @4xl:gap-4": [
+   "components/teach/teach-guest-app.tsx:466:template"
+  ],
+  "tt-day-${date}": [
+   "components/teach/teach-guest-app.tsx:722:template"
+  ],
+  "Next: Morning Flow · Wed 14 Oct 09:00": [
+   "components/teach/teach-guest-app.tsx:76:quoted"
+  ],
+  "Wed 14 Oct, 2 classes": [
+   "components/teach/teach-guest-app.tsx:86:quoted"
+  ],
+  "Get in touch": [
+   "components/teach/teach-guest-app.tsx:323:quoted"
+  ],
+  "url(\"${url}\")": [
+   "components/teach/teach-library.tsx:539:template"
+  ],
+  "${m.startTime}${m.endTime ?": [
+   "components/teach/teach-class-card.tsx:79:template"
+  ],
+  "repeat(${facts.length}, minmax(0, 1fr))": [
+   "components/teach/teach-class-card.tsx:161:template"
+  ],
+  "subject=${encodeURIComponent(subject)}": [
+   "lib/teach/links.ts:68:template"
+  ],
+  "body=${encodeURIComponent(body)}": [
+   "lib/teach/links.ts:69:template"
+  ],
+  "Tue 14 Oct": [
+   "lib/teach/links.ts:129:quoted",
+   "lib/teach/links.ts:130:quoted"
+  ],
+  "Tue, 14 Oct": [
+   "lib/teach/links.ts:130:quoted"
+  ],
+  "Instagram": [
+   "lib/teach/links.ts:155:quoted",
+   "lib/teach/links.ts:256:quoted",
+   "lib/teach/links.ts:314:quoted"
+  ],
+  "Facebook": [
+   "lib/teach/links.ts:156:quoted",
+   "lib/teach/links.ts:257:quoted",
+   "lib/teach/links.ts:315:quoted"
+  ],
+  "Telegram": [
+   "lib/teach/links.ts:317:quoted"
+  ],
+  "; items?: Record": [
+   "lib/teach/guestData.ts:89:jsx-text"
+  ]
+ },
+ "flowGuest": {
+  "customPage:${number}": [
+   "components/guest/explore-screen.tsx:47:template"
+  ],
+  "nextTone()": [
+   "components/guest/explore-screen.tsx:50:template"
+  ],
+  "customPage:${i}": [
+   "components/guest/explore-screen.tsx:242:template"
+  ],
+  "linear-gradient(160deg, ${v.color}, ${v.dark})": [
+   "components/guest/explore-screen.tsx:309:template"
+  ],
+  "linear-gradient(to top, color-mix(in srgb, ${v.dark} 85%, transparent), color-mix(in srgb, ${v.dark} 15%, transparent) 60%, transparent)": [
+   "components/guest/explore-screen.tsx:313:template"
+  ],
+  "${compact ? \"text-[9px]\" : \"text-[10px]\"} tracking-[0.2em] uppercase font-medium": [
+   "components/guest/explore-screen.tsx:317:template"
+  ],
+  "color-mix(in srgb, white 65%, ${v.color})": [
+   "components/guest/explore-screen.tsx:318:template"
+  ],
+  "linear-gradient(to top, color-mix(in srgb, ${v.dark} 80%, transparent), color-mix(in srgb, ${v.dark} 10%, transparent) 60%, transparent)": [
+   "components/guest/explore-screen.tsx:385:template"
+  ],
+  "color-mix(in srgb, ${v.onColor} 10%, transparent)": [
+   "components/guest/explore-screen.tsx:391:template"
+  ],
+  "Backspace": [
+   "components/guest/guest-access-screen.tsx:75:quoted"
+  ],
+  "ArrowLeft": [
+   "components/guest/guest-access-screen.tsx:78:quoted"
+  ],
+  "ArrowRight": [
+   "components/guest/guest-access-screen.tsx:80:quoted"
+  ],
+  "dynamic = \"force-dynamic\"": [
+   "app/s/[slug]/page.tsx:30:template"
+  ],
+  "Not found": [
+   "app/s/[slug]/social/[version]/route.tsx:31:quoted",
+   "app/s/[slug]/social/[version]/route.tsx:34:quoted"
+  ],
+  "select *": [
+   "app/g/[tenantId]/page.tsx:18:template"
+  ],
+  "HH:MM": [
+   "components/guest-app.tsx:39:quoted",
+   "components/today-screen.tsx:17:quoted",
+   "components/schedule-screen.tsx:14:quoted"
+  ],
+  "Back to home": [
+   "components/back-to-home-link.tsx:24:jsx-text",
+   "components/back-to-home-link.tsx:18:attr:aria-label",
+   "components/back-to-home-link.tsx:4:quoted",
+   "components/back-to-home-link.tsx:18:quoted"
+  ],
+  "<Link>": [
+   "components/back-to-home-link.tsx:8:template"
+  ],
+  "Back to My Spaces": [
+   "components/back-to-home-link.tsx:7:quoted"
+  ],
+  "new Date()": [
+   "components/today-screen.tsx:15:template"
+  ],
+  "linear-gradient(135deg, var(--rbr-primary), var(--rbr-forest-mid))": [
+   "components/today-screen.tsx:93:template"
+  ],
+  "YYYY-MM-DD": [
+   "components/today-screen.tsx:14:quoted"
+  ],
+  "Today's Intention": [
+   "components/today-screen.tsx:37:quoted"
+  ],
+  "i.startTime": [
+   "components/schedule-screen.tsx:81:jsx-text"
+  ],
+  "Meal": [
+   "components/schedule-screen.tsx:21:quoted"
+  ],
+  "WhatsApp": [
+   "components/arrival-screen.tsx:179:jsx-text"
+  ],
+  "idx === 0": [
+   "components/meals-screen.tsx:18:template"
+  ],
+  "linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))": [
+   "components/treatments-screen.tsx:69:template",
+   "components/facilities-screen.tsx:61:template"
+  ],
+  "Book at reception": [
+   "components/treatments-screen.tsx:22:quoted"
+  ],
+  "Sessions This Retreat": [
+   "components/facilitators-screen.tsx:45:quoted"
+  ],
+  "object-cover tt-fade-in ${className}": [
+   "components/shared/brand-image.tsx:87:template"
+  ],
+  "InnerDweS": [
+   "components/brand/wordmark.tsx:118:jsx-text"
+  ],
+  "Digital Wellness Solutions": [
+   "components/brand/wordmark.tsx:126:jsx-text"
+  ],
+  "pathLength=\"100\"": [
+   "components/brand/wordmark.tsx:18:template"
+  ],
+  "rotate(${RING_ROTATION} 50 50)": [
+   "components/brand/wordmark.tsx:75:template"
+  ],
+  "rotate(${ARC_ROTATION} 50 50)": [
+   "components/brand/wordmark.tsx:88:template"
+  ],
+  "The journey of a thousand miles begins with a single step.": [
+   "lib/content/dailyQuotes.ts:12:key:text",
+   "lib/content/dailyQuotes.ts:12:quoted"
+  ],
+  "Yoga is the stilling of the changing states of the mind.": [
+   "lib/content/dailyQuotes.ts:13:key:text",
+   "lib/content/dailyQuotes.ts:13:quoted"
+  ],
+  "Do you have the patience to wait until your mud settles and the water is clear?": [
+   "lib/content/dailyQuotes.ts:14:key:text",
+   "lib/content/dailyQuotes.ts:14:quoted"
+  ],
+  "Peace comes from within. Do not seek it without.": [
+   "lib/content/dailyQuotes.ts:15:key:text",
+   "lib/content/dailyQuotes.ts:15:quoted"
+  ],
+  "Yoga is not about touching your toes. It is about what you learn on the way down.": [
+   "lib/content/dailyQuotes.ts:16:key:text",
+   "lib/content/dailyQuotes.ts:16:quoted"
+  ],
+  "Knowing others is wisdom. Knowing yourself is enlightenment.": [
+   "lib/content/dailyQuotes.ts:17:key:text",
+   "lib/content/dailyQuotes.ts:17:quoted"
+  ],
+  "The mind is everything. What you think, you become.": [
+   "lib/content/dailyQuotes.ts:18:key:text",
+   "lib/content/dailyQuotes.ts:18:quoted"
+  ],
+  "In yoga, the body is the bow, the asana is the arrow, and the soul is the target.": [
+   "lib/content/dailyQuotes.ts:19:key:text",
+   "lib/content/dailyQuotes.ts:19:quoted"
+  ],
+  "Nature does not hurry, yet everything is accomplished.": [
+   "lib/content/dailyQuotes.ts:20:key:text",
+   "lib/content/dailyQuotes.ts:20:quoted"
+  ],
+  "Yoga is the art of listening — to the body, to the breath, to the silence within.": [
+   "lib/content/dailyQuotes.ts:22:key:text",
+   "lib/content/dailyQuotes.ts:22:quoted"
+  ],
+  "Water is fluid, soft, and yielding. But water will wear away rock. Be like water.": [
+   "lib/content/dailyQuotes.ts:23:key:text",
+   "lib/content/dailyQuotes.ts:23:quoted"
+  ],
+  "Do not dwell in the past, do not dream of the future — concentrate the mind on the present moment.": [
+   "lib/content/dailyQuotes.ts:24:key:text",
+   "lib/content/dailyQuotes.ts:24:quoted"
+  ],
+  "The rhythm of the body, the melody of the mind, and the harmony of the soul create the symphony of life.": [
+   "lib/content/dailyQuotes.ts:25:key:text",
+   "lib/content/dailyQuotes.ts:25:quoted"
+  ],
+  "To the mind that is still, the whole universe surrenders.": [
+   "lib/content/dailyQuotes.ts:26:key:text",
+   "lib/content/dailyQuotes.ts:26:quoted"
+  ],
+  "Radiate boundless love towards the entire world — above, below, and across — unhindered, without ill will, without enmity.": [
+   "lib/content/dailyQuotes.ts:27:key:text",
+   "lib/content/dailyQuotes.ts:27:quoted"
+  ],
+  "Yoga is a light which, once lit, will never dim. The better your practice, the brighter your flame.": [
+   "lib/content/dailyQuotes.ts:28:key:text",
+   "lib/content/dailyQuotes.ts:28:quoted"
+  ],
+  "He who knows that enough is enough will always have enough.": [
+   "lib/content/dailyQuotes.ts:29:key:text",
+   "lib/content/dailyQuotes.ts:29:quoted"
+  ],
+  "In separateness lies the world's great misery; in compassion lies the world's true strength.": [
+   "lib/content/dailyQuotes.ts:30:key:text",
+   "lib/content/dailyQuotes.ts:30:quoted"
+  ],
+  "Yoga teaches us to cure what need not be endured and endure what cannot be cured.": [
+   "lib/content/dailyQuotes.ts:31:key:text",
+   "lib/content/dailyQuotes.ts:31:quoted"
+  ],
+  "The Tao that can be told is not the eternal Tao. The name that can be named is not the eternal name.": [
+   "lib/content/dailyQuotes.ts:32:key:text",
+   "lib/content/dailyQuotes.ts:32:quoted"
+  ],
+  "You yourself, as much as anybody in the entire universe, deserve your love and affection.": [
+   "lib/content/dailyQuotes.ts:33:key:text",
+   "lib/content/dailyQuotes.ts:33:quoted"
+  ],
+  "Inhale, and God approaches you. Hold the inhalation, and God remains with you. Exhale, and you approach God.": [
+   "lib/content/dailyQuotes.ts:34:key:text",
+   "lib/content/dailyQuotes.ts:34:quoted"
+  ],
+  "Simplicity, patience, compassion — these three are your greatest treasures.": [
+   "lib/content/dailyQuotes.ts:35:key:text",
+   "lib/content/dailyQuotes.ts:35:quoted"
+  ],
+  "Health is the greatest gift, contentment the greatest wealth, faithfulness the best relationship.": [
+   "lib/content/dailyQuotes.ts:36:key:text",
+   "lib/content/dailyQuotes.ts:36:quoted"
+  ],
+  "Yoga does not just change the way we see things, it transforms the person who sees.": [
+   "lib/content/dailyQuotes.ts:37:key:text",
+   "lib/content/dailyQuotes.ts:37:quoted"
+  ],
+  "When you realise there is nothing lacking, the whole world belongs to you.": [
+   "lib/content/dailyQuotes.ts:38:key:text",
+   "lib/content/dailyQuotes.ts:38:quoted"
+  ],
+  "If you are quiet enough, you will hear the flow of the universe. You will feel its rhythm. Go with this flow.": [
+   "lib/content/dailyQuotes.ts:39:key:text",
+   "lib/content/dailyQuotes.ts:39:quoted"
+  ],
+  "The poses we avoid the most are the ones we need the most.": [
+   "lib/content/dailyQuotes.ts:40:key:text",
+   "lib/content/dailyQuotes.ts:40:quoted"
+  ],
+  "Act without expectation. Lead without dominating. Succeed without taking credit.": [
+   "lib/content/dailyQuotes.ts:41:key:text",
+   "lib/content/dailyQuotes.ts:41:quoted"
+  ],
+  "Better than a thousand hollow words is one word that brings peace.": [
+   "lib/content/dailyQuotes.ts:42:key:text",
+   "lib/content/dailyQuotes.ts:42:quoted"
+  ],
+  "Wonderland App/index.html": [
+   "lib/content/dailyQuotes.ts:3:template"
+  ],
+  "Lao Tzu · Tao Te Ching": [
+   "lib/content/dailyQuotes.ts:12:quoted",
+   "lib/content/dailyQuotes.ts:14:quoted",
+   "lib/content/dailyQuotes.ts:17:quoted",
+   "lib/content/dailyQuotes.ts:20:quoted",
+   "lib/content/dailyQuotes.ts:23:quoted",
+   "lib/content/dailyQuotes.ts:26:quoted",
+   "lib/content/dailyQuotes.ts:29:quoted",
+   "lib/content/dailyQuotes.ts:35:quoted",
+   "lib/content/dailyQuotes.ts:38:quoted",
+   "lib/content/dailyQuotes.ts:41:quoted"
+  ],
+  "Patanjali · Yoga Sutras": [
+   "lib/content/dailyQuotes.ts:13:quoted"
+  ],
+  "The Buddha": [
+   "lib/content/dailyQuotes.ts:15:quoted",
+   "lib/content/dailyQuotes.ts:18:quoted",
+   "lib/content/dailyQuotes.ts:21:quoted",
+   "lib/content/dailyQuotes.ts:24:quoted",
+   "lib/content/dailyQuotes.ts:30:quoted",
+   "lib/content/dailyQuotes.ts:33:quoted",
+   "lib/content/dailyQuotes.ts:39:quoted"
+  ],
+  "Jigar Gor": [
+   "lib/content/dailyQuotes.ts:16:quoted"
+  ],
+  "B.K.S. Iyengar": [
+   "lib/content/dailyQuotes.ts:19:quoted",
+   "lib/content/dailyQuotes.ts:25:quoted",
+   "lib/content/dailyQuotes.ts:28:quoted",
+   "lib/content/dailyQuotes.ts:31:quoted",
+   "lib/content/dailyQuotes.ts:37:quoted"
+  ],
+  "T.K.V. Desikachar": [
+   "lib/content/dailyQuotes.ts:22:quoted"
+  ],
+  "The Buddha · Metta Sutta": [
+   "lib/content/dailyQuotes.ts:27:quoted"
+  ],
+  "Lao Tzu · Tao Te Ching, Ch. 1": [
+   "lib/content/dailyQuotes.ts:32:quoted"
+  ],
+  "Krishnamacharya": [
+   "lib/content/dailyQuotes.ts:34:quoted"
+  ],
+  "The Buddha · Dhammapada": [
+   "lib/content/dailyQuotes.ts:36:quoted",
+   "lib/content/dailyQuotes.ts:42:quoted"
+  ],
+  "Yoga teaching": [
+   "lib/content/dailyQuotes.ts:40:quoted"
+  ]
+ }
+}

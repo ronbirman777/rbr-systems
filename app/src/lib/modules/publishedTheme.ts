@@ -43,6 +43,14 @@ export const publishedThemeSchema = z.object({
     .regex(/^#[0-9a-fA-F]{6}$/)
     .nullable()
     .optional(),
+  /** Shared Brand Surface/Tint (migration 0032). Optional for the same
+   * reason as its four siblings: every snapshot published before 0032 has
+   * no such key, and absent must mean "no override", not a parse failure. */
+  customSurface: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .nullable()
+    .optional(),
 });
 
 export type PublishedTheme = z.infer<typeof publishedThemeSchema>;

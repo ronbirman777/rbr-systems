@@ -18,6 +18,8 @@ import { parseImagePosition, type ImagePosition } from "@/lib/modules/imagePosit
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
 import { todayInTimezone, currentTimeInTimezone, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { publicMediaUrl } from "@/lib/media/path";
+import { directionOf } from "@/lib/i18n";
+import { localeFromPublishedModules } from "@/lib/spaceSettings";
 
 /**
  * Exactly the columns either guest lookup (by tenant id at /g/[tenantId],
@@ -41,6 +43,12 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
   const themeParsed = publishedThemeSchema.safeParse(space.theme);
   const theme = themeParsed.success ? themeParsed.data : DEFAULT_PUBLISHED_THEME;
   const modules = (space.modules ?? {}) as Record<string, unknown>;
+  // System language, read only from the published snapshot (0031's
+  // modules.spaceSettings). Never a private draft read, never the
+  // visitor's device language. Absent resolves to English, which is how
+  // every Space published before this renders.
+  const locale = localeFromPublishedModules(modules);
+  const dir = directionOf(locale);
 
   function withImage<T extends { imageRef: string | null }>(items: T[]): (T & { imageUrl: string | null })[] {
     return items.map((item) => ({ ...item, imageUrl: item.imageRef ? publicMediaUrl(item.imageRef) : null }));
@@ -133,10 +141,18 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
   return (
     <main
       style={{ ...vars, background: "var(--rbr-parchment-deep)" }}
-      className="guest-viewport flex-1 flex items-center justify-center sm:p-6 p-0"
+      lang={locale}
+      dir={dir}
+      className="guest-viewport flex-1 flex items-center justify-center sm:p-6 p-0 min-h-dvh"
     >
+      {/* On a phone the shell is exactly the VISIBLE viewport (dvh), not
+          the large one: with `h-full` the frame was as tall as the
+          viewport with the browser toolbars hidden, so whenever they were
+          showing the bottom navigation sat below the fold - the "nav
+          floats mid-screen" report. From `sm` up it is the fixed device
+          frame it has always been. */}
       <div
-        className="relative flex flex-col overflow-hidden sm:rounded-[44px] w-full sm:w-[390px] sm:h-[780px] h-full"
+        className="relative flex flex-col overflow-hidden sm:rounded-[44px] w-full h-dvh sm:w-[390px] sm:h-[780px]"
         style={{ background: "var(--rbr-background)", boxShadow: "0 40px 100px rgba(45,74,62,0.2), 0 10px 30px rgba(45,74,62,0.1)" }}
       >
         <GuestApp
@@ -157,6 +173,7 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
           customPages={customPages}
           stayConnected={stayConnected}
           moduleCoverImages={moduleCoverImages}
+          locale={locale}
         />
       </div>
     </main>

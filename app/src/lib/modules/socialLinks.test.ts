@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { socialLinkSchema, socialLinksSchema, SOCIAL_PLATFORMS, SOCIAL_PLATFORM_LABEL } from "./socialLinks";
+import { socialLinkSchema, socialLinksSchema, SOCIAL_PLATFORMS, socialPlatformLabel } from "./socialLinks";
 
 describe("socialLinkSchema", () => {
   it("accepts a valid platform + URL", () => {
@@ -46,14 +46,14 @@ describe("socialLinksSchema", () => {
   });
 });
 
-describe("SOCIAL_PLATFORMS / SOCIAL_PLATFORM_LABEL", () => {
+describe("SOCIAL_PLATFORMS / socialPlatformLabel()", () => {
   it("has exactly the 6 approved platforms", () => {
     expect(SOCIAL_PLATFORMS).toEqual(["instagram", "facebook", "youtube", "tiktok", "linkedin", "website"]);
   });
 
   it("has a label for every platform", () => {
     for (const platform of SOCIAL_PLATFORMS) {
-      expect(SOCIAL_PLATFORM_LABEL[platform]).toBeTruthy();
+      expect(socialPlatformLabel()[platform]).toBeTruthy();
     }
   });
 });

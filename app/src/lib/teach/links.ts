@@ -1,4 +1,6 @@
 import { normalizeWhatsAppNumber, whatsappUrl } from "@/lib/share/whatsapp";
+import { telUrl } from "@/lib/phone";
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
 import type {
   AvailabilityMetadata,
   ClassMetadata,
@@ -68,12 +70,11 @@ export function mailtoUrl(email: string | null | undefined, subject?: string | n
   return `mailto:${email.trim()}${params.length ? `?${params.join("&")}` : ""}`;
 }
 
-export function telUrl(raw: string | null | undefined): string | null {
-  const v = raw?.trim();
-  if (!v) return null;
-  const cleaned = v.replace(/[^\d+]/g, "");
-  return /^\+?\d{6,16}$/.test(cleaned) ? `tel:${cleaned}` : null;
-}
+/**
+ * Phone link building is product-agnostic and lives in lib/phone;
+ * re-exported here so Teach call sites keep their single import.
+ */
+export { telUrl };
 
 // ---------------------------------------------------------------------------
 // Message templates
@@ -91,10 +92,19 @@ export const TEMPLATE_VARIABLES = [
 export type TemplateVariable = (typeof TEMPLATE_VARIABLES)[number];
 export type TemplateValues = Partial<Record<TemplateVariable, string | null>>;
 
-export const DEFAULT_CLASS_WHATSAPP_TEMPLATE =
-  "Hi {{teacher_name}}, I'd like to join {{class_name}} on {{date}} at {{start_time}}. Could you please confirm availability?\n{{space_url}}";
-export const DEFAULT_PRIVATE_WHATSAPP_TEMPLATE =
-  "Hi {{teacher_name}}, I'd love a private session on {{date}} between {{start_time}} and {{end_time}}.";
+/**
+ * The prefilled enquiry a guest sends when the teacher has not written
+ * their own template. It is system copy, so it follows the Space
+ * language - the teacher reads these messages, and they should arrive in
+ * the language they run their Space in. The {{variables}} are
+ * substituted by renderTemplate and are identical in every language.
+ */
+export function defaultClassWhatsappTemplate(locale: Locale = DEFAULT_LOCALE): string {
+  return translate(locale, "teach", "classWhatsappTemplate");
+}
+export function defaultPrivateWhatsappTemplate(locale: Locale = DEFAULT_LOCALE): string {
+  return translate(locale, "teach", "privateWhatsappTemplate");
+}
 
 /**
  * Replaces {{ variable }} placeholders. Unknown variables are left exactly as
@@ -132,25 +142,36 @@ export function formatShortDate(dateIso: string): string {
 // Class registration CTA
 // ---------------------------------------------------------------------------
 
-export const REGISTRATION_METHOD_LABEL: Record<RegistrationMethod, string> = {
-  whatsapp: "WhatsApp",
-  website: "Website",
-  instagram: "Instagram",
-  facebook: "Facebook",
-  email: "Email",
-  bookingLink: "External booking link",
-  venueLink: "Host venue link",
-};
+/**
+ * How each registration method is named in the Studio picker.
+ *
+ * WhatsApp, Instagram and Facebook are brand names and stay as they are
+ * in every language; the rest is system copy and is translated.
+ */
+export function registrationMethodLabel(locale: Locale = DEFAULT_LOCALE): Record<RegistrationMethod, string> {
+  return {
+    whatsapp: "WhatsApp",
+    website: translate(locale, "common", "website"),
+    instagram: "Instagram",
+    facebook: "Facebook",
+    email: translate(locale, "common", "email"),
+    bookingLink: translate(locale, "teach", "externalBookingLink"),
+    venueLink: translate(locale, "teach", "hostVenueLink"),
+  };
+}
 
-const DEFAULT_BUTTON_LABEL: Record<RegistrationMethod, string> = {
-  whatsapp: "Join via WhatsApp",
-  website: "Register on website",
-  instagram: "Message on Instagram",
-  facebook: "Register on Facebook",
-  email: "Register by email",
-  bookingLink: "Book your spot",
-  venueLink: "Book with the venue",
-};
+/** The button a guest sees when the teacher has not written their own. */
+function defaultButtonLabel(locale: Locale): Record<RegistrationMethod, string> {
+  return {
+    whatsapp: translate(locale, "teach", "joinViaWhatsapp"),
+    website: translate(locale, "teach", "registerOnWebsite"),
+    instagram: translate(locale, "teach", "messageOnInstagram"),
+    facebook: translate(locale, "teach", "registerOnFacebook"),
+    email: translate(locale, "teach", "registerByEmail"),
+    bookingLink: translate(locale, "teach", "bookYourSpot"),
+    venueLink: translate(locale, "teach", "bookWithVenue"),
+  };
+}
 
 export type RegistrationCta = { href: string; label: string; method: RegistrationMethod; external: boolean };
 
@@ -183,12 +204,21 @@ export function buildRegistrationCta(
   meta: ClassMetadata,
   /** Public Guest App URL, woven into the prefilled message so the teacher
    * can see which Space an enquiry came from. Omitted when unknown. */
-  spaceUrl?: string | null
+  spaceUrl?: string | null,
+  locale: Locale = DEFAULT_LOCALE
 ): RegistrationCta | null {
   const { method, value, buttonLabel, whatsappTemplate } = meta.registration;
   if (!method) return null;
-  const label = buttonLabel ?? (method === "venueLink" && meta.venue.name ? `Book with ${meta.venue.name}` : DEFAULT_BUTTON_LABEL[method]);
-  const message = renderTemplate(whatsappTemplate ?? DEFAULT_CLASS_WHATSAPP_TEMPLATE, classTemplateValues(teacherName, title, meta, spaceUrl));
+  // A label the teacher typed wins over any translation - it is their copy.
+  const label =
+    buttonLabel ??
+    (method === "venueLink" && meta.venue.name
+      ? translate(locale, "teach", "bookWithNamed", { venue: meta.venue.name })
+      : defaultButtonLabel(locale)[method]);
+  const message = renderTemplate(
+    whatsappTemplate ?? defaultClassWhatsappTemplate(locale),
+    classTemplateValues(teacherName, title, meta, spaceUrl)
+  );
   let href: string | null = null;
   switch (method) {
     case "whatsapp":
@@ -216,18 +246,18 @@ export function buildRegistrationCta(
 export type VenueLink = { kind: "website" | "instagram" | "facebook" | "email" | "booking" | "map"; label: string; href: string };
 
 /** Only the venue fields actually configured (and valid) are returned. */
-export function venueLinks(venue: Venue): VenueLink[] {
+export function venueLinks(venue: Venue, locale: Locale = DEFAULT_LOCALE): VenueLink[] {
   if (!venue.enabled) return [];
   const out: VenueLink[] = [];
   const push = (kind: VenueLink["kind"], label: string, href: string | null) => {
     if (href) out.push({ kind, label, href });
   };
-  push("website", "Website", safeHttpUrl(venue.website));
+  push("website", translate(locale, "common", "website"), safeHttpUrl(venue.website));
   push("instagram", "Instagram", instagramUrl(venue.instagram));
   push("facebook", "Facebook", safeHttpUrl(venue.facebook));
-  push("booking", "Book", safeHttpUrl(venue.bookingUrl));
-  push("email", "Email", mailtoUrl(venue.email));
-  push("map", "Map", safeHttpUrl(venue.mapUrl));
+  push("booking", translate(locale, "teach", "book"), safeHttpUrl(venue.bookingUrl));
+  push("email", translate(locale, "common", "email"), mailtoUrl(venue.email));
+  push("map", translate(locale, "common", "map"), safeHttpUrl(venue.mapUrl));
   return out;
 }
 
@@ -241,10 +271,11 @@ export function availabilityCtas(
   teacherName: string,
   dateIso: string,
   meta: AvailabilityMetadata,
-  contact: TeachContact
+  contact: TeachContact,
+  locale: Locale = DEFAULT_LOCALE
 ): SimpleCta[] {
   const out: SimpleCta[] = [];
-  const message = renderTemplate(meta.whatsappTemplate ?? DEFAULT_PRIVATE_WHATSAPP_TEMPLATE, {
+  const message = renderTemplate(meta.whatsappTemplate ?? defaultPrivateWhatsappTemplate(locale), {
     teacher_name: teacherName,
     date: formatShortDate(dateIso),
     start_time: meta.from,
@@ -257,14 +288,14 @@ export function availabilityCtas(
       href = whatsappUrl(contact.methods.whatsapp, message);
       label = "WhatsApp";
     } else if (m === "email") {
-      href = mailtoUrl(contact.methods.email, "Private session", message);
-      label = "Email";
+      href = mailtoUrl(contact.methods.email, translate(locale, "teach", "privateSession"), message);
+      label = translate(locale, "common", "email");
     } else if (m === "bookingLink") {
       href = safeHttpUrl(meta.bookingUrl) ?? safeHttpUrl(contact.methods.bookingUrl);
-      label = "Book";
+      label = translate(locale, "teach", "book");
     } else if (m === "website") {
       href = safeHttpUrl(meta.website) ?? safeHttpUrl(contact.methods.website);
-      label = "Website";
+      label = translate(locale, "common", "website");
     }
     if (href) out.push({ href, label, kind: m });
   }
@@ -275,16 +306,18 @@ export function availabilityCtas(
 // Contact methods
 // ---------------------------------------------------------------------------
 
-export const CONTACT_METHOD_LABEL: Record<ContactMethod, string> = {
-  whatsapp: "WhatsApp",
-  phone: "Phone",
-  email: "Email",
-  instagram: "Instagram",
-  facebook: "Facebook",
-  website: "Website",
-  telegram: "Telegram",
-  bookingUrl: "Book a session",
-};
+export function contactMethodLabel(locale: Locale = DEFAULT_LOCALE): Record<ContactMethod, string> {
+  return {
+    whatsapp: "WhatsApp",
+    phone: translate(locale, "common", "phone"),
+    email: translate(locale, "common", "email"),
+    instagram: "Instagram",
+    facebook: "Facebook",
+    website: translate(locale, "common", "website"),
+    telegram: "Telegram",
+    bookingUrl: translate(locale, "teach", "bookASession"),
+  };
+}
 
 export function contactHref(method: ContactMethod, value: string | null | undefined): string | null {
   switch (method) {
@@ -308,12 +341,12 @@ export function contactHref(method: ContactMethod, value: string | null | undefi
 export type ContactEntry = { method: ContactMethod; label: string; value: string; href: string };
 
 /** Enabled + filled + valid methods, in the teacher's chosen order. */
-export function contactEntries(contact: TeachContact): ContactEntry[] {
+export function contactEntries(contact: TeachContact, locale: Locale = DEFAULT_LOCALE): ContactEntry[] {
   const out: ContactEntry[] = [];
   for (const method of contact.enabled) {
     const value = contact.methods[method];
     const href = contactHref(method, value);
-    if (value && href) out.push({ method, label: CONTACT_METHOD_LABEL[method], value, href });
+    if (value && href) out.push({ method, label: contactMethodLabel(locale)[method], value, href });
   }
   return out;
 }

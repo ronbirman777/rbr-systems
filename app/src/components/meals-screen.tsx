@@ -1,22 +1,19 @@
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
-import type { DisplayMeal } from "@/lib/modules/meal";
+import { mealTypeLabel, type DisplayMeal } from "@/lib/modules/meal";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
+import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { BrandImage } from "@/components/shared/brand-image";
+import { FLOW_SIZES } from "./flow-media-sizes";
 export type MealsScreenProps = {
   brand: BrandConfig;
   meals: DisplayMeal[];
+  /** The Space's system language. */
+  locale?: Locale;
 };
 
-const MEAL_TYPE_LABEL: Record<string, string> = {
-  breakfast: "Breakfast",
-  brunch: "Brunch",
-  lunch: "Lunch",
-  dinner: "Dinner",
-  special: "Special",
-  other: "Meal",
-};
 
 /**
  * Task 014 (item D, first-meal consistency fix): this component
@@ -35,23 +32,27 @@ const MEAL_TYPE_LABEL: Record<string, string> = {
  * description, location, and dietary tags, apart from legitimate content
  * differences.
  */
-export function MealsScreen({ brand, meals }: MealsScreenProps) {
+
+export function MealsScreen({ brand, meals, locale = DEFAULT_LOCALE }: MealsScreenProps) {
+  const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
 
   return (
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="px-6 pt-7 pb-5">
         <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Daily Nourishment
+          {t("flow", "eyebrowMeals")}
         </p>
         <h1 className="text-[24px] font-normal leading-tight" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
-          Today&apos;s <em>Meals</em>
+          {splitEmphasis(t("flow", "mealsHeading"), t("flow", "mealsHeadingEm")).map((part, i) =>
+            i === 1 ? <em key={i}>{part}</em> : part
+          )}
         </h1>
       </div>
 
       {meals.length === 0 && (
         <div className="px-6 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Nothing added yet.
+          {t("flow", "nothingAddedYet")}
         </div>
       )}
 
@@ -64,12 +65,13 @@ export function MealsScreen({ brand, meals }: MealsScreenProps) {
           >
             <div className="relative h-[160px]">
               {meal.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
+                <BrandImage
                   src={meal.imageUrl}
                   alt={meal.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full"
+                  sizes={FLOW_SIZES.frame}
                   style={{ objectPosition: objectPositionStyle(meal.imagePosition) }}
+                  fallback="var(--rbr-sand)"
                 />
               ) : (
                 <div className="w-full h-full" style={{ background: "var(--rbr-sand)" }} />
@@ -78,23 +80,23 @@ export function MealsScreen({ brand, meals }: MealsScreenProps) {
             <div className="p-4">
               <div className="flex items-baseline justify-between mb-1.5">
                 <span className="text-[10px] tracking-[0.18em] uppercase font-semibold" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-                  {MEAL_TYPE_LABEL[meal.mealType] ?? meal.mealType}
+                  {mealTypeLabel(meal.mealType, locale)}
                 </span>
                 <span className="text-[11px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-clay)" }}>
                   {meal.startTime}
                 </span>
               </div>
-              <h3 className="text-[18px] leading-snug" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
+              <h3 dir="auto" className="text-[18px] leading-snug" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
                 {meal.name}
               </h3>
               {meal.description && (
-                <p className="text-[12px] leading-relaxed mt-1.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
+                <p dir="auto" className="text-[12px] leading-relaxed mt-1.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
                   {meal.description}
                 </p>
               )}
               <div className="flex items-center gap-2 mt-3 flex-wrap">
                 {meal.location && (
-                  <span className="text-[10px]" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
+                  <span dir="auto" className="text-[10px]" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
                     {meal.location}
                   </span>
                 )}

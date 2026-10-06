@@ -7,6 +7,8 @@ import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, Studi
 import { saveArrivalInfo, type SaveArrivalInfoState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
+import { createTranslator } from "@/lib/i18n";
+import { ForwardArrow } from "./studio-ui";
 const initialState: SaveArrivalInfoState = { error: null };
 
 export type ArrivalStepProps = {
@@ -57,7 +59,8 @@ function Field({
  * Still a single structured form persisting to module_settings, exactly
  * as before - purely a visual restyle.
  */
-export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDirty, onSaved, registerSave }: ArrivalStepProps) {
+export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDirty, onSaved, registerSave, locale }: ArrivalStepProps) {
+  const { t } = createTranslator(locale);
   const [state, setState] = useState<SaveArrivalInfoState>(initialState);
   const [pending, setPending] = useState(false);
 
@@ -68,6 +71,7 @@ export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDir
 
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
+    formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set("data", JSON.stringify(info));
     setPending(true);
@@ -86,55 +90,54 @@ export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDir
 
   return (
     <div className="max-w-xl">
-      <StudioHeading>Prepare arrival information</StudioHeading>
+      <StudioHeading>{t("flow", "arrivalStepTitle")}</StudioHeading>
       <StudioIntro>
-        Everything guests need before and on arrival. Clear, calm information makes a big difference to first
-        impressions.
+        {t("flow", "arrivalStepBody")}
       </StudioIntro>
 
       {Object.values(info).every((v) => !v) && (
         <div className="mb-6">
           <EmptyState
-            title="No arrival information yet"
-            body="Start with check-in and check-out times and your address - guests see these first on the Arrival screen. Everything else is optional."
+            title={t("flow", "noArrivalInfoYet")}
+            body={t("flow", "noArrivalInfoBody")}
           />
         </div>
       )}
 
-      <StudioSectionSub first>Arrival Basics</StudioSectionSub>
+      <StudioSectionSub first>{t("flow", "arrivalBasics")}</StudioSectionSub>
       <div className="grid grid-cols-2 gap-4">
-        <Field label="Check-in time" value={info.checkInTime} onChange={(v) => set("checkInTime", v)} placeholder="e.g. 14:00" />
-        <Field label="Check-out time" value={info.checkOutTime} onChange={(v) => set("checkOutTime", v)} placeholder="e.g. 11:00" />
+        <Field label={t("flow", "checkIn")} value={info.checkInTime} onChange={(v) => set("checkInTime", v)} placeholder="e.g. 14:00" />
+        <Field label={t("flow", "checkOut")} value={info.checkOutTime} onChange={(v) => set("checkOutTime", v)} placeholder="e.g. 11:00" />
         <div className="col-span-2">
           <Field
-            label="Welcome message (optional)"
+            label={t("flow", "welcomeMessageOptional")}
             value={info.welcomeMessage}
             onChange={(v) => set("welcomeMessage", v)}
             textarea
-            placeholder="A short personal welcome shown on the Arrival screen…"
+            placeholder={t("flow", "welcomeMessagePlaceholder")}
           />
         </div>
       </div>
 
-      <StudioSectionSub>Location</StudioSectionSub>
+      <StudioSectionSub>{t("common", "location")}</StudioSectionSub>
       <div className="space-y-4">
-        <Field label="Address" value={info.address} onChange={(v) => set("address", v)} textarea placeholder={"147 Moo 4, Ban Tai\nKo Samui, Surat Thani 84320"} />
-        <Field label="Maps link (optional)" value={info.mapUrl} onChange={(v) => set("mapUrl", v)} placeholder="https://maps.apple.com/..." />
+        <Field label={t("common", "address")} value={info.address} onChange={(v) => set("address", v)} textarea placeholder={t("flow", "addressPlaceholder")} />
+        <Field label={t("flow", "mapsLinkOptional")} value={info.mapUrl} onChange={(v) => set("mapUrl", v)} placeholder="https://maps.apple.com/..." />
       </div>
 
-      <StudioSectionSub>Preparing for Arrival</StudioSectionSub>
+      <StudioSectionSub>{t("flow", "preparingForArrival")}</StudioSectionSub>
       <div className="space-y-4">
-        <Field label="Getting here" value={info.transportationInfo} onChange={(v) => set("transportationInfo", v)} textarea rows={3} placeholder="Transport options, directions from nearest airport or station…" />
-        <Field label="On arrival" value={info.arrivalInstructions} onChange={(v) => set("arrivalInstructions", v)} textarea placeholder="What to do when guests reach the retreat…" />
-        <Field label="What to bring" value={info.whatToBring} onChange={(v) => set("whatToBring", v)} textarea rows={3} placeholder="Packing suggestions and essentials…" />
-        <Field label="Important notes" value={info.importantNotes} onChange={(v) => set("importantNotes", v)} textarea rows={3} placeholder="House rules, policies, anything guests must know before arriving…" />
+        <Field label={t("flow", "gettingHere")} value={info.transportationInfo} onChange={(v) => set("transportationInfo", v)} textarea rows={3} placeholder={t("flow", "gettingHerePlaceholder")} />
+        <Field label={t("flow", "onArrival")} value={info.arrivalInstructions} onChange={(v) => set("arrivalInstructions", v)} textarea placeholder={t("flow", "onArrivalPlaceholder")} />
+        <Field label={t("flow", "whatToBring")} value={info.whatToBring} onChange={(v) => set("whatToBring", v)} textarea rows={3} placeholder={t("flow", "whatToBringPlaceholder")} />
+        <Field label={t("flow", "importantNotes")} value={info.importantNotes} onChange={(v) => set("importantNotes", v)} textarea rows={3} placeholder={t("flow", "importantNotesPlaceholder")} />
       </div>
 
-      <StudioSectionSub>Contact</StudioSectionSub>
+      <StudioSectionSub>{t("common", "contact")}</StudioSectionSub>
       <div className="grid grid-cols-3 gap-4">
-        <Field label="Contact name" value={info.contactName} onChange={(v) => set("contactName", v)} placeholder="e.g. Front Desk" />
-        <Field label="Phone number" value={info.contactPhone} onChange={(v) => set("contactPhone", v)} placeholder="+66 77 123 456" />
-        <Field label="WhatsApp number" value={info.contactWhatsapp} onChange={(v) => set("contactWhatsapp", v)} placeholder="+66 87 123 456" />
+        <Field label={t("flow", "contactName")} value={info.contactName} onChange={(v) => set("contactName", v)} placeholder={t("flow", "contactNamePlaceholder")} />
+        <Field label={t("flow", "phoneNumber")} value={info.contactPhone} onChange={(v) => set("contactPhone", v)} placeholder="+66 77 123 456" />
+        <Field label={t("flow", "whatsappNumber")} value={info.contactWhatsapp} onChange={(v) => set("contactWhatsapp", v)} placeholder="+66 87 123 456" />
       </div>
 
       {state.error && (
@@ -149,7 +152,7 @@ export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDir
           onClick={onBack}
           className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3"
         >
-          Back
+          {t("common", "back")}
         </button>
         <button
           type="button"
@@ -157,14 +160,14 @@ export function ArrivalStep({ tenantId, info, setInfo, onBack, onContinue, onDir
           disabled={pending}
           className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60"
         >
-          {pending ? "Saving…" : "Save Arrival Info"}
+          {pending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "moduleArrivalInfo") })}
         </button>
         <button
           type="button"
           onClick={onContinue}
           className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
         >
-          Continue →
+          {t("common", "next")} <ForwardArrow />
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import { mixHex } from "@/lib/theme/contrast";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
 /**
  * The Retreat Share Card - a finished digital invitation, not a raw QR
  * export. One drawing function, called against differently-sized canvases
@@ -45,6 +46,9 @@ export type ShareCardOptions = {
   qrUrl: string;
   primaryHex: string;
   secondaryHex: string;
+  /** The Space's system language. See shareCardLocale() for the one
+   * place it is deliberately not honoured. */
+  locale?: Locale;
 };
 
 const PARCHMENT = GUEST_BASE_PALETTE.parchment;
@@ -181,7 +185,36 @@ function roundedRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w:
   ctx.closePath();
 }
 
+/**
+ * Which language the Share Card's own labels are drawn in.
+ *
+ * DOCUMENTED LIMITATION: Hebrew falls back to English here, and only
+ * here. Two concrete reasons, both in this file:
+ *
+ *  1. The card is drawn with DM Serif Display and DM Sans, loaded
+ *     explicitly via document.fonts.load() below. Neither covers
+ *     Hebrew, so Hebrew text would render as tofu boxes or be silently
+ *     substituted with a system font - which also breaks the measured
+ *     layout this file arithmetic-checks against CARD_HEIGHT.
+ *  2. drawTrackedText() applies letter-spacing by measuring and drawing
+ *     one character at a time, advancing x left-to-right. That reverses
+ *     Hebrew and defeats its shaping.
+ *
+ * Supporting Hebrew properly means a Hebrew-capable display face plus a
+ * direction-aware replacement for drawTrackedText - a real piece of
+ * design and layout work, not a translation. Until then, an English card
+ * is the honest outcome; a card full of broken glyphs is not. Everything
+ * else in a Hebrew Space, including the Share Card's surrounding Studio
+ * UI, is fully translated.
+ *
+ * German is unaffected: it is Latin script and both faces cover it.
+ */
+function shareCardLocale(locale: Locale): Locale {
+  return locale === "he" ? "en" : locale;
+}
+
 export async function drawShareCard(canvas: HTMLCanvasElement, options: ShareCardOptions): Promise<void> {
+  const cardLocale = shareCardLocale(options.locale ?? DEFAULT_LOCALE);
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
@@ -300,7 +333,7 @@ export async function drawShareCard(canvas: HTMLCanvasElement, options: ShareCar
 
   ctx.fillStyle = MIST;
   ctx.font = '600 20px "DM Sans", sans-serif';
-  drawTrackedText(ctx, "YOUR RETREAT COMPANION", centerX, cursorY, 3);
+  drawTrackedText(ctx, translate(cardLocale, "flow", "cardKicker"), centerX, cursorY, 3);
   cursorY += 30; // = 690
 
   // Small Accent-colored detail - a single restrained dot, not a stripe.
@@ -345,7 +378,7 @@ export async function drawShareCard(canvas: HTMLCanvasElement, options: ShareCar
 
   ctx.fillStyle = DUSK;
   ctx.font = '600 20px "DM Sans", sans-serif';
-  drawTrackedText(ctx, "SCAN TO OPEN THE RETREAT APP", centerX, cursorY, 2);
+  drawTrackedText(ctx, translate(cardLocale, "flow", "cardScanLabel"), centerX, cursorY, 2);
   cursorY += 38; // = 1266
 
   // Footer - a thin hairline + restrained InnerDweS attribution, never

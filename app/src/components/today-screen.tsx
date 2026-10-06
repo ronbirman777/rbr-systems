@@ -5,6 +5,10 @@ import { PinIcon, PersonIcon, ChevronRightIcon } from "./guest/icons";
 import type { DailyQuote } from "@/lib/content/dailyQuotes";
 import type { CSSProperties } from "react";
 
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { formatLongDateLocalized } from "@/lib/i18n/datetime";
+import { BrandImage } from "@/components/shared/brand-image";
+import { FLOW_SIZES } from "./flow-media-sizes";
 export type TodayScreenProps = {
   tenantName: string;
   brand: BrandConfig;
@@ -45,6 +49,7 @@ export type TodayScreenProps = {
    * timezone (see lib/content/dailyQuotes). Not organizer-authored, so
    * there's no draft/published gap here the way there is for heroImageUrl. */
   dailyQuote?: DailyQuote | null;
+  locale?: Locale;
 };
 
 /**
@@ -70,36 +75,39 @@ export function TodayScreen({
   intention,
   onViewSchedule,
   dailyQuote,
+  locale = DEFAULT_LOCALE,
 }: TodayScreenProps) {
   const vars = deriveThemeVars(brand) as CSSProperties;
+  const { t } = createTranslator(locale);
   const nowSession = nowTime ? findNowItem(schedule, todayIso, nowTime) : null;
   const nextSession = nowTime ? findNextItem(schedule, todayIso, nowTime) : null;
-  const dateLabel = new Date(`${todayIso}T00:00:00`).toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+  const dateLabel = formatLongDateLocalized(todayIso, locale);
 
   return (
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
       <div className="relative h-[280px]">
-        {heroImageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={heroImageUrl} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div
-            className="w-full h-full"
-            style={{ background: `linear-gradient(135deg, var(--rbr-primary), var(--rbr-forest-mid))` }}
-          />
-        )}
+        {/* The Today hero is Flow's LCP element: eager, high fetch
+            priority, and synchronously decoded. Everything else on the
+            screen stays lazy. */}
+        <BrandImage
+          priority
+          sizes={FLOW_SIZES.frame}
+          src={heroImageUrl}
+          focal={null}
+          alt=""
+          className="w-full h-full"
+          fallback="linear-gradient(135deg, var(--rbr-primary), var(--rbr-forest-mid))"
+        />
         <div
           className="absolute inset-0"
           style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.3), transparent, rgba(0,0,0,0.65))" }}
         />
         <div className="absolute top-0 left-0 right-0 px-6 pt-3 flex items-center gap-2">
           {logoUrl && (
+            /* A small logo with object-contain: BrandImage is a
+               cover/focal-point primitive and would crop it. */
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt="" className="h-6 w-auto max-w-[88px] object-contain shrink-0" />
+            <img src={logoUrl} alt="" loading="eager" fetchPriority="high" className="h-6 w-auto max-w-[88px] object-contain shrink-0" />
           )}
           <span className="text-white/60 text-[10px] tracking-[0.22em] font-medium uppercase" style={{ fontFamily: "var(--rbr-font-ui)" }}>
             {tenantName}
@@ -107,7 +115,7 @@ export function TodayScreen({
         </div>
         <div className="absolute bottom-0 left-0 right-0 px-6 pb-5">
           <h1 className="text-white text-[2.4rem] leading-[1.1] font-normal" style={{ fontFamily: "var(--rbr-font-display)" }}>
-            Good morning.
+            {t("flow", "goodMorning")}
           </h1>
           <p className="text-white/65 text-[12px] mt-2 font-light tracking-[0.08em]" style={{ fontFamily: "var(--rbr-font-ui)" }}>
             {dateLabel}
@@ -146,7 +154,7 @@ export function TodayScreen({
               className="text-[10px] tracking-[0.2em] font-semibold uppercase"
               style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}
             >
-              Happening Now
+              {t("flow", "happeningNow")}
             </span>
           </div>
           <div
@@ -155,7 +163,7 @@ export function TodayScreen({
           >
             <div className="flex items-center justify-between mb-3">
               {nowSession.category && (
-                <span
+                <span dir="auto"
                   className="text-[10px] tracking-[0.18em] uppercase font-medium"
                   style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-on-primary)", opacity: 0.75 }}
                 >
@@ -166,10 +174,10 @@ export function TodayScreen({
                 className="text-white text-[9px] tracking-widest px-2.5 py-0.5 rounded-full uppercase font-semibold"
                 style={{ fontFamily: "var(--rbr-font-ui)", background: "color-mix(in srgb, var(--rbr-secondary) 80%, transparent)" }}
               >
-                Live
+                {t("flow", "live")}
               </span>
             </div>
-            <h2 className="text-white text-[22px] leading-tight" style={{ fontFamily: "var(--rbr-font-display)" }}>
+            <h2 dir="auto" className="text-white text-[22px] leading-tight" style={{ fontFamily: "var(--rbr-font-display)" }}>
               {nowSession.title}
             </h2>
             <p className="text-white/50 text-xs mt-1 mb-4" style={{ fontFamily: "var(--rbr-font-ui)" }}>
@@ -202,7 +210,7 @@ export function TodayScreen({
             className="text-[10px] tracking-[0.2em] font-semibold uppercase mb-2.5"
             style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}
           >
-            Up Next
+            {t("flow", "upNext")}
           </p>
           <div
             className="rounded-2xl p-4 border flex items-center gap-3"
@@ -210,17 +218,17 @@ export function TodayScreen({
           >
             <div className="flex-1 min-w-0">
               {nextSession.category && (
-                <span
+                <span dir="auto"
                   className="text-[10px] tracking-widest uppercase font-medium"
                   style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-secondary-foreground)" }}
                 >
                   {nextSession.category}
                 </span>
               )}
-              <h3 className="text-[17px] leading-snug mt-0.5" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
+              <h3 dir="auto" className="text-[17px] leading-snug mt-0.5" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
                 {nextSession.title}
               </h3>
-              <p className="text-xs mt-0.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
+              <p dir="auto" className="text-xs mt-0.5" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}>
                 {nextSession.startTime}
                 {nextSession.location ? ` · ${nextSession.location}` : ""}
               </p>
@@ -237,7 +245,7 @@ export function TodayScreen({
 
       {!nowSession && !nextSession && (
         <div className="mx-4 mt-5 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-          Nothing scheduled right now.
+          {t("flow", "nothingScheduledNow")}
         </div>
       )}
 
@@ -250,7 +258,7 @@ export function TodayScreen({
             style={{ borderColor: "color-mix(in srgb, var(--rbr-sand) 70%, transparent)", color: "var(--rbr-dusk)" }}
           >
             <span className="text-[13px] font-medium" style={{ fontFamily: "var(--rbr-font-ui)" }}>
-              View today&apos;s full schedule
+              {t("flow", "viewFullSchedule")}
             </span>
             <ChevronRightIcon style={{ color: "var(--rbr-mist)" }} />
           </button>
