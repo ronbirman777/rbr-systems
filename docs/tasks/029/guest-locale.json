@@ -223,5 +223,38 @@
    "pass": true,
    "detail": "en"
   }
- ]
+ ],
+ "frenchReverification": {
+  "note": "The five-locale publish-to-guest matrix above was measured before the final hardening phase. French was re-verified on the release candidate: the run that set and published French was killed by the OS for memory after both publishes and before its restore, so the published French output was read anonymously over HTTP instead of through a browser - which proves the same thing with less.",
+  "flow": {
+   "url": "/s/qa-flow-1h8ve",
+   "lang": "fr",
+   "dir": "ltr",
+   "navFound": [
+    "Aujourd’hui",
+    "Programme",
+    "Équipe",
+    "Explorer"
+   ],
+   "englishFound": []
+  },
+  "teach": {
+   "url": "/s/qa-teach-staging",
+   "lang": "fr",
+   "dir": "ltr",
+   "navFound": [
+    "Accueil",
+    "Horaires",
+    "À propos de moi",
+    "Explorer"
+   ],
+   "englishFound": []
+  },
+  "restoredAfterwards": {
+   "flowDraft": "en",
+   "flowPublished": "en",
+   "teachDraft": "en",
+   "teachPublished": "en"
+  }
+ }
 }
