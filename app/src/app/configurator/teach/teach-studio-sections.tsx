@@ -376,7 +376,7 @@ export function IdentitySection({ api }: Props) {
     <>
       <SectionHeader eyebrow={t("teach", "identityEyebrow")} title={t("teach", "sectionIdentity")} intro={t("teach", "identityBody")} />
       <SpaceCountryCard tenantId={api.tenantId} locale={api.locale} />
-      <SpaceLanguageCard tenantId={api.tenantId} uiLocale={api.locale} />
+      <SpaceLanguageCard tenantId={api.tenantId} uiLocale={api.locale} onChange={api.setLocale} />
       <Card title={t("teach", "whoYouAre")} description={t("teach", "whoYouAreBody")}>
         <Grid>
           <TextField label={t("teach", "myName")} value={api.name} onChange={api.setName} maxLength={80} placeholder={t("teach", "myNamePlaceholder")} />

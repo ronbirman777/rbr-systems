@@ -62,6 +62,7 @@ import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modu
 import { todayInTimezone, currentTimeInTimezone, timezoneOptions, timezoneSelectValue, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { useSpaceLocale } from "@/lib/studio/useSpaceLocale";
 import { moduleLabel } from "@/lib/modules/catalog";
 import {
   saveDraft,
@@ -1213,9 +1214,19 @@ export function RetreatConfigurator({
   initialFeaturedSubmission,
 }: RetreatConfiguratorProps) {
   const router = useRouter();
+  /**
+   * The Space's system language, LIVE.
+   *
+   * `initialLocale` is only the starting value - the language card hands
+   * its choice back through `setSpaceLocale`, which is what makes the
+   * Studio shell and the Live Draft Preview switch immediately instead
+   * of waiting for a reload. See lib/studio/useSpaceLocale.ts.
+   */
+  const { locale: spaceLocale, dir: spaceDir, setLocale: setSpaceLocale } = useSpaceLocale(initialLocale);
   // The Studio speaks the Space's own language, so an organizer edits in
   // the same language their guests read.
-  const { t } = createTranslator(initialLocale);
+  const { t } = createTranslator(spaceLocale);
+
   const [step, setStep] = useState<StepKey>(initialStep ?? "identity");
   const [name, setName] = useState(initialName);
   const [timezone, setTimezone] = useState(initialTimezone || DEFAULT_TIMEZONE);
@@ -1296,7 +1307,7 @@ export function RetreatConfigurator({
   function persistModuleCoverPosition(moduleKey: string, position: ImagePosition) {
     if (!tenantId) return;
     const formData = new FormData();
-    formData.set("locale", initialLocale);
+    formData.set("locale", spaceLocale);
     formData.set("tenantId", tenantId);
     formData.set("moduleKey", moduleKey);
     formData.set("position", JSON.stringify(position));
@@ -1365,7 +1376,7 @@ export function RetreatConfigurator({
 
   async function handleSaveSchedule() {
     const formData = new FormData();
-    formData.set("locale", initialLocale);
+    formData.set("locale", spaceLocale);
     formData.set("tenantId", tenantId ?? "");
     formData.set("items", JSON.stringify(schedule));
     const ids = schedule.map((s) => s.id);
@@ -1384,7 +1395,7 @@ export function RetreatConfigurator({
 
   async function handleSaveFacilitators() {
     const formData = new FormData();
-    formData.set("locale", initialLocale);
+    formData.set("locale", spaceLocale);
     formData.set("tenantId", tenantId ?? "");
     // socialLinks/specialties MUST be included here - this is the client
     // half of the metadata round-trip fix. Leaving them out would make
@@ -1450,7 +1461,7 @@ export function RetreatConfigurator({
 
   async function handleCheckSlug() {
     const formData = new FormData();
-    formData.set("locale", initialLocale);
+    formData.set("locale", spaceLocale);
     formData.set("slug", slugInput);
     setSlugCheckPending(true);
     const result = await checkSlugAvailability(slugCheckInitialState, formData);
@@ -1460,7 +1471,7 @@ export function RetreatConfigurator({
 
   async function handleReserveSlug() {
     const formData = new FormData();
-    formData.set("locale", initialLocale);
+    formData.set("locale", spaceLocale);
     formData.set("tenantId", tenantId ?? "");
     formData.set("name", name);
     formData.set("timezone", timezone);
@@ -1522,18 +1533,18 @@ export function RetreatConfigurator({
           if (save) moduleSaversRef.current.set(section, save);
           else moduleSaversRef.current.delete(section);
         },
-        locale: initialLocale,
+        locale: spaceLocale,
       } satisfies StudioSectionEditorProps,
     ]);
     return Object.fromEntries(entries) as Record<StudioModuleSection, StudioSectionEditorProps>;
-  }, [markDirty, markClean, initialLocale]);
+  }, [markDirty, markClean, spaceLocale]);
 
   async function saveAllDirtySections(): Promise<boolean> {
     let allSucceeded = true;
 
     if (dirty.dirtySections.has("identityAndBrand")) {
       const fd = new FormData();
-      fd.set("locale", initialLocale);
+      fd.set("locale", spaceLocale);
       fd.set("tenantId", tenantId ?? "");
       fd.set("name", name);
       fd.set("timezone", timezone);
@@ -1550,7 +1561,7 @@ export function RetreatConfigurator({
 
     if (dirty.dirtySections.has("modules")) {
       const fd = new FormData();
-      fd.set("locale", initialLocale);
+      fd.set("locale", spaceLocale);
       fd.set("tenantId", tenantId ?? "");
       IMPLEMENTED_OPTIONAL_MODULES.forEach((key) => fd.set(`module_${key}`, enabledModules.has(key) ? "on" : "off"));
       const result = await saveModules(modulesInitialState, fd);
@@ -1625,7 +1636,7 @@ export function RetreatConfigurator({
     list.push({ key: "publish", label: t("studio", "publish") });
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabledModules, initialLocale]);
+  }, [enabledModules, spaceLocale]);
 
   /** Visual Fidelity Phase 1: grouped sidebar sections, matching the
    * approved Creator Workspace's "My Space" / "Content" structure - a
@@ -1642,9 +1653,10 @@ export function RetreatConfigurator({
         items: steps.filter((s) => s.key !== "identity" && s.key !== "brand" && s.key !== "modules" && s.key !== "publish"),
       },
     ],
-    // `t` is derived from initialLocale, which never changes for a mount.
+    // `t` is derived from spaceLocale, which DOES change now (the
+    // language card switches it live), so it is a real dependency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [steps, initialLocale]
+    [steps, spaceLocale]
   );
 
   /** Generic prev/next navigation over the current step list - this is
@@ -1692,13 +1704,17 @@ export function RetreatConfigurator({
       : sidebarGroups.find((g) => g.items.some((i) => i.key === step))?.label;
 
   return (
-    <>
+    // lang/dir on the Studio shell itself: app/layout.tsx serves every
+    // route as <html lang="en"> with no dir, and each surface owns its
+    // own pair (the Guest App already did). Without this a Hebrew
+    // Studio renders its own chrome left-to-right.
+    <div lang={spaceLocale} dir={spaceDir} className="contents">
       <StudioTopBar
-        locale={initialLocale}
+        locale={spaceLocale}
         name={name}
         fallbackName={t("flow", "myRetreatFallback")}
         productBadge="Time to Flow"
-        saveStatus={saveStatusLabel({ saving: publishPending, dirty: dirty.isDirtyAnywhere }, initialLocale)}
+        saveStatus={saveStatusLabel({ saving: publishPending, dirty: dirty.isDirtyAnywhere }, spaceLocale)}
         onBack={() => attemptNavigate(() => router.push("/space"))}
         onPublish={() => attemptNavigate(() => setStep("publish"))}
         publishLabel={currentPublishedAt ? t("studio", "republish") : t("studio", "publish")}
@@ -2097,7 +2113,7 @@ export function RetreatConfigurator({
             {tenantId ? (
               <div className="max-w-[200px]">
                 <BrandImageField
-                  locale={initialLocale}
+                  locale={spaceLocale}
                   tenantId={tenantId}
                   kind="logo"
                   label={t("studio", "uploadLogo")}
@@ -2122,7 +2138,7 @@ export function RetreatConfigurator({
             </p>
             {tenantId ? (
               <BrandImageField
-                locale={initialLocale}
+                locale={spaceLocale}
                 tenantId={tenantId}
                 kind="space"
                 label={t("studio", "uploadSpaceImage")}
@@ -2156,8 +2172,8 @@ export function RetreatConfigurator({
             the shared action rather than this product's draft payload. */}
         {step === "identity" && tenantId ? (
           <div className="max-w-xl mt-6 flex flex-col gap-4">
-            <SpaceCountryCard tenantId={tenantId} locale={initialLocale} />
-            <SpaceLanguageCard tenantId={tenantId} uiLocale={initialLocale} />
+            <SpaceCountryCard tenantId={tenantId} locale={spaceLocale} />
+            <SpaceLanguageCard tenantId={tenantId} uiLocale={spaceLocale} onChange={setSpaceLocale} />
           </div>
         ) : null}
 
@@ -2179,7 +2195,7 @@ export function RetreatConfigurator({
 
             <div className="mb-8">
               <BrandPresetChips
-                locale={initialLocale}
+                locale={spaceLocale}
                 presets={getBrandPresets("retreat")}
                 activeKey={activePresetKey}
                 customActive={activePresetKey === null}
@@ -2199,7 +2215,7 @@ export function RetreatConfigurator({
 
             <div id="flow-custom-colors">
             <ColorPicker
-              locale={initialLocale}
+              locale={spaceLocale}
               first
               key={`primary-${presetNonce}`}
               label={t("studio", "primaryColour")}
@@ -2212,7 +2228,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
-              locale={initialLocale}
+              locale={spaceLocale}
               key={`accent-${presetNonce}`}
               label={t("studio", "accentColour")}
               swatches={swatchesFor("accent")}
@@ -2224,7 +2240,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
-              locale={initialLocale}
+              locale={spaceLocale}
               key={`navigation-${presetNonce}`}
               label={t("studio", "navigationColour")}
               swatches={swatchesFor("navigation")}
@@ -2236,7 +2252,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
-              locale={initialLocale}
+              locale={spaceLocale}
               key={`surface-${presetNonce}`}
               label={t("studio", "backgroundTint")}
               swatches={swatchesFor("surface")}
@@ -2248,7 +2264,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
-              locale={initialLocale}
+              locale={spaceLocale}
               key={`text-${presetNonce}`}
               label={t("studio", "textColour")}
               swatches={swatchesFor("text")}
@@ -2267,7 +2283,7 @@ export function RetreatConfigurator({
             </p>
             {tenantId ? (
               <BrandImageField
-                locale={initialLocale}
+                locale={spaceLocale}
                 tenantId={tenantId}
                 kind="hero"
                 label={t("studio", "uploadHeroPhoto")}
@@ -2309,7 +2325,7 @@ export function RetreatConfigurator({
                 products, covering every brand role rather than Primary
                 alone. The product-specific notes below stay as-is. */}
             <BrandContrastFeedback
-              locale={initialLocale}
+              locale={spaceLocale}
               className="mt-3"
               primary={effectivePrimary}
               accent={effectiveSecondary}
@@ -2405,7 +2421,7 @@ export function RetreatConfigurator({
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium" style={{ color: on ? GUEST_BASE_PALETTE.forest : GUEST_BASE_PALETTE.dusk }}>
-                          {moduleLabel(key, initialLocale)}
+                          {moduleLabel(key, spaceLocale)}
                         </p>
                         <p className="text-[11px] mt-0.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
                           {t("flow", meta.descriptionKey)}
@@ -2414,7 +2430,7 @@ export function RetreatConfigurator({
                       <button
                         type="button"
                         onClick={() => toggleModule(key)}
-                        aria-label={t("flow", "toggleModule", { module: moduleLabel(key, initialLocale) })}
+                        aria-label={t("flow", "toggleModule", { module: moduleLabel(key, spaceLocale) })}
                         className="w-10 h-6 rounded-full transition-all relative flex-shrink-0"
                         style={{ background: on ? GUEST_BASE_PALETTE.forest : `${GUEST_BASE_PALETTE.sand}cc` }}
                       >
@@ -2453,7 +2469,7 @@ export function RetreatConfigurator({
                               persistModuleCoverPosition(key, position);
                             }}
                             aspect="16/9"
-                            label={t("flow", "moduleCoverImageOf", { module: moduleLabel(key, initialLocale) })}
+                            label={t("flow", "moduleCoverImageOf", { module: moduleLabel(key, spaceLocale) })}
                           />
                         )}
                       </>
@@ -2516,7 +2532,7 @@ export function RetreatConfigurator({
             scheduleState={scheduleState}
             schedulePending={schedulePending}
             handleSaveSchedule={handleSaveSchedule}
-            locale={initialLocale}
+            locale={spaceLocale}
             goToStep={goToStep}
           />
         )}
@@ -2530,7 +2546,7 @@ export function RetreatConfigurator({
             facilitatorsState={facilitatorsState}
             facilitatorsPending={facilitatorsPending}
             handleSaveFacilitators={handleSaveFacilitators}
-            locale={initialLocale}
+            locale={spaceLocale}
             goToStep={goToStep}
           />
         )}
@@ -2708,7 +2724,7 @@ export function RetreatConfigurator({
 
                 <div className="rounded-2xl border border-[#E2DACD] bg-white p-5" data-testid="publish-status-card">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <StatusPill state={studioPublishState(currentPublishedAt)} locale={initialLocale} />
+                    <StatusPill state={studioPublishState(currentPublishedAt)} locale={spaceLocale} />
                     {formatPublishedAtUtc(currentPublishedAt) && (
                       <span className="text-[12px] text-[#8C8A84]">
                         Last published {formatPublishedAtUtc(currentPublishedAt)}
@@ -2726,13 +2742,13 @@ export function RetreatConfigurator({
                   <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84] mb-3">
                     {t("studio", "readyToPublish")}
                   </p>
-                  <ReadinessChecklist items={publishReadiness} locale={initialLocale} />
+                  <ReadinessChecklist items={publishReadiness} locale={spaceLocale} />
                 </div>
 
                 <div className="mt-4">
                   {currentSlug ? (
                     <PublicLinkCard
-                      locale={initialLocale}
+                      locale={spaceLocale}
                       url={publicSpaceUrl(tenantId, currentSlug)}
                       openHref={guestAppPath(tenantId, currentSlug)}
                       published={!!currentPublishedAt}
@@ -2807,14 +2823,14 @@ export function RetreatConfigurator({
                   only preview visible, matching the approved Publish
                   screen's own embedded, larger phone. */}
               <div className="flex flex-col items-center lg:items-start gap-2">
-                <p className="text-[10.5px] tracking-[0.12em] uppercase font-semibold text-[#8C8A84]">{previewDraftLabel(initialLocale)}</p>
-                <p className="text-[11px] text-[#8C8A84] mb-1">{previewDraftCaption(initialLocale)}</p>
+                <p className="text-[10.5px] tracking-[0.12em] uppercase font-semibold text-[#8C8A84]">{previewDraftLabel(spaceLocale)}</p>
+                <p className="text-[11px] text-[#8C8A84] mb-1">{previewDraftCaption(spaceLocale)}</p>
                 <div
                   className="w-[220px] h-[440px] rounded-[24px] overflow-hidden shadow-2xl"
                   style={{ border: `3px solid ${GUEST_BASE_PALETTE.forest}`, background: GUEST_BASE_PALETTE.parchment }}
                 >
                   <GuestApp
-                    locale={initialLocale}
+                    locale={spaceLocale}
                     tenantName={name}
                     brand={{
                       name,
@@ -2856,7 +2872,7 @@ export function RetreatConfigurator({
 
         {step === "share" && tenantId && (
           <ShareSpaceStep
-            locale={initialLocale}
+            locale={spaceLocale}
             tenantId={tenantId}
             name={name}
             slug={currentSlug}
@@ -2872,7 +2888,7 @@ export function RetreatConfigurator({
 
         {step === "featured" && tenantId && (
           <FeaturedStep
-            locale={initialLocale}
+            locale={spaceLocale}
             tenantId={tenantId}
             name={name}
             spaceImageUrl={spaceImageUrl}
@@ -2897,15 +2913,15 @@ export function RetreatConfigurator({
       {step !== "publish" && step !== "share" && step !== "featured" && (
       <aside className="hidden lg:flex bg-[#E9E3D8] border-l border-[#E2DACD] px-8 py-8 flex-col items-center overflow-y-auto lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]" data-testid="studio-preview-pane">
         <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#8C8A84]">
-          {previewDraftLabel(initialLocale)}
+          {previewDraftLabel(spaceLocale)}
         </div>
-        <div className="text-[11px] text-[#8C8A84] mt-1 text-center">{previewDraftCaption(initialLocale)}</div>
+        <div className="text-[11px] text-[#8C8A84] mt-1 text-center">{previewDraftCaption(spaceLocale)}</div>
         <div
           className="mt-7 w-[260px] h-[520px] rounded-[24px] lg:w-[220px] lg:h-[440px] lg:rounded-[20px] overflow-hidden shadow-2xl"
           style={{ border: `3px solid ${GUEST_BASE_PALETTE.forest}`, background: GUEST_BASE_PALETTE.parchment }}
         >
           <GuestApp
-            locale={initialLocale}
+            locale={spaceLocale}
             tenantName={name}
             brand={{
               name,
@@ -2954,7 +2970,7 @@ export function RetreatConfigurator({
       </div>
 
       <UnsavedChangesDialog
-        locale={initialLocale}
+        locale={spaceLocale}
         open={pendingNavigation !== null}
         onSaveAndContinue={async () => {
           const succeeded = await saveAllDirtySections();
@@ -2981,6 +2997,6 @@ export function RetreatConfigurator({
         }}
         onCancel={() => setPendingNavigation(null)}
       />
-    </>
+    </div>
   );
 }

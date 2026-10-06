@@ -31,27 +31,39 @@ import { parsePublishedTeachSpace } from "@/lib/teach/guestData";
 import { TeachGuestApp } from "@/components/teach/teach-guest-app";
 
 describe("supported locales", () => {
-  it("is exactly en/he/de, with English as the fallback", () => {
-    expect(SUPPORTED_LOCALES).toEqual(["en", "he", "de"]);
+  it("is exactly en/de/es/fr/he, in selector order, with English as the fallback", () => {
+    // The order is the selector's display order and is deliberately
+    // fixed: Hebrew last because it is the only RTL language here.
+    expect(SUPPORTED_LOCALES).toEqual(["en", "de", "es", "fr", "he"]);
     expect(DEFAULT_LOCALE).toBe("en");
   });
 
   it("knows which direction each language reads in", () => {
     expect(directionOf("en")).toBe("ltr");
     expect(directionOf("de")).toBe("ltr");
+    expect(directionOf("es")).toBe("ltr");
+    expect(directionOf("fr")).toBe("ltr");
     expect(directionOf("he")).toBe("rtl");
   });
 
   it("labels each language in its own script", () => {
-    expect(LOCALE_LABEL).toEqual({ en: "English", he: "עברית", de: "Deutsch" });
+    expect(LOCALE_LABEL).toEqual({
+      en: "English",
+      de: "Deutsch",
+      es: "Español",
+      fr: "Français",
+      he: "עברית",
+    });
   });
 
   it("resolves anything unrecognised to English instead of throwing", () => {
-    for (const bad of [null, undefined, "", "fr", "EN", 42, {}]) {
+    for (const bad of [null, undefined, "", "it", "EN", "es-MX", 42, {}]) {
       expect(resolveLocale(bad), String(bad)).toBe("en");
     }
     expect(isSupportedLocale("he")).toBe(true);
-    expect(isSupportedLocale("fr")).toBe(false);
+    expect(isSupportedLocale("es")).toBe(true);
+    expect(isSupportedLocale("fr")).toBe(true);
+    expect(isSupportedLocale("it")).toBe(false);
   });
 });
 
@@ -60,12 +72,16 @@ describe("translation and fallback", () => {
     expect(translate("en", "teach", "navHome")).toBe("Home");
     expect(translate("he", "teach", "navHome")).toBe("בית");
     expect(translate("de", "teach", "navHome")).toBe("Start");
+    expect(translate("es", "teach", "navHome")).toBe("Inicio");
+    expect(translate("fr", "teach", "navHome")).toBe("Accueil");
   });
 
   it("interpolates values without touching anything else", () => {
     expect(translate("en", "teach", "fromTeacher", { name: "Lena" })).toBe("From Lena");
     expect(translate("de", "teach", "fromTeacher", { name: "Lena" })).toBe("Von Lena");
     expect(translate("he", "teach", "fromTeacher", { name: "Lena" })).toContain("Lena");
+    expect(translate("es", "teach", "fromTeacher", { name: "Lena" })).toBe("De Lena");
+    expect(translate("fr", "teach", "fromTeacher", { name: "Lena" })).toBe("De Lena");
   });
 
   it("leaves an unknown placeholder visible rather than blanking it", () => {
@@ -73,16 +89,17 @@ describe("translation and fallback", () => {
   });
 
   it("falls back to English for an unknown locale, never to the key", () => {
-    const t = createTranslator("fr");
+    const t = createTranslator("it");
     expect(t.locale).toBe("en");
     expect(t.t("common", "save")).toBe("Save");
   });
 
-  it("has complete Hebrew and German dictionaries", () => {
+  it("has complete dictionaries for every non-English locale", () => {
     // A missing key would silently fall back to English, which is correct
     // behaviour but hides an untranslated surface - so it is asserted.
-    expect(missingKeys("he")).toEqual([]);
-    expect(missingKeys("de")).toEqual([]);
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(missingKeys(locale), locale).toEqual([]);
+    }
   });
 
   it("only repeats English where the word is genuinely the same", () => {
@@ -151,8 +168,26 @@ describe("translation and fallback", () => {
       "flow.catYoga",
       "flow.catMeditation",
       "flow.moduleAudio",
+      // TASK 029, Spanish and French. A unit abbreviation, and words
+      // these two languages spell exactly as English does.
+      "teach.minutes",
+      "teach.catMindfulness",
+      "teach.spacingCompact",
+      "teach.pages",
+      "teach.sectionModules",
+      "teach.contactCardTitle",
+      "common.contact",
+      "common.description",
+      "common.date",
+      "common.photo",
+      "common.question",
+      "flow.contact",
+      "flow.faq",
+      "flow.date",
+      "flow.pageLabel",
+      "studio.navModules",
     ]);
-    for (const locale of ["he", "de"] as const) {
+    for (const locale of ["he", "de", "es", "fr"] as const) {
       const unexpected = untranslatedKeys(locale).filter((k) => !allowed.has(k));
       expect(unexpected, `${locale} untranslated`).toEqual([]);
     }
@@ -166,6 +201,18 @@ describe("country recommends a language but never locks it", () => {
     expect(recommendedLocales("AT")).toEqual(["en", "de"]);
   });
 
+  it("recommends Spanish across Spain and Latin America, French across la Francophonie", () => {
+    for (const country of ["ES", "MX", "AR", "CO", "CR", "PR"]) {
+      expect(recommendedLocales(country), country).toEqual(["en", "es"]);
+    }
+    for (const country of ["FR", "BE", "LU", "CA", "MA", "SN"]) {
+      expect(recommendedLocales(country), country).toEqual(["en", "fr"]);
+    }
+    // Brazil speaks Portuguese, which this release does not support, so
+    // it must not be swept into the Spanish list.
+    expect(recommendedLocales("BR")).toEqual(["en"]);
+  });
+
   it("leads with English everywhere else", () => {
     expect(recommendedLocales("JP")).toEqual(["en"]);
     expect(recommendedLocales(null)).toEqual(["en"]);
@@ -175,19 +222,21 @@ describe("country recommends a language but never locks it", () => {
   it("never removes a language from the supported set", () => {
     // The recommendation orders the picker; it must never be read as a
     // restriction, so every supported language stays available.
-    for (const country of ["IL", "DE", "JP", null]) {
+    for (const country of ["IL", "DE", "ES", "MX", "FR", "CA", "JP", null]) {
       const recommended = recommendedLocales(country);
       expect(recommended.every((l) => SUPPORTED_LOCALES.includes(l))).toBe(true);
-      expect(SUPPORTED_LOCALES.length).toBe(3);
+      expect(SUPPORTED_LOCALES.length).toBe(5);
     }
   });
 });
 
 describe("locale persistence lives in the shared Space settings", () => {
   it("parses a supported locale and rejects anything else to null", () => {
-    expect(parseSpaceSettings({ locale: "he" }).locale).toBe("he");
-    expect(parseSpaceSettings({ locale: "de" }).locale).toBe("de");
-    expect(parseSpaceSettings({ locale: "fr" }).locale).toBeNull();
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(parseSpaceSettings({ locale }).locale, locale).toBe(locale);
+    }
+    expect(parseSpaceSettings({ locale: "it" }).locale).toBeNull();
+    expect(parseSpaceSettings({ locale: "es-MX" }).locale).toBeNull();
     expect(parseSpaceSettings({}).locale).toBeNull();
   });
 
@@ -213,8 +262,9 @@ function guest(locale?: string) {
 
 describe("the Guest App reads locale from published data only", () => {
   it("takes the locale from the published spaceSettings object", () => {
-    expect(guest("he").locale).toBe("he");
-    expect(guest("de").locale).toBe("de");
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(guest(locale).locale, locale).toBe(locale);
+    }
   });
 
   it("defaults an existing Space with no locale to English", () => {
@@ -225,7 +275,8 @@ describe("the Guest App reads locale from published data only", () => {
   });
 
   it("ignores an unsupported stored locale rather than breaking", () => {
-    expect(guest("fr").locale).toBe("en");
+    expect(guest("it").locale).toBe("en");
+    expect(guest("es-MX").locale).toBe("en");
   });
 
   it("sets lang and dir on the rendered Guest App", () => {
@@ -234,6 +285,10 @@ describe("the Guest App reads locale from published data only", () => {
     expect(html("he")).toContain('lang="he"');
     expect(html("de")).toContain('dir="ltr"');
     expect(html("de")).toContain('lang="de"');
+    expect(html("es")).toContain('dir="ltr"');
+    expect(html("es")).toContain('lang="es"');
+    expect(html("fr")).toContain('dir="ltr"');
+    expect(html("fr")).toContain('lang="fr"');
     expect(html()).toContain('lang="en"');
   });
 
@@ -241,6 +296,8 @@ describe("the Guest App reads locale from published data only", () => {
     const html = (l?: string) => renderToStaticMarkup(createElement(TeachGuestApp, { data: guest(l) }));
     expect(html("he")).toContain("בית");
     expect(html("de")).toContain("Start");
+    expect(html("es")).toContain("Inicio");
+    expect(html("fr")).toContain("Accueil");
     expect(html()).toContain("Home");
   });
 });
@@ -255,6 +312,8 @@ describe("the canvas Share Card's Hebrew fallback is deliberate", () => {
     // direction-aware text routine, this test is what tells them to
     // translate these two keys.
     expect(translate("de", "flow", "cardKicker")).toBe("DEIN RETREAT-BEGLEITER");
+    expect(translate("es", "flow", "cardKicker")).toBe("TU COMPAÑERO DE RETIRO");
+    expect(translate("fr", "flow", "cardKicker")).toBe("VOTRE COMPAGNON DE RETRAITE");
     expect(translate("he", "flow", "cardKicker")).toBe(translate("en", "flow", "cardKicker"));
     expect(translate("he", "flow", "cardScanLabel")).toBe(translate("en", "flow", "cardScanLabel"));
   });
@@ -293,17 +352,20 @@ describe("the Guest Access gate speaks the Space language", () => {
   it("translates the gate rather than falling back to English", () => {
     expect(guestAccessCopy("retreat", "he").title).toBe("ריטריט פרטי");
     expect(guestAccessCopy("teach", "de").title).toBe("Privater Space");
+    expect(guestAccessCopy("retreat", "es").title).toBe("Retiro privado");
+    expect(guestAccessCopy("teach", "fr").title).toBe("Espace privé");
   });
 });
 
 describe("published locale is read from the snapshot only", () => {
   it("takes the locale from modules.spaceSettings", () => {
-    expect(localeFromPublishedModules({ spaceSettings: { locale: "he" } })).toBe("he");
-    expect(localeFromPublishedModules({ spaceSettings: { locale: "de" } })).toBe("de");
+    for (const locale of SUPPORTED_LOCALES) {
+      expect(localeFromPublishedModules({ spaceSettings: { locale } }), locale).toBe(locale);
+    }
   });
 
   it("defaults to English for anything else, never throwing", () => {
-    for (const bad of [null, undefined, {}, { spaceSettings: null }, { spaceSettings: { locale: "fr" } }, "nonsense"]) {
+    for (const bad of [null, undefined, {}, { spaceSettings: null }, { spaceSettings: { locale: "it" } }, "nonsense"]) {
       expect(localeFromPublishedModules(bad), String(bad)).toBe("en");
     }
   });
@@ -319,7 +381,7 @@ describe("Server Actions answer in the Space language", () => {
   it("falls back to English for a missing, stale or hand-edited value", () => {
     // The posted locale only selects message text - it carries no
     // authority - so anything unrecognised must resolve, never throw.
-    for (const bad of [undefined, "", "fr", "EN", "../../etc", "he;de"]) {
+    for (const bad of [undefined, "", "it", "EN", "../../etc", "he;de"]) {
       const fd = new FormData();
       if (bad !== undefined) fd.set("locale", bad);
       expect(localeFromFormData(fd), String(bad)).toBe("en");
@@ -331,6 +393,8 @@ describe("Server Actions answer in the Space language", () => {
     const de = studioMessages("de");
     expect(he("notLoggedInToSave")).toBe("צריך להתחבר כדי לשמור.");
     expect(de("notLoggedInToSave")).toBe("Du musst angemeldet sein, um zu speichern.");
+    expect(studioMessages("es")("notLoggedInToSave")).toBe("Tienes que haber iniciado sesión para guardar.");
+    expect(studioMessages("fr")("notLoggedInToSave")).toBe("Vous devez vous connecter pour enregistrer.");
     // English stays exactly as the action previously returned it.
     expect(studioMessages("en")("notLoggedInToSave")).toBe("You need to be logged in to save.");
   });
@@ -345,6 +409,8 @@ describe("Server Actions answer in the Space language", () => {
     const tooMany = Array.from({ length: 7 }, () => ({ label: "x", url: "https://a.test" }));
     expect(validateAdditionalLinks(tooMany, "en")).toBe("You can add up to 6 additional links.");
     expect(validateAdditionalLinks(tooMany, "he")).toBe("אפשר להוסיף עד 6 קישורים נוספים.");
+    expect(validateAdditionalLinks(tooMany, "es")).toBe("Puedes añadir hasta 6 enlaces adicionales.");
+    expect(validateAdditionalLinks(tooMany, "fr")).toBe("Vous pouvez ajouter jusqu’à 6 liens supplémentaires.");
     expect(validateAdditionalLinks([], "de")).toBeNull();
   });
 });
@@ -379,11 +445,12 @@ describe("date and time localization is presentation only", () => {
     const en = formatShortDateLocalized(iso, "en");
     const he = formatShortDateLocalized(iso, "he");
     const de = formatShortDateLocalized(iso, "de");
+    const es = formatShortDateLocalized(iso, "es");
+    const fr = formatShortDateLocalized(iso, "fr");
     expect(en).toBe("Wed 14 Oct");
-    expect(he).not.toBe(en);
-    expect(de).not.toBe(en);
+    for (const out of [he, de, es, fr]) expect(out).not.toBe(en);
     // The calendar day survives in every rendering.
-    for (const out of [en, he, de]) expect(out).toContain("14");
+    for (const out of [en, he, de, es, fr]) expect(out).toContain("14");
   });
 
   it("returns a malformed date unchanged instead of inventing one", () => {
@@ -400,6 +467,7 @@ describe("date and time localization is presentation only", () => {
     }
     expect(formatTimeLocalized("09:00", "en")).toBe("09:00");
     expect(formatTimeLocalized("09:00", "de")).toBe("09:00");
+    expect(formatTimeLocalized("09:00", "fr")).toBe("09:00");
   });
 
   it("rejects a malformed time rather than guessing", () => {
@@ -415,6 +483,8 @@ describe("date and time localization is presentation only", () => {
     expect(shortWeekdayName(6, "he")).toBe("שבת");
     expect(shortWeekdayName(0, "en")).toBe("Sun");
     expect(shortWeekdayName(3, "de")).toBe("Mi");
+    expect(shortWeekdayName(0, "es")).not.toBe(shortWeekdayName(0, "en"));
+    expect(shortWeekdayName(0, "fr")).not.toBe(shortWeekdayName(0, "en"));
   });
 
   it("assembles a recurrence that reads naturally in each language", () => {
@@ -425,11 +495,21 @@ describe("date and time localization is presentation only", () => {
     // repeat the word "day".
     expect(recurrenceSummary(rule, "2026-10-05", { locale: "he" })).toBe("כל שבועיים בימים א׳, ד׳ · עד 31 בדצמ׳ 2027");
     expect(recurrenceSummary(rule, "2026-10-05", { locale: "de" })).toBe("Alle 2 Wochen am So, Mi · Bis 31. Dez. 2027");
+    // Spanish and French assemble from their own phrases; what matters
+    // is that neither leaks an English word into the summary.
+    for (const locale of ["es", "fr"] as const) {
+      const summary = recurrenceSummary(rule, "2026-10-05", { locale });
+      expect(summary, locale).not.toContain("Every");
+      expect(summary, locale).not.toContain("Until");
+      expect(summary, locale).toContain("2027");
+    }
   });
 
   it("formats numbers for the locale", () => {
     expect(formatNumberLocalized(1234, "en")).toBe("1,234");
     expect(formatNumberLocalized(1234, "de")).toBe("1.234");
+    expect(formatNumberLocalized(1234, "es")).not.toBe("1234");
+    expect(formatNumberLocalized(1234, "fr")).not.toBe("1234");
   });
 });
 
