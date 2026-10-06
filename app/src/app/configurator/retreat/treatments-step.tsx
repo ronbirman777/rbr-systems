@@ -5,9 +5,9 @@ import { ModuleItemPhotoField } from "@/components/module-item-photo-field";
 import { FocalPointPicker } from "@/components/focal-point-picker";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
-import type { EditableTreatment } from "@/lib/modules/treatment";
+import { CHARGE_TYPES, type ChargeType, type EditableTreatment } from "@/lib/modules/treatment";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, StudioField, StudioHeading, StudioIntro, StudioLabel } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
 import { saveTreatments, type SaveTreatmentsState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
@@ -29,6 +29,10 @@ export function blankTreatment(): EditableTreatment {
     location: null,
     bookingInfo: null,
     imagePosition: null,
+    price: null,
+    currency: null,
+    chargeType: null,
+    availability: null,
   };
 }
 
@@ -89,6 +93,10 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
             location,
             bookingInfo,
             imagePosition,
+            price,
+            currency,
+            chargeType,
+            availability,
           }) => ({
             id,
             name,
@@ -100,6 +108,10 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
             location,
             bookingInfo,
             imagePosition,
+            price,
+            currency,
+            chargeType,
+            availability,
           })
         )
       )
@@ -124,7 +136,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
 
   return (
     <div className="max-w-2xl">
-      <StudioHeading>{t("flow", "treatmentsStepTitle")}</StudioHeading>
+      <StudioHeading>{t("flow", "treatmentsAndExtras")}</StudioHeading>
       <StudioIntro>
         {t("flow", "treatmentsStepBody")}
       </StudioIntro>
@@ -155,7 +167,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
               <div className="flex-1 py-3 min-w-0 pr-3">
                 <div className="flex items-baseline gap-2 mb-0.5">
                   {item.durationMinutes && (
-                    <span className="text-[11px] font-medium" style={{ color: GUEST_BASE_PALETTE.clay }}>
+                    <span className="text-[11px] font-medium relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11" style={{ color: GUEST_BASE_PALETTE.clay }}>
                       {item.durationMinutes} min
                     </span>
                   )}
@@ -171,7 +183,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                 <button
                   type="button"
                   onClick={() => setEditId(isEditing ? null : item.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
                   {t("common", "edit")}
@@ -179,7 +191,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                 <button
                   type="button"
                   onClick={() => handleRemove(item.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
                   {t("common", "remove")}
@@ -202,22 +214,23 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
         className="w-full border-2 border-dashed rounded-2xl py-3 text-[12px] font-medium transition-all mb-4"
         style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, color: GUEST_BASE_PALETTE.mist }}
       >
-        + Add Treatment
+        + {t("flow", "addTreatment")}
       </button>
 
       {editing && (
         <div className="rounded-2xl border p-5" style={{ background: GUEST_BASE_PALETTE.parchmentDeep, borderColor: "rgba(45,74,62,0.15)" }}>
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
-              Editing {editing.name || "treatment"}
+              {t("studio", "editingItem", { name: editing.name || t("flow", "untitledTreatment") })}
             </h4>
-            <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <ModuleItemPhotoField
+                locale={locale}
                 tenantId={tenantId}
                 moduleKey="treatments"
                 itemId={editing.id}
@@ -234,6 +247,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
               />
               {editing.imageUrl && (
                 <FocalPointPicker
+                  locale={locale}
                   imageUrl={editing.imageUrl}
                   position={editing.imagePosition}
                   onChange={(imagePosition) => update(editing.id, { imagePosition })}
@@ -244,72 +258,140 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
             </div>
             <div className="col-span-2 space-y-3">
               <div>
-                <StudioLabel>{t("flow", "treatmentName")}</StudioLabel>
-                <input
-                  value={editing.name}
-                  onChange={(e) => update(editing.id, { name: e.target.value })}
-                  placeholder={t("flow", "treatmentNamePlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("flow", "treatmentName")}>
+                  <input
+                    value={editing.name}
+                    onChange={(e) => update(editing.id, { name: e.target.value })}
+                    placeholder={t("flow", "treatmentNamePlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
               <div>
-                <StudioLabel>{t("flow", "shortDescription")}</StudioLabel>
-                <input
-                  value={editing.shortDescription ?? ""}
-                  onChange={(e) => update(editing.id, { shortDescription: e.target.value || null })}
-                  placeholder={t("flow", "shortDescriptionPlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <StudioLabel>{t("flow", "durationMinutes")}</StudioLabel>
+                <StudioField label={t("flow", "shortDescription")}>
                   <input
+                    value={editing.shortDescription ?? ""}
+                    onChange={(e) => update(editing.id, { shortDescription: e.target.value || null })}
+                    placeholder={t("flow", "shortDescriptionPlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <StudioField label={t("flow", "durationMinutes")}>
+                    <input
+                      type="number"
+                      min={1}
+                      value={editing.durationMinutes ?? ""}
+                      onChange={(e) => update(editing.id, { durationMinutes: e.target.value ? Number(e.target.value) : null })}
+                      placeholder="90"
+                      className={STUDIO_INPUT_CLASS}
+                    />
+                  </StudioField>
+                </div>
+                <div>
+                  <StudioField label={t("flow", "practitioner")}>
+                    <input
+                      value={editing.provider ?? ""}
+                      onChange={(e) => update(editing.id, { provider: e.target.value || null })}
+                      placeholder={t("common", "optional")}
+                      className={STUDIO_INPUT_CLASS}
+                    />
+                  </StudioField>
+                </div>
+                <div>
+                  <StudioField label={t("common", "location")}>
+                    <input
+                      value={editing.location ?? ""}
+                      onChange={(e) => update(editing.id, { location: e.target.value || null })}
+                      placeholder={t("flow", "treatmentLocationPlaceholder")}
+                      className={STUDIO_INPUT_CLASS}
+                    />
+                  </StudioField>
+                </div>
+                <div>
+                  <StudioField label={t("flow", "bookingInfo")}>
+                    <input
+                      value={editing.bookingInfo ?? ""}
+                      onChange={(e) => update(editing.id, { bookingInfo: e.target.value || null })}
+                      placeholder={t("flow", "bookingInfoPlaceholder")}
+                      className={STUDIO_INPUT_CLASS}
+                    />
+                  </StudioField>
+                </div>
+              </div>
+
+              {/* TASK 029 (D1) - what it costs and when it can be had.
+                  Retreat-item pricing only: nothing here is connected to
+                  InnerDweS billing, Stripe or any checkout. */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <StudioLabel>{t("flow", "price")}</StudioLabel>
+                  <input
+                    aria-label={t("flow", "price")}
                     type="number"
-                    min={1}
-                    value={editing.durationMinutes ?? ""}
-                    onChange={(e) => update(editing.id, { durationMinutes: e.target.value ? Number(e.target.value) : null })}
-                    placeholder="90"
+                    min={0}
+                    step="any"
+                    inputMode="decimal"
+                    value={editing.price ?? ""}
+                    onChange={(e) => update(editing.id, { price: e.target.value ? Number(e.target.value) : null })}
+                    placeholder={t("flow", "pricePlaceholder")}
                     className={STUDIO_INPUT_CLASS}
                   />
                 </div>
                 <div>
-                  <StudioLabel>{t("flow", "practitioner")}</StudioLabel>
+                  <StudioLabel>{t("flow", "currency")}</StudioLabel>
                   <input
-                    value={editing.provider ?? ""}
-                    onChange={(e) => update(editing.id, { provider: e.target.value || null })}
-                    placeholder={t("common", "optional")}
+                    aria-label={t("flow", "currency")}
+                    value={editing.currency ?? ""}
+                    onChange={(e) => update(editing.id, { currency: e.target.value.toUpperCase() || null })}
+                    placeholder={t("flow", "currencyPlaceholder")}
+                    maxLength={8}
                     className={STUDIO_INPUT_CLASS}
                   />
                 </div>
                 <div>
-                  <StudioLabel>{t("common", "location")}</StudioLabel>
-                  <input
-                    value={editing.location ?? ""}
-                    onChange={(e) => update(editing.id, { location: e.target.value || null })}
-                    placeholder={t("flow", "treatmentLocationPlaceholder")}
+                  <StudioLabel>{t("flow", "chargeType")}</StudioLabel>
+                  <select
+                    aria-label={t("flow", "chargeType")}
+                    value={editing.chargeType ?? ""}
+                    onChange={(e) =>
+                      update(editing.id, { chargeType: (e.target.value || null) as ChargeType | null })
+                    }
                     className={STUDIO_INPUT_CLASS}
-                  />
-                </div>
-                <div>
-                  <StudioLabel>{t("flow", "bookingInfo")}</StudioLabel>
-                  <input
-                    value={editing.bookingInfo ?? ""}
-                    onChange={(e) => update(editing.id, { bookingInfo: e.target.value || null })}
-                    placeholder={t("flow", "bookingInfoPlaceholder")}
-                    className={STUDIO_INPUT_CLASS}
-                  />
+                  >
+                    <option value="">{t("flow", "chargeNotSet")}</option>
+                    {CHARGE_TYPES.map((value) => (
+                      <option key={value} value={value}>
+                        {value === "included" ? t("flow", "chargeIncluded") : t("flow", "chargeAdditional")}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div>
-                <StudioLabel>{t("flow", "fullDescription")}</StudioLabel>
-                <textarea
-                  value={editing.description ?? ""}
-                  onChange={(e) => update(editing.id, { description: e.target.value || null })}
-                  placeholder={t("flow", "fullDescriptionPlaceholder")}
-                  rows={2}
-                  className={`${STUDIO_INPUT_CLASS} resize-none`}
+                <StudioLabel>{t("flow", "availability")}</StudioLabel>
+                <input
+                  aria-label={t("flow", "availability")}
+                  value={editing.availability ?? ""}
+                  onChange={(e) => update(editing.id, { availability: e.target.value || null })}
+                  placeholder={t("flow", "availabilityPlaceholder")}
+                  maxLength={200}
+                  className={STUDIO_INPUT_CLASS}
+                  dir="auto"
                 />
+              </div>
+              <div>
+                <StudioField label={t("flow", "fullDescription")}>
+                  <textarea
+                    value={editing.description ?? ""}
+                    onChange={(e) => update(editing.id, { description: e.target.value || null })}
+                    placeholder={t("flow", "fullDescriptionPlaceholder")}
+                    rows={2}
+                    className={`${STUDIO_INPUT_CLASS} resize-none`}
+                  />
+                </StudioField>
               </div>
             </div>
           </div>
@@ -322,7 +404,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button
           type="button"
           onClick={onBack}
@@ -341,7 +423,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
         <button
           type="button"
           onClick={onContinue}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>

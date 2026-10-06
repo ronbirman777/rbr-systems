@@ -10,6 +10,9 @@ import { FLOW_SIZES } from "./flow-media-sizes";
 export type MealsScreenProps = {
   brand: BrandConfig;
   meals: DisplayMeal[];
+  /** TASK 029 (P3A): the organizer's one paragraph above the list.
+   * Null, which is the usual case, renders nothing at all. */
+  intro?: string | null;
   /** The Space's system language. */
   locale?: Locale;
 };
@@ -33,7 +36,7 @@ export type MealsScreenProps = {
  * differences.
  */
 
-export function MealsScreen({ brand, meals, locale = DEFAULT_LOCALE }: MealsScreenProps) {
+export function MealsScreen({ brand, meals, intro, locale = DEFAULT_LOCALE }: MealsScreenProps) {
   const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
 
@@ -49,6 +52,19 @@ export function MealsScreen({ brand, meals, locale = DEFAULT_LOCALE }: MealsScre
           )}
         </h1>
       </div>
+
+      {/* TASK 029 (P3A): the module's own introduction, above the
+          entries because that is where a guest reads it - and gone
+          entirely when the organizer has not written one. */}
+      {intro && (
+        <p
+          dir="auto"
+          className="px-6 pb-5 -mt-1 text-[13.5px] leading-relaxed"
+          style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}
+        >
+          {intro}
+        </p>
+      )}
 
       {meals.length === 0 && (
         <div className="px-6 text-xs" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>

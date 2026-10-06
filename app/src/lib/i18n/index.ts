@@ -1,6 +1,8 @@
 import { en, type Dictionary, type Namespace } from "./dictionaries/en";
 import { he } from "./dictionaries/he";
 import { de } from "./dictionaries/de";
+import { es } from "./dictionaries/es";
+import { fr } from "./dictionaries/fr";
 import { DEFAULT_LOCALE, directionOf, resolveLocale, type Direction, type Locale } from "./locales";
 
 export * from "./locales";
@@ -15,7 +17,7 @@ export type { Dictionary, Namespace };
  *   dictionary, so a typo or a key removed from English fails the build
  *   rather than rendering a raw key to a guest.
  *
- *   DETERMINISTIC FALLBACK. A key missing from Hebrew or German falls
+ *   DETERMINISTIC FALLBACK. A key missing from a non-English locale falls
  *   back to English - never to the key name, never to an empty string. A
  *   partially translated locale degrades to a readable mixed UI instead
  *   of a broken one.
@@ -25,7 +27,7 @@ export type { Dictionary, Namespace };
  *   this function at all.
  */
 
-const DICTIONARIES: Record<Locale, Dictionary> = { en, he, de };
+const DICTIONARIES: Record<Locale, Dictionary> = { en, de, es, fr, he };
 
 export type TranslationKey<N extends Namespace> = keyof Dictionary[N];
 

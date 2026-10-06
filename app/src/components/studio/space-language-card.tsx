@@ -11,10 +11,11 @@ import { createTranslator, DEFAULT_LOCALE } from "@/lib/i18n";
  *
  * Two rules this encodes:
  *
- *   Country recommends, never locks. When the Space has a country, the
- *   languages that country suggests are marked "Recommended" and listed
- *   first - but every supported language stays visible and selectable.
- *   Nothing is inferred about who the organizer is.
+ *   Country recommends, never locks and never reorders. When the Space
+ *   has a country, the language that country suggests is marked
+ *   "Recommended" - but the list itself is always in the same order and
+ *   every supported language stays visible and selectable. Nothing is
+ *   inferred about who the organizer is.
  *
  *   Changing the language changes the interface only. Everything the
  *   organizer typed - biography, class descriptions, readings - is left
@@ -31,7 +32,27 @@ import { createTranslator, DEFAULT_LOCALE } from "@/lib/i18n";
  * are not, and conflating them is how a card like this ends up
  * half-switching mid-save.
  */
-export function SpaceLanguageCard({ tenantId, uiLocale = DEFAULT_LOCALE }: { tenantId: string; uiLocale?: Locale }) {
+export function SpaceLanguageCard({
+  tenantId,
+  uiLocale = DEFAULT_LOCALE,
+  onChange,
+}: {
+  tenantId: string;
+  uiLocale?: Locale;
+  /**
+   * Hands the chosen language up to whoever owns the Studio's locale
+   * state (see lib/studio/useSpaceLocale.ts).
+   *
+   * Called OPTIMISTICALLY, before the save resolves, because that is the
+   * behaviour the organizer is owed: pressing a language button should
+   * change the interface at once, not after a round trip. If the save
+   * then fails the message below says so and the stored value is
+   * unchanged - the interface is ahead of the database for a moment,
+   * which is the right way round for a setting whose only effect is
+   * which words are on screen.
+   */
+  onChange?: (next: Locale) => void;
+}) {
   const { t } = createTranslator(uiLocale);
   const [locale, setLocale] = useState<Locale | null>(null);
   const [country, setCountry] = useState<string | null>(null);
@@ -57,14 +78,21 @@ export function SpaceLanguageCard({ tenantId, uiLocale = DEFAULT_LOCALE }: { ten
   }, [tenantId]);
 
   const recommended = recommendedLocales(country);
-  // Recommended first, then everything else - ordered, never filtered.
-  const ordered: Locale[] = [
-    ...recommended,
-    ...SUPPORTED_LOCALES.filter((l) => !recommended.includes(l)),
-  ];
+  /**
+   * The canonical selector order, always - never reordered by country.
+   *
+   * A recommendation is a BADGE on an option, not a different list. The
+   * earlier version put recommended languages first, which meant the
+   * same selector presented its five options in a different order
+   * depending on the Space's country; an organizer who had learned where
+   * their language sits would have to find it again. See
+   * `recommendedLocales` for the rest of that reasoning.
+   */
+  const ordered: Locale[] = [...SUPPORTED_LOCALES];
 
   function commit(next: Locale) {
     setLocale(next);
+    onChange?.(next);
     setMessage(null);
     startTransition(async () => {
       const result = await saveSpaceSettings(tenantId, { locale: next });
@@ -86,7 +114,10 @@ export function SpaceLanguageCard({ tenantId, uiLocale = DEFAULT_LOCALE }: { ten
       <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={t("studio", "systemLanguage")}>
         {ordered.map((code) => {
           const active = effective === code;
-          const isRecommended = recommended.includes(code) && recommended.length > 1;
+          // English is in every recommendation list, so badging it would
+          // make the badge meaningless. Only the country's own language
+          // is marked.
+          const isRecommended = recommended.length > 1 && code !== "en" && recommended.includes(code);
           return (
             <button
               key={code}

@@ -21,6 +21,10 @@ import { EMPTY_ARRIVAL_INFO } from "@/lib/modules/arrival";
 import type { DisplayFaqItem } from "@/lib/modules/faq";
 import type { DisplayCustomPage } from "@/lib/modules/customPage";
 import { EMPTY_STAY_CONNECTED, type StayConnected } from "@/lib/modules/stayConnected";
+import type { DisplayGuideline } from "@/lib/modules/guideline";
+import { playableTracks, type DisplayFlowReading, type DisplayFlowTrack } from "@/lib/modules/flowLibrary";
+import { EMPTY_RETREAT_PROFILE, retreatWelcome, retreatWhatToBring, type RetreatProfile } from "@/lib/modules/retreatProfile";
+import { moduleIntro, type ModuleIntros } from "@/lib/modules/moduleIntro";
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
 import { getDailyQuote } from "@/lib/content/dailyQuotes";
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
@@ -51,6 +55,19 @@ export type GuestAppProps = {
   faq?: DisplayFaqItem[];
   customPages?: DisplayCustomPage[];
   stayConnected?: StayConnected;
+  /**
+   * TASK 029 - the retreat's own description and the three new modules.
+   *
+   * Optional, with the same reasoning as every other prop added since
+   * this component was written: the Studio preview and the published
+   * route both pass them, and any caller that predates them keeps
+   * working and renders nothing new.
+   */
+  retreatProfile?: RetreatProfile;
+  moduleIntros?: ModuleIntros;
+  guidelines?: DisplayGuideline[];
+  readings?: DisplayFlowReading[];
+  audio?: DisplayFlowTrack[];
   /** Explore module hero/cover images (added alongside Task 015) -
    * moduleKey -> resolved image URL + focal point (TASK 020),
    * absent/null meaning "no cover set, use the existing fallback" (see
@@ -76,7 +93,10 @@ const EXPLORE_MODULE_KEYS: OptionalModuleKey[] = [
   "treatments",
   "facilities",
   "arrivalInfo",
+  "guidelines",
   "faq",
+  "readings",
+  "audio",
   "customPages",
   "stayConnected",
 ];
@@ -102,6 +122,18 @@ const GUEST_TABS: TabDef[] = [
         schedule={props.schedule}
         todayIso={props.todayIso}
         nowTime={props.nowTime}
+        tagline={props.retreatProfile?.tagline ?? null}
+        shortDescription={props.retreatProfile?.shortDescription ?? null}
+        longDescription={props.retreatProfile?.longDescription ?? null}
+        /* D3's precedence is resolved HERE, once, so neither screen nor
+           any future caller has to re-decide it: the canonical value,
+           then the legacy Arrival one, then nothing. */
+        welcome={retreatWelcome(props.retreatProfile ?? EMPTY_RETREAT_PROFILE, props.arrivalInfo ?? EMPTY_ARRIVAL_INFO)}
+        whatToBring={retreatWhatToBring(
+          props.retreatProfile ?? EMPTY_RETREAT_PROFILE,
+          props.arrivalInfo ?? EMPTY_ARRIVAL_INFO
+        )}
+        whatToExpect={props.retreatProfile?.whatToExpect ?? []}
         onViewSchedule={props.enabledModules.includes("schedule") ? () => goTo("schedule") : undefined}
         dailyQuote={props.enabledModules.includes("dailyInspiration") ? getDailyQuote(props.todayIso) : null}
         locale={props.locale ?? DEFAULT_LOCALE}
@@ -145,6 +177,10 @@ const GUEST_TABS: TabDef[] = [
         faq={props.faq ?? []}
         customPages={props.customPages ?? []}
         stayConnected={props.stayConnected ?? EMPTY_STAY_CONNECTED}
+        guidelines={props.guidelines ?? []}
+        readings={props.readings ?? []}
+        audio={props.audio ?? []}
+        mealsIntro={moduleIntro(props.moduleIntros, "meals")}
         moduleCoverImages={props.moduleCoverImages ?? {}}
         locale={props.locale ?? DEFAULT_LOCALE}
       />
@@ -189,6 +225,19 @@ export function guestPrefetchItems(props: GuestAppProps, activeTab: TabKey): Med
       for (const page of props.customPages ?? []) {
         items.push({ src: page.imageUrl, sizes: EXPLORE_CUSTOM_PAGE_SIZES });
       }
+    }
+    // TASK 029: Readings and Audio borrow a first item's own photo when
+    // no cover is set (see ExploreScreen), so the fallback is what will
+    // actually render - warm THAT, not a cover that does not exist.
+    if (enabledModules.includes("readings") && !props.moduleCoverImages?.readings?.imageUrl) {
+      const fallback = (props.readings ?? []).find((r) => r.imageUrl);
+      if (fallback) items.push({ src: fallback.imageUrl, sizes: EXPLORE_COVER_SIZES.readings });
+    }
+    if (enabledModules.includes("audio") && !props.moduleCoverImages?.audio?.imageUrl) {
+      const fallback = playableTracks(props.audio ?? []).find((a) => (a as DisplayFlowTrack).imageUrl) as
+        | DisplayFlowTrack
+        | undefined;
+      if (fallback) items.push({ src: fallback.imageUrl, sizes: EXPLORE_COVER_SIZES.audio });
     }
   }
 

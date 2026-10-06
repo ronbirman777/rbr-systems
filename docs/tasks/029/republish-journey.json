@@ -1,0 +1,63 @@
+{
+ "base": "https://innerdwes-j1wrc12ck-inner-dwe-s.vercel.app",
+ "marker": "rp029c",
+ "total": 11,
+ "failed": 0,
+ "results": [
+  {
+   "name": "the Space under test is already published, so the top bar says Republish",
+   "pass": true,
+   "detail": "top bar says \"Republish\""
+  },
+  {
+   "name": "the edit is saved but not yet visible to guests",
+   "pass": true,
+   "detail": "rp029c"
+  },
+  {
+   "name": "while publishing, the button is disabled / aria-busy",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "a second press cannot start a second publish",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "it published in place, without navigating to the publish step",
+   "pass": true,
+   "detail": "\"Retreat Home\" -> \"Retreat Home\""
+  },
+  {
+   "name": "success is announced on screen",
+   "pass": true,
+   "detail": "All changes saved | Published — your guests see this version now. Dismiss"
+  },
+  {
+   "name": "and the Guest App now serves the edit",
+   "pass": true,
+   "detail": "rp029c"
+  },
+  {
+   "name": "an unpublished Space would be offered navigation, not a silent publish",
+   "pass": true,
+   "detail": "Preview & Publish vs Republish"
+  },
+  {
+   "name": "the publish control is a real focusable submit button",
+   "pass": true,
+   "detail": "{\"focused\":true,\"tag\":\"BUTTON\",\"type\":\"submit\",\"form\":\"studio-top-bar-publish\"}"
+  },
+  {
+   "name": "and it submits the shared publish form rather than its own action",
+   "pass": true,
+   "detail": "{\"focused\":true,\"tag\":\"BUTTON\",\"type\":\"submit\",\"form\":\"studio-top-bar-publish\"}"
+  },
+  {
+   "name": "no uncaught client errors",
+   "pass": true,
+   "detail": ""
+  }
+ ]
+}

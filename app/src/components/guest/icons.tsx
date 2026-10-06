@@ -89,9 +89,17 @@ export function ExploreIcon({ active }: IconProps) {
   );
 }
 
+/**
+ * Both chevrons mean "that way", so both mirror in RTL - they are on the
+ * directional allowlist in lib/i18n/direction.ts. The class is applied
+ * HERE rather than at each call site because every caller uses them for
+ * back/forward navigation, and a per-site decision is how one of them
+ * ends up pointing the wrong way in Hebrew. (TASK 029 P6: before this,
+ * none of Flow's chevrons mirrored at all.)
+ */
 export function ChevronLeftIcon({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg className={`w-4 h-4 ${className}`} style={style} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+    <svg className={`w-4 h-4 rtl-mirror ${className}`} style={style} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
     </svg>
   );
@@ -99,7 +107,7 @@ export function ChevronLeftIcon({ className = "", style }: { className?: string;
 
 export function ChevronRightIcon({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
   return (
-    <svg className={`w-4 h-4 ${className}`} style={style} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+    <svg className={`w-4 h-4 rtl-mirror ${className}`} style={style} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
     </svg>
   );
@@ -215,6 +223,42 @@ export function PagesIcon({ className = "", style }: SmallIconProps) {
       <path strokeLinecap="round" strokeLinejoin="round" d="M7 3h7l4 4v14H7z" />
       <path strokeLinecap="round" strokeLinejoin="round" d="M14 3v4h4" />
       <path strokeLinecap="round" d="M9.5 13h5M9.5 16.5h5" />
+    </svg>
+  );
+}
+
+/**
+ * TASK 029's three Explore tiles. Same 24-grid, same 1.8 stroke and same
+ * `SmallIconProps` as their neighbours above, so a tile does not change
+ * weight depending on which module it is.
+ *
+ * None of them is on the directional allowlist (lib/i18n/direction.ts):
+ * a document, a book and a headphone mean what they are, not "that
+ * way", so none mirrors in RTL.
+ */
+export function GuidelinesIcon({ className = "", style }: SmallIconProps) {
+  return (
+    <svg className={className} style={style} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 4h9l4 4v12H6z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14 4v5h5M9 13h6M9 16.5h4" />
+    </svg>
+  );
+}
+
+export function ReadingsIcon({ className = "", style }: SmallIconProps) {
+  return (
+    <svg className={className} style={style} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.5S10 4.5 5 5v13c5-.5 7 1.5 7 1.5s2-2 7-1.5V5c-5-.5-7 1.5-7 1.5z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.5v13" />
+    </svg>
+  );
+}
+
+export function AudioIcon({ className = "", style }: SmallIconProps) {
+  return (
+    <svg className={className} style={style} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 14v-2a8 8 0 0 1 16 0v2" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 14h2.5a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1zM20 14h-2.5a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1H19a1 1 0 0 0 1-1z" />
     </svg>
   );
 }

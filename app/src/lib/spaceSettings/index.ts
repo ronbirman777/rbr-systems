@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isSupportedCountry } from "@/lib/countries";
 
-import { resolveLocale, type Locale } from "@/lib/i18n";
+import { SUPPORTED_LOCALES, resolveLocale, type Locale } from "@/lib/i18n";
 /**
  * Space Settings - the product-neutral home for Space-level preferences
  * that are not specific to Flow, Teach or Heal.
@@ -37,12 +37,15 @@ const countryCode = z
   .refine(isSupportedCountry, { message: "Unknown country code" });
 
 /**
- * BCP-47 language subtag. CP3 owns the supported set (en/he/de); the
- * shape is reserved here so locale lands in this object rather than in a
- * second place later. Unknown values fall back to null on read instead of
- * throwing, so a value written by a newer build never breaks an older one.
+ * BCP-47 language subtag, validated against `SUPPORTED_LOCALES` itself
+ * rather than a second hand-written list. TASK 029 found the cost of the
+ * copy: adding Spanish and French to the registry left this schema still
+ * rejecting them, so a Space could select a language the persistence
+ * layer then silently discarded on read. Unknown values fall back to null
+ * instead of throwing, so a value written by a newer build never breaks
+ * an older one.
  */
-const localeCode = z.enum(["en", "he", "de"]);
+const localeCode = z.enum(SUPPORTED_LOCALES);
 
 export const spaceSettingsSchema = z.object({
   /**

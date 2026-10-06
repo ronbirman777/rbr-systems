@@ -1,0 +1,118 @@
+{
+ "phase0_baseline": {
+  "project": "qzmsclkzbxrfohuxnitc",
+  "ledgerHead": "0032",
+  "ledgerRows": 31,
+  "timestampRows": 0,
+  "publish_space": {
+   "md5": "21172ffb3652b833bee37ecbfda6daca",
+   "len": 11169
+  },
+  "build_teach_payload": {
+   "md5": "8e1ef4a0b4e54494fa9503285a68c14b",
+   "len": 2089
+  },
+  "counts": {
+   "tables": 17,
+   "policies": 32,
+   "functions": 30,
+   "schedule_items_cols": 14,
+   "tenants": 22,
+   "published_spaces": 7,
+   "module_items": 73,
+   "module_settings": 11,
+   "schedule_items_rows": 43
+  },
+  "backup": {
+   "latestCompletedPhysical": 1878925231,
+   "insertedAt": "2026-10-05T22:05:54.935Z",
+   "walgEnabled": true,
+   "pitrEnabled": false,
+   "note": "Daily physical backups at ~22:05 UTC. The latest COMPLETED one predates today's non-TASK-029 Lena edit (07:42) and publish (07:45), and PITR is off, so a physical restore would lose that work. Mitigated two ways: the rehearsed SQL rollback script is the real rollback path for this migration, and a targeted logical snapshot of the Lena Space was taken immediately before applying (47517 bytes, md5 2b6af2e40c7f2af26722baa1094aced6, held in the session scratchpad only)."
+  },
+  "vercelProduction": {
+   "deploymentId": "dpl_292TnEsSWNakoiAhAJ2sBtBbZDS7",
+   "state": "READY",
+   "sha": "d3f4bed",
+   "created": "2026-10-06T02:49:44Z",
+   "url": "innerdwes-dz1xdro08-inner-dwe-s.vercel.app"
+  },
+  "mainSha": "d3f4bed"
+ },
+ "phase1_apply": {
+  "path": "supabase db push --linked --project-ref qzmsclkzbxrfohuxnitc --skip-vault",
+  "dryRunShowed": [
+   "0033_flow_content_expansion.sql"
+  ],
+  "seeds": [],
+  "roles": [],
+  "fileMd5": "5956235cfe4880073e9bcdb966895214",
+  "fileBytes": 26740,
+  "fileUnchangedSince": "d682c72 (single commit in its history, so byte-identical to what Staging verified)",
+  "result": "applied"
+ },
+ "phase2_verification": {
+  "A_column": {
+   "type": "jsonb",
+   "nullable": "NO",
+   "default": "'{}'::jsonb"
+  },
+  "B_existingRows": {
+   "total": 43,
+   "metadataEmpty": 43,
+   "metadataNull": 0,
+   "contentMutation": "none"
+  },
+  "C_jsonb_pick": {
+   "volatility": "i (immutable)",
+   "securityDefiner": false,
+   "parallel": "s (safe)",
+   "config": [
+    "search_path=public"
+   ],
+   "owner": "postgres",
+   "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+   "anonExecute": false,
+   "tableDeps": 0,
+   "identicalToStaging": true
+  },
+  "D_publish_space": {
+   "md5": "f5c39adfa718ce91969e273e2381f1f0",
+   "len": 18229,
+   "matchesPinned0033": true
+  },
+  "E_build_teach_payload": {
+   "md5": "8e1ef4a0b4e54494fa9503285a68c14b",
+   "len": 2089,
+   "unchangedFromBaseline": true
+  },
+  "F_rlsGrants": {
+   "tables": "17 -> 17",
+   "policies": "32 -> 32",
+   "functions": "30 -> 31 (+jsonb_pick)",
+   "newTables": 0,
+   "unintendedPolicies": 0,
+   "unintendedGrants": 0
+  },
+  "G_legacyEquivalence": {
+   "method": "The pinned 0032-vs-0033 payload-equality script is LOCAL ONLY - it swaps a live function body mid-transaction - so it was not run here. The Production-safe equivalent: re-publish every pre-existing Space under 0033 inside a transaction that rolls back, and check 0033's conditional keys are absent.",
+   "spacesTested": 7,
+   "zeroThirtyThreeKeysPresent": 0,
+   "keysRemoved": 0,
+   "keysAdded": {
+    "five September retreat Spaces": "brand, moduleCovers, spaceSettings",
+    "example (retreat)": "spaceSettings",
+    "teacherexample (teach)": "none"
+   },
+   "attribution": "Those added keys come from 0017/0020/0031/0032, which post-date those snapshots - not from 0033. A first naive comparison of 'stored snapshot' vs 're-publish now' showed all seven differing and was the wrong test: it conflates every publish_space change since each snapshot, plus any draft edit since, with this migration's effect."
+  },
+  "H_teachOutput": {
+   "storedSnapshotVsBaseline": "byte-identical across all 21 baseline fields",
+   "publishedModulesMd5": "85103a2983cb700f2333657abae8dc2d",
+   "publishedAt": "2026-10-06 07:45:26.182006+00",
+   "republishWouldDiffer": "+31 bytes, entirely spaceSettings: stored {} vs {\"locale\":\"en\",\"country\":null}",
+   "everythingElseMd5": "0d381fe810e07f6e5fb22410c6987c45 (identical both sides)",
+   "cause": "A user change, not the release: the owner set the Space locale at 07:50:05 UTC, five minutes AFTER the 07:45:26 publish. The stored snapshot was not touched."
+  }
+ }
+}

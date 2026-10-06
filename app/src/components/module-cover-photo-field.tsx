@@ -10,6 +10,7 @@ import {
 import { enqueueItemOp } from "@/lib/modules/persistItem";
 import { validateImageFile, classifyServerImageError } from "@/lib/media/clientValidation";
 import { ImageUploadErrorDialog } from "@/components/image-upload-error-dialog";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 
 const uploadInitialState: UploadModuleCoverPhotoState = { error: null, imageRef: null, imageUrl: null };
 const removeInitialState: RemoveModuleCoverPhotoState = { error: null };
@@ -20,6 +21,8 @@ export type ModuleCoverPhotoFieldProps = {
   imageRef: string | null;
   imageUrl: string | null;
   onChange: (patch: { imageRef: string | null; imageUrl: string | null }) => void;
+  /** The Space's system language, for this control's own labels. */
+  locale?: Locale;
 };
 
 /**
@@ -36,7 +39,8 @@ export type ModuleCoverPhotoFieldProps = {
  * queued-op ordering guarantee) so this reads as the same feature, not a
  * second design.
  */
-export function ModuleCoverPhotoField({ tenantId, moduleKey, imageRef, imageUrl, onChange }: ModuleCoverPhotoFieldProps) {
+export function ModuleCoverPhotoField({ tenantId, moduleKey, imageRef, imageUrl, onChange, locale = DEFAULT_LOCALE }: ModuleCoverPhotoFieldProps) {
+  const { t } = createTranslator(locale);
   const [uploadPending, setUploadPending] = useState(false);
   const [removeState, setRemoveState] = useState<RemoveModuleCoverPhotoState>(removeInitialState);
   const [removePending, setRemovePending] = useState(false);
@@ -95,14 +99,14 @@ export function ModuleCoverPhotoField({ tenantId, moduleKey, imageRef, imageUrl,
         <div className="w-12 h-9 rounded-md bg-idw-forest/10 shrink-0" aria-hidden="true" />
       )}
 
-      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
+      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" aria-label={t("studio", "chooseImageFile")} className="hidden" onChange={handleFileChange} />
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
         disabled={uploadPending}
-        className="text-[11px] font-semibold text-idw-forest underline disabled:opacity-50"
+        className="text-[11px] font-semibold text-idw-forest underline disabled:opacity-50 relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
       >
-        {uploadPending ? "Uploading…" : imageUrl ? "Replace cover image" : "Add cover image"}
+        {uploadPending ? t("common", "uploading") : imageUrl ? t("studio", "replaceCoverImage") : t("studio", "addCoverImage")}
       </button>
 
       {imageRef && (
@@ -110,7 +114,7 @@ export function ModuleCoverPhotoField({ tenantId, moduleKey, imageRef, imageUrl,
           type="button"
           onClick={handleRemove}
           disabled={removePending}
-          className="text-[11px] text-idw-forest/40 hover:text-idw-forest disabled:opacity-50"
+          className="text-[11px] text-idw-forest/40 hover:text-idw-forest disabled:opacity-50 relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {removePending ? "Removing…" : "Remove"}
         </button>

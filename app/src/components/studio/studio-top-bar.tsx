@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import Link from "next/link";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 
@@ -8,7 +8,9 @@ import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 /**
  * Shared Studio top bar (desktop): back to My Spaces, Space name, product
  * badge, save status and the primary Publish action. Presentational only -
- * the caller owns navigation guards and save/publish behaviour.
+ * the caller owns navigation guards and save/publish behaviour, and passes
+ * `publishPending` when its own publish is in flight so this button can
+ * show that and refuse a second click.
  */
 export function StudioTopBar({
   name,
@@ -18,6 +20,8 @@ export function StudioTopBar({
   onBack,
   onPublish,
   publishLabel,
+  publishPending = false,
+  publishFormId,
   trailing,
   backHref = "/space",
   backLabel,
@@ -28,8 +32,29 @@ export function StudioTopBar({
   productBadge: string;
   saveStatus: ReactNode;
   onBack?: () => void;
-  onPublish: () => void;
+  /**
+   * Receives the click. With `publishFormId` set the button is a real
+   * submit, so a handler that wants to stop it (an unsaved-changes guard,
+   * a publish already in flight) calls preventDefault.
+   */
+  onPublish: (event: MouseEvent<HTMLButtonElement>) => void;
   publishLabel?: string;
+  /**
+   * True while the publish this button triggered is in flight. The button
+   * then shows a spinner and refuses further clicks - it is the only
+   * protection against a double publish, because the action is dispatched
+   * from here rather than from a form the browser would disable.
+   */
+  publishPending?: boolean;
+  /**
+   * The id of a form whose action publishes. When given, this button
+   * SUBMITS that form rather than calling an action programmatically.
+   * That is not a style preference: dispatching a Server Action outside a
+   * form made Next navigate the route, show its loading.tsx and remount
+   * the Studio - which discarded the pending state and the confirmation
+   * the button had just set. A submit keeps the tree mounted.
+   */
+  publishFormId?: string;
   trailing?: ReactNode;
   backHref?: string;
   backLabel?: string;
@@ -70,7 +95,20 @@ export function StudioTopBar({
           {saveStatus}
         </span>
         {trailing}
-        <button type="button" onClick={onPublish} className="min-h-10 px-4 rounded-full bg-[#192B21] text-white text-[12.5px] font-semibold">
+        <button
+          type={publishFormId ? "submit" : "button"}
+          form={publishFormId}
+          onClick={onPublish}
+          disabled={publishPending}
+          aria-busy={publishPending || undefined}
+          className="min-h-10 px-4 rounded-full bg-[#192B21] text-white text-[12.5px] font-semibold disabled:opacity-60 inline-flex items-center gap-2"
+        >
+          {publishPending ? (
+            <span
+              className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin shrink-0"
+              aria-hidden="true"
+            />
+          ) : null}
           {publishLabel ?? t("studio", "publish")}
         </button>
       </div>

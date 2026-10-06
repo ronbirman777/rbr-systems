@@ -5,7 +5,7 @@ import type { SocialLink } from "@/lib/modules/socialLinks";
 import { SOCIAL_PLATFORMS, socialPlatformLabel } from "@/lib/modules/socialLinks";
 import { SocialIcon } from "@/components/guest/social-icon";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { STUDIO_INPUT_CLASS, StudioHeading, StudioIntro } from "./studio-ui";
+import { STUDIO_HIT_SQUARE_CLASS, STUDIO_INPUT_CLASS, StudioHeading, StudioIntro } from "./studio-ui";
 import { saveStayConnected, type SaveStayConnectedState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
@@ -94,10 +94,10 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
             {/* Reorder controls - fixed-width area, identical every row
                 since its content (▲/▼) never varies by link. */}
             <div className="flex flex-col gap-0.5 shrink-0">
-              <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="text-[10px] disabled:opacity-20" style={{ color: GUEST_BASE_PALETTE.mist }}>
+              <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className={`text-[10px] disabled:opacity-20 ${STUDIO_HIT_SQUARE_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
                 ▲
               </button>
-              <button type="button" onClick={() => move(i, 1)} disabled={i === links.length - 1} className="text-[10px] disabled:opacity-20" style={{ color: GUEST_BASE_PALETTE.mist }}>
+              <button type="button" onClick={() => move(i, 1)} disabled={i === links.length - 1} className={`text-[10px] disabled:opacity-20 ${STUDIO_HIT_SQUARE_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
                 ▼
               </button>
             </div>
@@ -118,6 +118,7 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
                 was the actual root cause of the row-to-row width
                 inconsistency. */}
             <select
+              aria-label={t("studio", "socialPlatformN", { index: i + 1 })}
               value={link.platform}
               onChange={(e) => update(i, { platform: e.target.value as SocialLink["platform"] })}
               className="shrink-0 w-[92px] sm:w-36 bg-white border border-[#D4C5A9]/70 rounded-xl px-2 sm:px-3.5 py-2.5 text-[13px] text-[#2D4A3E] outline-none focus:ring-2 focus:ring-[#2D4A3E]/15 focus:border-[#2D4A3E]/30 transition-all"
@@ -137,6 +138,7 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
                 governs its width, not the `w-full` it inherits from
                 STUDIO_INPUT_CLASS. */}
             <input
+              aria-label={t("studio", "socialUrlN", { index: i + 1 })}
               value={link.url}
               onChange={(e) => update(i, { url: e.target.value })}
               placeholder="https://..."
@@ -169,7 +171,7 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
         className="w-full border-2 border-dashed rounded-2xl py-3 text-[12px] font-medium transition-all mb-4 disabled:opacity-40"
         style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, color: GUEST_BASE_PALETTE.mist }}
       >
-        + Add Link
+        + {t("flow", "addLink")}
       </button>
 
       {state.error && (
@@ -185,7 +187,7 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
         <button type="button" disabled={pending} onClick={handleSave} className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60">
           {pending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "stayConnected") })}
         </button>
-        <button type="button" onClick={onContinue} className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest">
+        <button type="button" onClick={onContinue} className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11">
           {t("common", "next")} <ForwardArrow />
         </button>
       </div>

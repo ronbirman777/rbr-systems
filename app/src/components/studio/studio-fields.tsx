@@ -265,7 +265,7 @@ export function ColorField({
       <div className="flex items-center gap-2.5">
         <input
           type="color"
-          aria-label={`${label} visual picker`}
+          aria-label={t("studio", "visualPickerOf", { label })}
           value={HEX.test(value) ? value : "#5B7A6E"}
           onChange={(e) => commit(e.target.value)}
           className="w-11 h-11 rounded-xl border border-[#D4C5A9]/70 bg-white p-1 cursor-pointer"
@@ -370,10 +370,10 @@ export function ImageField({
             ) : null}
           </div>
           <Hint>{hint ?? t("studio", "imageFormats8mb")}</Hint>
-          <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFile} aria-label={`${label} file`} />
+          <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFile} aria-label={t("studio", "fileFor", { label })} />
         </div>
       </div>
-      {imageUrl ? <FocalPointPicker imageUrl={imageUrl} position={focal} onChange={onFocal} label={label} /> : null}
+      {imageUrl ? <FocalPointPicker imageUrl={imageUrl} position={focal} onChange={onFocal} label={label} locale={locale} /> : null}
       <ImageUploadErrorDialog
         open={errorDialog !== null}
         title={errorDialog?.title ?? ""}

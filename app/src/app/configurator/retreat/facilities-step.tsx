@@ -7,7 +7,7 @@ import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import type { EditableFacility } from "@/lib/modules/facility";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, StudioField, StudioHeading, StudioIntro, StudioLabel } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
 import { saveFacilities, type SaveFacilitiesState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
@@ -20,6 +20,7 @@ export function blankFacility(): EditableFacility {
   return {
     id: crypto.randomUUID(),
     name: "",
+    shortDescription: null,
     description: null,
     imageRef: null,
     imageUrl: null,
@@ -74,9 +75,10 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
     formData.set(
       "items",
       JSON.stringify(
-        facilities.map(({ id, name, description, imageRef, openingHours, location, importantInfo, imagePosition }) => ({
+        facilities.map(({ id, name, shortDescription, description, imageRef, openingHours, location, importantInfo, imagePosition }) => ({
           id,
           name,
+          shortDescription,
           description,
           imageRef,
           openingHours,
@@ -134,7 +136,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
               </div>
               <div className="flex-1 py-3 min-w-0 pr-3">
                 {f.openingHours && (
-                  <span className="text-[11px] font-medium" style={{ color: GUEST_BASE_PALETTE.clay }}>
+                  <span className="text-[11px] font-medium relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11" style={{ color: GUEST_BASE_PALETTE.clay }}>
                     {f.openingHours}
                   </span>
                 )}
@@ -149,7 +151,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                 <button
                   type="button"
                   onClick={() => setEditId(isEditing ? null : f.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
                   {t("common", "edit")}
@@ -157,7 +159,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                 <button
                   type="button"
                   onClick={() => handleRemove(f.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
                   {t("common", "remove")}
@@ -180,22 +182,23 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
         className="w-full border-2 border-dashed rounded-2xl py-3 text-[12px] font-medium transition-all mb-4"
         style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, color: GUEST_BASE_PALETTE.mist }}
       >
-        + Add Facility
+        + {t("flow", "addFacility")}
       </button>
 
       {editing && (
         <div className="rounded-2xl border p-5" style={{ background: GUEST_BASE_PALETTE.parchmentDeep, borderColor: "rgba(45,74,62,0.15)" }}>
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
-              Editing {editing.name || "facility"}
+              {t("studio", "editingItem", { name: editing.name || t("flow", "untitledFacility") })}
             </h4>
-            <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <ModuleItemPhotoField
+                locale={locale}
                 tenantId={tenantId}
                 moduleKey="facilities"
                 itemId={editing.id}
@@ -211,6 +214,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
               />
               {editing.imageUrl && (
                 <FocalPointPicker
+                  locale={locale}
                   imageUrl={editing.imageUrl}
                   position={editing.imagePosition}
                   onChange={(imagePosition) => update(editing.id, { imagePosition })}
@@ -221,52 +225,74 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
             </div>
             <div className="col-span-2 space-y-3">
               <div>
-                <StudioLabel>{t("flow", "facilityName")}</StudioLabel>
-                <input
-                  value={editing.name}
-                  onChange={(e) => update(editing.id, { name: e.target.value })}
-                  placeholder={t("flow", "facilityNamePlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <StudioLabel>{t("flow", "openingHours")}</StudioLabel>
+                <StudioField label={t("flow", "facilityName")}>
                   <input
-                    value={editing.openingHours ?? ""}
-                    onChange={(e) => update(editing.id, { openingHours: e.target.value || null })}
-                    placeholder="e.g. 06:00 - 21:00"
+                    value={editing.name}
+                    onChange={(e) => update(editing.id, { name: e.target.value })}
+                    placeholder={t("flow", "facilityNamePlaceholder")}
                     className={STUDIO_INPUT_CLASS}
                   />
+                </StudioField>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <StudioField label={t("flow", "openingHours")}>
+                    <input
+                      value={editing.openingHours ?? ""}
+                      onChange={(e) => update(editing.id, { openingHours: e.target.value || null })}
+                      placeholder="e.g. 06:00 - 21:00"
+                      className={STUDIO_INPUT_CLASS}
+                    />
+                  </StudioField>
                 </div>
                 <div>
-                  <StudioLabel>{t("common", "location")}</StudioLabel>
-                  <input
-                    value={editing.location ?? ""}
-                    onChange={(e) => update(editing.id, { location: e.target.value || null })}
-                    placeholder={t("flow", "facilityLocationPlaceholder")}
-                    className={STUDIO_INPUT_CLASS}
-                  />
+                  <StudioField label={t("common", "location")}>
+                    <input
+                      value={editing.location ?? ""}
+                      onChange={(e) => update(editing.id, { location: e.target.value || null })}
+                      placeholder={t("flow", "facilityLocationPlaceholder")}
+                      className={STUDIO_INPUT_CLASS}
+                    />
+                  </StudioField>
                 </div>
               </div>
+              {/* TASK 029 (D4): two descriptions, clearly distinct. The
+                  short one is the card line and is stored in the
+                  `subtitle` column; the long one is the detail text.
+                  There is no third field - see lib/modules/facility.ts. */}
               <div>
-                <StudioLabel>{t("common", "description")}</StudioLabel>
-                <textarea
-                  value={editing.description ?? ""}
-                  onChange={(e) => update(editing.id, { description: e.target.value || null })}
-                  placeholder={t("flow", "facilityDescriptionPlaceholder")}
-                  rows={2}
-                  className={`${STUDIO_INPUT_CLASS} resize-none`}
+                <StudioLabel>{t("flow", "shortDescription")}</StudioLabel>
+                <input
+                  aria-label={t("flow", "shortDescription")}
+                  value={editing.shortDescription ?? ""}
+                  onChange={(e) => update(editing.id, { shortDescription: e.target.value || null })}
+                  placeholder={t("flow", "facilityShortDescriptionPlaceholder")}
+                  maxLength={160}
+                  className={STUDIO_INPUT_CLASS}
+                  dir="auto"
                 />
               </div>
               <div>
-                <StudioLabel>{t("flow", "importantInfoOptional")}</StudioLabel>
-                <input
-                  value={editing.importantInfo ?? ""}
-                  onChange={(e) => update(editing.id, { importantInfo: e.target.value || null })}
-                  placeholder={t("flow", "importantInfoPlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("flow", "fullDescription")}>
+                  <textarea
+                    value={editing.description ?? ""}
+                    onChange={(e) => update(editing.id, { description: e.target.value || null })}
+                    placeholder={t("flow", "facilityDescriptionPlaceholder")}
+                    rows={3}
+                    className={`${STUDIO_INPUT_CLASS} resize-none`}
+                    dir="auto"
+                  />
+                </StudioField>
+              </div>
+              <div>
+                <StudioField label={t("flow", "importantInfoOptional")}>
+                  <input
+                    value={editing.importantInfo ?? ""}
+                    onChange={(e) => update(editing.id, { importantInfo: e.target.value || null })}
+                    placeholder={t("flow", "importantInfoPlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
             </div>
           </div>
@@ -279,7 +305,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button
           type="button"
           onClick={onBack}
@@ -298,7 +324,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
         <button
           type="button"
           onClick={onContinue}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>

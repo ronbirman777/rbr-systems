@@ -1,6 +1,5 @@
 "use client";
 
-/* eslint-disable @next/next/no-img-element */
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { timezoneOptions, timezoneSelectValue } from "@/lib/timezone";
@@ -9,7 +8,8 @@ import { recurrenceProblem, recurrenceSummary, repeatPresetOf, validExceptions, 
 import { dstConflicts, upcomingOccurrenceDates, type DstConflict } from "@/lib/teach/recurrence";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
 import { MEDIA_BUCKET } from "@/lib/media/path";
-import { uploadAudioDraftObject } from "@/lib/teach/audioUpload";
+import { detectAudioDuration, uploadAudioDraftObject } from "@/lib/media/audioUpload";
+import { audioFileProblem } from "@/lib/media/audio";
 import { SOCIAL_PLATFORMS, socialPlatformLabel, type SocialPlatform } from "@/lib/modules/socialLinks";
 import { checkSlugAvailability, reserveSlug } from "@/app/configurator/retreat/actions";
 import { publishTeachSpace, saveTeachDirectoryListing } from "./actions";
@@ -28,7 +28,6 @@ import {
   CONTACT_METHODS,
   DAILY_INSPIRATION_MAX_LENGTH,
   DAILY_INSPIRATION_MAX_QUOTES,
-  MAX_AUDIO_BYTES,
   REGISTRATION_METHODS,
   TEACH_CORNERS,
   TEACH_DIVIDERS,
@@ -64,13 +63,17 @@ import {
   renderTemplate,
 } from "@/lib/teach/links";
 import { EXPLORE_MODULE_EMPTY_HINT, exploreModuleStatus } from "@/lib/teach/moduleVisibility";
-import { weekdayLabels, describeAvailability, formatDuration, sortClasses } from "@/lib/teach/schedule";
+import { weekdayLabels, describeAvailability, sortClasses } from "@/lib/teach/schedule";
+import { formatDuration } from "@/lib/modules/duration";
 import { getBrandPresets, presetColorUpdate } from "@/lib/brand/presets";
 import type { StudioApi, SectionKey } from "./teach-studio";
 import { audioAttached, audioDetached, imageRemoved, imageUploaded, moveItemById, patchExploreCard, patchItemById, patchSlot, type Patch } from "./studioStateUpdates";
 import { SectionHeader } from "@/components/studio/section-header";
+import { CollapsibleItemRow } from "@/components/studio/collapsible-item-row";
 import { createTranslator, translate, type Locale, type TranslationKey } from "@/lib/i18n";
 import { formatShortDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime";
+import { formatPublishedAtUtc } from "@/lib/studio/status";
+import { PRESET_LABEL } from "@/lib/brand/presetLabels";
 import {
   Card,
   ColorField,
@@ -182,44 +185,30 @@ function ItemList<K extends TeachEditableItemKey>({
         const isOpen = open === item.id;
         const index = items.findIndex((i) => i.id === item.id);
         return (
-          <div key={item.id} className={`rounded-xl border ${isOpen ? "border-[#9A7B4F]/60 bg-[#FBF8F2]" : "border-[#E2DACD] bg-white"}`} data-testid={`item-${moduleKey}`}>
-            <div className="flex items-center gap-3 p-3">
-              {s.thumb !== undefined ? (
-                s.thumb ? (
-                  <img src={s.thumb} alt="" className="w-11 h-11 rounded-lg object-cover shrink-0" />
-                ) : (
-                  <span className="w-11 h-11 rounded-lg bg-[#F1E9DC] shrink-0" aria-hidden="true" />
-                )
-              ) : null}
-              <button type="button" onClick={() => setOpen(isOpen ? null : item.id)} aria-expanded={isOpen} className="flex-1 min-w-0 text-left min-h-11">
-                <span className="block text-[14px] font-semibold text-[#192B21] truncate">{s.title || t("common", "untitled")}</span>
-                <span className="block text-[11.5px] text-[#8C8A84] truncate">{s.sub}</span>
-              </button>
-              {reorder && !order ? (
-                <span className="flex">
-                  <button type="button" onClick={() => move(item.id, -1)} aria-label={t("studio", "moveUp")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5" disabled={index === 0}>
-                    ↑
-                  </button>
-                  <button type="button" onClick={() => move(item.id, 1)} aria-label={t("studio", "moveDown")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5" disabled={index === items.length - 1}>
-                    ↓
-                  </button>
-                </span>
-              ) : null}
-              <button type="button" onClick={() => setOpen(isOpen ? null : item.id)} aria-label={isOpen ? t("studio", "collapse") : t("common", "edit")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5">
-                {isOpen ? "▴" : "▾"}
-              </button>
-            </div>
-            {isOpen ? (
-              <div className="px-3 sm:px-4 pb-4 flex flex-col gap-4 border-t border-[#E2DACD] pt-4">
-                {editor(item, (patch) => update(item.id, patch), index)}
-                <div className="flex justify-end">
-                  <StudioButton kind="danger" onClick={() => remove(item.id)} disabled={busy === item.id}>
-                    {busy === item.id ? t("common", "removing") : t("common", "remove")}
-                  </StudioButton>
-                </div>
-              </div>
-            ) : null}
-          </div>
+          <CollapsibleItemRow
+            key={item.id}
+            locale={api.locale}
+            testId={`item-${moduleKey}`}
+            title={s.title}
+            sub={s.sub}
+            thumb={s.thumb}
+            open={isOpen}
+            onToggle={() => setOpen(isOpen ? null : item.id)}
+            move={
+              reorder && !order
+                ? {
+                    up: () => move(item.id, -1),
+                    down: () => move(item.id, 1),
+                    upDisabled: index === 0,
+                    downDisabled: index === items.length - 1,
+                  }
+                : undefined
+            }
+            onRemove={() => remove(item.id)}
+            removing={busy === item.id}
+          >
+            {editor(item, (patch) => update(item.id, patch), index)}
+          </CollapsibleItemRow>
         );
       })}
       {error ? <p className="text-[12px] text-[#8F3B3B]" role="alert">{error}</p> : null}
@@ -227,7 +216,7 @@ function ItemList<K extends TeachEditableItemKey>({
         <StudioButton kind="soft" onClick={add} disabled={max !== undefined && items.length >= max}>
           + {addLabel}
         </StudioButton>
-        {max !== undefined ? <Hint>{`${items.length} of ${max} used`}</Hint> : null}
+        {max !== undefined ? <Hint>{t("studio", "usedOfMax", { used: items.length, max })}</Hint> : null}
       </div>
     </div>
   );
@@ -389,7 +378,7 @@ export function IdentitySection({ api }: Props) {
     <>
       <SectionHeader eyebrow={t("teach", "identityEyebrow")} title={t("teach", "sectionIdentity")} intro={t("teach", "identityBody")} />
       <SpaceCountryCard tenantId={api.tenantId} locale={api.locale} />
-      <SpaceLanguageCard tenantId={api.tenantId} uiLocale={api.locale} />
+      <SpaceLanguageCard tenantId={api.tenantId} uiLocale={api.locale} onChange={api.setLocale} />
       <Card title={t("teach", "whoYouAre")} description={t("teach", "whoYouAreBody")}>
         <Grid>
           <TextField label={t("teach", "myName")} value={api.name} onChange={api.setName} maxLength={80} placeholder={t("teach", "myNamePlaceholder")} />
@@ -544,7 +533,7 @@ export function BrandSection({ api }: Props) {
                   <span className="w-6 h-6 rounded-full" style={{ background: p.accent }} />
                 </span>
                 <span className="text-[13px] font-semibold" style={{ color: p.text }}>
-                  {p.label}
+                  {t("studio", PRESET_LABEL[p.key])}
                 </span>
               </button>
             );
@@ -580,7 +569,7 @@ export function BrandSection({ api }: Props) {
             label={t("studio", "primaryColour")}
             value={api.colors.primary}
             checkWhiteText
-            swatches={presets.map((p) => ({ label: p.label, hex: p.primary }))}
+            swatches={presets.map((p) => ({ label: t("studio", PRESET_LABEL[p.key]), hex: p.primary }))}
             onChange={(hex) => {
               api.setColors({ ...api.colors, primary: hex });
               set({ preset: "custom" });
@@ -591,7 +580,7 @@ export function BrandSection({ api }: Props) {
             locale={api.locale}
             label={t("studio", "accentColour")}
             value={api.colors.accent}
-            swatches={presets.map((p) => ({ label: p.label, hex: p.accent }))}
+            swatches={presets.map((p) => ({ label: t("studio", PRESET_LABEL[p.key]), hex: p.accent }))}
             onChange={(hex) => {
               api.setColors({ ...api.colors, accent: hex });
               set({ preset: "custom" });
@@ -1305,10 +1294,12 @@ export function ScheduleSection({ api }: Props) {
           {otherZoneClasses > 0 ? (
             <div className="flex flex-wrap items-center gap-3 px-3 py-2.5 rounded-lg bg-[#F4EFE6]" data-testid="apply-zone-to-classes">
               <p className="text-[12.5px] text-[#4A4843] flex-1 min-w-[200px]">
-                {otherZoneClasses === 1 ? "1 class uses" : `${otherZoneClasses} classes use`} a different time zone from your Space. Changing it keeps each class’s local date and time.
+                {otherZoneClasses === 1
+                  ? t("teach", "oneClassOtherZone")
+                  : t("teach", "manyClassesOtherZone", { count: otherZoneClasses })}
               </p>
               <StudioButton kind="outline" onClick={applyZoneToClasses}>
-                Use {api.timezone} for all classes
+                {t("teach", "useTimezoneForAll", { timezone: api.timezone })}
               </StudioButton>
             </div>
           ) : null}
@@ -1626,21 +1617,6 @@ function ModuleOffNotice({ api }: Props) {
 // My Audio
 // ---------------------------------------------------------------------------
 
-function detectDuration(file: File): Promise<number | null> {
-  return new Promise((resolve) => {
-    const url = URL.createObjectURL(file);
-    const audio = new Audio();
-    const done = (v: number | null) => {
-      URL.revokeObjectURL(url);
-      resolve(v);
-    };
-    audio.preload = "metadata";
-    audio.onloadedmetadata = () => done(Number.isFinite(audio.duration) ? Math.round(audio.duration) : null);
-    audio.onerror = () => done(null);
-    audio.src = url;
-  });
-}
-
 function AudioFileField({ api, item, update, index }: { api: StudioApi; item: EditableTeachItem<"teachAudio">; update: (p: Patch<EditableTeachItem<"teachAudio">>) => void; index: number }) {
   const { t } = createTranslator(api.locale);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -1651,11 +1627,12 @@ function AudioFileField({ api, item, update, index }: { api: StudioApi; item: Ed
 
   async function handle(file: File) {
     setError(null);
-    const ext = AUDIO_ALLOWED_TYPES[file.type];
-    if (!ext) return setError(t("studio", "unsupportedAudio"));
-    if (file.size > MAX_AUDIO_BYTES) return setError(t("teach", "audioTooLarge100"));
+    // Shared rule, product-specific wording: see audioFileProblem().
+    const problem = audioFileProblem(file);
+    if (problem === "unsupportedType") return setError(t("studio", "unsupportedAudio"));
+    if (problem === "tooLarge") return setError(t("teach", "audioTooLarge100"));
     setBusy(t("common", "uploading"));
-    const duration = await detectDuration(file);
+    const duration = await detectAudioDuration(file);
     // Ownership at upload: the server makes sure this item's row exists
     // before any bytes land, and hands back a brand-new versioned path.
     const prep = await api.prepareAudioUpload(item, index, file.type, file.size);
@@ -1897,8 +1874,8 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
     { ok: api.canPublish, text: api.canPublish ? t("teach", "readinessAccess", { plan: api.accessLabel }) : t("teach", "readinessNoAccess"), blocking: true },
     { ok: Boolean(api.slug), text: api.slug ? t("teach", "readinessAddress", { address: `${api.slug}.innerdwes.com` }) : t("teach", "readinessNoAddress") },
     { ok: Boolean(api.heroImageRef), text: api.heroImageRef ? t("teach", "readinessImageSet") : t("teach", "readinessNoImage") },
-    { ok: api.items.teachClasses.length > 0, text: `${api.items.teachClasses.length} classes · ${api.items.teachAvailability.length} private windows` },
-    { ok: noRegistration.length === 0, text: noRegistration.length === 0 ? t("teach", "readinessRegistration") : `${noRegistration.length} class(es) have no working registration method — no join button will show` },
+    { ok: api.items.teachClasses.length > 0, text: t("teach", "readinessClassesWindows", { classes: api.items.teachClasses.length, windows: api.items.teachAvailability.length }) },
+    { ok: noRegistration.length === 0, text: noRegistration.length === 0 ? t("teach", "readinessRegistration") : t("teach", "readinessNoRegistration", { count: noRegistration.length }) },
   ];
   const blocked = checks.some((c) => c.blocking && !c.ok);
 
@@ -1945,7 +1922,7 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
           </p>
         ) : null}
         <Hint>{api.publishedAt
-            ? t("teach", "lastPublished", { timestamp: api.publishedAt.slice(0, 16).replace("T", " ") })
+            ? t("studio", "lastPublished", { timestamp: formatPublishedAtUtc(api.publishedAt) ?? "" })
             : t("teach", "notPublishedYet")}</Hint>
       </Card>
       <Card title={t("teach", "shareYourGuestApp")} description={t("teach", "shareGuestAppBody")}>

@@ -16,10 +16,14 @@ import type { Locale } from "@/lib/i18n";
  * one contract rather than seven divergent solutions.
  */
 export type StudioModuleSection =
+  | "home"
   | "meals"
   | "treatments"
   | "facilities"
   | "faq"
+  | "guidelines"
+  | "readings"
+  | "audio"
   | "customPages"
   | "stayConnected"
   | "arrival";
@@ -27,11 +31,20 @@ export type StudioModuleSection =
 /** Save order is the Studio step order - a Save-and-continue that touches
  * several sections applies them in the order the organizer sees them. */
 export const STUDIO_MODULE_SECTIONS: readonly StudioModuleSection[] = [
+  // TASK 029: Retreat Home comes first because it is first in the
+  // Studio, and because its save is the one that takes over a legacy
+  // Arrival value - running it before Arrival's own save means a
+  // Save-and-continue that touches both applies them in the order the
+  // organizer saw them.
+  "home",
   "meals",
   "treatments",
   "facilities",
   "arrival",
+  "guidelines",
   "faq",
+  "readings",
+  "audio",
   "customPages",
   "stayConnected",
 ] as const;

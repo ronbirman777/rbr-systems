@@ -121,7 +121,7 @@ export function BrandImageField({ tenantId, kind, label, hint, imageRef, imageUr
       <p className="text-[11px] mb-2" style={{ color: GUEST_BASE_PALETTE.mist }}>
         {t("studio", RATIO_HINT_KEY[kind])}
       </p>
-      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleFileChange} />
+      <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" aria-label={t("studio", "chooseImageFile")} className="hidden" onChange={handleFileChange} />
       {imageUrl ? (
         <div
           className={`relative rounded-2xl overflow-hidden ${PREVIEW_BOX_CLASS[kind]}`}

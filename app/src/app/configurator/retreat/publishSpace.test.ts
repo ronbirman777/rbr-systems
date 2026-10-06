@@ -21,6 +21,8 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 
 const mockGetUser = vi.fn();
 const mockModuleItemsSelect = vi.fn();
+/** TASK 029: the separate audio read - metadata.audioRef, not image_ref. */
+const mockAudioItemsSelect = vi.fn();
 const mockBrandConfigSelect = vi.fn();
 const mockModuleConfigsSelect = vi.fn();
 const mockRpc = vi.fn();
@@ -36,7 +38,10 @@ vi.mock("@/lib/supabase/server", () => ({
     auth: { getUser: mockGetUser },
     from: (table: string) => {
       if (table === "module_items") {
-        return { select: () => ({ eq: () => ({ in: mockModuleItemsSelect }) }) };
+        // Two different reads now: the image refs across every
+        // media-bearing module (.in), and TASK 029's audio files for the
+        // one module that has them (.eq).
+        return { select: () => ({ eq: () => ({ in: mockModuleItemsSelect, eq: mockAudioItemsSelect }) }) };
       }
       if (table === "brand_configs") {
         return { select: () => ({ eq: () => ({ maybeSingle: mockBrandConfigSelect }) }) };
@@ -100,6 +105,7 @@ describe("publishSpace - every path resolves a well-formed PublishState, never t
     mockGetSpaceEntitlement.mockResolvedValue(null);
     mockDeriveCommercialAvailability.mockReturnValue({ canPublish: true });
     mockModuleItemsSelect.mockResolvedValue({ data: [] });
+    mockAudioItemsSelect.mockResolvedValue({ data: [] });
     mockBrandConfigSelect.mockResolvedValue({ data: null });
     mockModuleConfigsSelect.mockResolvedValue({ data: [] });
     mockCopyDraftToPublished.mockResolvedValue(undefined);

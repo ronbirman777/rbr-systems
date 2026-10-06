@@ -9,6 +9,7 @@ import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { formatLongDateLocalized } from "@/lib/i18n/datetime";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "./flow-media-sizes";
+import { FlowBulletList } from "./guest/flow-screen-chrome";
 export type TodayScreenProps = {
   tenantName: string;
   brand: BrandConfig;
@@ -40,6 +41,23 @@ export type TodayScreenProps = {
    * text has no persisted field yet. The card simply doesn't render
    * until a caller can pass one. */
   intention?: string | null;
+  /**
+   * TASK 029 (P3): the retreat's own description.
+   *
+   * Passed already RESOLVED - the caller has applied D3's precedence
+   * (retreatProfile, then the legacy arrivalInfo value, then nothing),
+   * so this screen has one answer per field and no opinion about where
+   * it came from. Every one is optional and every one hides when empty;
+   * none of them has a heading of its own except the two lists and the
+   * About section, because a Home screen full of empty headings is
+   * worse than a Home screen with fewer sections.
+   */
+  tagline?: string | null;
+  shortDescription?: string | null;
+  longDescription?: string | null;
+  welcome?: string | null;
+  whatToBring?: string[];
+  whatToExpect?: string[];
   /** Present only when the Schedule module is enabled - Today answers "what's
    * now / what's next", Schedule answers "what's the whole program"; this is
    * the one deliberate cross-link between those two different questions. */
@@ -73,6 +91,12 @@ export function TodayScreen({
   heroImageUrl,
   logoUrl,
   intention,
+  tagline,
+  shortDescription,
+  longDescription,
+  welcome,
+  whatToBring = [],
+  whatToExpect = [],
   onViewSchedule,
   dailyQuote,
   locale = DEFAULT_LOCALE,
@@ -120,6 +144,18 @@ export function TodayScreen({
           <p className="text-white/65 text-[12px] mt-2 font-light tracking-[0.08em]" style={{ fontFamily: "var(--rbr-font-ui)" }}>
             {dateLabel}
           </p>
+          {/* TASK 029: the tagline sits under the greeting, inside the
+              hero, because it belongs to the retreat's identity - not in
+              a card of its own competing with Happening Now. */}
+          {tagline && (
+            <p
+              dir="auto"
+              className="text-white/80 text-[13.5px] mt-2.5 leading-snug max-w-[88%]"
+              style={{ fontFamily: "var(--rbr-font-display)" }}
+            >
+              {tagline}
+            </p>
+          )}
         </div>
       </div>
 
@@ -265,6 +301,60 @@ export function TodayScreen({
         </div>
       )}
 
+      {/* TASK 029 (P3): the retreat itself, below today's practical
+          answers. Order is deliberate - a guest opening the app mid-
+          retreat wants Happening Now first, and the description second.
+          Every block disappears when empty. */}
+      {shortDescription && (
+        <div className="mx-4 mt-5">
+          <p
+            dir="auto"
+            className="text-[14px] leading-relaxed"
+            style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}
+          >
+            {shortDescription}
+          </p>
+        </div>
+      )}
+
+      {welcome && (
+        <div className="mx-4 mt-5">
+          <div className="rounded-2xl px-5 py-4" style={{ background: "var(--rbr-secondary-soft)" }}>
+            <p
+              dir="auto"
+              className="text-[14px] leading-relaxed"
+              style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}
+            >
+              {welcome}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {longDescription && (
+        <HomeSection title={t("flow", "retreatAbout")}>
+          <p
+            dir="auto"
+            className="text-[13.5px] leading-[1.7] whitespace-pre-line"
+            style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-dusk)" }}
+          >
+            {longDescription}
+          </p>
+        </HomeSection>
+      )}
+
+      {whatToBring.length > 0 && (
+        <HomeSection title={t("flow", "whatToBring")}>
+          <FlowBulletList items={whatToBring} />
+        </HomeSection>
+      )}
+
+      {whatToExpect.length > 0 && (
+        <HomeSection title={t("flow", "whatToExpect")}>
+          <FlowBulletList items={whatToExpect} />
+        </HomeSection>
+      )}
+
       {dailyQuote && (
         <div className="mx-4 mt-5 mb-8">
           <div
@@ -293,5 +383,20 @@ export function TodayScreen({
 
       {!onViewSchedule && !dailyQuote && <div className="mb-8" />}
     </div>
+  );
+}
+
+/** A titled block on Home. Only rendered when it has something in it. */
+function HomeSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="mx-4 mt-6">
+      <h2
+        className="text-[10px] tracking-[0.2em] uppercase font-semibold mb-2.5"
+        style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}
+      >
+        {title}
+      </h2>
+      {children}
+    </section>
   );
 }

@@ -23,6 +23,7 @@ describe("facilitator metadata round-trip", () => {
     name: "Maya Cohen",
     role: "Yoga Facilitator",
     bio: "Original bio.",
+    longBio: null,
     imageRef: null,
     specialties: ["Vinyasa Flow", "Pranayama"],
     socialLinks: [{ platform: "instagram", url: "https://instagram.com/maya" }],
@@ -54,6 +55,7 @@ describe("facilitator metadata round-trip", () => {
     const edited: EditableFacilitator = {
       ...base,
       bio: "Fully updated.",
+      longBio: null,
       specialties: ["Yin Yoga"],
       socialLinks: [{ platform: "tiktok" as const, url: "https://tiktok.com/@maya" }],
     };

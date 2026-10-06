@@ -1,0 +1,71 @@
+-- Rollback for 0033_flow_content_expansion.sql.
+-- Do NOT run unless the migration needs to be reverted.
+--
+-- 0033 is additive: one new column with a default, one new helper
+-- function, and a replaced publish_space(). So the rollback has a
+-- NON-DESTRUCTIVE step that is sufficient on its own, and a destructive
+-- step that is optional and should normally be skipped.
+--
+-- ===========================================================================
+-- STEP 1 - REQUIRED, LOSES NOTHING. Re-apply 0032's publish_space().
+-- ===========================================================================
+-- Run, from app/:
+--
+--   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/0032_brand_surface.sql
+--
+-- That is the whole rollback of the published contract. Everything 0033
+-- added to the snapshot is produced BY the function, so restoring the
+-- function restores the previous payload exactly - rehearsed on a
+-- throwaway database, where the three test Spaces' `modules` came back
+-- byte-identical to their pre-0033 value.
+--
+-- 0032's file also re-runs its own `add column if not exists
+-- custom_surface`, which is a no-op on an already-migrated database (it
+-- prints a NOTICE and skips).
+--
+-- After step 1, schedule_items.metadata and any 'readings'/'audio'/
+-- 'guidelines'/'retreatProfile'/'moduleIntros' rows remain in place and
+-- become inert: nothing reads them, nothing publishes them, and no guest
+-- sees them. Leaving them is the safe default - it loses no organizer's
+-- work and makes re-applying 0033 a one-command operation.
+--
+-- The one thing to do by hand after step 1: the three new modules may be
+-- switched on in module_configs, which makes them appear in
+-- published_spaces.enabled_modules even though 0032's function publishes
+-- no content for them. If the application build has also been rolled
+-- back, an unknown enabled module is ignored by every reader; if you want
+-- them off anyway:
+--
+--   update public.module_configs set enabled = false
+--   where module_key in ('readings', 'audio', 'guidelines');
+--
+-- then republish the affected Spaces. That is a content change, not a
+-- schema one, so it is deliberately not part of this script.
+--
+-- ===========================================================================
+-- STEP 2 - OPTIONAL AND DESTRUCTIVE. Only after step 1, only once nothing
+-- writes these objects, and only if the column and function must actually
+-- go. It PERMANENTLY DELETES every per-activity "what to bring" and "what
+-- to expect" an organizer has entered.
+-- ===========================================================================
+-- Uncomment deliberately. There is no undo.
+--
+-- BEGIN;
+--
+-- -- Anything still stored in the column is gone with it. Check first:
+-- --   select count(*) from public.schedule_items where metadata <> '{}'::jsonb;
+-- ALTER TABLE public.schedule_items DROP COLUMN IF EXISTS metadata;
+--
+-- -- Safe to drop only when no function body still references it; after
+-- -- step 1, publish_space() does not.
+-- DROP FUNCTION IF EXISTS public.jsonb_pick(jsonb, text[]);
+--
+-- COMMIT;
+--
+-- The metadata keys 0033 added to EXISTING tables (treatments' price /
+-- currency / chargeType / availability, facilitators' longBio, facilities'
+-- subtitle) are not dropped by anything here and should not be: they live
+-- in columns that predate this migration, they are valid jsonb either
+-- way, and deleting them would destroy content for no benefit. Once
+-- publish_space() no longer mentions them they simply stop being
+-- published.

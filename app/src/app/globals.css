@@ -118,6 +118,22 @@ body {
   transform: scaleX(-1);
 }
 
+/*
+ * The audio scrubber (TASK 029). `accent-color` is enough: it tints the
+ * native track and thumb in every engine this app supports, so the
+ * control keeps its platform behaviour - including keyboard arrows and
+ * the OS's own larger hit area - instead of being rebuilt as a div that
+ * would have to re-earn all of it. The height is a touch-target floor.
+ */
+.rbr-range {
+  accent-color: var(--rbr-primary);
+  /* 44px, not the 24px this started as: the P6 accessibility pass
+     measured the scrubber at 334x24 and a thumb needs more than that.
+     The track itself is still drawn thin and centred by the UA - the
+     extra height is hit area, which is exactly what was missing. */
+  min-height: 44px;
+}
+
 .guest-viewport {
   max-width: 100%;
 }

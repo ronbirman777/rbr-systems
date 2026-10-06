@@ -156,9 +156,13 @@ describe("shared Space settings", () => {
     expect(parseSpaceSettings("not an object")).toEqual(defaultSpaceSettings());
   });
 
-  it("reserves locale for CP3 without accepting an unsupported one", () => {
+  it("accepts a supported locale and rejects anything else", () => {
+    // TASK 029 added Spanish and French to the supported set, so the
+    // schema validates against SUPPORTED_LOCALES rather than its own copy
+    // of the list - "fr" is a real locale now, "it" is not.
     expect(parseSpaceSettings({ locale: "he" }).locale).toBe("he");
-    expect(parseSpaceSettings({ locale: "fr" }).locale).toBeNull();
+    expect(parseSpaceSettings({ locale: "fr" }).locale).toBe("fr");
+    expect(parseSpaceSettings({ locale: "it" }).locale).toBeNull();
   });
 
   it("keeps country and locale independent, so one never clears the other", () => {

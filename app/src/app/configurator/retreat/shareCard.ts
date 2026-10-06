@@ -207,7 +207,8 @@ function roundedRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w:
  * else in a Hebrew Space, including the Share Card's surrounding Studio
  * UI, is fully translated.
  *
- * German is unaffected: it is Latin script and both faces cover it.
+ * German, Spanish and French are unaffected: all three are Latin script,
+ * accents included, and both faces cover them.
  */
 function shareCardLocale(locale: Locale): Locale {
   return locale === "he" ? "en" : locale;

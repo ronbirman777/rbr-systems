@@ -10,7 +10,11 @@ import { FocalPointPicker } from "@/components/focal-point-picker";
 import { objectPositionStyle, type ImagePosition } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import { persistNewScheduleItemStub, persistScheduleItemRemoval } from "@/lib/modules/persistSchedule";
+import { HomeStep } from "./home-step";
 import { MealsStep } from "./meals-step";
+import { GuidelinesStep } from "./guidelines-step";
+import { ReadingsStep } from "./readings-step";
+import { AudioStep } from "./audio-step";
 import { TreatmentsStep } from "./treatments-step";
 import { FacilitiesStep } from "./facilities-step";
 import { ArrivalStep } from "./arrival-step";
@@ -27,10 +31,11 @@ import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
 import { BrandImageField } from "./brand-image-field";
 import { PALETTES, GUEST_BASE_PALETTE, type AtmosphereKey, type PaletteKey } from "@/lib/theme/tokens";
 import { safeTextColor, meetsAA } from "@/lib/theme/contrast";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioSectionSub, StudioHeading, StudioIntro, StudioEyebrowContext, ForwardArrow } from "./studio-ui";
+import { ForwardArrow, STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, StudioEyebrowContext, StudioField, StudioHeading, StudioIntro, StudioLabel, StudioSectionSub } from "./studio-ui";
 import { StudioTopBar } from "@/components/studio/studio-top-bar";
 import { saveStatusLabel, previewDraftLabel, previewDraftCaption, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
 import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
+import { PRESET_LABEL, type PresetLabelKey } from "@/lib/brand/presetLabels";
 import { SpaceCountryCard } from "@/components/studio/space-country-card";
 import { SpaceLanguageCard } from "@/components/studio/space-language-card";
 import { BrandContrastFeedback } from "@/components/studio/brand-contrast-feedback";
@@ -40,8 +45,8 @@ import { StatusPill } from "@/components/studio/status-pill";
 import { ReadinessChecklist, type ReadinessItem } from "@/components/studio/readiness-checklist";
 import { PublicLinkCard } from "@/components/studio/public-link-card";
 import { publicSpaceUrl, guestAppPath } from "@/lib/studio/publicLink";
-import type { EditableScheduleItem } from "@/lib/schedule/types";
-import type { EditableFacilitator } from "@/lib/modules/facilitator";
+import { hasActivityExtras, type EditableScheduleItem } from "@/lib/schedule/types";
+import { facilitatorSavePayload, type EditableFacilitator } from "@/lib/modules/facilitator";
 import type { EditableMeal } from "@/lib/modules/meal";
 import type { EditableTreatment } from "@/lib/modules/treatment";
 import type { EditableFacility } from "@/lib/modules/facility";
@@ -49,11 +54,16 @@ import type { ArrivalInfo } from "@/lib/modules/arrival";
 import type { EditableFaqItem } from "@/lib/modules/faq";
 import type { EditableCustomPage } from "@/lib/modules/customPage";
 import type { StayConnected } from "@/lib/modules/stayConnected";
+import { listToText, textToList, type RetreatProfile } from "@/lib/modules/retreatProfile";
+import type { ModuleIntros } from "@/lib/modules/moduleIntro";
+import type { EditableGuideline } from "@/lib/modules/guideline";
+import type { EditableFlowReading, EditableFlowTrack } from "@/lib/modules/flowLibrary";
 import { SOCIAL_PLATFORMS, socialPlatformLabel, isLikelyValidUrl, type SocialPlatform } from "@/lib/modules/socialLinks";
 import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
 import { todayInTimezone, currentTimeInTimezone, timezoneOptions, timezoneSelectValue, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { useSpaceLocale } from "@/lib/studio/useSpaceLocale";
 import { moduleLabel } from "@/lib/modules/catalog";
 import {
   saveDraft,
@@ -104,6 +114,13 @@ export type RetreatConfiguratorProps = {
   initialFaq: EditableFaqItem[];
   initialCustomPages: EditableCustomPage[];
   initialStayConnected: StayConnected;
+  /** TASK 029 - Retreat Home, the generic module intros, and the three
+   * new content modules. */
+  initialRetreatProfile: RetreatProfile;
+  initialModuleIntros: ModuleIntros;
+  initialGuidelines: EditableGuideline[];
+  initialReadings: EditableFlowReading[];
+  initialAudio: EditableFlowTrack[];
   initialEnabledModules: OptionalModuleKey[];
   initialModuleCovers: Record<string, { imageRef: string | null; imageUrl: string | null; imagePosition: ImagePosition }>;
   initialPublishedAt: string | null;
@@ -132,6 +149,8 @@ function blankScheduleItem(): EditableScheduleItem {
     location: null,
     description: null,
     category: null,
+    whatToBring: [],
+    whatToExpect: [],
   };
 }
 
@@ -141,6 +160,7 @@ function blankFacilitator(): EditableFacilitator {
     name: "",
     role: null,
     bio: null,
+    longBio: null,
     imageRef: null,
     imageUrl: null,
     specialties: [],
@@ -159,39 +179,77 @@ type StepKey =
   | "identity"
   | "brand"
   | "modules"
+  /** TASK 029 - always present: Retreat Home is not an optional module. */
+  | "home"
   | "schedule"
   | "facilitators"
   | "meals"
   | "treatments"
   | "facilities"
   | "arrivalInfo"
+  | "guidelines"
   | "faq"
+  | "readings"
+  | "audio"
   | "customPages"
   | "stayConnected"
   | "publish"
   | "share"
   | "featured";
 
-type ContentStepKey = Exclude<StepKey, "identity" | "brand" | "modules" | "publish" | "share" | "featured">;
+/**
+ * The content steps that are gated on their module being enabled.
+ *
+ * `home` is deliberately NOT in here: Retreat Home is the Space's own
+ * description, not an optional module an organizer switches off, so it
+ * is always offered (the same reasoning that keeps spaceSettings out of
+ * module_configs). It is pushed into the step list explicitly below.
+ */
+type ModuleStepKey = Exclude<StepKey, "identity" | "brand" | "modules" | "home" | "publish" | "share" | "featured">;
 
 /** Translation keys, not labels - resolved per render in the Space language. */
-const STEP_LABEL_KEYS: Record<ContentStepKey, "navSchedule" | "facilitators" | "meals" | "treatments" | "facilities" | "moduleArrivalInfo" | "faq" | "moduleCustomPages" | "stayConnected"> = {
+const STEP_LABEL_KEYS: Record<
+  ModuleStepKey,
+  | "navSchedule"
+  | "facilitators"
+  | "meals"
+  | "treatments"
+  | "facilities"
+  | "moduleArrivalInfo"
+  | "guidelines"
+  | "faq"
+  | "readings"
+  | "audioStepTitle"
+  | "moduleCustomPages"
+  | "stayConnected"
+> = {
   schedule: "navSchedule",
   facilitators: "facilitators",
   meals: "meals",
   treatments: "treatments",
   facilities: "facilities",
   arrivalInfo: "moduleArrivalInfo",
+  guidelines: "guidelines",
   faq: "faq",
+  readings: "readings",
+  audio: "audioStepTitle",
   customPages: "moduleCustomPages",
   stayConnected: "stayConnected",
 };
 
+/** The hidden form the top bar's Republish button submits. */
+const TOP_BAR_PUBLISH_FORM_ID = "studio-top-bar-publish";
+
 const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
-/** One swatch per canonical preset for a colour role. */
+/**
+ * One swatch per canonical preset for a colour role. The preset's NAME is
+ * carried as a dictionary key (see lib/brand/presetLabels.ts) rather than
+ * the English label on the preset data, so the swatch reads in the
+ * Space's own language.
+ */
 function swatchesFor(role: "primary" | "accent" | "navigation" | "text" | "surface") {
-  return getBrandPresets("retreat").map((p) => ({ label: p.label, hex: p[role] }));
+  return getBrandPresets("retreat").map((p) => ({ labelKey: PRESET_LABEL[p.key], hex: p[role] }));
 }
 
 /**
@@ -206,7 +264,7 @@ function swatchesFor(role: "primary" | "accent" | "navigation" | "text" | "surfa
  * label was translated, which is exactly the class of bug localization
  * exposes - the first picker simply lost its spacing in he/de.
  */
-function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: { label: string; hint: string; value: string; swatches: readonly { label: string; hex: string }[]; onChange: (hex: string) => void; locale: Locale; first?: boolean }) {
+function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: { label: string; hint: string; value: string; swatches: readonly { labelKey: PresetLabelKey; hex: string }[]; onChange: (hex: string) => void; locale: Locale; first?: boolean }) {
   const { t } = createTranslator(locale);
   const [draft, setDraft] = useState(value);
   const [showError, setShowError] = useState(false);
@@ -242,10 +300,10 @@ function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: 
       <div className="grid grid-cols-4 gap-2 mb-3">
         {swatches.map((c) => (
           <button
-            key={`${c.label}-${c.hex}`}
+            key={`${c.labelKey}-${c.hex}`}
             type="button"
-            title={c.label}
-            aria-label={`${c.label} ${c.hex}`}
+            title={t("studio", c.labelKey)}
+            aria-label={`${t("studio", c.labelKey)} ${c.hex}`}
             onClick={() => commit(c.hex)}
             className="flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all"
             style={{ background: value.toLowerCase() === c.hex.toLowerCase() ? `${GUEST_BASE_PALETTE.forest}14` : "transparent" }}
@@ -255,7 +313,7 @@ function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: 
               style={{ background: c.hex, outline: value.toLowerCase() === c.hex.toLowerCase() ? `2px solid ${GUEST_BASE_PALETTE.forest}66` : "none", outlineOffset: 2 }}
             />
             <span className="text-[10px] font-medium" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-              {c.label}
+              {t("studio", c.labelKey)}
             </span>
           </button>
         ))}
@@ -276,7 +334,7 @@ function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: 
           type="color"
           value={isValid ? normalizedDraft : "#2D4A3E"}
           onChange={(e) => commit(e.target.value)}
-          aria-label={`${label} - open color picker`}
+          aria-label={t("studio", "openColorPicker", { label })}
           className="w-8 h-8 rounded-md shrink-0 border-0 p-0 cursor-pointer"
           style={{ background: "none" }}
         />
@@ -285,7 +343,8 @@ function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: 
           onChange={(e) => commit(e.target.value)}
           onBlur={() => setShowError(!isValid && draft.trim().length > 0)}
           aria-invalid={showError}
-          className="flex-1 min-w-0 text-[13px] outline-none font-mono"
+          aria-label={t("studio", "hexValueOf", { label })}
+          className="flex-1 min-w-0 py-2 text-[13px] outline-none font-mono"
           style={{ color: GUEST_BASE_PALETTE.forest }}
         />
         <span className="text-[10px] shrink-0" style={{ color: GUEST_BASE_PALETTE.mist }}>
@@ -294,7 +353,7 @@ function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: 
       </div>
       {showError && (
         <p className="text-[11px] mt-1.5" style={{ color: "#B23B3B" }} role="alert">
-          Enter a hex color like #2D4A3E (or pick one from the swatch).
+          {t("studio", "hexHint")}
         </p>
       )}
     </div>
@@ -312,6 +371,9 @@ type ModuleDescriptionKey =
   | "moduleFaqDesc"
   | "moduleCustomPagesDesc"
   | "moduleStayConnectedDesc"
+  | "moduleGuidelinesDesc"
+  | "moduleReadingsDesc"
+  | "moduleAudioDesc"
   | "notYetAvailable";
 
 const MODULE_META: Record<OptionalModuleKey, { icon: string; descriptionKey: ModuleDescriptionKey }> = {
@@ -325,8 +387,10 @@ const MODULE_META: Record<OptionalModuleKey, { icon: string; descriptionKey: Mod
   faq: { icon: "?", descriptionKey: "moduleFaqDesc" },
   customPages: { icon: "▤", descriptionKey: "moduleCustomPagesDesc" },
   stayConnected: { icon: "@", descriptionKey: "moduleStayConnectedDesc" },
+  guidelines: { icon: "§", descriptionKey: "moduleGuidelinesDesc" },
+  readings: { icon: "❧", descriptionKey: "moduleReadingsDesc" },
+  audio: { icon: "♪", descriptionKey: "moduleAudioDesc" },
   resources: { icon: "◇", descriptionKey: "notYetAvailable" },
-  audio: { icon: "◇", descriptionKey: "notYetAvailable" },
   announcements: { icon: "◇", descriptionKey: "notYetAvailable" },
 };
 
@@ -346,6 +410,12 @@ const EXPLORE_CARD_MODULE_KEYS = new Set<OptionalModuleKey>([
   "arrivalInfo",
   "faq",
   "stayConnected",
+  // TASK 029 - the three new Explore cards. Each is in 0033's own
+  // moduleCovers allowlist too; the two lists have to agree or a cover
+  // an organizer can upload here would never publish.
+  "guidelines",
+  "readings",
+  "audio",
 ]);
 
 /**
@@ -528,7 +598,7 @@ function ScheduleEditor({
                 <button
                   type="button"
                   onClick={() => setEditId(isEditing ? null : item.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
                   {t("common", "edit")}
@@ -536,7 +606,7 @@ function ScheduleEditor({
                 <button
                   type="button"
                   onClick={() => handleRemove(item.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
                   {t("common", "remove")}
@@ -559,7 +629,7 @@ function ScheduleEditor({
         className="w-full border-2 border-dashed rounded-2xl py-3 text-[12px] font-medium transition-all mb-4"
         style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, color: GUEST_BASE_PALETTE.mist }}
       >
-        + Add Session
+        + {t("flow", "addSession")}
       </button>
 
       {editing && (
@@ -568,92 +638,159 @@ function ScheduleEditor({
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
               {t("flow", "editSession")}
             </h4>
-            <button type="button" onClick={closePanel} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={closePanel} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <StudioLabel>{t("common", "startTime")}</StudioLabel>
-              <input
-                type="time"
-                value={editing.startTime}
-                onChange={(e) => updateScheduleItem(editing.id, { startTime: e.target.value })}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("common", "startTime")}>
+                <input
+                  type="time"
+                  value={editing.startTime}
+                  onChange={(e) => updateScheduleItem(editing.id, { startTime: e.target.value })}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("flow", "endTimeOptional")}</StudioLabel>
-              <input
-                type="time"
-                value={editing.endTime ?? ""}
-                onChange={(e) => updateScheduleItem(editing.id, { endTime: e.target.value || null })}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("flow", "endTimeOptional")}>
+                <input
+                  type="time"
+                  value={editing.endTime ?? ""}
+                  onChange={(e) => updateScheduleItem(editing.id, { endTime: e.target.value || null })}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div className="col-span-2">
-              <StudioLabel>{t("flow", "sessionTitle")}</StudioLabel>
-              <input
-                value={editing.title}
-                onChange={(e) => updateScheduleItem(editing.id, { title: e.target.value })}
-                placeholder={t("flow", "sessionTitlePlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("flow", "sessionTitle")}>
+                <input
+                  value={editing.title}
+                  onChange={(e) => updateScheduleItem(editing.id, { title: e.target.value })}
+                  placeholder={t("flow", "sessionTitlePlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("flow", "facilitator")}</StudioLabel>
-              <input
-                value={editing.facilitator ?? ""}
-                onChange={(e) => updateScheduleItem(editing.id, { facilitator: e.target.value || null })}
-                placeholder={t("flow", "facilitatorPlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("flow", "facilitator")}>
+                <input
+                  value={editing.facilitator ?? ""}
+                  onChange={(e) => updateScheduleItem(editing.id, { facilitator: e.target.value || null })}
+                  placeholder={t("flow", "facilitatorPlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("common", "location")}</StudioLabel>
-              <input
-                value={editing.location ?? ""}
-                onChange={(e) => updateScheduleItem(editing.id, { location: e.target.value || null })}
-                placeholder={t("flow", "locationPlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("common", "location")}>
+                <input
+                  value={editing.location ?? ""}
+                  onChange={(e) => updateScheduleItem(editing.id, { location: e.target.value || null })}
+                  placeholder={t("flow", "locationPlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("common", "date")}</StudioLabel>
-              <input
-                type="date"
-                value={editing.date}
-                onChange={(e) => {
-                  updateScheduleItem(editing.id, { date: e.target.value });
-                  setActiveDate(e.target.value);
-                }}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("common", "date")}>
+                <input
+                  type="date"
+                  value={editing.date}
+                  onChange={(e) => {
+                    updateScheduleItem(editing.id, { date: e.target.value });
+                    setActiveDate(e.target.value);
+                  }}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("common", "category")}</StudioLabel>
-              <select
-                value={editing.category ?? ""}
-                onChange={(e) => updateScheduleItem(editing.id, { category: e.target.value || null })}
-                className={STUDIO_INPUT_CLASS}
+              <StudioField label={t("common", "category")}>
+                <select
+                  value={editing.category ?? ""}
+                  onChange={(e) => updateScheduleItem(editing.id, { category: e.target.value || null })}
+                  className={STUDIO_INPUT_CLASS}
+                >
+                  <option value="">{t("common", "none")}</option>
+                  {SCHEDULE_CATEGORIES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {t("flow", c.key)}
+                    </option>
+                  ))}
+                </select>
+              </StudioField>
+            </div>
+            <div className="col-span-2">
+              <StudioField label={t("flow", "notesOptional")}>
+                <input
+                  value={editing.description ?? ""}
+                  onChange={(e) => updateScheduleItem(editing.id, { description: e.target.value || null })}
+                  placeholder={t("flow", "notesPlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                  dir="auto"
+                />
+              </StudioField>
+            </div>
+            {/* TASK 029 (P5D): per-activity extras, COLLAPSED by default.
+                Most sessions never need them, and the brief is explicit
+                that they must not clutter the standard editor. A native
+                <details> rather than custom state: it is keyboard- and
+                screen-reader-operable for free, and this panel already
+                re-mounts whenever a different session is opened. */}
+            <details className="col-span-2 group">
+              <summary
+                className="cursor-pointer text-[11px] font-semibold uppercase tracking-[0.14em] py-1.5 list-none flex items-center gap-1.5 relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
+                style={{ color: GUEST_BASE_PALETTE.mist }}
               >
-                <option value="">{t("common", "none")}</option>
-                {SCHEDULE_CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {t("flow", c.key)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-span-2">
-              <StudioLabel>{t("flow", "notesOptional")}</StudioLabel>
-              <input
-                value={editing.description ?? ""}
-                onChange={(e) => updateScheduleItem(editing.id, { description: e.target.value || null })}
-                placeholder={t("flow", "notesPlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
-            </div>
+                <span aria-hidden="true" className="group-open:rotate-90 transition-transform inline-block">
+                  ▸
+                </span>
+                {t("flow", "extraDetails")}
+                {hasActivityExtras(editing) ? (
+                  <span
+                    aria-hidden="true"
+                    className="w-1.5 h-1.5 rounded-full inline-block"
+                    style={{ background: GUEST_BASE_PALETTE.clay }}
+                  />
+                ) : null}
+              </summary>
+              <p className="text-[11px] mb-3 mt-1" style={{ color: GUEST_BASE_PALETTE.mist }}>
+                {t("flow", "extraDetailsHint")}
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <StudioLabel>{t("flow", "whatToBring")}</StudioLabel>
+                  <textarea
+                    aria-label={t("flow", "whatToBring")}
+                    value={listToText(editing.whatToBring)}
+                    onChange={(e) => updateScheduleItem(editing.id, { whatToBring: textToList(e.target.value) })}
+                    placeholder={t("flow", "activityWhatToBringPlaceholder")}
+                    rows={3}
+                    maxLength={1000}
+                    className={`${STUDIO_INPUT_CLASS} resize-none`}
+                    dir="auto"
+                  />
+                </div>
+                <div>
+                  <StudioLabel>{t("flow", "whatToExpect")}</StudioLabel>
+                  <textarea
+                    aria-label={t("flow", "whatToExpect")}
+                    value={listToText(editing.whatToExpect)}
+                    onChange={(e) => updateScheduleItem(editing.id, { whatToExpect: textToList(e.target.value) })}
+                    placeholder={t("flow", "activityWhatToExpectPlaceholder")}
+                    rows={3}
+                    maxLength={1000}
+                    className={`${STUDIO_INPUT_CLASS} resize-none`}
+                    dir="auto"
+                  />
+                </div>
+              </div>
+              <p className="text-[11px] mt-1.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
+                {t("flow", "onePerLine")}
+              </p>
+            </details>
           </div>
         </div>
       )}
@@ -683,7 +820,7 @@ function ScheduleEditor({
         <button
           type="button"
           onClick={() => goToStep(1)}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>
@@ -814,6 +951,7 @@ function TeamEditor({
               {isEditing && (
                 <div className="px-3 pb-3">
                   <ModuleItemPhotoField
+                    locale={locale}
                     tenantId={tenantId}
                     moduleKey="facilitators"
                     itemId={f.id}
@@ -830,6 +968,7 @@ function TeamEditor({
                   />
                   {f.imageUrl && (
                     <FocalPointPicker
+                      locale={locale}
                       imageUrl={f.imageUrl}
                       position={f.imagePosition}
                       onChange={(imagePosition) => updateFacilitator(f.id, { imagePosition })}
@@ -852,7 +991,7 @@ function TeamEditor({
           <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ borderColor: `${GUEST_BASE_PALETTE.sand}b3` }}>
             +
           </div>
-          <span className="text-[11px] font-medium">{t("flow", "addFacilitator")}</span>
+          <span className="text-[11px] font-medium relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11">{t("flow", "addFacilitator")}</span>
         </button>
       </div>
 
@@ -860,56 +999,77 @@ function TeamEditor({
         <div className="rounded-2xl border p-5" style={{ background: GUEST_BASE_PALETTE.parchmentDeep, borderColor: "rgba(45,74,62,0.15)" }}>
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
-              Editing {editing.name || "facilitator"}
+              {t("studio", "editingItem", { name: editing.name || t("flow", "unnamed") })}
             </h4>
-            <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>
           <div className="space-y-3">
             <div>
-              <StudioLabel>{t("flow", "fullName")}</StudioLabel>
-              <input
-                value={editing.name}
-                onChange={(e) => updateFacilitator(editing.id, { name: e.target.value })}
-                placeholder={t("flow", "facilitatorPlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("flow", "fullName")}>
+                <input
+                  value={editing.name}
+                  onChange={(e) => updateFacilitator(editing.id, { name: e.target.value })}
+                  placeholder={t("flow", "facilitatorPlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("flow", "role")}</StudioLabel>
-              <input
-                value={editing.role ?? ""}
-                onChange={(e) => updateFacilitator(editing.id, { role: e.target.value || null })}
-                placeholder={t("flow", "rolePlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("flow", "role")}>
+                <input
+                  value={editing.role ?? ""}
+                  onChange={(e) => updateFacilitator(editing.id, { role: e.target.value || null })}
+                  placeholder={t("flow", "rolePlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
-              <StudioLabel>{t("flow", "shortBiography")}</StudioLabel>
+              <StudioField label={t("flow", "shortBiography")}>
+                <textarea
+                  value={editing.bio ?? ""}
+                  onChange={(e) => updateFacilitator(editing.id, { bio: e.target.value || null })}
+                  placeholder={t("flow", "bioPlaceholder")}
+                  rows={3}
+                  className={`${STUDIO_INPUT_CLASS} resize-none`}
+                  dir="auto"
+                />
+              </StudioField>
+            </div>
+            {/* TASK 029 (D5): the long version, for this facilitator's
+                own screen. `bio` above keeps its meaning - the line on
+                the card - so neither replaces the other. */}
+            <div>
+              <StudioLabel>{t("flow", "fullBiography")}</StudioLabel>
               <textarea
-                value={editing.bio ?? ""}
-                onChange={(e) => updateFacilitator(editing.id, { bio: e.target.value || null })}
-                placeholder={t("flow", "bioPlaceholder")}
-                rows={3}
+                aria-label={t("flow", "fullBiography")}
+                value={editing.longBio ?? ""}
+                onChange={(e) => updateFacilitator(editing.id, { longBio: e.target.value || null })}
+                placeholder={t("flow", "fullBiographyPlaceholder")}
+                rows={6}
+                maxLength={6000}
                 className={`${STUDIO_INPUT_CLASS} resize-none`}
+                dir="auto"
               />
             </div>
             <div>
-              <StudioLabel>{t("flow", "specialties")}</StudioLabel>
-              <input
-                defaultValue={editing.specialties.join(", ")}
-                onBlur={(e) =>
-                  updateFacilitator(editing.id, {
-                    specialties: e.target.value
-                      .split(",")
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-                  })
-                }
-                placeholder={t("flow", "specialtiesPlaceholder")}
-                className={STUDIO_INPUT_CLASS}
-              />
+              <StudioField label={t("flow", "specialties")}>
+                <input
+                  defaultValue={editing.specialties.join(", ")}
+                  onBlur={(e) =>
+                    updateFacilitator(editing.id, {
+                      specialties: e.target.value
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
+                    })
+                  }
+                  placeholder={t("flow", "specialtiesPlaceholder")}
+                  className={STUDIO_INPUT_CLASS}
+                />
+              </StudioField>
             </div>
             <div>
               <StudioLabel>{t("flow", "socialLinksOptional")}</StudioLabel>
@@ -930,6 +1090,7 @@ function TeamEditor({
                     <div key={i} className="rounded-xl border p-3" style={{ borderColor: `${GUEST_BASE_PALETTE.sand}80` }}>
                       <div className="flex items-center gap-2">
                         <select
+                          aria-label={t("studio", "socialPlatformN", { index: i + 1 })}
                           value={link.platform}
                           onChange={(e) =>
                             updateFacilitator(editing.id, {
@@ -963,6 +1124,7 @@ function TeamEditor({
                         </button>
                       </div>
                       <input
+                        aria-label={t("studio", "socialUrlN", { index: i + 1 })}
                         value={link.url}
                         onChange={(e) =>
                           updateFacilitator(editing.id, {
@@ -989,10 +1151,10 @@ function TeamEditor({
                       const next = SOCIAL_PLATFORMS.find((p) => !used.has(p)) ?? SOCIAL_PLATFORMS[0];
                       updateFacilitator(editing.id, { socialLinks: [...editing.socialLinks, { platform: next, url: "" }] });
                     }}
-                    className="text-[11px] font-medium"
+                    className="text-[11px] font-medium relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
                     style={{ color: GUEST_BASE_PALETTE.forest }}
                   >
-                    + Add social link
+                    + {t("flow", "addSocialLink")}
                   </button>
                 )}
               </div>
@@ -1026,7 +1188,7 @@ function TeamEditor({
         <button
           type="button"
           onClick={() => goToStep(1)}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>
@@ -1064,6 +1226,11 @@ export function RetreatConfigurator({
   initialFaq,
   initialCustomPages,
   initialStayConnected,
+  initialRetreatProfile,
+  initialModuleIntros,
+  initialGuidelines,
+  initialReadings,
+  initialAudio,
   initialEnabledModules,
   initialModuleCovers,
   initialPublishedAt,
@@ -1073,9 +1240,19 @@ export function RetreatConfigurator({
   initialFeaturedSubmission,
 }: RetreatConfiguratorProps) {
   const router = useRouter();
+  /**
+   * The Space's system language, LIVE.
+   *
+   * `initialLocale` is only the starting value - the language card hands
+   * its choice back through `setSpaceLocale`, which is what makes the
+   * Studio shell and the Live Draft Preview switch immediately instead
+   * of waiting for a reload. See lib/studio/useSpaceLocale.ts.
+   */
+  const { locale: spaceLocale, dir: spaceDir, setLocale: setSpaceLocale } = useSpaceLocale(initialLocale);
   // The Studio speaks the Space's own language, so an organizer edits in
   // the same language their guests read.
-  const { t } = createTranslator(initialLocale);
+  const { t } = createTranslator(spaceLocale);
+
   const [step, setStep] = useState<StepKey>(initialStep ?? "identity");
   const [name, setName] = useState(initialName);
   const [timezone, setTimezone] = useState(initialTimezone || DEFAULT_TIMEZONE);
@@ -1144,6 +1321,7 @@ export function RetreatConfigurator({
       Object.entries(moduleCovers).map(([key, v]) => [key, { imageUrl: v.imageUrl, imagePosition: v.imagePosition }])
     );
 
+
   /** TASK 020 - instant-persist a module cover's focal point (module
    * covers have no "Save" step of their own; see
    * updateModuleCoverPosition's own comment, actions.ts). Fire-and-forget
@@ -1155,7 +1333,7 @@ export function RetreatConfigurator({
   function persistModuleCoverPosition(moduleKey: string, position: ImagePosition) {
     if (!tenantId) return;
     const formData = new FormData();
-    formData.set("locale", initialLocale);
+    formData.set("locale", spaceLocale);
     formData.set("tenantId", tenantId);
     formData.set("moduleKey", moduleKey);
     formData.set("position", JSON.stringify(position));
@@ -1169,6 +1347,30 @@ export function RetreatConfigurator({
   const [arrivalInfo, setArrivalInfo] = useState<ArrivalInfo>(initialArrivalInfo);
   const [faq, setFaq] = useState<EditableFaqItem[]>(initialFaq);
   const [customPages, setCustomPages] = useState<EditableCustomPage[]>(initialCustomPages);
+  // TASK 029 content state. Same shape as its siblings above: the parent
+  // owns it, each editor patches it, and each editor's own Save
+  // persists it.
+  const [retreatProfile, setRetreatProfile] = useState<RetreatProfile>(initialRetreatProfile);
+  const [moduleIntros, setModuleIntros] = useState<ModuleIntros>(initialModuleIntros);
+  const [guidelines, setGuidelines] = useState<EditableGuideline[]>(initialGuidelines);
+  const [readings, setReadings] = useState<EditableFlowReading[]>(initialReadings);
+  const [audioTracks, setAudioTracks] = useState<EditableFlowTrack[]>(initialAudio);
+  /**
+   * TASK 029: the editable Readings/Audio items as the Guest screens
+   * want them.
+   *
+   * The only difference is that `imageUrl`/`audioUrl` are OPTIONAL on
+   * the editable type (an item that has never been loaded has neither)
+   * and required on the display type. The preview is fed the draft
+   * signed URLs, which is the whole point of a draft preview - the
+   * published route feeds the same screens /api/media URLs instead.
+   */
+  const readingsForPreview = readings.map((r) => ({ ...r, imageUrl: r.imageUrl ?? null }));
+  const audioForPreview = audioTracks.map((a) => ({
+    ...a,
+    imageUrl: a.imageUrl ?? null,
+    audioUrl: a.audioUrl ?? null,
+  }));
   const [stayConnected, setStayConnected] = useState(initialStayConnected.links);
 
   const [draftState, draftAction, draftPending] = useActionState(saveDraft, {
@@ -1200,7 +1402,7 @@ export function RetreatConfigurator({
 
   async function handleSaveSchedule() {
     const formData = new FormData();
-    formData.set("locale", initialLocale);
+    formData.set("locale", spaceLocale);
     formData.set("tenantId", tenantId ?? "");
     formData.set("items", JSON.stringify(schedule));
     const ids = schedule.map((s) => s.id);
@@ -1219,29 +1421,13 @@ export function RetreatConfigurator({
 
   async function handleSaveFacilitators() {
     const formData = new FormData();
-    formData.set("locale", initialLocale);
+    formData.set("locale", spaceLocale);
     formData.set("tenantId", tenantId ?? "");
-    // socialLinks/specialties MUST be included here - this is the client
-    // half of the metadata round-trip fix. Leaving them out would make
-    // facilitatorSchema.safeParse fail server-side (both fields are
-    // required, if empty, arrays), not silently drop them - but the
-    // correct fix is to always send the full current object, matching
-    // what [tenantId]/page.tsx loaded on this page's initial render.
-    formData.set(
-      "items",
-      JSON.stringify(
-        facilitators.map(({ id, name, role, bio, imageRef, socialLinks, specialties, imagePosition }) => ({
-          id,
-          name,
-          role,
-          bio,
-          imageRef,
-          socialLinks,
-          specialties,
-          imagePosition,
-        }))
-      )
-    );
+    // The whole object, every time - the metadata round-trip discipline
+    // described in lib/modules/facilitator.ts. This list used to be
+    // written out inline here, and it omitted longBio: every save wiped
+    // the field the organizer had just typed, with no error anywhere.
+    formData.set("items", JSON.stringify(facilitatorSavePayload(facilitators)));
     const ids = facilitators.map((f) => f.id);
     setFacilitatorsPending(true);
     const result = await enqueueItemsOp(ids, () => saveFacilitators(facilitatorsInitialState, formData));
@@ -1255,6 +1441,23 @@ export function RetreatConfigurator({
     ...publishInitialState,
     publishedAt: initialPublishedAt,
   });
+
+  /**
+   * Publishing from the top bar needs its own feedback, because the
+   * organizer is not looking at the Preview & Publish step when they do
+   * it - the step's own error line and status card are not on screen. The
+   * publish itself is the same dispatch; only the place the result is
+   * announced is different.
+   */
+  const [topBarPublish, setTopBarPublish] = useState<"ok" | "error" | null>(null);
+  const topBarPublishInFlight = useRef(false);
+  useEffect(() => {
+    if (publishPending) return;
+    if (!topBarPublishInFlight.current) return;
+    topBarPublishInFlight.current = false;
+    setTopBarPublish(publishState.error ? "error" : "ok");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [publishPending]);
 
   const [slugInput, setSlugInput] = useState(initialSlug ?? "");
   const [slugCheckState, setSlugCheckState] = useState<SlugCheckState>(slugCheckInitialState);
@@ -1285,7 +1488,7 @@ export function RetreatConfigurator({
 
   async function handleCheckSlug() {
     const formData = new FormData();
-    formData.set("locale", initialLocale);
+    formData.set("locale", spaceLocale);
     formData.set("slug", slugInput);
     setSlugCheckPending(true);
     const result = await checkSlugAvailability(slugCheckInitialState, formData);
@@ -1295,7 +1498,7 @@ export function RetreatConfigurator({
 
   async function handleReserveSlug() {
     const formData = new FormData();
-    formData.set("locale", initialLocale);
+    formData.set("locale", spaceLocale);
     formData.set("tenantId", tenantId ?? "");
     formData.set("name", name);
     formData.set("timezone", timezone);
@@ -1357,18 +1560,18 @@ export function RetreatConfigurator({
           if (save) moduleSaversRef.current.set(section, save);
           else moduleSaversRef.current.delete(section);
         },
-        locale: initialLocale,
+        locale: spaceLocale,
       } satisfies StudioSectionEditorProps,
     ]);
     return Object.fromEntries(entries) as Record<StudioModuleSection, StudioSectionEditorProps>;
-  }, [markDirty, markClean, initialLocale]);
+  }, [markDirty, markClean, spaceLocale]);
 
   async function saveAllDirtySections(): Promise<boolean> {
     let allSucceeded = true;
 
     if (dirty.dirtySections.has("identityAndBrand")) {
       const fd = new FormData();
-      fd.set("locale", initialLocale);
+      fd.set("locale", spaceLocale);
       fd.set("tenantId", tenantId ?? "");
       fd.set("name", name);
       fd.set("timezone", timezone);
@@ -1385,7 +1588,7 @@ export function RetreatConfigurator({
 
     if (dirty.dirtySections.has("modules")) {
       const fd = new FormData();
-      fd.set("locale", initialLocale);
+      fd.set("locale", spaceLocale);
       fd.set("tenantId", tenantId ?? "");
       IMPLEMENTED_OPTIONAL_MODULES.forEach((key) => fd.set(`module_${key}`, enabledModules.has(key) ? "on" : "off"));
       const result = await saveModules(modulesInitialState, fd);
@@ -1451,13 +1654,16 @@ export function RetreatConfigurator({
       { key: "brand", label: t("studio", "navBrand") },
       { key: "modules", label: t("studio", "navModules") },
     ];
-    (Object.keys(STEP_LABEL_KEYS) as ContentStepKey[]).forEach((key) => {
+    // Retreat Home is always offered - it is the Space's own
+    // description, not a module that can be switched off.
+    list.push({ key: "home", label: t("flow", "homeStepTitle") });
+    (Object.keys(STEP_LABEL_KEYS) as ModuleStepKey[]).forEach((key) => {
       if (enabledModules.has(key)) list.push({ key, label: t("flow", STEP_LABEL_KEYS[key]) });
     });
     list.push({ key: "publish", label: t("studio", "publish") });
     return list;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabledModules, initialLocale]);
+  }, [enabledModules, spaceLocale]);
 
   /** Visual Fidelity Phase 1: grouped sidebar sections, matching the
    * approved Creator Workspace's "My Space" / "Content" structure - a
@@ -1474,9 +1680,10 @@ export function RetreatConfigurator({
         items: steps.filter((s) => s.key !== "identity" && s.key !== "brand" && s.key !== "modules" && s.key !== "publish"),
       },
     ],
-    // `t` is derived from initialLocale, which never changes for a mount.
+    // `t` is derived from spaceLocale, which DOES change now (the
+    // language card switches it live), so it is a real dependency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [steps, initialLocale]
+    [steps, spaceLocale]
   );
 
   /** Generic prev/next navigation over the current step list - this is
@@ -1524,17 +1731,100 @@ export function RetreatConfigurator({
       : sidebarGroups.find((g) => g.items.some((i) => i.key === step))?.label;
 
   return (
-    <>
+    // lang/dir on the Studio shell itself: app/layout.tsx serves every
+    // route as <html lang="en"> with no dir, and each surface owns its
+    // own pair (the Guest App already did). Without this a Hebrew
+    // Studio renders its own chrome left-to-right.
+    <div lang={spaceLocale} dir={spaceDir} className="contents">
       <StudioTopBar
-        locale={initialLocale}
+        locale={spaceLocale}
         name={name}
         fallbackName={t("flow", "myRetreatFallback")}
         productBadge="Time to Flow"
-        saveStatus={saveStatusLabel({ saving: publishPending, dirty: dirty.isDirtyAnywhere }, initialLocale)}
+        saveStatus={saveStatusLabel({ saving: publishPending, dirty: dirty.isDirtyAnywhere }, spaceLocale)}
         onBack={() => attemptNavigate(() => router.push("/space"))}
-        onPublish={() => attemptNavigate(() => setStep("publish"))}
-        publishLabel={currentPublishedAt ? t("studio", "republish") : t("studio", "publish")}
+        /**
+         * TASK 029 final hardening: this button used to be labelled
+         * "Republish" and only navigate to the publish step. A button that
+         * names an action has to perform it, so:
+         *
+         *   already published -> a real republish. It SUBMITS the hidden
+         *     form below, whose action is the same publishFormAction the
+         *     Preview & Publish step submits: one implementation, one
+         *     pending flag, one error surface.
+         *   not published yet -> still navigates, and now says so
+         *     ("Preview & Publish"), because a first publish belongs next
+         *     to the readiness checklist and the guest address.
+         *
+         * Unsaved edits are resolved first either way. Publishing
+         * publishes the SAVED draft, so silently leaving out what the
+         * organizer just typed would be the worse bug - when the draft is
+         * dirty the native submit is cancelled, the usual dialog decides,
+         * and its callback submits the form for real.
+         */
+        onPublish={(event) => {
+          if (!currentPublishedAt) {
+            event.preventDefault();
+            attemptNavigate(() => setStep("publish"));
+            return;
+          }
+          if (publishPending) {
+            event.preventDefault();
+            return;
+          }
+          topBarPublishInFlight.current = true;
+          setTopBarPublish(null);
+          if (dirty.isDirtyAnywhere) {
+            event.preventDefault();
+            attemptNavigate(() => {
+              const form = document.getElementById(TOP_BAR_PUBLISH_FORM_ID);
+              if (form instanceof HTMLFormElement) form.requestSubmit();
+            });
+          }
+        }}
+        publishFormId={currentPublishedAt ? TOP_BAR_PUBLISH_FORM_ID : undefined}
+        publishPending={publishPending}
+        publishLabel={
+          publishPending
+            ? t("studio", "publishingNow")
+            : currentPublishedAt
+              ? t("studio", "republish")
+              : t("studio", "navPreviewPublish")
+        }
       />
+      {/* The top bar's Republish target. It lives here, outside the
+          Preview & Publish step, because the step is only mounted when
+          the organizer is looking at it - and the button is on every
+          step. Same action, same dispatcher, same pending flag. */}
+      <form id={TOP_BAR_PUBLISH_FORM_ID} action={publishFormAction} className="hidden">
+        <input type="hidden" name="tenantId" value={tenantId ?? ""} />
+        <input type="hidden" name="locale" value={spaceLocale} />
+      </form>
+      {topBarPublish ? (
+        <div
+          role={topBarPublish === "error" ? "alert" : "status"}
+          aria-live="polite"
+          className="flex items-start justify-between gap-3 px-4 sm:px-6 py-2.5 border-b text-[12.5px]"
+          style={
+            topBarPublish === "error"
+              ? { background: "#FBEFEF", borderColor: "#E7C9C9", color: "#8F3B3B" }
+              : { background: "#EDF3EE", borderColor: "#CBDFD0", color: "#2F5B3C" }
+          }
+        >
+          <span dir="auto">
+            {topBarPublish === "error"
+              ? (publishState.error ?? t("studio", "saveFailed"))
+              : t("flow", "publishedNow")}
+          </span>
+          <button
+            type="button"
+            onClick={() => setTopBarPublish(null)}
+            className="shrink-0 min-h-11 px-2 -my-2 font-semibold underline"
+          >
+            {t("common", "dismiss")}
+          </button>
+        </div>
+      ) : null}
       {/* Mobile Studio Navigation - the desktop sidebar below is
           `hidden lg:flex`, so below that breakpoint this topbar + drawer
           is the only way to switch sections. */}
@@ -1803,7 +2093,7 @@ export function RetreatConfigurator({
       </aside>
 
       {/* CENTER: configuration */}
-      <section className="px-6 py-10 sm:px-12 min-w-0">
+      <section className="px-6 py-10 sm:px-12 min-w-0" data-testid="studio-editor">
       <StudioEyebrowContext.Provider value={stepEyebrow}>
         {step === "identity" && (
           <form action={draftAction} className="max-w-xl">
@@ -1816,16 +2106,17 @@ export function RetreatConfigurator({
             <StudioSectionSub first>{t("flow", "retreatDetails")}</StudioSectionSub>
             <div className="space-y-4">
               <div>
-                <StudioLabel>{t("flow", "retreatName")}</StudioLabel>
-                <input
-                  value={name}
-                  onChange={(e) => {
-                    setName(e.target.value);
-                    dirty.markDirty("identityAndBrand");
-                  }}
-                  placeholder={t("flow", "retreatNamePlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("flow", "retreatName")}>
+                  <input
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      dirty.markDirty("identityAndBrand");
+                    }}
+                    placeholder={t("flow", "retreatNamePlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
               <div>
                 <StudioLabel>{t("flow", "timezone")}</StudioLabel>
@@ -1833,6 +2124,7 @@ export function RetreatConfigurator({
                   {t("flow", "timezoneHelp")}
                 </p>
                 <select
+                  aria-label={t("studio", "timezoneField")}
                   value={timezoneSelectValue(timezone)}
                   onChange={(e) => {
                     setTimezone(e.target.value);
@@ -1858,6 +2150,7 @@ export function RetreatConfigurator({
               style={{ background: "white" }}
             >
               <input
+                aria-label={t("studio", "guestAddressField")}
                 value={slugInput}
                 onChange={(e) => {
                   setSlugInput(normalizeSlug(e.target.value));
@@ -1877,7 +2170,7 @@ export function RetreatConfigurator({
                 type="button"
                 onClick={handleCheckSlug}
                 disabled={slugCheckPending || !slugInput || localSlugStatus !== "ok"}
-                className="text-[11px] font-semibold uppercase tracking-wide underline disabled:opacity-40"
+                className="text-[11px] font-semibold uppercase tracking-wide underline disabled:opacity-40 relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
                 style={{ color: GUEST_BASE_PALETTE.forest }}
               >
                 {slugCheckPending ? t("studio", "checking") : t("studio", "checkAvailability")}
@@ -1929,7 +2222,7 @@ export function RetreatConfigurator({
             {tenantId ? (
               <div className="max-w-[200px]">
                 <BrandImageField
-                  locale={initialLocale}
+                  locale={spaceLocale}
                   tenantId={tenantId}
                   kind="logo"
                   label={t("studio", "uploadLogo")}
@@ -1954,7 +2247,7 @@ export function RetreatConfigurator({
             </p>
             {tenantId ? (
               <BrandImageField
-                locale={initialLocale}
+                locale={spaceLocale}
                 tenantId={tenantId}
                 kind="space"
                 label={t("studio", "uploadSpaceImage")}
@@ -1988,8 +2281,8 @@ export function RetreatConfigurator({
             the shared action rather than this product's draft payload. */}
         {step === "identity" && tenantId ? (
           <div className="max-w-xl mt-6 flex flex-col gap-4">
-            <SpaceCountryCard tenantId={tenantId} locale={initialLocale} />
-            <SpaceLanguageCard tenantId={tenantId} uiLocale={initialLocale} />
+            <SpaceCountryCard tenantId={tenantId} locale={spaceLocale} />
+            <SpaceLanguageCard tenantId={tenantId} uiLocale={spaceLocale} onChange={setSpaceLocale} />
           </div>
         ) : null}
 
@@ -2006,12 +2299,11 @@ export function RetreatConfigurator({
             <input type="hidden" name="customText" value={customText ?? ""} />
             <input type="hidden" name="customSurface" value={customSurface ?? ""} />
             <StudioHeading>{t("flow", "brandTitle")}</StudioHeading>
-      <StudioIntro>Choose colors that reflect your retreat&apos;s energy. InnerDweS ensures they work beautifully across
-              your entire guest application.</StudioIntro>
+      <StudioIntro>{t("flow", "brandBody")}</StudioIntro>
 
             <div className="mb-8">
               <BrandPresetChips
-                locale={initialLocale}
+                locale={spaceLocale}
                 presets={getBrandPresets("retreat")}
                 activeKey={activePresetKey}
                 customActive={activePresetKey === null}
@@ -2031,7 +2323,7 @@ export function RetreatConfigurator({
 
             <div id="flow-custom-colors">
             <ColorPicker
-              locale={initialLocale}
+              locale={spaceLocale}
               first
               key={`primary-${presetNonce}`}
               label={t("studio", "primaryColour")}
@@ -2044,7 +2336,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
-              locale={initialLocale}
+              locale={spaceLocale}
               key={`accent-${presetNonce}`}
               label={t("studio", "accentColour")}
               swatches={swatchesFor("accent")}
@@ -2056,7 +2348,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
-              locale={initialLocale}
+              locale={spaceLocale}
               key={`navigation-${presetNonce}`}
               label={t("studio", "navigationColour")}
               swatches={swatchesFor("navigation")}
@@ -2068,7 +2360,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
-              locale={initialLocale}
+              locale={spaceLocale}
               key={`surface-${presetNonce}`}
               label={t("studio", "backgroundTint")}
               swatches={swatchesFor("surface")}
@@ -2080,7 +2372,7 @@ export function RetreatConfigurator({
               }}
             />
             <ColorPicker
-              locale={initialLocale}
+              locale={spaceLocale}
               key={`text-${presetNonce}`}
               label={t("studio", "textColour")}
               swatches={swatchesFor("text")}
@@ -2099,7 +2391,7 @@ export function RetreatConfigurator({
             </p>
             {tenantId ? (
               <BrandImageField
-                locale={initialLocale}
+                locale={spaceLocale}
                 tenantId={tenantId}
                 kind="hero"
                 label={t("studio", "uploadHeroPhoto")}
@@ -2130,8 +2422,9 @@ export function RetreatConfigurator({
                   {readabilityPasses ? t("studio", "contrastGood") : t("studio", "contrastLow")}
                 </p>
                 <p className="text-[11px] mt-0.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                  {readabilityTextColor === "#FBF9F5" ? t("studio", "swatchWhite") : t("studio", "swatchDark")} text on this color{" "}
-                  {readabilityPasses ? "meets" : "may not meet"} accessibility standards.
+                  {t("studio", readabilityPasses ? "contrastMeets" : "contrastMayNotMeet", {
+                    colour: readabilityTextColor === "#FBF9F5" ? t("studio", "swatchWhite") : t("studio", "swatchDark"),
+                  })}
                 </p>
               </div>
               <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: readabilityPasses ? GUEST_BASE_PALETTE.sage : GUEST_BASE_PALETTE.clay }} />
@@ -2141,7 +2434,7 @@ export function RetreatConfigurator({
                 products, covering every brand role rather than Primary
                 alone. The product-specific notes below stay as-is. */}
             <BrandContrastFeedback
-              locale={initialLocale}
+              locale={spaceLocale}
               className="mt-3"
               primary={effectivePrimary}
               accent={effectiveSecondary}
@@ -2188,7 +2481,7 @@ export function RetreatConfigurator({
                 <button
                   type="button"
                   onClick={() => setStep("modules")}
-                  className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+                  className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
                 >
                   {t("flow", "continueToModules")} <ForwardArrow />
                 </button>
@@ -2204,8 +2497,7 @@ export function RetreatConfigurator({
               <input key={key} type="hidden" name={`module_${key}`} value={enabledModules.has(key) ? "on" : "off"} />
             ))}
             <StudioHeading>{t("flow", "modulesTitle")}</StudioHeading>
-      <StudioIntro>Enable the experiences that are part of your retreat. Disabled modules won&apos;t appear in the guest
-              app. You can change this any time.</StudioIntro>
+      <StudioIntro>{t("flow", "modulesBody")}</StudioIntro>
 
             <div className="space-y-2.5">
               {IMPLEMENTED_OPTIONAL_MODULES.map((key) => {
@@ -2237,7 +2529,7 @@ export function RetreatConfigurator({
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-medium" style={{ color: on ? GUEST_BASE_PALETTE.forest : GUEST_BASE_PALETTE.dusk }}>
-                          {moduleLabel(key, initialLocale)}
+                          {moduleLabel(key, spaceLocale)}
                         </p>
                         <p className="text-[11px] mt-0.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
                           {t("flow", meta.descriptionKey)}
@@ -2246,7 +2538,7 @@ export function RetreatConfigurator({
                       <button
                         type="button"
                         onClick={() => toggleModule(key)}
-                        aria-label={t("flow", "toggleModule", { module: moduleLabel(key, initialLocale) })}
+                        aria-label={t("flow", "toggleModule", { module: moduleLabel(key, spaceLocale) })}
                         className="w-10 h-6 rounded-full transition-all relative flex-shrink-0"
                         style={{ background: on ? GUEST_BASE_PALETTE.forest : `${GUEST_BASE_PALETTE.sand}cc` }}
                       >
@@ -2259,6 +2551,7 @@ export function RetreatConfigurator({
                     {supportsCover && tenantId && (
                       <>
                         <ModuleCoverPhotoField
+                          locale={spaceLocale}
                           tenantId={tenantId}
                           moduleKey={key}
                           imageRef={moduleCovers[key]?.imageRef ?? null}
@@ -2275,6 +2568,7 @@ export function RetreatConfigurator({
                         />
                         {moduleCovers[key]?.imageUrl && (
                           <FocalPointPicker
+                            locale={spaceLocale}
                             imageUrl={moduleCovers[key].imageUrl!}
                             position={moduleCovers[key]?.imagePosition ?? null}
                             onChange={(position) => {
@@ -2285,7 +2579,7 @@ export function RetreatConfigurator({
                               persistModuleCoverPosition(key, position);
                             }}
                             aspect="16/9"
-                            label={t("flow", "moduleCoverImageOf", { module: moduleLabel(key, initialLocale) })}
+                            label={t("flow", "moduleCoverImageOf", { module: moduleLabel(key, spaceLocale) })}
                           />
                         )}
                       </>
@@ -2331,7 +2625,7 @@ export function RetreatConfigurator({
               <button
                 type="button"
                 onClick={() => goToStep(1)}
-                className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+                className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
               >
                 {t("common", "next")} <ForwardArrow />
               </button>
@@ -2348,7 +2642,7 @@ export function RetreatConfigurator({
             scheduleState={scheduleState}
             schedulePending={schedulePending}
             handleSaveSchedule={handleSaveSchedule}
-            locale={initialLocale}
+            locale={spaceLocale}
             goToStep={goToStep}
           />
         )}
@@ -2362,8 +2656,20 @@ export function RetreatConfigurator({
             facilitatorsState={facilitatorsState}
             facilitatorsPending={facilitatorsPending}
             handleSaveFacilitators={handleSaveFacilitators}
-            locale={initialLocale}
+            locale={spaceLocale}
             goToStep={goToStep}
+          />
+        )}
+
+        {step === "home" && tenantId && (
+          <HomeStep
+            tenantId={tenantId}
+            profile={retreatProfile}
+            setProfile={setRetreatProfile}
+            arrivalInfo={arrivalInfo}
+            onBack={() => goToStep(-1)}
+            onContinue={() => goToStep(1)}
+            {...moduleSectionProps.home}
           />
         )}
 
@@ -2372,6 +2678,8 @@ export function RetreatConfigurator({
             tenantId={tenantId}
             meals={meals}
             setMeals={setMeals}
+            moduleIntros={moduleIntros}
+            setModuleIntros={setModuleIntros}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}
             {...moduleSectionProps.meals}
@@ -2405,9 +2713,43 @@ export function RetreatConfigurator({
             tenantId={tenantId}
             info={arrivalInfo}
             setInfo={setArrivalInfo}
+            onOpenHome={() => attemptNavigate(() => setStep("home"))}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}
             {...moduleSectionProps.arrival}
+          />
+        )}
+
+        {step === "guidelines" && tenantId && (
+          <GuidelinesStep
+            tenantId={tenantId}
+            guidelines={guidelines}
+            setGuidelines={setGuidelines}
+            onBack={() => goToStep(-1)}
+            onContinue={() => goToStep(1)}
+            {...moduleSectionProps.guidelines}
+          />
+        )}
+
+        {step === "readings" && tenantId && (
+          <ReadingsStep
+            tenantId={tenantId}
+            readings={readings}
+            setReadings={setReadings}
+            onBack={() => goToStep(-1)}
+            onContinue={() => goToStep(1)}
+            {...moduleSectionProps.readings}
+          />
+        )}
+
+        {step === "audio" && tenantId && (
+          <AudioStep
+            tenantId={tenantId}
+            tracks={audioTracks}
+            setTracks={setAudioTracks}
+            onBack={() => goToStep(-1)}
+            onContinue={() => goToStep(1)}
+            {...moduleSectionProps.audio}
           />
         )}
 
@@ -2492,10 +2834,10 @@ export function RetreatConfigurator({
 
                 <div className="rounded-2xl border border-[#E2DACD] bg-white p-5" data-testid="publish-status-card">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <StatusPill state={studioPublishState(currentPublishedAt)} locale={initialLocale} />
-                    {formatPublishedAtUtc(currentPublishedAt) && (
+                    <StatusPill state={studioPublishState(currentPublishedAt)} locale={spaceLocale} />
+                    {currentPublishedAt && (
                       <span className="text-[12px] text-[#8C8A84]">
-                        Last published {formatPublishedAtUtc(currentPublishedAt)}
+                        {t("studio", "lastPublished", { timestamp: formatPublishedAtUtc(currentPublishedAt) ?? "" })}
                       </span>
                     )}
                   </div>
@@ -2510,13 +2852,13 @@ export function RetreatConfigurator({
                   <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84] mb-3">
                     {t("studio", "readyToPublish")}
                   </p>
-                  <ReadinessChecklist items={publishReadiness} locale={initialLocale} />
+                  <ReadinessChecklist items={publishReadiness} locale={spaceLocale} />
                 </div>
 
                 <div className="mt-4">
                   {currentSlug ? (
                     <PublicLinkCard
-                      locale={initialLocale}
+                      locale={spaceLocale}
                       url={publicSpaceUrl(tenantId, currentSlug)}
                       openHref={guestAppPath(tenantId, currentSlug)}
                       published={!!currentPublishedAt}
@@ -2591,14 +2933,14 @@ export function RetreatConfigurator({
                   only preview visible, matching the approved Publish
                   screen's own embedded, larger phone. */}
               <div className="flex flex-col items-center lg:items-start gap-2">
-                <p className="text-[10.5px] tracking-[0.12em] uppercase font-semibold text-[#8C8A84]">{previewDraftLabel(initialLocale)}</p>
-                <p className="text-[11px] text-[#8C8A84] mb-1">{previewDraftCaption(initialLocale)}</p>
+                <p className="text-[10.5px] tracking-[0.12em] uppercase font-semibold text-[#8C8A84]">{previewDraftLabel(spaceLocale)}</p>
+                <p className="text-[11px] text-[#8C8A84] mb-1">{previewDraftCaption(spaceLocale)}</p>
                 <div
                   className="w-[220px] h-[440px] rounded-[24px] overflow-hidden shadow-2xl"
                   style={{ border: `3px solid ${GUEST_BASE_PALETTE.forest}`, background: GUEST_BASE_PALETTE.parchment }}
                 >
                   <GuestApp
-                    locale={initialLocale}
+                    locale={spaceLocale}
                     tenantName={name}
                     brand={{
                       name,
@@ -2625,6 +2967,11 @@ export function RetreatConfigurator({
                     faq={faq.filter((f) => f.enabled)}
                     customPages={customPages.filter((p) => p.enabled).map((p) => ({ ...p, imageUrl: p.imageUrl ?? null }))}
                     stayConnected={{ links: stayConnected }}
+                    retreatProfile={retreatProfile}
+                    moduleIntros={moduleIntros}
+                    guidelines={guidelines}
+                    readings={readingsForPreview}
+                    audio={audioForPreview}
                     moduleCoverImages={moduleCoverImagesForPreview}
                   />
                 </div>
@@ -2635,7 +2982,7 @@ export function RetreatConfigurator({
 
         {step === "share" && tenantId && (
           <ShareSpaceStep
-            locale={initialLocale}
+            locale={spaceLocale}
             tenantId={tenantId}
             name={name}
             slug={currentSlug}
@@ -2651,7 +2998,7 @@ export function RetreatConfigurator({
 
         {step === "featured" && tenantId && (
           <FeaturedStep
-            locale={initialLocale}
+            locale={spaceLocale}
             tenantId={tenantId}
             name={name}
             spaceImageUrl={spaceImageUrl}
@@ -2676,15 +3023,15 @@ export function RetreatConfigurator({
       {step !== "publish" && step !== "share" && step !== "featured" && (
       <aside className="hidden lg:flex bg-[#E9E3D8] border-l border-[#E2DACD] px-8 py-8 flex-col items-center overflow-y-auto lg:sticky lg:top-16 lg:h-[calc(100dvh-4rem)]" data-testid="studio-preview-pane">
         <div className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#8C8A84]">
-          {previewDraftLabel(initialLocale)}
+          {previewDraftLabel(spaceLocale)}
         </div>
-        <div className="text-[11px] text-[#8C8A84] mt-1 text-center">{previewDraftCaption(initialLocale)}</div>
+        <div className="text-[11px] text-[#8C8A84] mt-1 text-center">{previewDraftCaption(spaceLocale)}</div>
         <div
           className="mt-7 w-[260px] h-[520px] rounded-[24px] lg:w-[220px] lg:h-[440px] lg:rounded-[20px] overflow-hidden shadow-2xl"
           style={{ border: `3px solid ${GUEST_BASE_PALETTE.forest}`, background: GUEST_BASE_PALETTE.parchment }}
         >
           <GuestApp
-            locale={initialLocale}
+            locale={spaceLocale}
             tenantName={name}
             brand={{
               name,
@@ -2711,6 +3058,11 @@ export function RetreatConfigurator({
             faq={faq.filter((f) => f.enabled)}
             customPages={customPages.filter((p) => p.enabled).map((p) => ({ ...p, imageUrl: p.imageUrl ?? null }))}
             stayConnected={{ links: stayConnected }}
+            retreatProfile={retreatProfile}
+            moduleIntros={moduleIntros}
+            guidelines={guidelines}
+            readings={readingsForPreview}
+            audio={audioForPreview}
             moduleCoverImages={moduleCoverImagesForPreview}
           />
         </div>
@@ -2728,7 +3080,7 @@ export function RetreatConfigurator({
       </div>
 
       <UnsavedChangesDialog
-        locale={initialLocale}
+        locale={spaceLocale}
         open={pendingNavigation !== null}
         onSaveAndContinue={async () => {
           const succeeded = await saveAllDirtySections();
@@ -2755,6 +3107,6 @@ export function RetreatConfigurator({
         }}
         onCancel={() => setPendingNavigation(null)}
       />
-    </>
+    </div>
   );
 }

@@ -8,6 +8,7 @@ import { PublicLinkCard } from "./public-link-card";
 import { QrCodeCard } from "./qr-code-card";
 import { SectionHeader } from "./section-header";
 import { BrandPresetChips } from "./brand-preset-chips";
+import { CollapsibleItemRow } from "./collapsible-item-row";
 import { StudioTopBar } from "./studio-top-bar";
 import { getBrandPresets } from "@/lib/brand/presets";
 import { StudioEyebrowContext, StudioHeading } from "@/app/configurator/retreat/studio-ui";
@@ -87,6 +88,51 @@ describe("shared Studio components", () => {
     expect(out).toContain("Time to Flow");
     expect(out).toContain("All changes saved");
     expect(out).toContain("Publish");
+  });
+
+  it("the Studio's small row actions carry a 44x44 hit area", () => {
+    // TASK 029 final hardening. The painted box stays small on purpose -
+    // a compact list should not become a toolbar - so the target is added
+    // with an invisible centred ::after. This asserts the classes that do
+    // it are actually on the three icon controls, because the mistake this
+    // guards against is a refactor that keeps the look and drops the
+    // pseudo-element with it.
+    const props = {
+      locale: "en" as const,
+      testId: "item-teachAudio",
+      title: "T",
+      sub: "s",
+      open: false,
+      onToggle: () => {},
+      move: { up: () => {}, down: () => {}, upDisabled: false, downDisabled: false },
+      children: createElement("span", null, "editor"),
+    };
+    const out = html(createElement(CollapsibleItemRow, props));
+    // three controls: move up, move down, expand
+    expect(out.match(/after:w-11/g)).toHaveLength(3);
+    expect(out.match(/after:h-11/g)).toHaveLength(3);
+    // and they are still painted at their original 36px
+    expect(out.match(/w-9 h-9/g)).toHaveLength(3);
+  });
+
+  it("StudioTopBar reports a publish in flight and refuses a second click", () => {
+    // TASK 029 final hardening: the Flow top bar now DISPATCHES the
+    // publish instead of navigating to the step, so this button is the
+    // only thing standing between an impatient organizer and two
+    // concurrent publishes.
+    const idle = html(createElement(StudioTopBar, { name: "QA", fallbackName: "f", productBadge: "b", saveStatus: "ok", onPublish: () => {}, publishLabel: "Republish" }));
+    expect(idle).toContain("Republish");
+    // The Tailwind class is literally "disabled:opacity-60", so the
+    // attribute has to be matched, not the substring.
+    expect(idle).not.toMatch(/<button[^>]*\sdisabled(=|\s|>)/);
+    expect(idle).not.toContain("aria-busy");
+
+    const busy = html(createElement(StudioTopBar, { name: "QA", fallbackName: "f", productBadge: "b", saveStatus: "ok", onPublish: () => {}, publishLabel: "Publishing…", publishPending: true }));
+    expect(busy).toContain("Publishing…");
+    expect(busy).toMatch(/<button[^>]*\sdisabled(=|\s|>)/);
+    expect(busy).toContain('aria-busy="true"');
+    // The spinner is decorative; the state is carried by aria-busy.
+    expect(busy).toContain('aria-hidden="true"');
   });
 
   it("ReadinessChecklist gives screen readers a text alternative for the tick/warning icons", () => {

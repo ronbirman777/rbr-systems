@@ -1,6 +1,8 @@
 import type { BrandPreset } from "@/lib/brand/presets";
+import { PRESET_LABEL } from "@/lib/brand/presetLabels";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+
 /**
  * Shared Brand preset picker: a row of named starting looks. Applying a
  * preset is the caller's job (it just populates the product's existing
@@ -47,7 +49,7 @@ export function BrandPresetChips({
                 <span className="w-4 h-4 rounded-full border border-black/10" style={{ background: p.primary }} />
                 <span className="w-4 h-4 rounded-full border border-black/10 -ml-1.5" style={{ background: p.accent }} />
               </span>
-              {p.label}
+              {t("studio", PRESET_LABEL[p.key])}
             </button>
           );
         })}

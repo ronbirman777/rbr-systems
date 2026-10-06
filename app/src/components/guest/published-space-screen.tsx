@@ -11,6 +11,19 @@ import { facilitySchema, type DisplayFacility } from "@/lib/modules/facility";
 import { arrivalInfoSchema, EMPTY_ARRIVAL_INFO, type ArrivalInfo } from "@/lib/modules/arrival";
 import { publishedFaqItemSchema, type DisplayFaqItem } from "@/lib/modules/faq";
 import { publishedCustomPageSchema, type DisplayCustomPage } from "@/lib/modules/customPage";
+import { publishedGuidelineSchema, type DisplayGuideline } from "@/lib/modules/guideline";
+import {
+  parseFlowReadings,
+  parseFlowTracks,
+  type DisplayFlowReading,
+  type DisplayFlowTrack,
+} from "@/lib/modules/flowLibrary";
+import {
+  retreatProfileSchema,
+  EMPTY_RETREAT_PROFILE,
+  type RetreatProfile,
+} from "@/lib/modules/retreatProfile";
+import { moduleIntrosSchema, EMPTY_MODULE_INTROS, type ModuleIntros } from "@/lib/modules/moduleIntro";
 import { socialLinksSchema } from "@/lib/modules/socialLinks";
 import { EMPTY_STAY_CONNECTED, type StayConnected } from "@/lib/modules/stayConnected";
 import { publishedThemeSchema, brandMediaSchema, DEFAULT_PUBLISHED_THEME } from "@/lib/modules/publishedTheme";
@@ -79,6 +92,35 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
   const customPages: DisplayCustomPage[] = customPagesParsed.success
     ? customPagesParsed.data.map((p) => ({ ...p, imageUrl: p.imageRef ? publicMediaUrl(p.imageRef) : null }))
     : [];
+
+  // TASK 029 - the new published keys. Each is read exactly like its
+  // siblings above: a tolerant safeParse that degrades to empty rather
+  // than throwing, so a snapshot written by an older or newer
+  // publish_space() can never blank a guest's whole screen.
+  const guidelinesParsed = z.array(publishedGuidelineSchema).safeParse(modules.guidelines);
+  const guidelines: DisplayGuideline[] = guidelinesParsed.success ? guidelinesParsed.data : [];
+
+  const readings: DisplayFlowReading[] = parseFlowReadings(modules.readings).map((r) => ({
+    ...r,
+    imageUrl: r.imageRef ? publicMediaUrl(r.imageRef) : null,
+  }));
+
+  const audio: DisplayFlowTrack[] = parseFlowTracks(modules.audio).map((a) => ({
+    ...a,
+    imageUrl: a.imageRef ? publicMediaUrl(a.imageRef) : null,
+    // The audio file goes through the same /api/media path every image
+    // does - there is no Flow-specific media route, and nothing here
+    // ever constructs a Storage URL of its own.
+    audioUrl: a.metadata.audioRef ? publicMediaUrl(a.metadata.audioRef) : null,
+  }));
+
+  const retreatProfileParsed = retreatProfileSchema.safeParse(modules.retreatProfile);
+  const retreatProfile: RetreatProfile = retreatProfileParsed.success
+    ? retreatProfileParsed.data
+    : EMPTY_RETREAT_PROFILE;
+
+  const moduleIntrosParsed = moduleIntrosSchema.safeParse(modules.moduleIntros);
+  const moduleIntros: ModuleIntros = moduleIntrosParsed.success ? moduleIntrosParsed.data : EMPTY_MODULE_INTROS;
 
   const stayConnectedParsed = socialLinksSchema.safeParse(
     (modules.stayConnected as { links?: unknown } | undefined)?.links
@@ -172,6 +214,11 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
           faq={faq}
           customPages={customPages}
           stayConnected={stayConnected}
+          retreatProfile={retreatProfile}
+          moduleIntros={moduleIntros}
+          guidelines={guidelines}
+          readings={readings}
+          audio={audio}
           moduleCoverImages={moduleCoverImages}
           locale={locale}
         />

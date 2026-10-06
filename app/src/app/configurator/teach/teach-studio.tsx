@@ -20,6 +20,7 @@ import type {
   TeachSettingsKey,
 } from "@/lib/teach/schemas";
 import { uploadModuleItemPhoto, removeModuleItemPhoto, uploadBrandImage, removeBrandImage } from "@/app/configurator/retreat/actions";
+import { useSpaceLocale } from "@/lib/studio/useSpaceLocale";
 import { createTranslator, type TranslationKey } from "@/lib/i18n";
 import {
   saveTeachBrandColors,
@@ -133,6 +134,8 @@ export type StudioApi = {
   /** The Space's system language. On the API rather than threaded through
    * every section, because every section renders its own labels. */
   locale: Locale;
+  /** Switches it live - the language card calls this (TASK 029). */
+  setLocale: (next: Locale) => void;
   todayIso: string;
   name: string;
   setName: (v: string) => void;
@@ -178,9 +181,16 @@ export type StudioApi = {
 
 export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
   const tenantId = initial.tenantId;
+  /**
+   * The Space's system language, LIVE - `spaceLocale` is only the
+   * starting value. Before this, saving a language left the Studio shell
+   * and the Live Draft Preview in the previous one until a reload. See
+   * lib/studio/useSpaceLocale.ts for the whole story.
+   */
+  const { locale: spaceLocale, dir: spaceDir, setLocale: setSpaceLocale } = useSpaceLocale(initial.locale);
   // The Studio renders in the Space's own language, so a teacher edits in
   // the same language their guests read.
-  const { t } = createTranslator(initial.locale);
+  const { t } = createTranslator(spaceLocale);
   const [section, setSection] = useState<SectionKey>(
     ALL_SECTIONS.includes(initial.initialSection as SectionKey) ? (initial.initialSection as SectionKey) : "identity"
   );
@@ -282,32 +292,32 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
     switch (s) {
       case "identity":
         return run(
-          saveTeachIdentity(tenantId, { name, timezone }, initial.locale),
-          saveTeachSettings(tenantId, "teachProfile", settings.teachProfile, initial.locale),
-          saveTeachSettings(tenantId, "dailyInspiration", settings.dailyInspiration, initial.locale)
+          saveTeachIdentity(tenantId, { name, timezone }, spaceLocale),
+          saveTeachSettings(tenantId, "teachProfile", settings.teachProfile, spaceLocale),
+          saveTeachSettings(tenantId, "dailyInspiration", settings.dailyInspiration, spaceLocale)
         );
       case "brand":
-        return run(saveTeachBrandColors(tenantId, colors, initial.locale), saveTeachSettings(tenantId, "teachStyle", settings.teachStyle, initial.locale));
+        return run(saveTeachBrandColors(tenantId, colors, spaceLocale), saveTeachSettings(tenantId, "teachStyle", settings.teachStyle, spaceLocale));
       case "home":
-        return run(saveTeachSettings(tenantId, "teachProfile", settings.teachProfile, initial.locale));
+        return run(saveTeachSettings(tenantId, "teachProfile", settings.teachProfile, spaceLocale));
       case "schedule":
-        return run(saveTeachItems(tenantId, "teachClasses", stripItems(items.teachClasses), initial.locale), saveTeachItems(tenantId, "teachAvailability", stripItems(items.teachAvailability), initial.locale));
+        return run(saveTeachItems(tenantId, "teachClasses", stripItems(items.teachClasses), spaceLocale), saveTeachItems(tenantId, "teachAvailability", stripItems(items.teachAvailability), spaceLocale));
       case "about":
         return run(
-          saveTeachSettings(tenantId, "teachAbout", settings.teachAbout, initial.locale),
-          saveTeachItems(tenantId, "teachGallery", stripItems(items.teachGallery), initial.locale),
-          saveTeachItems(tenantId, "teachCertificates", stripItems(items.teachCertificates), initial.locale)
+          saveTeachSettings(tenantId, "teachAbout", settings.teachAbout, spaceLocale),
+          saveTeachItems(tenantId, "teachGallery", stripItems(items.teachGallery), spaceLocale),
+          saveTeachItems(tenantId, "teachCertificates", stripItems(items.teachCertificates), spaceLocale)
         );
       case "modules":
-        return run(saveTeachModules(tenantId, enabledExplore, initial.locale), saveTeachSettings(tenantId, "teachExplore", settings.teachExplore, initial.locale));
+        return run(saveTeachModules(tenantId, enabledExplore, spaceLocale), saveTeachSettings(tenantId, "teachExplore", settings.teachExplore, spaceLocale));
       case "readings":
-        return run(saveTeachItems(tenantId, "teachReadings", stripItems(items.teachReadings), initial.locale));
+        return run(saveTeachItems(tenantId, "teachReadings", stripItems(items.teachReadings), spaceLocale));
       case "audio":
-        return run(saveTeachItems(tenantId, "teachAudio", stripItems(items.teachAudio), initial.locale));
+        return run(saveTeachItems(tenantId, "teachAudio", stripItems(items.teachAudio), spaceLocale));
       case "contact":
-        return run(saveTeachSettings(tenantId, "teachContact", settings.teachContact, initial.locale));
+        return run(saveTeachSettings(tenantId, "teachContact", settings.teachContact, spaceLocale));
       case "pages":
-        return run(saveTeachItems(tenantId, "customPages", stripItems(items.customPages), initial.locale));
+        return run(saveTeachItems(tenantId, "customPages", stripItems(items.customPages), spaceLocale));
       case "publish":
         return null;
     }
@@ -423,7 +433,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
   };
 
   const removeItem: StudioApi["removeItem"] = async (key, id) => {
-    const res = await deleteTeachItem(tenantId, key, id, initial.locale);
+    const res = await deleteTeachItem(tenantId, key, id, spaceLocale);
     if (res.error) return res.error;
     setItemsState((prev) => ({ ...prev, [key]: (prev[key] as EditableTeachItem[]).filter((i) => i.id !== id) }));
     return null;
@@ -431,7 +441,8 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
 
   const api: StudioApi = {
     tenantId,
-    locale: initial.locale,
+    locale: spaceLocale,
+    setLocale: setSpaceLocale,
     todayIso: mounted ? todayInTimezone(timezone) : new Date().toISOString().slice(0, 10),
     name,
     setName: (v) => {
@@ -475,10 +486,10 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
         index,
         mimeType,
         sizeBytes,
-        initial.locale
+        spaceLocale
       ),
-    attachAudio: async (itemId, ref, durationSeconds) => (await attachTeachAudio(tenantId, itemId, ref, durationSeconds, initial.locale)).error,
-    detachAudio: async (itemId) => (await detachTeachAudio(tenantId, itemId, initial.locale)).error,
+    attachAudio: async (itemId, ref, durationSeconds) => (await attachTeachAudio(tenantId, itemId, ref, durationSeconds, spaceLocale)).error,
+    detachAudio: async (itemId) => (await detachTeachAudio(tenantId, itemId, spaceLocale)).error,
     markDirty,
     isDirty: (s) => dirty.has(s),
     save,
@@ -502,7 +513,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
       teacherName: name || t("teach", "yourNameFallback"),
       // Preview renders in the Space's own language, so an organizer sees
       // what their guests will see rather than always English.
-      locale: initial.locale,
+      locale: spaceLocale,
       timezone,
       todayIso: todayInTimezone(timezone),
       nowTime: currentTimeInTimezone(timezone),
@@ -531,9 +542,9 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
       enabledExplore,
       mediaUrls,
     };
-      // `t` is derived from initial.locale, already a dependency here.
+      // `t` is derived from spaceLocale, already a dependency here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mounted, name, timezone, colors, heroImageRef, settings, items, enabledExplore, mediaUrls, initial.locale]);
+  }, [mounted, name, timezone, colors, heroImageRef, settings, items, enabledExplore, mediaUrls, spaceLocale]);
 
   const sectionProps = { api };
   let content: React.ReactNode;
@@ -608,7 +619,10 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
   );
 
   return (
-    <div className="flex-1 flex flex-col bg-[#F3EFE7] min-h-dvh" data-testid="teach-studio">
+    // lang/dir on the Studio shell: app/layout.tsx serves every route as
+    // <html lang="en"> with no dir, and each surface owns its own pair.
+    // Without this a Hebrew Studio renders its own chrome left-to-right.
+    <div lang={spaceLocale} dir={spaceDir} className="flex-1 flex flex-col bg-[#F3EFE7] min-h-dvh" data-testid="teach-studio">
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-[#F3EFE7]/95 backdrop-blur border-b border-[#E2DACD]">
         <div className="flex items-center gap-3 min-w-0">
           <button type="button" className="lg:hidden min-h-11 px-2 -ml-2 text-[13px] font-semibold text-[#192B21]" onClick={() => setMobileNav((v) => !v)} aria-expanded={mobileNav}>
@@ -648,7 +662,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
         <aside className="hidden lg:block bg-[#EFE9DE] px-3 py-4 border-r border-[#E2DACD]">
           <div className="sticky top-20">{navList}</div>
         </aside>
-        <main ref={mainRef} className="min-w-0 px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-5">
+        <main ref={mainRef} className="min-w-0 px-4 sm:px-8 py-6 sm:py-8 flex flex-col gap-5" data-testid="studio-editor">
           {content}
         </main>
         <aside className="hidden lg:flex flex-col items-center gap-3 bg-[#E9E3D8] px-5 py-6 border-l border-[#E2DACD]">

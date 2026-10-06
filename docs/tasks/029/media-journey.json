@@ -1,0 +1,47 @@
+{
+ "base": "https://innerdwes-47zfezgxc-inner-dwe-s.vercel.app",
+ "total": 8,
+ "failed": 0,
+ "results": [
+  {
+   "name": "the Audio editor opens an existing track",
+   "pass": true,
+   "detail": "7 track rows"
+  },
+  {
+   "name": "the track editor has an audio file input",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "name": "after uploading, the control names a file",
+   "pass": true,
+   "detail": "AUDIO FILE draft.mp3 · 0:02 Replace audio Remove MP3, M4A, AAC, WAV or OGG, up to 100 MB."
+  },
+  {
+   "name": "the control no longer says there is no file",
+   "pass": true,
+   "detail": "AUDIO FILE draft.mp3 · 0:02 Replace audio Remove MP3, M4A, AAC, WAV or OGG, up to 100 MB."
+  },
+  {
+   "name": "a duration was detected from the file itself",
+   "pass": true,
+   "detail": "0:02"
+  },
+  {
+   "name": "the attached file survives a save and a reload",
+   "pass": true,
+   "detail": "AUDIO FILE draft.mp3 · 0:02 Replace audio Remove MP3, M4A, AAC, WAV or OGG, up to 100 MB."
+  },
+  {
+   "name": "the published Guest App exposes an audio source",
+   "pass": true,
+   "detail": "{\"sources\":[\"/api/media/3e6e4978-79a3-4912-98b5-c26d15d30155/audioFile/8722c23f-962b-4c9b-9943-35527105d7e0/1cc1a940-4203-486a-8798-a128e88e82ed/published.mp3\"],\"media\":[{\"status\":307,\"type\":\"\"},{\"status\":307,\"type\":\"\"},{\"status\":307,\"type\":\"\"}]}"
+  },
+  {
+   "name": "and that source is actually fetchable",
+   "pass": true,
+   "detail": "200 audio/mpeg"
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+{
+ "base": "https://innerdwes-j1wrc12ck-inner-dwe-s.vercel.app",
+ "locale": "he",
+ "latinRuns": 0,
+ "report": {
+  "Flow": {},
+  "Teach": {}
+ }
+}

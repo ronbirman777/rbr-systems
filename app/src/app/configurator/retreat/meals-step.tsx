@@ -7,9 +7,10 @@ import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import { MEAL_TYPES, type EditableMeal, type MealType, mealTypeLabel } from "@/lib/modules/meal";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, StudioField, StudioHeading, StudioIntro, StudioLabel } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
-import { saveMeals, type SaveMealsState } from "./actions";
+import { saveMeals, saveModuleIntros, type SaveMealsState } from "./actions";
+import { pruneModuleIntros, type ModuleIntros } from "@/lib/modules/moduleIntro";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
 import { createTranslator } from "@/lib/i18n";
@@ -36,6 +37,15 @@ export type MealsStepProps = {
   tenantId: string;
   meals: EditableMeal[];
   setMeals: Dispatch<SetStateAction<EditableMeal[]>>;
+  /**
+   * TASK 029 (P3A): the module-level introduction. It is NOT a property
+   * of any one meal, so it is not in `meals` - it lives in the generic
+   * `moduleIntros` settings object, which is why this prop is the whole
+   * record rather than a single string. Facilities or Treatments getting
+   * an introduction later needs no new prop here and no migration.
+   */
+  moduleIntros: ModuleIntros;
+  setModuleIntros: Dispatch<SetStateAction<ModuleIntros>>;
   onBack: () => void;
   onContinue: () => void;
 } & StudioSectionEditorProps;
@@ -50,7 +60,19 @@ export type MealsStepProps = {
  * persistNewItemStub, saveMeals via enqueueItemsOp) as before - a visual/
  * interaction restyle, not a data-model change.
  */
-export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDirty, onSaved, registerSave, locale }: MealsStepProps) {
+export function MealsStep({
+  tenantId,
+  meals,
+  setMeals,
+  moduleIntros,
+  setModuleIntros,
+  onBack,
+  onContinue,
+  onDirty,
+  onSaved,
+  registerSave,
+  locale,
+}: MealsStepProps) {
   const { t } = createTranslator(locale);
   const [state, setState] = useState<SaveMealsState>(initialState);
   const [pending, setPending] = useState(false);
@@ -97,6 +119,19 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
     );
     const ids = meals.map((m) => m.id);
     setPending(true);
+    // The intro is a separate settings row, so it is a separate write.
+    // It goes FIRST: if it fails, the items are left untouched and the
+    // section stays dirty, rather than half the step appearing to save.
+    const introForm = new FormData();
+    introForm.set("locale", locale);
+    introForm.set("tenantId", tenantId);
+    introForm.set("data", JSON.stringify(pruneModuleIntros(moduleIntros)));
+    const introResult = await saveModuleIntros({ error: null }, introForm);
+    if (introResult.error) {
+      setPending(false);
+      setState({ error: introResult.error });
+      return false;
+    }
     // Queued behind every currently-in-flight write for these items (a
     // stub create, an upload) so Save is always applied after anything
     // already requested for them, and becomes the new queue position so a
@@ -124,6 +159,28 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
       <StudioIntro>
         {t("flow", "mealsStepBody")}
       </StudioIntro>
+
+      {/* TASK 029 (P3A) - the module-level introduction, above the list
+          because that is where a guest reads it. */}
+      <div className="mb-6">
+        <StudioLabel>{t("flow", "mealsIntro")}</StudioLabel>
+        <textarea
+          aria-label={t("flow", "mealsIntro")}
+          value={moduleIntros.meals?.intro ?? ""}
+          onChange={(e) => {
+            onDirty();
+            setModuleIntros((prev) => ({ ...prev, meals: { intro: e.target.value || null } }));
+          }}
+          placeholder={t("flow", "mealsIntroPlaceholder")}
+          rows={2}
+          maxLength={1200}
+          className={`${STUDIO_INPUT_CLASS} resize-none`}
+          dir="auto"
+        />
+        <p className="text-[11px] mt-1.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
+          {t("flow", "mealsIntroHint")}
+        </p>
+      </div>
 
       <div className="space-y-3 mb-4">
         {meals.map((m) => {
@@ -153,7 +210,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
                   <span className="text-[10px] tracking-widest uppercase font-semibold" style={{ color: GUEST_BASE_PALETTE.mist }}>
                     {m.mealType}
                   </span>
-                  <span className="text-[11px] font-medium" style={{ color: GUEST_BASE_PALETTE.clay }}>
+                  <span className="text-[11px] font-medium relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11" style={{ color: GUEST_BASE_PALETTE.clay }}>
                     {m.startTime}
                   </span>
                 </div>
@@ -168,7 +225,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
                 <button
                   type="button"
                   onClick={() => setEditId(isEditing ? null : m.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
                   {t("common", "edit")}
@@ -176,7 +233,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
                 <button
                   type="button"
                   onClick={() => handleRemove(m.id)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
                   {t("common", "remove")}
@@ -199,22 +256,23 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
         className="w-full border-2 border-dashed rounded-2xl py-3 text-[12px] font-medium transition-all mb-4"
         style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, color: GUEST_BASE_PALETTE.mist }}
       >
-        + Add Meal
+        + {t("flow", "addMeal")}
       </button>
 
       {editing && (
         <div className="rounded-2xl border p-5" style={{ background: GUEST_BASE_PALETTE.parchmentDeep, borderColor: "rgba(45,74,62,0.15)" }}>
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
-              Editing {editing.name || "meal"}
+              {t("studio", "editingItem", { name: editing.name || t("flow", "untitledMeal") })}
             </h4>
-            <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <ModuleItemPhotoField
+                locale={locale}
                 tenantId={tenantId}
                 moduleKey="meals"
                 itemId={editing.id}
@@ -230,6 +288,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
               />
               {editing.imageUrl && (
                 <FocalPointPicker
+                  locale={locale}
                   imageUrl={editing.imageUrl}
                   position={editing.imagePosition}
                   onChange={(imagePosition) => update(editing.id, { imagePosition })}
@@ -239,65 +298,71 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
               )}
             </div>
             <div className="col-span-2 space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <StudioLabel>{t("flow", "mealType")}</StudioLabel>
-                  <select value={editing.mealType} onChange={(e) => update(editing.id, { mealType: e.target.value as MealType })} className={STUDIO_INPUT_CLASS}>
-                    {MEAL_TYPES.map((mealType) => (
-                      <option key={mealType} value={mealType}>
-                        {mealTypeLabel(mealType, locale)}
-                      </option>
-                    ))}
-                  </select>
+                  <StudioField label={t("flow", "mealType")}>
+                    <select value={editing.mealType} onChange={(e) => update(editing.id, { mealType: e.target.value as MealType })} className={STUDIO_INPUT_CLASS}>
+                      {MEAL_TYPES.map((mealType) => (
+                        <option key={mealType} value={mealType}>
+                          {mealTypeLabel(mealType, locale)}
+                        </option>
+                      ))}
+                    </select>
+                  </StudioField>
                 </div>
                 <div>
-                  <StudioLabel>{t("common", "time")}</StudioLabel>
-                  <input type="time" value={editing.startTime} onChange={(e) => update(editing.id, { startTime: e.target.value })} className={STUDIO_INPUT_CLASS} />
+                  <StudioField label={t("common", "time")}>
+                    <input type="time" value={editing.startTime} onChange={(e) => update(editing.id, { startTime: e.target.value })} className={STUDIO_INPUT_CLASS} />
+                  </StudioField>
                 </div>
               </div>
               <div>
-                <StudioLabel>{t("common", "title")}</StudioLabel>
-                <input
-                  value={editing.name}
-                  onChange={(e) => update(editing.id, { name: e.target.value })}
-                  placeholder={t("flow", "mealTitlePlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("common", "title")}>
+                  <input
+                    value={editing.name}
+                    onChange={(e) => update(editing.id, { name: e.target.value })}
+                    placeholder={t("flow", "mealTitlePlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
               <div>
-                <StudioLabel>{t("common", "location")}</StudioLabel>
-                <input
-                  value={editing.location ?? ""}
-                  onChange={(e) => update(editing.id, { location: e.target.value || null })}
-                  placeholder={t("flow", "mealLocationPlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("common", "location")}>
+                  <input
+                    value={editing.location ?? ""}
+                    onChange={(e) => update(editing.id, { location: e.target.value || null })}
+                    placeholder={t("flow", "mealLocationPlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
               <div>
-                <StudioLabel>{t("common", "description")}</StudioLabel>
-                <textarea
-                  value={editing.description ?? ""}
-                  onChange={(e) => update(editing.id, { description: e.target.value || null })}
-                  placeholder={t("flow", "mealDescriptionPlaceholder")}
-                  rows={2}
-                  className={`${STUDIO_INPUT_CLASS} resize-none`}
-                />
+                <StudioField label={t("common", "description")}>
+                  <textarea
+                    value={editing.description ?? ""}
+                    onChange={(e) => update(editing.id, { description: e.target.value || null })}
+                    placeholder={t("flow", "mealDescriptionPlaceholder")}
+                    rows={2}
+                    className={`${STUDIO_INPUT_CLASS} resize-none`}
+                  />
+                </StudioField>
               </div>
               <div>
-                <StudioLabel>{t("flow", "dietaryTags")}</StudioLabel>
-                <input
-                  value={editing.dietaryTags.join(", ")}
-                  onChange={(e) =>
-                    update(editing.id, {
-                      dietaryTags: e.target.value
-                        .split(",")
-                        .map((s) => s.trim())
-                        .filter(Boolean),
-                    })
-                  }
-                  placeholder={t("flow", "dietaryTagsPlaceholder")}
-                  className={STUDIO_INPUT_CLASS}
-                />
+                <StudioField label={t("flow", "dietaryTags")}>
+                  <input
+                    value={editing.dietaryTags.join(", ")}
+                    onChange={(e) =>
+                      update(editing.id, {
+                        dietaryTags: e.target.value
+                          .split(",")
+                          .map((s) => s.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                    placeholder={t("flow", "dietaryTagsPlaceholder")}
+                    className={STUDIO_INPUT_CLASS}
+                  />
+                </StudioField>
               </div>
             </div>
           </div>
@@ -310,7 +375,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button
           type="button"
           onClick={onBack}
@@ -329,7 +394,7 @@ export function MealsStep({ tenantId, meals, setMeals, onBack, onContinue, onDir
         <button
           type="button"
           onClick={onContinue}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>

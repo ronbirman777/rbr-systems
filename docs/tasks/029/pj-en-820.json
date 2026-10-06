@@ -1,0 +1,28 @@
+{
+ "width": 820,
+ "locale": "en",
+ "checks": 47,
+ "failed": 4,
+ "failures": [
+  {
+   "name": "Explore: no broken covers",
+   "pass": false,
+   "detail": "published.webp,published.webp,published.webp"
+  },
+  {
+   "name": "Readings: no broken images",
+   "pass": false,
+   "detail": "published.webp"
+  },
+  {
+   "name": "Reading detail: no broken hero",
+   "pass": false,
+   "detail": "published.webp"
+  },
+  {
+   "name": "no media request failed",
+   "pass": false,
+   "detail": "404 published.webp?w=480 | 404 published.webp?w=480 | 404 published.webp?w=480 | 404 published.webp?w=480 | 404 published.webp?w=480 | 404 published.webp?w=480 | 404 published.webp?w=480 | 404 published.webp?w=960 | 404 published.webp?w=480 | 404 published.webp?w=480 | 404 published.webp?w=480 | 404 published.mp3 | 404 published.webp?w=480 | 404 published.webp?w=480 | 404 published.webp?w=480 | 404 published.webp?w=480 | 404 published.webp?w=480 | 404 published.webp?w=480"
+  }
+ ]
+}

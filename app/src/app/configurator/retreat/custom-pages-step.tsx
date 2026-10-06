@@ -7,7 +7,7 @@ import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
 import type { EditableCustomPage } from "@/lib/modules/customPage";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { STUDIO_INPUT_CLASS, StudioLabel, StudioHeading, StudioIntro } from "./studio-ui";
+import { STUDIO_HIT_ROW_CLASS, STUDIO_HIT_SQUARE_CLASS, STUDIO_INPUT_CLASS, StudioField, StudioHeading, StudioIntro } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
 import { saveCustomPages, type SaveCustomPagesState } from "./actions";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
@@ -117,7 +117,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
       <StudioHeading>{t("flow", "customPagesStepTitle")}</StudioHeading>
       <StudioIntro>{t("flow", "customPagesStepBody")}</StudioIntro>
       <p className="text-[11px] mb-4" style={{ color: GUEST_BASE_PALETTE.mist }}>
-        {customPages.length} of {DEFAULT_CUSTOM_PAGES_LIMIT} pages used
+        {t("flow", "pagesUsed", { used: customPages.length, limit: DEFAULT_CUSTOM_PAGES_LIMIT })}
       </p>
 
       <div className="space-y-2 mb-4">
@@ -133,10 +133,10 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
               }}
             >
               <div className="flex flex-col gap-0.5 flex-shrink-0">
-                <button type="button" onClick={() => move(page.id, -1)} disabled={i === 0} className="text-[10px] disabled:opacity-20" style={{ color: GUEST_BASE_PALETTE.mist }}>
+                <button type="button" onClick={() => move(page.id, -1)} disabled={i === 0} className={`text-[10px] disabled:opacity-20 ${STUDIO_HIT_SQUARE_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
                   ▲
                 </button>
-                <button type="button" onClick={() => move(page.id, 1)} disabled={i === customPages.length - 1} className="text-[10px] disabled:opacity-20" style={{ color: GUEST_BASE_PALETTE.mist }}>
+                <button type="button" onClick={() => move(page.id, 1)} disabled={i === customPages.length - 1} className={`text-[10px] disabled:opacity-20 ${STUDIO_HIT_SQUARE_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
                   ▼
                 </button>
               </div>
@@ -185,7 +185,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
           className="w-full border-2 border-dashed rounded-2xl py-3 text-[12px] font-medium transition-all mb-4"
           style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, color: GUEST_BASE_PALETTE.mist }}
         >
-          + Add Page
+          + {t("flow", "addPage")}
         </button>
       )}
 
@@ -193,15 +193,16 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
         <div className="rounded-2xl border p-5" style={{ background: GUEST_BASE_PALETTE.parchmentDeep, borderColor: "rgba(45,74,62,0.15)" }}>
           <div className="flex items-center justify-between mb-4">
             <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
-              Editing {editing.title || "page"}
+              {t("studio", "editingItem", { name: editing.title || t("flow", "untitledPage") })}
             </h4>
-            <button type="button" onClick={() => setEditId(null)} className="text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
               {t("common", "done")}
             </button>
           </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <ModuleItemPhotoField
+                locale={locale}
                 tenantId={tenantId}
                 moduleKey="customPages"
                 itemId={editing.id}
@@ -217,6 +218,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
               />
               {editing.imageUrl && (
                 <FocalPointPicker
+                  locale={locale}
                   imageUrl={editing.imageUrl}
                   position={editing.imagePosition}
                   onChange={(imagePosition) => update(editing.id, { imagePosition })}
@@ -227,14 +229,16 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
             </div>
             <div className="col-span-2 space-y-3">
               <div>
-                <StudioLabel>{t("flow", "pageTitle")}</StudioLabel>
-                <input value={editing.title} onChange={(e) => update(editing.id, { title: e.target.value })} placeholder={t("flow", "pageTitlePlaceholder")} className={STUDIO_INPUT_CLASS} />
+                <StudioField label={t("flow", "pageTitle")}>
+                  <input value={editing.title} onChange={(e) => update(editing.id, { title: e.target.value })} placeholder={t("flow", "pageTitlePlaceholder")} className={STUDIO_INPUT_CLASS} />
+                </StudioField>
               </div>
               <div>
-                <StudioLabel>{t("common", "content")}</StudioLabel>
-                <textarea value={editing.body ?? ""} onChange={(e) => update(editing.id, { body: e.target.value || null })} rows={5} className={`${STUDIO_INPUT_CLASS} resize-none`} />
+                <StudioField label={t("common", "content")}>
+                  <textarea value={editing.body ?? ""} onChange={(e) => update(editing.id, { body: e.target.value || null })} rows={5} className={`${STUDIO_INPUT_CLASS} resize-none`} />
+                </StudioField>
               </div>
-              <label className="flex items-center gap-2 text-[12px]" style={{ color: GUEST_BASE_PALETTE.dusk }}>
+              <label className="flex items-center gap-2 min-h-11 text-[12px]" style={{ color: GUEST_BASE_PALETTE.dusk }}>
                 <input type="checkbox" checked={editing.enabled} onChange={(e) => update(editing.id, { enabled: e.target.checked })} />
                 {t("studio", "visibleToGuests")}
               </label>
@@ -256,7 +260,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
         <button type="button" disabled={pending} onClick={handleSave} className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60">
           {pending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "moduleCustomPages") })}
         </button>
-        <button type="button" onClick={onContinue} className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest">
+        <button type="button" onClick={onContinue} className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11">
           {t("common", "next")} <ForwardArrow />
         </button>
       </div>

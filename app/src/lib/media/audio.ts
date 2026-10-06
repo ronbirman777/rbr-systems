@@ -49,3 +49,27 @@ export function parseAudioDraftRef(ref: string): VersionedMediaParts | null {
   if (!parts || parts.kind !== "draft" || !AUDIO_EXTENSIONS.has(parts.ext)) return null;
   return parts;
 }
+
+/**
+ * What is wrong with this file for an audio upload, or null when nothing
+ * is - the shared half of the Studio's client-side pre-check.
+ *
+ * Only the RULE is shared; the message is not. The two products word the
+ * refusal differently and in three locales, so this returns a reason the
+ * caller translates rather than a string. The server re-checks both the
+ * mimetype and the size when it mints the upload path, so this is a
+ * courtesy to the organizer, never the enforcement point.
+ *
+ * It deliberately matches the existing Teach check byte for byte: the
+ * browser-reported `type` is looked up as given (not normalized - Storage
+ * normalization applies to what Storage reports, not to a File), and the
+ * size test is a bare upper bound, so a zero-byte file still reaches the
+ * server that will reject it.
+ */
+export type AudioFileProblem = "unsupportedType" | "tooLarge";
+
+export function audioFileProblem(file: { type: string; size: number }): AudioFileProblem | null {
+  if (!AUDIO_ALLOWED_TYPES[file.type]) return "unsupportedType";
+  if (file.size > MAX_AUDIO_BYTES) return "tooLarge";
+  return null;
+}

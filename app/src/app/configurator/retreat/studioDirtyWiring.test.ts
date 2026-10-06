@@ -4,7 +4,7 @@ import path from "node:path";
 import { STUDIO_MODULE_SECTIONS, type StudioModuleSection } from "./studioSection";
 
 /**
- * The seven Studio module editors are React components, and this project's
+ * The eleven Studio module editors are React components, and this project's
  * test environment is deliberately `node` with no DOM and no React testing
  * library (see vitest.config.ts). Adding one is out of scope here, so these
  * are STRUCTURAL wiring tests: they prove each editor actually integrates
@@ -20,6 +20,11 @@ import { STUDIO_MODULE_SECTIONS, type StudioModuleSection } from "./studioSectio
 const DIR = path.join(process.cwd(), "src/app/configurator/retreat");
 
 const EDITOR_FILES: Record<StudioModuleSection, string> = {
+  // TASK 029 - four more editors, covered by the same contract.
+  home: "home-step.tsx",
+  guidelines: "guidelines-step.tsx",
+  readings: "readings-step.tsx",
+  audio: "audio-step.tsx",
   meals: "meals-step.tsx",
   treatments: "treatments-step.tsx",
   facilities: "facilities-step.tsx",
@@ -36,9 +41,21 @@ function editorSource(section: StudioModuleSection): string {
 const configuratorSource = readFileSync(path.join(DIR, "retreat-configurator.tsx"), "utf8");
 
 describe("STUDIO_MODULE_SECTIONS", () => {
-  it("names exactly the seven module editors the guard must cover", () => {
+  it("names exactly the eleven module editors the guard must cover", () => {
     expect([...STUDIO_MODULE_SECTIONS].sort()).toEqual(
-      ["arrival", "customPages", "facilities", "faq", "meals", "stayConnected", "treatments"].sort()
+      [
+        "arrival",
+        "audio",
+        "customPages",
+        "facilities",
+        "faq",
+        "guidelines",
+        "home",
+        "meals",
+        "readings",
+        "stayConnected",
+        "treatments",
+      ].sort()
     );
   });
 

@@ -17,10 +17,24 @@ export type ArrivalScreenProps = {
   locale?: Locale;
 };
 
-const ACCORDION_SECTIONS: { key: keyof ArrivalInfo; labelKey: "gettingHere" | "onArrival" | "whatToBring" | "importantNotes" }[] = [
+/**
+ * TASK 029 (decision B): `whatToBring` and `welcomeMessage` are NOT here
+ * any more.
+ *
+ * Both moved to Retreat Home, which resolves the canonical value and the
+ * legacy one and renders exactly one of them (see retreatProfile.ts and
+ * guest-app.tsx). Leaving them on this screen too was a real duplication
+ * that Staging Preview QA caught: a Space with a canonical list AND a
+ * legacy string showed the canonical list on Home and the legacy string
+ * again here, which is the two-versions-of-one-thing the decision exists
+ * to prevent.
+ *
+ * The stored legacy values are untouched - nothing is migrated or
+ * deleted, they are simply read from one place now.
+ */
+const ACCORDION_SECTIONS: { key: keyof ArrivalInfo; labelKey: "gettingHere" | "onArrival" | "importantNotes" }[] = [
   { key: "transportationInfo", labelKey: "gettingHere" },
   { key: "arrivalInstructions", labelKey: "onArrival" },
-  { key: "whatToBring", labelKey: "whatToBring" },
   { key: "importantNotes", labelKey: "importantNotes" },
 ];
 
@@ -48,8 +62,7 @@ export function ArrivalScreen({ brand, info, locale = DEFAULT_LOCALE }: ArrivalS
   const hasAddress = info.address || info.mapUrl;
   const visibleSections = ACCORDION_SECTIONS.filter((s) => info[s.key]);
 
-  const hasAnyContent =
-    info.welcomeMessage || hasStats || hasAddress || hasContact || visibleSections.length > 0;
+  const hasAnyContent = hasStats || hasAddress || hasContact || visibleSections.length > 0;
 
   return (
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
@@ -69,14 +82,6 @@ export function ArrivalScreen({ brand, info, locale = DEFAULT_LOCALE }: ArrivalS
       )}
 
       <div className="px-4 pb-10 space-y-3">
-        {info.welcomeMessage && (
-          <div className="rounded-2xl p-4" style={{ background: "var(--rbr-primary)" }}>
-            <p dir="auto" className="text-sm leading-relaxed" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-on-primary)" }}>
-              {info.welcomeMessage}
-            </p>
-          </div>
-        )}
-
         {hasStats && (
           <div className="rounded-3xl p-5 grid grid-cols-2 gap-3" style={{ background: "var(--rbr-primary)" }}>
             {info.checkInTime && (

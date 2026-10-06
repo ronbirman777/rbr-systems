@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
-import type { PublicScheduleItem } from "@/lib/schedule/types";
+import { hasActivityExtras, type PublicScheduleItem } from "@/lib/schedule/types";
 import type { CSSProperties } from "react";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
@@ -211,8 +211,16 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime, locale = DE
                           style={{ fontFamily: "var(--rbr-font-ui)", color: isNow ? "color-mix(in srgb, var(--rbr-on-primary) 45%, transparent)" : "var(--rbr-mist)" }}
                         >
                           {item.location && <span dir="auto">{item.location}</span>}
-                          {item.endTime && <span>· until {item.endTime}</span>}
+                          {item.endTime && <span>· {t("flow", "untilTime", { time: item.endTime })}</span>}
                         </div>
+                      )}
+                      {/* TASK 029 (P5D): this activity's own extra
+                          details, and ONLY when it has some. Collapsed,
+                          because most sessions have none and a schedule
+                          is read by scanning - a permanently expanded
+                          list on one card would break that scan. */}
+                      {hasActivityExtras(item) && (
+                        <ActivityExtras item={item} isNow={isNow} locale={locale} />
                       )}
                     </div>
                     {item.category && chip && (
@@ -234,6 +242,111 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime, locale = DE
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * One activity's "what to bring / what to expect" (TASK 029, P5D).
+ *
+ * A disclosure rather than always-open: a retreat day has a dozen
+ * sessions and a guest reads the schedule by scanning times and titles.
+ * Two bullet lists on one card would defeat that, so they stay one tap
+ * away - and the card gives no hint at all when there is nothing to
+ * show, because `hasActivityExtras` gates the whole component.
+ *
+ * `aria-expanded` and `aria-controls` are on the button for the same
+ * reason they are on the FAQ accordion: without them a screen reader
+ * announces an unlabelled button next to some text.
+ */
+function ActivityExtras({
+  item,
+  isNow,
+  locale,
+}: {
+  item: PublicScheduleItem;
+  isNow: boolean;
+  locale: Locale;
+}) {
+  const { t } = createTranslator(locale);
+  const [open, setOpen] = useState(false);
+  const id = `extras-${item.date}-${item.startTime}`.replace(/[^a-zA-Z0-9-]/g, "");
+  const muted = isNow ? "color-mix(in srgb, var(--rbr-on-primary) 55%, transparent)" : "var(--rbr-mist)";
+  const body = isNow ? "color-mix(in srgb, var(--rbr-on-primary) 80%, transparent)" : "var(--rbr-dusk)";
+
+  return (
+    <div className="mt-2.5">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-controls={id}
+        className="flex items-center gap-1.5 text-[10px] tracking-[0.14em] uppercase font-semibold min-h-11"
+        style={{ fontFamily: "var(--rbr-font-ui)", color: muted }}
+      >
+        {t("flow", "extraDetails")}
+        <svg
+          className={`w-3 h-3 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div id={id} className="mt-1.5 space-y-2.5">
+          {item.whatToBring.length > 0 && (
+            <ExtrasList title={t("flow", "whatToBring")} items={item.whatToBring} titleColor={muted} bodyColor={body} />
+          )}
+          {item.whatToExpect.length > 0 && (
+            <ExtrasList title={t("flow", "whatToExpect")} items={item.whatToExpect} titleColor={muted} bodyColor={body} />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ExtrasList({
+  title,
+  items,
+  titleColor,
+  bodyColor,
+}: {
+  title: string;
+  items: string[];
+  titleColor: string;
+  bodyColor: string;
+}) {
+  return (
+    <div>
+      <p
+        className="text-[9.5px] tracking-[0.18em] uppercase font-semibold mb-1"
+        style={{ fontFamily: "var(--rbr-font-ui)", color: titleColor }}
+      >
+        {title}
+      </p>
+      <ul className="space-y-1">
+        {items.map((entry, i) => (
+          <li key={i} className="flex gap-2 items-start">
+            <span
+              aria-hidden="true"
+              className="w-1 h-1 rounded-full shrink-0 mt-[0.5em]"
+              style={{ background: "currentColor", color: titleColor }}
+            />
+            <span
+              dir="auto"
+              className="text-[11.5px] leading-relaxed"
+              style={{ fontFamily: "var(--rbr-font-ui)", color: bodyColor }}
+            >
+              {entry}
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
