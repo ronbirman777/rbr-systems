@@ -24,7 +24,8 @@ const SPACES = [
   { product: "Teach", tenant: "cc51ee9a-9b39-4676-bc39-e20467180488", path: "teach", slug: "qa-teach-staging",
     navKeys: ["teach.navHome", "teach.navSchedule", "teach.navAbout", "teach.navExplore"] },
 ];
-const LOCALES = ["en", "de", "es", "fr", "he"];
+/** All five by default; `LOCALES=fr` narrows it (see locale-journey). */
+const LOCALES = (process.env.LOCALES ?? "en,de,es,fr,he").split(",").map((s) => s.trim()).filter(Boolean);
 const ORDER = { en: "English", de: "Deutsch", es: "Español", fr: "Français", he: "עברית" };
 const SHELL = 'div.contents[lang][dir], [data-testid="teach-studio"][lang][dir]';
 
@@ -140,5 +141,5 @@ for (const space of SPACES) {
 
 await browser.close();
 const failed = results.filter((r) => !r.pass);
-console.log(JSON.stringify({ base: BASE, total: results.length, failed: failed.length, results }, null, 1));
+console.log(JSON.stringify({ base: BASE, locales: LOCALES, total: results.length, failed: failed.length, results }, null, 1));
 process.exit(failed.length ? 1 : 0);

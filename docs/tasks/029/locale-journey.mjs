@@ -25,7 +25,15 @@ const L = JSON.parse(await (await import("node:fs/promises")).readFile(LABELS, "
 
 const FLOW = "3e6e4978-79a3-4912-98b5-c26d15d30155";
 const TEACH = "cc51ee9a-9b39-4676-bc39-e20467180488";
-const LOCALES = ["en", "de", "es", "fr", "he"];
+/**
+ * All five by default. `LOCALES=fr,he` narrows it, which is what the
+ * final hardening pass used: the machine was under memory pressure and a
+ * five-locale run is five browsers' worth of work, so the languages the
+ * change actually touched were re-verified first.
+ */
+const LOCALES = (process.env.LOCALES ?? "en,de,es,fr,he").split(",").map((s) => s.trim()).filter(Boolean);
+/** The selector's fixed order - always all five, whatever LOCALES says. */
+const ALL = ["en", "de", "es", "fr", "he"];
 const ORDER = ["English", "Deutsch", "Español", "Français", "עברית"];
 
 const results = [];
@@ -81,7 +89,7 @@ const previewNav = () => page.evaluate(() => {
   return groups.length ? groups[groups.length - 1] : [];
 });
 const pickLocale = async (code) => {
-  const label = ORDER[LOCALES.indexOf(code)];
+  const label = ORDER[ALL.indexOf(code)];
   await page.evaluate(() => { window.__noReload = true; });
   await page.click(`button:has-text("${label}")`);
   // The optimistic change is a React state update; the commit is a Server
@@ -164,5 +172,5 @@ ok("no uncaught client errors during the whole journey", pageErrors.length === 0
 await browser.close();
 
 const failed = results.filter((r) => !r.pass);
-console.log(JSON.stringify({ base: BASE, width: WIDTH, total: results.length, failed: failed.length, results }, null, 1));
+console.log(JSON.stringify({ base: BASE, width: WIDTH, locales: LOCALES, total: results.length, failed: failed.length, results }, null, 1));
 process.exit(failed.length ? 1 : 0);
