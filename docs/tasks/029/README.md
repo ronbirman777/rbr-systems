@@ -89,3 +89,40 @@ ellipsis. NOT graded: interaction, for the reason in the first section.
 It found German overflowing at 320 and 360 in seven of the eight
 editors — fixed by making the fixed `grid-cols-2`/`grid-cols-3` collapse
 to one column below `sm`, and by letting the Back/Save/Next row wrap.
+
+## 4. `pj-*.json` — the real Staging Preview journey
+
+`preview-journey.mjs` drives the **deployed Preview** (target `staging`)
+against the **real published Staging snapshot**: real images through the
+deployed `/api/media`, real client navigation, real clicks. 47 named
+checks per run, at 390 and 820, in all three locales.
+
+```sh
+node docs/tasks/029/preview-journey.mjs <preview-url> <bypass-secret> <tenantId> <width> <locale>
+```
+
+Nothing here is modelled. The one thing it cannot cover is noted in each
+result file: three image refs in the synthetic fixture were created by
+SQL, so no bytes were ever uploaded through the real pipeline and those
+three 404 at Storage. The Space that WAS populated through the real
+pipeline in an earlier task (`3e6e4978-…`) reports zero failed media
+requests and zero broken images, which is the real-media evidence.
+
+`dupcheck.mjs` is the one-off that caught the duplication bug: a Space
+with a canonical packing list AND a legacy one rendered the canonical
+list on Home and the legacy string again on the Arrival screen. It is
+kept because the fix has a unit test now, and this is how the defect was
+actually found.
+
+### Why this journey needed a browser rather than curl
+
+Grepping the served HTML gave two confident false readings, both
+recorded here so the next person does not repeat them:
+
+- Next serialises the published snapshot into the RSC payload, so a
+  string can appear in the HTML without being rendered anywhere. Only
+  `innerText` distinguishes the two.
+- CSS `text-transform: uppercase` changes `innerText`, so every text
+  match has to be case-insensitive. Getting that wrong stranded the
+  journey inside the first sub-screen and produced six "failures" that
+  were nothing of the kind.

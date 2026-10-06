@@ -195,3 +195,75 @@ describe("Daily Inspiration is unaffected by the new Home sections (P5F)", () =>
     expect(renderToStaticMarkup(h(GuestApp, props))).not.toContain(quote.source);
   });
 });
+
+describe("the packing list and the welcome appear exactly once (decision B)", () => {
+  /**
+   * Staging Preview QA caught this: a Space with a canonical list AND a
+   * legacy string rendered the canonical list on Home and the legacy
+   * string again on the Arrival screen. One piece of content, two
+   * places, which is precisely what decision B forbids - so this is a
+   * regression test for a defect that was actually shipped to Staging,
+   * not a hypothetical.
+   */
+  const bothSources = () => {
+    const props = {
+      tenantName: "Return to Balance",
+      brand,
+      todayIso: "2026-05-04",
+      nowTime: "09:00",
+      // Arrival ON, so its Explore screen is reachable and would render
+      // the duplicate if it still could.
+      enabledModules: ["arrivalInfo"],
+      schedule: [],
+      facilitators: [],
+      meals: [],
+      treatments: [],
+      facilities: [],
+      arrivalInfo: {
+        ...EMPTY_ARRIVAL_INFO,
+        whatToBring: "LEGACY towel",
+        welcomeMessage: "LEGACY welcome",
+        transportationInfo: "Take the 7 bus.",
+      },
+      retreatProfile: { ...EMPTY_RETREAT_PROFILE, whatToBring: ["CANONICAL towel"], welcome: "CANONICAL welcome" },
+      locale: "en",
+    } as unknown as GuestAppProps;
+    return renderToStaticMarkup(h(GuestApp, props));
+  };
+
+  it("renders the canonical values and neither legacy one, anywhere in the app", () => {
+    const out = bothSources();
+    expect(out).toContain("CANONICAL towel");
+    expect(out).toContain("CANONICAL welcome");
+    expect(out).not.toContain("LEGACY towel");
+    expect(out).not.toContain("LEGACY welcome");
+  });
+
+  it("the Arrival screen keeps every field that did NOT move", async () => {
+    const { ArrivalScreen } = await import("./arrival-screen");
+    const out = renderToStaticMarkup(
+      h(ArrivalScreen, {
+        brand,
+        info: {
+          ...EMPTY_ARRIVAL_INFO,
+          whatToBring: "LEGACY towel",
+          welcomeMessage: "LEGACY welcome",
+          transportationInfo: "Take the 7 bus.",
+          importantNotes: "No shoes indoors.",
+          checkInTime: "15:00",
+        },
+        locale: "en",
+      } as never)
+    );
+    // The accordion is collapsed by default, so what proves a section
+    // survived is its heading, not its body.
+    expect(out).toContain("Getting Here");
+    expect(out).toContain("Important Notes");
+    expect(out).toContain("15:00");
+    // ...and the two that moved have no heading here any more.
+    expect(out).not.toContain("What to Bring");
+    // The two that moved are gone from here, legacy value or not.
+    expect(out).not.toContain("LEGACY towel");
+    expect(out).not.toContain("LEGACY welcome");
+  });
+});
