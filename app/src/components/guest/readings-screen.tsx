@@ -47,7 +47,7 @@ export function ReadingsScreen({ brand, readings, locale = DEFAULT_LOCALE }: Rea
   const open = openId ? (readings.find((r) => r.id === openId) ?? null) : null;
 
   if (open) {
-    return <ReadingDetail brand={brand} reading={open} onBack={() => setOpenId(null)} locale={locale} />;
+    return <ReadingDetailScreen brand={brand} reading={open} onBack={() => setOpenId(null)} locale={locale} />;
   }
 
   const [featured, ...rest] = list;
@@ -214,7 +214,11 @@ function CategoryChip({
       onClick={onClick}
       aria-pressed={active}
       dir={userContent ? "auto" : undefined}
-      className="shrink-0 rounded-full px-3.5 py-1.5 text-[11.5px] font-medium whitespace-nowrap transition-colors"
+      /* min-h-11 is 44px: the P6 accessibility pass measured these
+         chips at 31px tall, which is under the touch target a thumb
+         needs. Padding alone would not have been enough on the
+         shortest label ("All"), so the floor is explicit. */
+      className="shrink-0 rounded-full px-4 min-h-11 text-[11.5px] font-medium whitespace-nowrap transition-colors"
       style={{
         fontFamily: "var(--rbr-font-ui)",
         background: active ? "var(--rbr-primary)" : "var(--rbr-cream)",
@@ -227,7 +231,7 @@ function CategoryChip({
   );
 }
 
-function ReadingDetail({
+export function ReadingDetailScreen({
   brand,
   reading,
   onBack,

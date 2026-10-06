@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { z } from "zod";
 import { audioNote, readingMetadataSchema } from "./library";
 import { collectMediaRefs, collectImageRefs, isPublishedMediaPath, isDraftMediaPath } from "@/lib/media/path";
 // The REAL Flow schema, not a copy of it - this file is worth little if
@@ -44,29 +43,32 @@ const STAGING = {
   },
 };
 
-describe("the shared Phase 1 schemas accept the real Staging 0033 Flow payload", () => {
-  it("parses every published Flow reading", () => {
-    for (const r of STAGING.readings) {
-      const out = readingMetadataSchema.safeParse(r.metadata);
-      expect(out.success, r.title).toBe(true);
-    }
-    expect(readingMetadataSchema.parse(STAGING.readings[0].metadata).excerpt).toBe("Landing takes a day.");
-    // The reading with no date/imagePosition still gets the defaults.
-    expect(readingMetadataSchema.parse(STAGING.readings[1].metadata).imagePosition).toBeNull();
+describe("the real Staging 0033 payload, through the real Flow read path", () => {
+  // Through parseFlowReadings/parseFlowTracks - the functions the
+  // published route actually calls - not just their metadata schemas.
+  const readings = parseFlowReadings(STAGING.readings);
+  const tracks = parseFlowTracks(STAGING.audio);
+
+  it("keeps every published reading, with its metadata and its envelope", () => {
+    expect(readings).toHaveLength(STAGING.readings.length);
+    expect(readings[0]?.metadata.excerpt).toBe("Landing takes a day.");
+    expect(readings[0]?.imageRef).toContain("/published.webp");
+    // The reading with no date or focal point still gets the defaults.
+    expect(readings[1]?.metadata.imagePosition).toBeNull();
+    expect(readings[1]?.externalLink).toBe("https://example.test/essay");
+    expect(readingMetadataSchema.parse({}).date).toBeNull();
   });
 
-  it("parses every published Flow track, including the one with no file", () => {
-    for (const a of STAGING.audio) {
-      const out = flowAudioMetadataSchema.safeParse(a.metadata);
-      expect(out.success, a.title).toBe(true);
-    }
-    expect(flowAudioMetadataSchema.parse(STAGING.audio[2].metadata).audioRef).toBeNull();
-    expect(flowAudioMetadataSchema.parse(STAGING.audio[0].metadata).durationSeconds).toBe(1448);
+  it("keeps every published track, including the one with no file yet", () => {
+    expect(tracks).toHaveLength(STAGING.audio.length);
+    expect(tracks[0]?.metadata.durationSeconds).toBe(1448);
+    expect(tracks[2]?.metadata.audioRef).toBeNull();
+    expect(flowAudioMetadataSchema.parse({}).note).toBeNull();
   });
 
   it("audioNote reads Flow's `note` without Teach's key being present", () => {
-    expect(audioNote(flowAudioMetadataSchema.parse(STAGING.audio[0].metadata))).toBe("Lie down somewhere warm.");
-    expect(audioNote(flowAudioMetadataSchema.parse(STAGING.audio[1].metadata))).toBeNull();
+    expect(audioNote(tracks[0]!.metadata)).toBe("Lie down somewhere warm.");
+    expect(audioNote(tracks[1]!.metadata)).toBeNull();
   });
 });
 

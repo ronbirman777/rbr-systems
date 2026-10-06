@@ -744,6 +744,7 @@ function ScheduleEditor({
                 <div>
                   <StudioLabel>{t("flow", "whatToBring")}</StudioLabel>
                   <textarea
+                    aria-label={t("flow", "whatToBring")}
                     value={listToText(editing.whatToBring)}
                     onChange={(e) => updateScheduleItem(editing.id, { whatToBring: textToList(e.target.value) })}
                     placeholder={t("flow", "activityWhatToBringPlaceholder")}
@@ -756,6 +757,7 @@ function ScheduleEditor({
                 <div>
                   <StudioLabel>{t("flow", "whatToExpect")}</StudioLabel>
                   <textarea
+                    aria-label={t("flow", "whatToExpect")}
                     value={listToText(editing.whatToExpect)}
                     onChange={(e) => updateScheduleItem(editing.id, { whatToExpect: textToList(e.target.value) })}
                     placeholder={t("flow", "activityWhatToExpectPlaceholder")}
@@ -1018,6 +1020,7 @@ function TeamEditor({
             <div>
               <StudioLabel>{t("flow", "fullBiography")}</StudioLabel>
               <textarea
+                aria-label={t("flow", "fullBiography")}
                 value={editing.longBio ?? ""}
                 onChange={(e) => updateFacilitator(editing.id, { longBio: e.target.value || null })}
                 placeholder={t("flow", "fullBiographyPlaceholder")}

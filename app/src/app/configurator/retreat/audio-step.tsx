@@ -262,6 +262,7 @@ export function AudioStep({
               <div>
                 <StudioLabel>{t("common", "title")}</StudioLabel>
                 <input
+                  aria-label={t("common", "title")}
                   value={editing.title}
                   onChange={(e) => update(editing.id, { title: e.target.value })}
                   placeholder={t("flow", "trackTitlePlaceholder")}
@@ -273,6 +274,7 @@ export function AudioStep({
               <div>
                 <StudioLabel>{t("flow", "category")}</StudioLabel>
                 <input
+                  aria-label={t("flow", "category")}
                   value={editing.metadata.category ?? ""}
                   onChange={(e) => updateMeta(editing.id, { category: e.target.value || null })}
                   placeholder={t("flow", "categoryPlaceholder")}
@@ -293,6 +295,7 @@ export function AudioStep({
               <div>
                 <StudioLabel>{t("flow", "noteOptional")}</StudioLabel>
                 <textarea
+                  aria-label={t("flow", "noteOptional")}
                   value={editing.metadata.note ?? ""}
                   onChange={(e) => updateMeta(editing.id, { note: e.target.value || null })}
                   placeholder={t("flow", "notePlaceholder")}
@@ -305,6 +308,7 @@ export function AudioStep({
               <div>
                 <StudioLabel>{t("common", "description")}</StudioLabel>
                 <textarea
+                  aria-label={t("common", "description")}
                   value={editing.description ?? ""}
                   onChange={(e) => update(editing.id, { description: e.target.value || null })}
                   placeholder={t("flow", "mealDescriptionPlaceholder")}
@@ -325,7 +329,7 @@ export function AudioStep({
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button
           type="button"
           onClick={onBack}

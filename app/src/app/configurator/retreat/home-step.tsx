@@ -131,6 +131,7 @@ export function HomeStep({
         <div>
           <StudioLabel>{t("flow", "tagline")}</StudioLabel>
           <input
+            aria-label={t("flow", "tagline")}
             value={profile.tagline ?? ""}
             onChange={(e) => set("tagline", e.target.value || null)}
             placeholder={t("flow", "taglinePlaceholder")}
@@ -142,6 +143,7 @@ export function HomeStep({
         <div>
           <StudioLabel>{t("flow", "shortDescription")}</StudioLabel>
           <textarea
+            aria-label={t("flow", "shortDescription")}
             value={profile.shortDescription ?? ""}
             onChange={(e) => set("shortDescription", e.target.value || null)}
             placeholder={t("flow", "shortDescriptionPlaceholder")}
@@ -154,6 +156,7 @@ export function HomeStep({
         <div>
           <StudioLabel>{t("flow", "retreatAbout")}</StudioLabel>
           <textarea
+            aria-label={t("flow", "retreatAbout")}
             value={profile.longDescription ?? ""}
             onChange={(e) => set("longDescription", e.target.value || null)}
             placeholder={t("flow", "fullDescriptionPlaceholder")}
@@ -169,6 +172,7 @@ export function HomeStep({
       <div>
         <StudioLabel>{t("flow", "welcomeMessageOptional")}</StudioLabel>
         <textarea
+          aria-label={t("flow", "welcomeMessageOptional")}
           value={welcomeText}
           onChange={(e) => {
             setTouchedWelcome(true);
@@ -188,6 +192,7 @@ export function HomeStep({
         <div>
           <StudioLabel>{t("flow", "whatToBring")}</StudioLabel>
           <textarea
+            aria-label={t("flow", "whatToBring")}
             value={bringText}
             onChange={(e) => {
               setTouchedBring(true);
@@ -205,6 +210,7 @@ export function HomeStep({
         <div>
           <StudioLabel>{t("flow", "whatToExpect")}</StudioLabel>
           <textarea
+            aria-label={t("flow", "whatToExpect")}
             value={listToText(profile.whatToExpect)}
             onChange={(e) => set("whatToExpect", textToList(e.target.value))}
             placeholder={t("flow", "whatToExpectPlaceholder")}
@@ -223,7 +229,7 @@ export function HomeStep({
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button
           type="button"
           onClick={onBack}

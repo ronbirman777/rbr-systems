@@ -242,6 +242,7 @@ export function ReadingsStep({
               <div>
                 <StudioLabel>{t("common", "title")}</StudioLabel>
                 <input
+                  aria-label={t("common", "title")}
                   value={editing.title}
                   onChange={(e) => update(editing.id, { title: e.target.value })}
                   placeholder={t("flow", "readingTitlePlaceholder")}
@@ -253,6 +254,7 @@ export function ReadingsStep({
               <div>
                 <StudioLabel>{t("flow", "excerpt")}</StudioLabel>
                 <textarea
+                  aria-label={t("flow", "excerpt")}
                   value={editing.metadata.excerpt ?? ""}
                   onChange={(e) => updateMeta(editing.id, { excerpt: e.target.value || null })}
                   placeholder={t("flow", "excerptPlaceholder")}
@@ -262,10 +264,11 @@ export function ReadingsStep({
                   dir="auto"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <StudioLabel>{t("flow", "author")}</StudioLabel>
                   <input
+                    aria-label={t("flow", "author")}
                     value={editing.metadata.author ?? ""}
                     onChange={(e) => updateMeta(editing.id, { author: e.target.value || null })}
                     placeholder={t("flow", "authorPlaceholder")}
@@ -277,6 +280,7 @@ export function ReadingsStep({
                 <div>
                   <StudioLabel>{t("flow", "category")}</StudioLabel>
                   <input
+                    aria-label={t("flow", "category")}
                     value={editing.metadata.category ?? ""}
                     onChange={(e) => updateMeta(editing.id, { category: e.target.value || null })}
                     placeholder={t("flow", "categoryPlaceholder")}
@@ -286,10 +290,11 @@ export function ReadingsStep({
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <StudioLabel>{t("flow", "date")}</StudioLabel>
                   <input
+                    aria-label={t("flow", "date")}
                     type="date"
                     value={editing.metadata.date ?? ""}
                     onChange={(e) => updateMeta(editing.id, { date: e.target.value || null })}
@@ -310,6 +315,7 @@ export function ReadingsStep({
               <div>
                 <StudioLabel>{t("flow", "readingBody")}</StudioLabel>
                 <textarea
+                  aria-label={t("flow", "readingBody")}
                   value={editing.description ?? ""}
                   onChange={(e) => update(editing.id, { description: e.target.value || null })}
                   placeholder={t("flow", "readingBodyPlaceholder")}
@@ -330,7 +336,7 @@ export function ReadingsStep({
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button
           type="button"
           onClick={onBack}

@@ -227,7 +227,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
               {t("common", "done")}
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <ModuleItemPhotoField
                 tenantId={tenantId}
@@ -273,7 +273,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                   className={STUDIO_INPUT_CLASS}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <StudioLabel>{t("flow", "durationMinutes")}</StudioLabel>
                   <input
@@ -317,10 +317,11 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
               {/* TASK 029 (D1) - what it costs and when it can be had.
                   Retreat-item pricing only: nothing here is connected to
                   InnerDweS billing, Stripe or any checkout. */}
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <StudioLabel>{t("flow", "price")}</StudioLabel>
                   <input
+                    aria-label={t("flow", "price")}
                     type="number"
                     min={0}
                     step="any"
@@ -334,6 +335,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                 <div>
                   <StudioLabel>{t("flow", "currency")}</StudioLabel>
                   <input
+                    aria-label={t("flow", "currency")}
                     value={editing.currency ?? ""}
                     onChange={(e) => update(editing.id, { currency: e.target.value.toUpperCase() || null })}
                     placeholder={t("flow", "currencyPlaceholder")}
@@ -344,6 +346,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                 <div>
                   <StudioLabel>{t("flow", "chargeType")}</StudioLabel>
                   <select
+                    aria-label={t("flow", "chargeType")}
                     value={editing.chargeType ?? ""}
                     onChange={(e) =>
                       update(editing.id, { chargeType: (e.target.value || null) as ChargeType | null })
@@ -362,6 +365,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
               <div>
                 <StudioLabel>{t("flow", "availability")}</StudioLabel>
                 <input
+                  aria-label={t("flow", "availability")}
                   value={editing.availability ?? ""}
                   onChange={(e) => update(editing.id, { availability: e.target.value || null })}
                   placeholder={t("flow", "availabilityPlaceholder")}
@@ -391,7 +395,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button
           type="button"
           onClick={onBack}

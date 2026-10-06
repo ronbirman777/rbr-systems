@@ -178,7 +178,7 @@ export function ArrivalStep({
       )}
 
       <StudioSectionSub first>{t("flow", "arrivalBasics")}</StudioSectionSub>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Field label={t("flow", "checkIn")} value={info.checkInTime} onChange={(v) => set("checkInTime", v)} placeholder="e.g. 14:00" />
         <Field label={t("flow", "checkOut")} value={info.checkOutTime} onChange={(v) => set("checkOutTime", v)} placeholder="e.g. 11:00" />
         <div className="col-span-2">
@@ -211,7 +211,7 @@ export function ArrivalStep({
       </div>
 
       <StudioSectionSub>{t("common", "contact")}</StudioSectionSub>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Field label={t("flow", "contactName")} value={info.contactName} onChange={(v) => set("contactName", v)} placeholder={t("flow", "contactNamePlaceholder")} />
         <Field label={t("flow", "phoneNumber")} value={info.contactPhone} onChange={(v) => set("contactPhone", v)} placeholder="+66 77 123 456" />
         <Field label={t("flow", "whatsappNumber")} value={info.contactWhatsapp} onChange={(v) => set("contactWhatsapp", v)} placeholder="+66 87 123 456" />
@@ -223,7 +223,7 @@ export function ArrivalStep({
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button
           type="button"
           onClick={onBack}

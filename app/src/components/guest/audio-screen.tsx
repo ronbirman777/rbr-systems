@@ -144,7 +144,8 @@ function Chip({
       onClick={onClick}
       aria-pressed={active}
       dir={userContent ? "auto" : undefined}
-      className="shrink-0 rounded-full px-3.5 py-1.5 text-[11.5px] font-medium whitespace-nowrap transition-colors"
+      /* 44px floor - see the matching note in readings-screen.tsx. */
+      className="shrink-0 rounded-full px-4 min-h-11 text-[11.5px] font-medium whitespace-nowrap transition-colors"
       style={{
         fontFamily: "var(--rbr-font-ui)",
         background: active ? "var(--rbr-primary)" : "var(--rbr-cream)",
@@ -164,7 +165,7 @@ function Chip({
  * list - so no <audio> element exists until then, and nothing is fetched
  * for tracks nobody opened.
  */
-function AudioPlayerScreen({
+export function AudioPlayerScreen({
   brand,
   track,
   onBack,

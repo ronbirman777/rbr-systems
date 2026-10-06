@@ -123,6 +123,7 @@ export function GuidelinesStep({
                 <div>
                   <StudioLabel>{t("common", "title")}</StudioLabel>
                   <input
+                    aria-label={t("common", "title")}
                     value={g.title}
                     onChange={(e) => update(g.id, { title: e.target.value })}
                     placeholder={t("flow", "guidelineTitlePlaceholder")}
@@ -134,6 +135,7 @@ export function GuidelinesStep({
                 <div>
                   <StudioLabel>{t("common", "description")}</StudioLabel>
                   <textarea
+                    aria-label={t("common", "description")}
                     value={g.description ?? ""}
                     onChange={(e) => update(g.id, { description: e.target.value || null })}
                     placeholder={t("flow", "guidelineDescriptionPlaceholder")}
@@ -194,7 +196,7 @@ export function GuidelinesStep({
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button
           type="button"
           onClick={onBack}

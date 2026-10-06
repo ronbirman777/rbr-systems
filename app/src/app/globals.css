@@ -127,7 +127,11 @@ body {
  */
 .rbr-range {
   accent-color: var(--rbr-primary);
-  height: 24px;
+  /* 44px, not the 24px this started as: the P6 accessibility pass
+     measured the scrubber at 334x24 and a thumb needs more than that.
+     The track itself is still drawn thin and centred by the UA - the
+     extra height is hit area, which is exactly what was missing. */
+  min-height: 44px;
 }
 
 .guest-viewport {

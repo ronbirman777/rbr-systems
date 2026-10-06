@@ -195,7 +195,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
               {t("common", "done")}
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <ModuleItemPhotoField
                 tenantId={tenantId}
@@ -231,7 +231,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
                   className={STUDIO_INPUT_CLASS}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <StudioLabel>{t("flow", "openingHours")}</StudioLabel>
                   <input
@@ -258,6 +258,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
               <div>
                 <StudioLabel>{t("flow", "shortDescription")}</StudioLabel>
                 <input
+                  aria-label={t("flow", "shortDescription")}
                   value={editing.shortDescription ?? ""}
                   onChange={(e) => update(editing.id, { shortDescription: e.target.value || null })}
                   placeholder={t("flow", "facilityShortDescriptionPlaceholder")}
@@ -297,7 +298,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button
           type="button"
           onClick={onBack}
