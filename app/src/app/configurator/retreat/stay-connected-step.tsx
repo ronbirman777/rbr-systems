@@ -169,7 +169,7 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
         className="w-full border-2 border-dashed rounded-2xl py-3 text-[12px] font-medium transition-all mb-4 disabled:opacity-40"
         style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, color: GUEST_BASE_PALETTE.mist }}
       >
-        + Add Link
+        + {t("flow", "addLink")}
       </button>
 
       {state.error && (

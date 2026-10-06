@@ -250,6 +250,7 @@ export function AudioStep({
               />
               {editing.imageUrl && (
                 <FocalPointPicker
+                  locale={locale}
                   imageUrl={editing.imageUrl}
                   position={editing.metadata.imagePosition}
                   onChange={(imagePosition) => updateMeta(editing.id, { imagePosition })}

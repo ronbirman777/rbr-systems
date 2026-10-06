@@ -21,6 +21,21 @@ import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
  *      will do, instead of asking the organizer to abandon their colour.
  */
 
+/**
+ * The three graded roles, named in the reader's language. The grading data
+ * (lib/brand/accessibility.ts) is shared with tests that pin its English
+ * labels, so the label is translated here at the render site.
+ */
+const ROLE_LABEL: Record<RolePairReport["role"], "contrastRoleText" | "contrastRolePrimary" | "contrastRoleNavigation"> = {
+  text: "contrastRoleText",
+  primary: "contrastRolePrimary",
+  navigation: "contrastRoleNavigation",
+  // Accent and surface are never graded (see gradeBrandRoles); these
+  // entries exist only to keep the map total.
+  accent: "contrastRoleText",
+  surface: "contrastRoleText",
+};
+
 const TONE: Record<RolePairReport["grade"], { dot: string; text: string; prefix: string }> = {
   pass: { dot: "#4E7A5B", text: "#4E7A5B", prefix: "✓" },
   warn: { dot: "#A8643C", text: "#A8643C", prefix: "!" },
@@ -65,7 +80,7 @@ export function BrandContrastFeedback({
             <li key={report.role} className="flex items-start gap-2 text-[12px]" data-grade={report.grade} data-role={report.role}>
               <span aria-hidden="true" className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ background: tone.dot }} />
               <span className="min-w-0">
-                <span className="text-[#232926]">{report.label}</span>
+                <span className="text-[#232926]">{t("studio", ROLE_LABEL[report.role])}</span>
                 <span className="text-[#8C8A84]"> — {report.displayRatio}</span>
                 <span style={{ color: tone.text }}>
                   {" "}

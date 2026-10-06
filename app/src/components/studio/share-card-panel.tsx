@@ -38,8 +38,8 @@ export function ShareCardPanel({
       <div className="flex flex-col gap-2 min-w-0">
         <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84]">{t("studio", "shareCard")}</p>
         <p className="text-[13px] text-[#6F6C66] leading-relaxed max-w-[44ch]">
-          A ready-to-send card with your photo, your name and your QR code - for WhatsApp, email, social or printing.
-          {published ? "" : " It will be ready once you publish."}
+          {t("studio", "shareCardPanelBody")}
+          {published ? "" : ` ${t("studio", "shareCardAfterPublish")}`}
         </p>
         {published ? (
           <a

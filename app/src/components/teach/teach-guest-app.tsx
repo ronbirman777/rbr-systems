@@ -12,7 +12,7 @@ import type { TeachExploreModule, TeachItem } from "@/lib/teach/schemas";
 import { exploreModuleStatus } from "@/lib/teach/moduleVisibility";
 import { teachStyleVars, textureBackground } from "@/lib/teach/style";
 import { TEACH_FONT_VARIABLES } from "@/lib/teach/fonts";
-import { safeHttpUrl, whatsappUrl, mailtoUrl, contactEntries, formatShortDate } from "@/lib/teach/links";
+import { safeHttpUrl, whatsappUrl, mailtoUrl, contactEntries } from "@/lib/teach/links";
 import {
   availabilityOn,
   buildScheduleDays,
@@ -719,8 +719,10 @@ function ScheduleScreen({ data, desktop }: { data: TeachGuestData; desktop: bool
       </div>
       <section className="flex flex-col gap-3 px-4 @min-[40rem]:px-6">
         <p className="px-1 text-[12px] @min-[40rem]:text-[13px] font-semibold" style={{ color: "var(--rbr-text-muted)" }}>
-          {formatShortDate(date)}
-          {mode === "classes" ? ` · ${classes.length} ${classes.length === 1 ? "class" : "classes"}` : ""}
+          {formatShortDateLocalized(date, data.locale)}
+          {mode === "classes"
+            ? ` · ${classes.length === 1 ? t("teach", "classOne") : t("teach", "classesN", { count: classes.length })}`
+            : ""}
         </p>
         {mode === "classes" ? (
           classes.length > 0 ? (
@@ -730,7 +732,7 @@ function ScheduleScreen({ data, desktop }: { data: TeachGuestData; desktop: bool
               icon="calendar"
               title={data.classes.length ? t("teach", "noClassesOnDay") : t("teach", "newClassesSoon")}
               body={next ? nextClassLine(next, data.locale) : undefined}
-              action={next ? <PillButton kind="soft" onClick={() => setSelected(next.metadata.startDate)}>Go to {formatShortDate(next.metadata.startDate)}</PillButton> : undefined}
+              action={next ? <PillButton kind="soft" onClick={() => setSelected(next.metadata.startDate)}>{t("teach", "goToDate", { date: formatShortDateLocalized(next.metadata.startDate, data.locale) })}</PillButton> : undefined}
             />
           )
         ) : windows.length > 0 ? (
@@ -808,7 +810,7 @@ function ScheduleAgenda({
                 >
                   <span className="font-medium">
                     {d.date === data.todayIso ? `${t("common", "today")} · ` : ""}
-                    {formatShortDate(d.date)}
+                    {formatShortDateLocalized(d.date, data.locale)}
                   </span>
                   <span className="text-[12px]" style={{ color: "var(--rbr-text-muted)" }}>
                     {n} {mode === "classes" ? (n === 1 ? "class" : "classes") : n === 1 ? "window" : "windows"}
@@ -819,7 +821,7 @@ function ScheduleAgenda({
           </nav>
         ) : null}
         <p className="text-[12px]" style={{ color: "var(--rbr-text-muted)" }}>
-          Times are shown in {data.timezone}.
+          {t("teach", "timesShownIn", { timezone: data.timezone })}
         </p>
       </aside>
       <div className="flex flex-col gap-12 min-w-0">
@@ -841,7 +843,7 @@ function ScheduleAgenda({
           agenda.map((d) => {
             const day = new Date(`${d.date}T12:00:00Z`);
             return (
-              <section key={d.date} id={anchor(d.date)} aria-label={formatShortDate(d.date)} className="grid grid-cols-[96px_minmax(0,1fr)] gap-8 scroll-mt-28">
+              <section key={d.date} id={anchor(d.date)} aria-label={formatShortDateLocalized(d.date, data.locale)} className="grid grid-cols-[96px_minmax(0,1fr)] gap-8 scroll-mt-28">
                 <div className="sticky top-24 self-start flex flex-col items-center py-3" style={{ background: d.date === data.todayIso ? "var(--rbr-primary-soft)" : "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
                   <span className="text-[11px] font-semibold tracking-wider" style={{ color: "var(--rbr-text-muted)" }}>
                     {d.date === data.todayIso ? t("teach", "today") : shortWeekdayName(day.getUTCDay(), data.locale).toUpperCase()}

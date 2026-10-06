@@ -72,6 +72,7 @@ import { SectionHeader } from "@/components/studio/section-header";
 import { CollapsibleItemRow } from "@/components/studio/collapsible-item-row";
 import { createTranslator, translate, type Locale, type TranslationKey } from "@/lib/i18n";
 import { formatShortDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime";
+import { formatPublishedAtUtc } from "@/lib/studio/status";
 import {
   Card,
   ColorField,
@@ -1870,8 +1871,8 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
     { ok: api.canPublish, text: api.canPublish ? t("teach", "readinessAccess", { plan: api.accessLabel }) : t("teach", "readinessNoAccess"), blocking: true },
     { ok: Boolean(api.slug), text: api.slug ? t("teach", "readinessAddress", { address: `${api.slug}.innerdwes.com` }) : t("teach", "readinessNoAddress") },
     { ok: Boolean(api.heroImageRef), text: api.heroImageRef ? t("teach", "readinessImageSet") : t("teach", "readinessNoImage") },
-    { ok: api.items.teachClasses.length > 0, text: `${api.items.teachClasses.length} classes · ${api.items.teachAvailability.length} private windows` },
-    { ok: noRegistration.length === 0, text: noRegistration.length === 0 ? t("teach", "readinessRegistration") : `${noRegistration.length} class(es) have no working registration method — no join button will show` },
+    { ok: api.items.teachClasses.length > 0, text: t("teach", "readinessClassesWindows", { classes: api.items.teachClasses.length, windows: api.items.teachAvailability.length }) },
+    { ok: noRegistration.length === 0, text: noRegistration.length === 0 ? t("teach", "readinessRegistration") : t("teach", "readinessNoRegistration", { count: noRegistration.length }) },
   ];
   const blocked = checks.some((c) => c.blocking && !c.ok);
 
@@ -1918,7 +1919,7 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
           </p>
         ) : null}
         <Hint>{api.publishedAt
-            ? t("teach", "lastPublished", { timestamp: api.publishedAt.slice(0, 16).replace("T", " ") })
+            ? t("studio", "lastPublished", { timestamp: formatPublishedAtUtc(api.publishedAt) ?? "" })
             : t("teach", "notPublishedYet")}</Hint>
       </Card>
       <Card title={t("teach", "shareYourGuestApp")} description={t("teach", "shareGuestAppBody")}>

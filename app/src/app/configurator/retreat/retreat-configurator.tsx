@@ -343,7 +343,7 @@ function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: 
       </div>
       {showError && (
         <p className="text-[11px] mt-1.5" style={{ color: "#B23B3B" }} role="alert">
-          Enter a hex color like #2D4A3E (or pick one from the swatch).
+          {t("studio", "hexHint")}
         </p>
       )}
     </div>
@@ -619,7 +619,7 @@ function ScheduleEditor({
         className="w-full border-2 border-dashed rounded-2xl py-3 text-[12px] font-medium transition-all mb-4"
         style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, color: GUEST_BASE_PALETTE.mist }}
       >
-        + Add Session
+        + {t("flow", "addSession")}
       </button>
 
       {editing && (
@@ -949,6 +949,7 @@ function TeamEditor({
                   />
                   {f.imageUrl && (
                     <FocalPointPicker
+                      locale={locale}
                       imageUrl={f.imageUrl}
                       position={f.imagePosition}
                       onChange={(imagePosition) => updateFacilitator(f.id, { imagePosition })}
@@ -1128,7 +1129,7 @@ function TeamEditor({
                     className="text-[11px] font-medium"
                     style={{ color: GUEST_BASE_PALETTE.forest }}
                   >
-                    + Add social link
+                    + {t("flow", "addSocialLink")}
                   </button>
                 )}
               </div>
@@ -2190,8 +2191,7 @@ export function RetreatConfigurator({
             <input type="hidden" name="customText" value={customText ?? ""} />
             <input type="hidden" name="customSurface" value={customSurface ?? ""} />
             <StudioHeading>{t("flow", "brandTitle")}</StudioHeading>
-      <StudioIntro>Choose colors that reflect your retreat&apos;s energy. InnerDweS ensures they work beautifully across
-              your entire guest application.</StudioIntro>
+      <StudioIntro>{t("flow", "brandBody")}</StudioIntro>
 
             <div className="mb-8">
               <BrandPresetChips
@@ -2314,8 +2314,9 @@ export function RetreatConfigurator({
                   {readabilityPasses ? t("studio", "contrastGood") : t("studio", "contrastLow")}
                 </p>
                 <p className="text-[11px] mt-0.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                  {readabilityTextColor === "#FBF9F5" ? t("studio", "swatchWhite") : t("studio", "swatchDark")} text on this color{" "}
-                  {readabilityPasses ? "meets" : "may not meet"} accessibility standards.
+                  {t("studio", readabilityPasses ? "contrastMeets" : "contrastMayNotMeet", {
+                    colour: readabilityTextColor === "#FBF9F5" ? t("studio", "swatchWhite") : t("studio", "swatchDark"),
+                  })}
                 </p>
               </div>
               <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: readabilityPasses ? GUEST_BASE_PALETTE.sage : GUEST_BASE_PALETTE.clay }} />
@@ -2388,8 +2389,7 @@ export function RetreatConfigurator({
               <input key={key} type="hidden" name={`module_${key}`} value={enabledModules.has(key) ? "on" : "off"} />
             ))}
             <StudioHeading>{t("flow", "modulesTitle")}</StudioHeading>
-      <StudioIntro>Enable the experiences that are part of your retreat. Disabled modules won&apos;t appear in the guest
-              app. You can change this any time.</StudioIntro>
+      <StudioIntro>{t("flow", "modulesBody")}</StudioIntro>
 
             <div className="space-y-2.5">
               {IMPLEMENTED_OPTIONAL_MODULES.map((key) => {
@@ -2443,6 +2443,7 @@ export function RetreatConfigurator({
                     {supportsCover && tenantId && (
                       <>
                         <ModuleCoverPhotoField
+                          locale={spaceLocale}
                           tenantId={tenantId}
                           moduleKey={key}
                           imageRef={moduleCovers[key]?.imageRef ?? null}
@@ -2459,6 +2460,7 @@ export function RetreatConfigurator({
                         />
                         {moduleCovers[key]?.imageUrl && (
                           <FocalPointPicker
+                            locale={spaceLocale}
                             imageUrl={moduleCovers[key].imageUrl!}
                             position={moduleCovers[key]?.imagePosition ?? null}
                             onChange={(position) => {
@@ -2725,9 +2727,9 @@ export function RetreatConfigurator({
                 <div className="rounded-2xl border border-[#E2DACD] bg-white p-5" data-testid="publish-status-card">
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <StatusPill state={studioPublishState(currentPublishedAt)} locale={spaceLocale} />
-                    {formatPublishedAtUtc(currentPublishedAt) && (
+                    {currentPublishedAt && (
                       <span className="text-[12px] text-[#8C8A84]">
-                        Last published {formatPublishedAtUtc(currentPublishedAt)}
+                        {t("studio", "lastPublished", { timestamp: formatPublishedAtUtc(currentPublishedAt) ?? "" })}
                       </span>
                     )}
                   </div>

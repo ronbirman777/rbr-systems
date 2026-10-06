@@ -214,7 +214,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
         className="w-full border-2 border-dashed rounded-2xl py-3 text-[12px] font-medium transition-all mb-4"
         style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, color: GUEST_BASE_PALETTE.mist }}
       >
-        + Add Treatment
+        + {t("flow", "addTreatment")}
       </button>
 
       {editing && (
@@ -246,6 +246,7 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
               />
               {editing.imageUrl && (
                 <FocalPointPicker
+                  locale={locale}
                   imageUrl={editing.imageUrl}
                   position={editing.imagePosition}
                   onChange={(imagePosition) => update(editing.id, { imagePosition })}

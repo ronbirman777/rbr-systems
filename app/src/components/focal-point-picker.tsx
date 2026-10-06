@@ -2,6 +2,7 @@
 
 import { useRef, type KeyboardEvent, type MouseEvent as ReactMouseEvent } from "react";
 import { clampImagePosition, type ImagePosition } from "@/lib/modules/imagePosition";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 
 const KEYBOARD_STEP = 2;
 
@@ -14,6 +15,8 @@ export type FocalPointPickerProps = {
    * established, evidenced reason to differ (see TeamEditor's "center
    * top" bias for facilitator headshots, preserved deliberately). */
   defaultPosition?: { x: number; y: number };
+  /** The Space's system language, for this control's own instructions. */
+  locale?: Locale;
   /** Tailwind `aspect-[]` value for the preview box - should match this
    * surface's real guest render shape as closely as practical, so the
    * preview crop the organizer sees while choosing a focus point is the
@@ -51,7 +54,9 @@ export function FocalPointPicker({
   defaultPosition = { x: 50, y: 50 },
   aspect = "4/3",
   label,
+  locale = DEFAULT_LOCALE,
 }: FocalPointPickerProps) {
+  const { t } = createTranslator(locale);
   const containerRef = useRef<HTMLDivElement>(null);
   const x = position?.x ?? defaultPosition.x;
   const y = position?.y ?? defaultPosition.y;
@@ -96,8 +101,7 @@ export function FocalPointPicker({
   return (
     <div className="mt-3">
       <p id={instructionsId} className="text-[11px] mb-1.5 text-idw-forest/50">
-        Click or tap the image to choose which area should stay in frame. With the image focused, use the arrow keys
-        to fine-tune.
+        {t("studio", "focalHint")}
       </p>
       <div
         ref={containerRef}
@@ -132,7 +136,7 @@ export function FocalPointPicker({
         />
       </div>
       <span className="sr-only" aria-live="polite">
-        Focus point set to {Math.round(x)} percent from left, {Math.round(y)} percent from top.
+        {t("studio", "focalPointSet", { x: Math.round(x), y: Math.round(y) })}
       </span>
       {position !== null && (
         <button

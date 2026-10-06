@@ -117,7 +117,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
       <StudioHeading>{t("flow", "customPagesStepTitle")}</StudioHeading>
       <StudioIntro>{t("flow", "customPagesStepBody")}</StudioIntro>
       <p className="text-[11px] mb-4" style={{ color: GUEST_BASE_PALETTE.mist }}>
-        {customPages.length} of {DEFAULT_CUSTOM_PAGES_LIMIT} pages used
+        {t("flow", "pagesUsed", { used: customPages.length, limit: DEFAULT_CUSTOM_PAGES_LIMIT })}
       </p>
 
       <div className="space-y-2 mb-4">
@@ -185,7 +185,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
           className="w-full border-2 border-dashed rounded-2xl py-3 text-[12px] font-medium transition-all mb-4"
           style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, color: GUEST_BASE_PALETTE.mist }}
         >
-          + Add Page
+          + {t("flow", "addPage")}
         </button>
       )}
 
@@ -217,6 +217,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
               />
               {editing.imageUrl && (
                 <FocalPointPicker
+                  locale={locale}
                   imageUrl={editing.imageUrl}
                   position={editing.imagePosition}
                   onChange={(imagePosition) => update(editing.id, { imagePosition })}

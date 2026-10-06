@@ -28,8 +28,8 @@ export function QrCodeCard({
       <div className="flex flex-col gap-2 min-w-0">
         <p className="text-[10.5px] tracking-[0.14em] uppercase font-semibold text-[#8C8A84]">{t("studio", "qrCode")}</p>
         <p className="text-[13px] text-[#6F6C66] leading-relaxed max-w-[44ch]">
-          Print it or show it on a screen - guests scan it to open your Guest App.
-          {published ? "" : " It will work once you publish."}
+          {t("studio", "qrCardBody")}
+          {published ? "" : ` ${t("studio", "qrWorksAfterPublish")}`}
         </p>
         {published ? (
           <a

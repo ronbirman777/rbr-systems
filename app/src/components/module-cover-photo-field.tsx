@@ -10,6 +10,7 @@ import {
 import { enqueueItemOp } from "@/lib/modules/persistItem";
 import { validateImageFile, classifyServerImageError } from "@/lib/media/clientValidation";
 import { ImageUploadErrorDialog } from "@/components/image-upload-error-dialog";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 
 const uploadInitialState: UploadModuleCoverPhotoState = { error: null, imageRef: null, imageUrl: null };
 const removeInitialState: RemoveModuleCoverPhotoState = { error: null };
@@ -20,6 +21,8 @@ export type ModuleCoverPhotoFieldProps = {
   imageRef: string | null;
   imageUrl: string | null;
   onChange: (patch: { imageRef: string | null; imageUrl: string | null }) => void;
+  /** The Space's system language, for this control's own labels. */
+  locale?: Locale;
 };
 
 /**
@@ -36,7 +39,8 @@ export type ModuleCoverPhotoFieldProps = {
  * queued-op ordering guarantee) so this reads as the same feature, not a
  * second design.
  */
-export function ModuleCoverPhotoField({ tenantId, moduleKey, imageRef, imageUrl, onChange }: ModuleCoverPhotoFieldProps) {
+export function ModuleCoverPhotoField({ tenantId, moduleKey, imageRef, imageUrl, onChange, locale = DEFAULT_LOCALE }: ModuleCoverPhotoFieldProps) {
+  const { t } = createTranslator(locale);
   const [uploadPending, setUploadPending] = useState(false);
   const [removeState, setRemoveState] = useState<RemoveModuleCoverPhotoState>(removeInitialState);
   const [removePending, setRemovePending] = useState(false);
@@ -102,7 +106,7 @@ export function ModuleCoverPhotoField({ tenantId, moduleKey, imageRef, imageUrl,
         disabled={uploadPending}
         className="text-[11px] font-semibold text-idw-forest underline disabled:opacity-50"
       >
-        {uploadPending ? "Uploading…" : imageUrl ? "Replace cover image" : "Add cover image"}
+        {uploadPending ? t("common", "uploading") : imageUrl ? t("studio", "replaceCoverImage") : t("studio", "addCoverImage")}
       </button>
 
       {imageRef && (
