@@ -939,6 +939,7 @@ function TeamEditor({
               {isEditing && (
                 <div className="px-3 pb-3">
                   <ModuleItemPhotoField
+                    locale={locale}
                     tenantId={tenantId}
                     moduleKey="facilitators"
                     itemId={f.id}

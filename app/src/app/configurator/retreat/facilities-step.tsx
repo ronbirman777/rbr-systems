@@ -198,6 +198,7 @@ export function FacilitiesStep({ tenantId, facilities, setFacilities, onBack, on
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <ModuleItemPhotoField
+                locale={locale}
                 tenantId={tenantId}
                 moduleKey="facilities"
                 itemId={editing.id}

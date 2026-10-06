@@ -10,6 +10,7 @@ import {
 import { enqueueItemOp } from "@/lib/modules/persistItem";
 import { validateImageFile, classifyServerImageError } from "@/lib/media/clientValidation";
 import { ImageUploadErrorDialog } from "@/components/image-upload-error-dialog";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 
 const uploadInitialState: UploadModuleItemPhotoState = { error: null, imageRef: null, imageUrl: null };
 const removeInitialState: RemoveModuleItemPhotoState = { error: null };
@@ -27,6 +28,8 @@ export type ModuleItemPhotoFieldProps = {
   sortOrder: number;
   imageRef: string | null;
   imageUrl: string | null | undefined;
+  /** The Space's system language, for this control's own labels. */
+  locale?: Locale;
   onChange: (patch: { imageRef: string | null; imageUrl: string | null }) => void;
   /** Tailwind `aspect-[]` value (e.g. "13/10") matching this item's ACTUAL
    * guest-app render box, so the preview thumbnail is cropped the same way
@@ -70,7 +73,9 @@ export function ModuleItemPhotoField({
   previewAspect = "1/1",
   previewPosition = "center",
   ratioHint,
+  locale = DEFAULT_LOCALE,
 }: ModuleItemPhotoFieldProps) {
+  const { t } = createTranslator(locale);
   const [uploadPending, setUploadPending] = useState(false);
   const [removeState, setRemoveState] = useState<RemoveModuleItemPhotoState>(removeInitialState);
   const [removePending, setRemovePending] = useState(false);
@@ -159,7 +164,7 @@ export function ModuleItemPhotoField({
           disabled={uploadPending}
           className="text-xs font-semibold text-idw-forest underline disabled:opacity-50"
         >
-          {uploadPending ? "Uploading…" : imageUrl ? "Replace photo" : "Upload photo"}
+          {uploadPending ? t("common", "uploading") : imageUrl ? t("studio", "replacePhoto") : t("studio", "uploadPhoto")}
         </button>
 
         {imageRef && (
@@ -175,7 +180,7 @@ export function ModuleItemPhotoField({
       </div>
 
       <p className="text-[11px] text-idw-forest/40 mt-1.5">
-        Images up to 8MB. We automatically optimize them for fast loading.
+        {t("studio", "imageOptimizeHint")}
         {ratioHint ? ` ${ratioHint}` : ""}
       </p>
 

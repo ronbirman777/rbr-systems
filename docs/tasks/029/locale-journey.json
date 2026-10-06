@@ -1,0 +1,2289 @@
+{
+ "base": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app",
+ "widths": {
+  "320": {
+   "total": 64,
+   "failed": 0,
+   "results": [
+    {
+     "name": "login: the QA owner reaches My Spaces through the normal form",
+     "pass": true,
+     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+    },
+    {
+     "name": "Flow: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Flow: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "DeutschRecommended"
+    },
+    {
+     "name": "Flow/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Flow/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Tell us about your retreat\" got \"Tell us about your retreat\""
+    },
+    {
+     "name": "Flow/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Today/Schedule/Team/Explore got Today/Schedule/Team/Explore"
+    },
+    {
+     "name": "Flow/en@320: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Flow/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Erzähl uns von deinem Retreat\" got \"Erzähl uns von deinem Retreat\""
+    },
+    {
+     "name": "Flow/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Heute/Zeitplan/Team/Entdecken got Heute/Zeitplan/Team/Entdecken"
+    },
+    {
+     "name": "Flow/de@320: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Flow/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Cuéntanos sobre tu retiro\" got \"Cuéntanos sobre tu retiro\""
+    },
+    {
+     "name": "Flow/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Hoy/Programa/Equipo/Descubre got Hoy/Programa/Equipo/Descubre"
+    },
+    {
+     "name": "Flow/es@320: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Flow/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Parlez-nous de votre retraite\" got \"Parlez-nous de votre retraite\""
+    },
+    {
+     "name": "Flow/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Aujourd’hui/Programme/Équipe/Explorer got Aujourd’hui/Programme/Équipe/Explorer"
+    },
+    {
+     "name": "Flow/fr@320: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Flow/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Flow/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"ספרו לנו על הריטריט\" got \"ספרו לנו על הריטריט\""
+    },
+    {
+     "name": "Flow/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want היום/לוח זמנים/הצוות/גלו got היום/לוח זמנים/הצוות/גלו"
+    },
+    {
+     "name": "Flow/he@320: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Flow: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Teach: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "(none badged)"
+    },
+    {
+     "name": "Teach/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "he -> en, noReload=true"
+    },
+    {
+     "name": "Teach/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Identity\" got \"Identity\""
+    },
+    {
+     "name": "Teach/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Home/Schedule/About Me/Explore got Home/Schedule/About Me/Explore"
+    },
+    {
+     "name": "Teach/en@320: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Teach/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Identität\" got \"Identität\""
+    },
+    {
+     "name": "Teach/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Start/Zeitplan/Über mich/Entdecken got Start/Zeitplan/Über mich/Entdecken"
+    },
+    {
+     "name": "Teach/de@320: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Teach/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Identidad\" got \"Identidad\""
+    },
+    {
+     "name": "Teach/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Inicio/Horarios/Sobre mí/Descubre got Inicio/Horarios/Sobre mí/Descubre"
+    },
+    {
+     "name": "Teach/es@320: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Teach/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Identité\" got \"Identité\""
+    },
+    {
+     "name": "Teach/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Accueil/Horaires/À propos de moi/Explorer got Accueil/Horaires/À propos de moi/Explorer"
+    },
+    {
+     "name": "Teach/fr@320: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Teach/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Teach/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"זהות\" got \"זהות\""
+    },
+    {
+     "name": "Teach/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want בית/לוח שיעורים/עליי/גלו got בית/לוח שיעורים/עליי/גלו"
+    },
+    {
+     "name": "Teach/he@320: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "no uncaught client errors during the whole journey",
+     "pass": true,
+     "detail": ""
+    }
+   ]
+  },
+  "390": {
+   "total": 64,
+   "failed": 0,
+   "results": [
+    {
+     "name": "login: the QA owner reaches My Spaces through the normal form",
+     "pass": true,
+     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+    },
+    {
+     "name": "Flow: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Flow: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "DeutschRecommended"
+    },
+    {
+     "name": "Flow/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Flow/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Tell us about your retreat\" got \"Tell us about your retreat\""
+    },
+    {
+     "name": "Flow/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Today/Schedule/Team/Explore got Today/Schedule/Team/Explore"
+    },
+    {
+     "name": "Flow/en@390: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Flow/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Erzähl uns von deinem Retreat\" got \"Erzähl uns von deinem Retreat\""
+    },
+    {
+     "name": "Flow/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Heute/Zeitplan/Team/Entdecken got Heute/Zeitplan/Team/Entdecken"
+    },
+    {
+     "name": "Flow/de@390: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Flow/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Cuéntanos sobre tu retiro\" got \"Cuéntanos sobre tu retiro\""
+    },
+    {
+     "name": "Flow/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Hoy/Programa/Equipo/Descubre got Hoy/Programa/Equipo/Descubre"
+    },
+    {
+     "name": "Flow/es@390: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Flow/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Parlez-nous de votre retraite\" got \"Parlez-nous de votre retraite\""
+    },
+    {
+     "name": "Flow/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Aujourd’hui/Programme/Équipe/Explorer got Aujourd’hui/Programme/Équipe/Explorer"
+    },
+    {
+     "name": "Flow/fr@390: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Flow/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Flow/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"ספרו לנו על הריטריט\" got \"ספרו לנו על הריטריט\""
+    },
+    {
+     "name": "Flow/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want היום/לוח זמנים/הצוות/גלו got היום/לוח זמנים/הצוות/גלו"
+    },
+    {
+     "name": "Flow/he@390: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Flow: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Teach: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "(none badged)"
+    },
+    {
+     "name": "Teach/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Teach/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Identity\" got \"Identity\""
+    },
+    {
+     "name": "Teach/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Home/Schedule/About Me/Explore got Home/Schedule/About Me/Explore"
+    },
+    {
+     "name": "Teach/en@390: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Teach/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Identität\" got \"Identität\""
+    },
+    {
+     "name": "Teach/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Start/Zeitplan/Über mich/Entdecken got Start/Zeitplan/Über mich/Entdecken"
+    },
+    {
+     "name": "Teach/de@390: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Teach/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Identidad\" got \"Identidad\""
+    },
+    {
+     "name": "Teach/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Inicio/Horarios/Sobre mí/Descubre got Inicio/Horarios/Sobre mí/Descubre"
+    },
+    {
+     "name": "Teach/es@390: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Teach/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Identité\" got \"Identité\""
+    },
+    {
+     "name": "Teach/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Accueil/Horaires/À propos de moi/Explorer got Accueil/Horaires/À propos de moi/Explorer"
+    },
+    {
+     "name": "Teach/fr@390: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Teach/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Teach/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"זהות\" got \"זהות\""
+    },
+    {
+     "name": "Teach/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want בית/לוח שיעורים/עליי/גלו got בית/לוח שיעורים/עליי/גלו"
+    },
+    {
+     "name": "Teach/he@390: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "no uncaught client errors during the whole journey",
+     "pass": true,
+     "detail": ""
+    }
+   ]
+  },
+  "430": {
+   "total": 64,
+   "failed": 0,
+   "results": [
+    {
+     "name": "login: the QA owner reaches My Spaces through the normal form",
+     "pass": true,
+     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+    },
+    {
+     "name": "Flow: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Flow: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "DeutschRecommended"
+    },
+    {
+     "name": "Flow/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Flow/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Tell us about your retreat\" got \"Tell us about your retreat\""
+    },
+    {
+     "name": "Flow/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Today/Schedule/Team/Explore got Today/Schedule/Team/Explore"
+    },
+    {
+     "name": "Flow/en@430: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Flow/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Erzähl uns von deinem Retreat\" got \"Erzähl uns von deinem Retreat\""
+    },
+    {
+     "name": "Flow/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Heute/Zeitplan/Team/Entdecken got Heute/Zeitplan/Team/Entdecken"
+    },
+    {
+     "name": "Flow/de@430: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Flow/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Cuéntanos sobre tu retiro\" got \"Cuéntanos sobre tu retiro\""
+    },
+    {
+     "name": "Flow/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Hoy/Programa/Equipo/Descubre got Hoy/Programa/Equipo/Descubre"
+    },
+    {
+     "name": "Flow/es@430: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Flow/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Parlez-nous de votre retraite\" got \"Parlez-nous de votre retraite\""
+    },
+    {
+     "name": "Flow/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Aujourd’hui/Programme/Équipe/Explorer got Aujourd’hui/Programme/Équipe/Explorer"
+    },
+    {
+     "name": "Flow/fr@430: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Flow/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Flow/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"ספרו לנו על הריטריט\" got \"ספרו לנו על הריטריט\""
+    },
+    {
+     "name": "Flow/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want היום/לוח זמנים/הצוות/גלו got היום/לוח זמנים/הצוות/גלו"
+    },
+    {
+     "name": "Flow/he@430: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Flow: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Teach: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "(none badged)"
+    },
+    {
+     "name": "Teach/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Teach/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Identity\" got \"Identity\""
+    },
+    {
+     "name": "Teach/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Home/Schedule/About Me/Explore got Home/Schedule/About Me/Explore"
+    },
+    {
+     "name": "Teach/en@430: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Teach/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Identität\" got \"Identität\""
+    },
+    {
+     "name": "Teach/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Start/Zeitplan/Über mich/Entdecken got Start/Zeitplan/Über mich/Entdecken"
+    },
+    {
+     "name": "Teach/de@430: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Teach/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Identidad\" got \"Identidad\""
+    },
+    {
+     "name": "Teach/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Inicio/Horarios/Sobre mí/Descubre got Inicio/Horarios/Sobre mí/Descubre"
+    },
+    {
+     "name": "Teach/es@430: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Teach/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Identité\" got \"Identité\""
+    },
+    {
+     "name": "Teach/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Accueil/Horaires/À propos de moi/Explorer got Accueil/Horaires/À propos de moi/Explorer"
+    },
+    {
+     "name": "Teach/fr@430: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Teach/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Teach/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"זהות\" got \"זהות\""
+    },
+    {
+     "name": "Teach/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want בית/לוח שיעורים/עליי/גלו got בית/לוח שיעורים/עליי/גלו"
+    },
+    {
+     "name": "Teach/he@430: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "no uncaught client errors during the whole journey",
+     "pass": true,
+     "detail": ""
+    }
+   ]
+  },
+  "768": {
+   "total": 64,
+   "failed": 0,
+   "results": [
+    {
+     "name": "login: the QA owner reaches My Spaces through the normal form",
+     "pass": true,
+     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+    },
+    {
+     "name": "Flow: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Flow: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "DeutschRecommended"
+    },
+    {
+     "name": "Flow/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Flow/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Tell us about your retreat\" got \"Tell us about your retreat\""
+    },
+    {
+     "name": "Flow/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Today/Schedule/Team/Explore got Today/Schedule/Team/Explore"
+    },
+    {
+     "name": "Flow/en@768: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Flow/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Erzähl uns von deinem Retreat\" got \"Erzähl uns von deinem Retreat\""
+    },
+    {
+     "name": "Flow/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Heute/Zeitplan/Team/Entdecken got Heute/Zeitplan/Team/Entdecken"
+    },
+    {
+     "name": "Flow/de@768: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Flow/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Cuéntanos sobre tu retiro\" got \"Cuéntanos sobre tu retiro\""
+    },
+    {
+     "name": "Flow/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Hoy/Programa/Equipo/Descubre got Hoy/Programa/Equipo/Descubre"
+    },
+    {
+     "name": "Flow/es@768: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Flow/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Parlez-nous de votre retraite\" got \"Parlez-nous de votre retraite\""
+    },
+    {
+     "name": "Flow/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Aujourd’hui/Programme/Équipe/Explorer got Aujourd’hui/Programme/Équipe/Explorer"
+    },
+    {
+     "name": "Flow/fr@768: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Flow/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Flow/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"ספרו לנו על הריטריט\" got \"ספרו לנו על הריטריט\""
+    },
+    {
+     "name": "Flow/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want היום/לוח זמנים/הצוות/גלו got היום/לוח זמנים/הצוות/גלו"
+    },
+    {
+     "name": "Flow/he@768: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Flow: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Teach: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "(none badged)"
+    },
+    {
+     "name": "Teach/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Teach/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Identity\" got \"Identity\""
+    },
+    {
+     "name": "Teach/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Home/Schedule/About Me/Explore got Home/Schedule/About Me/Explore"
+    },
+    {
+     "name": "Teach/en@768: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Teach/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Identität\" got \"Identität\""
+    },
+    {
+     "name": "Teach/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Start/Zeitplan/Über mich/Entdecken got Start/Zeitplan/Über mich/Entdecken"
+    },
+    {
+     "name": "Teach/de@768: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Teach/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Identidad\" got \"Identidad\""
+    },
+    {
+     "name": "Teach/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Inicio/Horarios/Sobre mí/Descubre got Inicio/Horarios/Sobre mí/Descubre"
+    },
+    {
+     "name": "Teach/es@768: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Teach/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Identité\" got \"Identité\""
+    },
+    {
+     "name": "Teach/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Accueil/Horaires/À propos de moi/Explorer got Accueil/Horaires/À propos de moi/Explorer"
+    },
+    {
+     "name": "Teach/fr@768: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Teach/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Teach/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"זהות\" got \"זהות\""
+    },
+    {
+     "name": "Teach/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want בית/לוח שיעורים/עליי/גלו got בית/לוח שיעורים/עליי/גלו"
+    },
+    {
+     "name": "Teach/he@768: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "no uncaught client errors during the whole journey",
+     "pass": true,
+     "detail": ""
+    }
+   ]
+  },
+  "820": {
+   "total": 64,
+   "failed": 0,
+   "results": [
+    {
+     "name": "login: the QA owner reaches My Spaces through the normal form",
+     "pass": true,
+     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+    },
+    {
+     "name": "Flow: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Flow: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "DeutschRecommended"
+    },
+    {
+     "name": "Flow/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Flow/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Tell us about your retreat\" got \"Tell us about your retreat\""
+    },
+    {
+     "name": "Flow/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Today/Schedule/Team/Explore got Today/Schedule/Team/Explore"
+    },
+    {
+     "name": "Flow/en@820: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Flow/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Erzähl uns von deinem Retreat\" got \"Erzähl uns von deinem Retreat\""
+    },
+    {
+     "name": "Flow/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Heute/Zeitplan/Team/Entdecken got Heute/Zeitplan/Team/Entdecken"
+    },
+    {
+     "name": "Flow/de@820: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Flow/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Cuéntanos sobre tu retiro\" got \"Cuéntanos sobre tu retiro\""
+    },
+    {
+     "name": "Flow/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Hoy/Programa/Equipo/Descubre got Hoy/Programa/Equipo/Descubre"
+    },
+    {
+     "name": "Flow/es@820: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Flow/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Parlez-nous de votre retraite\" got \"Parlez-nous de votre retraite\""
+    },
+    {
+     "name": "Flow/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Aujourd’hui/Programme/Équipe/Explorer got Aujourd’hui/Programme/Équipe/Explorer"
+    },
+    {
+     "name": "Flow/fr@820: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Flow/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Flow/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"ספרו לנו על הריטריט\" got \"ספרו לנו על הריטריט\""
+    },
+    {
+     "name": "Flow/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want היום/לוח זמנים/הצוות/גלו got היום/לוח זמנים/הצוות/גלו"
+    },
+    {
+     "name": "Flow/he@820: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Flow: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Teach: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "(none badged)"
+    },
+    {
+     "name": "Teach/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Teach/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Identity\" got \"Identity\""
+    },
+    {
+     "name": "Teach/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Home/Schedule/About Me/Explore got Home/Schedule/About Me/Explore"
+    },
+    {
+     "name": "Teach/en@820: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Teach/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Identität\" got \"Identität\""
+    },
+    {
+     "name": "Teach/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Start/Zeitplan/Über mich/Entdecken got Start/Zeitplan/Über mich/Entdecken"
+    },
+    {
+     "name": "Teach/de@820: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Teach/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Identidad\" got \"Identidad\""
+    },
+    {
+     "name": "Teach/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Inicio/Horarios/Sobre mí/Descubre got Inicio/Horarios/Sobre mí/Descubre"
+    },
+    {
+     "name": "Teach/es@820: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Teach/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Identité\" got \"Identité\""
+    },
+    {
+     "name": "Teach/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Accueil/Horaires/À propos de moi/Explorer got Accueil/Horaires/À propos de moi/Explorer"
+    },
+    {
+     "name": "Teach/fr@820: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Teach/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Teach/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"זהות\" got \"זהות\""
+    },
+    {
+     "name": "Teach/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want בית/לוח שיעורים/עליי/גלו got בית/לוח שיעורים/עליי/גלו"
+    },
+    {
+     "name": "Teach/he@820: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "no uncaught client errors during the whole journey",
+     "pass": true,
+     "detail": ""
+    }
+   ]
+  },
+  "1024": {
+   "total": 64,
+   "failed": 0,
+   "results": [
+    {
+     "name": "login: the QA owner reaches My Spaces through the normal form",
+     "pass": true,
+     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+    },
+    {
+     "name": "Flow: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Flow: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "DeutschRecommended"
+    },
+    {
+     "name": "Flow/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Flow/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Tell us about your retreat\" got \"Tell us about your retreat\""
+    },
+    {
+     "name": "Flow/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Today/Schedule/Team/Explore got Today/Schedule/Team/Explore"
+    },
+    {
+     "name": "Flow/en@1024: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Flow/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Erzähl uns von deinem Retreat\" got \"Erzähl uns von deinem Retreat\""
+    },
+    {
+     "name": "Flow/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Heute/Zeitplan/Team/Entdecken got Heute/Zeitplan/Team/Entdecken"
+    },
+    {
+     "name": "Flow/de@1024: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Flow/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Cuéntanos sobre tu retiro\" got \"Cuéntanos sobre tu retiro\""
+    },
+    {
+     "name": "Flow/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Hoy/Programa/Equipo/Descubre got Hoy/Programa/Equipo/Descubre"
+    },
+    {
+     "name": "Flow/es@1024: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Flow/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Parlez-nous de votre retraite\" got \"Parlez-nous de votre retraite\""
+    },
+    {
+     "name": "Flow/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Aujourd’hui/Programme/Équipe/Explorer got Aujourd’hui/Programme/Équipe/Explorer"
+    },
+    {
+     "name": "Flow/fr@1024: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Flow/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Flow/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"ספרו לנו על הריטריט\" got \"ספרו לנו על הריטריט\""
+    },
+    {
+     "name": "Flow/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want היום/לוח זמנים/הצוות/גלו got היום/לוח זמנים/הצוות/גלו"
+    },
+    {
+     "name": "Flow/he@1024: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Flow: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Teach: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "(none badged)"
+    },
+    {
+     "name": "Teach/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Teach/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Identity\" got \"Identity\""
+    },
+    {
+     "name": "Teach/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Home/Schedule/About Me/Explore got Home/Schedule/About Me/Explore"
+    },
+    {
+     "name": "Teach/en@1024: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Teach/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Identität\" got \"Identität\""
+    },
+    {
+     "name": "Teach/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Start/Zeitplan/Über mich/Entdecken got Start/Zeitplan/Über mich/Entdecken"
+    },
+    {
+     "name": "Teach/de@1024: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Teach/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Identidad\" got \"Identidad\""
+    },
+    {
+     "name": "Teach/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Inicio/Horarios/Sobre mí/Descubre got Inicio/Horarios/Sobre mí/Descubre"
+    },
+    {
+     "name": "Teach/es@1024: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Teach/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Identité\" got \"Identité\""
+    },
+    {
+     "name": "Teach/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Accueil/Horaires/À propos de moi/Explorer got Accueil/Horaires/À propos de moi/Explorer"
+    },
+    {
+     "name": "Teach/fr@1024: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Teach/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Teach/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"זהות\" got \"זהות\""
+    },
+    {
+     "name": "Teach/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want בית/לוח שיעורים/עליי/גלו got בית/לוח שיעורים/עליי/גלו"
+    },
+    {
+     "name": "Teach/he@1024: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "no uncaught client errors during the whole journey",
+     "pass": true,
+     "detail": ""
+    }
+   ]
+  },
+  "1440": {
+   "total": 64,
+   "failed": 0,
+   "results": [
+    {
+     "name": "login: the QA owner reaches My Spaces through the normal form",
+     "pass": true,
+     "detail": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app/space"
+    },
+    {
+     "name": "Flow: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Flow: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | DeutschRecommended | Español | Français | עברית"
+    },
+    {
+     "name": "Flow: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "DeutschRecommended"
+    },
+    {
+     "name": "Flow/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Flow/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Tell us about your retreat\" got \"Tell us about your retreat\""
+    },
+    {
+     "name": "Flow/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Today/Schedule/Team/Explore got Today/Schedule/Team/Explore"
+    },
+    {
+     "name": "Flow/en@1440: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Flow/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Erzähl uns von deinem Retreat\" got \"Erzähl uns von deinem Retreat\""
+    },
+    {
+     "name": "Flow/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Heute/Zeitplan/Team/Entdecken got Heute/Zeitplan/Team/Entdecken"
+    },
+    {
+     "name": "Flow/de@1440: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Flow/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Cuéntanos sobre tu retiro\" got \"Cuéntanos sobre tu retiro\""
+    },
+    {
+     "name": "Flow/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Hoy/Programa/Equipo/Descubre got Hoy/Programa/Equipo/Descubre"
+    },
+    {
+     "name": "Flow/es@1440: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Flow/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Flow/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Parlez-nous de votre retraite\" got \"Parlez-nous de votre retraite\""
+    },
+    {
+     "name": "Flow/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Aujourd’hui/Programme/Équipe/Explorer got Aujourd’hui/Programme/Équipe/Explorer"
+    },
+    {
+     "name": "Flow/fr@1440: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Flow/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Flow/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"ספרו לנו על הריטריט\" got \"ספרו לנו על הריטריט\""
+    },
+    {
+     "name": "Flow/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want היום/לוח זמנים/הצוות/גלו got היום/לוח זמנים/הצוות/גלו"
+    },
+    {
+     "name": "Flow/he@1440: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Flow: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Flow: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: the Studio loads for a Space this owner belongs to",
+     "pass": true,
+     "detail": "InnerDweS · Digital Wellness Solutions"
+    },
+    {
+     "name": "Teach: exactly five languages are offered",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: the order is English / Deutsch / Español / Français / עברית",
+     "pass": true,
+     "detail": "English | Deutsch | Español | Français | עברית"
+    },
+    {
+     "name": "Teach: a recommendation badges an option, it does not reorder the list",
+     "pass": true,
+     "detail": "(none badged)"
+    },
+    {
+     "name": "Teach/en: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> en, noReload=true"
+    },
+    {
+     "name": "Teach/en: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/en: the Studio heading is the en string",
+     "pass": true,
+     "detail": "want \"Identity\" got \"Identity\""
+    },
+    {
+     "name": "Teach/en: the Live Draft Preview navigation is already in en",
+     "pass": true,
+     "detail": "want Home/Schedule/About Me/Explore got Home/Schedule/About Me/Explore"
+    },
+    {
+     "name": "Teach/en@1440: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/de: the shell switches language with no reload",
+     "pass": true,
+     "detail": "en -> de, noReload=true"
+    },
+    {
+     "name": "Teach/de: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/de: the Studio heading is the de string",
+     "pass": true,
+     "detail": "want \"Identität\" got \"Identität\""
+    },
+    {
+     "name": "Teach/de: the Live Draft Preview navigation is already in de",
+     "pass": true,
+     "detail": "want Start/Zeitplan/Über mich/Entdecken got Start/Zeitplan/Über mich/Entdecken"
+    },
+    {
+     "name": "Teach/de@1440: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/es: the shell switches language with no reload",
+     "pass": true,
+     "detail": "de -> es, noReload=true"
+    },
+    {
+     "name": "Teach/es: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/es: the Studio heading is the es string",
+     "pass": true,
+     "detail": "want \"Identidad\" got \"Identidad\""
+    },
+    {
+     "name": "Teach/es: the Live Draft Preview navigation is already in es",
+     "pass": true,
+     "detail": "want Inicio/Horarios/Sobre mí/Descubre got Inicio/Horarios/Sobre mí/Descubre"
+    },
+    {
+     "name": "Teach/es@1440: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/fr: the shell switches language with no reload",
+     "pass": true,
+     "detail": "es -> fr, noReload=true"
+    },
+    {
+     "name": "Teach/fr: the shell direction is ltr",
+     "pass": true,
+     "detail": "ltr"
+    },
+    {
+     "name": "Teach/fr: the Studio heading is the fr string",
+     "pass": true,
+     "detail": "want \"Identité\" got \"Identité\""
+    },
+    {
+     "name": "Teach/fr: the Live Draft Preview navigation is already in fr",
+     "pass": true,
+     "detail": "want Accueil/Horaires/À propos de moi/Explorer got Accueil/Horaires/À propos de moi/Explorer"
+    },
+    {
+     "name": "Teach/fr@1440: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach/he: the shell switches language with no reload",
+     "pass": true,
+     "detail": "fr -> he, noReload=true"
+    },
+    {
+     "name": "Teach/he: the shell direction is rtl",
+     "pass": true,
+     "detail": "rtl"
+    },
+    {
+     "name": "Teach/he: the Studio heading is the he string",
+     "pass": true,
+     "detail": "want \"זהות\" got \"זהות\""
+    },
+    {
+     "name": "Teach/he: the Live Draft Preview navigation is already in he",
+     "pass": true,
+     "detail": "want בית/לוח שיעורים/עליי/גלו got בית/לוח שיעורים/עליי/גלו"
+    },
+    {
+     "name": "Teach/he@1440: nothing overflows horizontally",
+     "pass": true,
+     "detail": "{\"doc\":0,\"worst\":0}"
+    },
+    {
+     "name": "Teach: the chosen language survives a reload",
+     "pass": true,
+     "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "Teach: and it is restored to English for the next run",
+     "pass": true,
+     "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+    },
+    {
+     "name": "no uncaught client errors during the whole journey",
+     "pass": true,
+     "detail": ""
+    }
+   ]
+  }
+ },
+ "checks": 448,
+ "failed": 0
+}

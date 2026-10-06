@@ -202,6 +202,7 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
           <div className="grid grid-cols-3 gap-4">
             <div>
               <ModuleItemPhotoField
+                locale={locale}
                 tenantId={tenantId}
                 moduleKey="customPages"
                 itemId={editing.id}

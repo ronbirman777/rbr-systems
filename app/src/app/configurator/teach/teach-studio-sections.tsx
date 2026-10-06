@@ -216,7 +216,7 @@ function ItemList<K extends TeachEditableItemKey>({
         <StudioButton kind="soft" onClick={add} disabled={max !== undefined && items.length >= max}>
           + {addLabel}
         </StudioButton>
-        {max !== undefined ? <Hint>{`${items.length} of ${max} used`}</Hint> : null}
+        {max !== undefined ? <Hint>{t("studio", "usedOfMax", { used: items.length, max })}</Hint> : null}
       </div>
     </div>
   );

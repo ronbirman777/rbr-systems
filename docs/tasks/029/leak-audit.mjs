@@ -20,15 +20,27 @@ const { chromium } = await import(PW);
 const FLOW = "3e6e4978-79a3-4912-98b5-c26d15d30155";
 const TEACH = "cc51ee9a-9b39-4676-bc39-e20467180488";
 
-/** Latin that is correct in a Hebrew UI: brands, products, formats, units. */
+/**
+ * Latin that is correct in a Hebrew UI: brands, products, formats, units.
+ * Entries are substring-stripped before the scan, so a single letter must
+ * never appear here - "X" (the platform) was in this list once and turned
+ * every "qa029x ..." fixture title into a fake finding.
+ */
 const ALLOW = [
   "InnerDweS", "WhatsApp", "Instagram", "Facebook", "TikTok", "YouTube", "Pinterest",
-  "LinkedIn", "Spotify", "Threads", "X", "QR", "UTC", "URL", "HTTPS", "HTTP", "WCAG AA", "WCAG",
+  "LinkedIn", "Spotify", "Threads", "QR", "UTC", "URL", "HTTPS", "HTTP", "WCAG AA", "WCAG",
   "JPG", "PNG", "WebP", "MP3", "M4A", "AAC", "WAV", "OGG", "MB", "KB", "px",
   "TIME TO TEACH", "TIME TO FLOW", "Time to Teach", "Time to Flow",
   "Space", "Spaces", "Guest App", "Studio", "Vinyasa", "Yin", "Pranayama",
   "Yoga", "Nidra", "Pilates", "Maya", "Levin", "Aa", "RYT", "Alliance",
 ];
+
+/**
+ * The synthetic QA Spaces' own content. It is organizer-authored, so it
+ * must NOT be translated - it appears in row labels that are not inputs,
+ * which is the one place the collector cannot exclude structurally.
+ */
+const ORGANIZER = /^(QA |qa029|Welcome QA|Welcome to QA|Tel Aviv QA|Lao Tzu|Tao Te|Knowing |A towel|a water bottle|PROBE|probe|FIRSTROW|Olive Tree)/;
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({
@@ -57,7 +69,11 @@ const collect = () => page.evaluate((allow) => {
     if (!text) continue;
     for (const a of allow) text = text.split(a).join(" ");
     // What remains: Latin word runs of two or more words.
-    const runs = text.match(/[A-Za-z][A-Za-z’'-]*(?:\s+[A-Za-z][A-Za-z’'-]*)+/g) || [];
+    // Digits belong INSIDE a word here. Without them the scan starts
+    // mid-token on fixture titles like "qa029x on arriving" and reports
+    // "x on arriving", which then reads as a finding instead of as the
+    // organizer's own text.
+    const runs = text.match(/[A-Za-z][A-Za-z0-9’'-]*(?:\s+[A-Za-z0-9][A-Za-z0-9’'-]*)+/g) || [];
     for (const r of runs) {
       if (r.trim().split(/\s+/).length < 2) continue;
       out.push({ text: r.trim().slice(0, 120), where: (el.tagName + "." + (el.className || "").toString().split(" ")[0]).slice(0, 40) });
@@ -96,7 +112,9 @@ for (const [product, tenant] of [["Flow", FLOW], ["Teach", TEACH]]) {
       await opener.click().catch(() => {});
       await page.waitForTimeout(400);
     }
-    const hits = await collect();
+    // ORGANIZER is applied here, in Node: `collect` runs inside the page
+    // and cannot see this scope.
+    const hits = (await collect()).filter((h) => !ORGANIZER.test(h.text));
     if (hits.length) report[product][name] = hits;
   }
   // The language card lives on the Identity step, so the Space has to be

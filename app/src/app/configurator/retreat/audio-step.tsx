@@ -231,6 +231,7 @@ export function AudioStep({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <ModuleItemPhotoField
+                locale={locale}
                 tenantId={tenantId}
                 moduleKey={FLOW_AUDIO_KEY}
                 itemId={editing.id}

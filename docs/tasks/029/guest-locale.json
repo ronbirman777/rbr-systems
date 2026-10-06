@@ -1,0 +1,217 @@
+{
+ "base": "https://innerdwes-cfbom6o1x-inner-dwe-s.vercel.app",
+ "total": 42,
+ "failed": 0,
+ "results": [
+  {
+   "name": "Flow/en: the Studio offers a publish control in en",
+   "pass": true,
+   "detail": "Republish / Publish / Publish now"
+  },
+  {
+   "name": "Flow/en: the published Guest App declares lang=en",
+   "pass": true,
+   "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Flow/en: and dir=ltr",
+   "pass": true,
+   "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Flow/en: the guest navigation is in en",
+   "pass": true,
+   "detail": "Today / Schedule / Team / Explore"
+  },
+  {
+   "name": "Flow/de: the Studio offers a publish control in de",
+   "pass": true,
+   "detail": "Neu veröffentlichen / Veröffentlichen / Jetzt veröffentlichen"
+  },
+  {
+   "name": "Flow/de: the published Guest App declares lang=de",
+   "pass": true,
+   "detail": "{\"lang\":\"de\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Flow/de: and dir=ltr",
+   "pass": true,
+   "detail": "{\"lang\":\"de\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Flow/de: the guest navigation is in de",
+   "pass": true,
+   "detail": "Heute / Zeitplan / Team / Entdecken"
+  },
+  {
+   "name": "Flow/es: the Studio offers a publish control in es",
+   "pass": true,
+   "detail": "Volver a publicar / Publicar / Publicar ahora"
+  },
+  {
+   "name": "Flow/es: the published Guest App declares lang=es",
+   "pass": true,
+   "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Flow/es: and dir=ltr",
+   "pass": true,
+   "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Flow/es: the guest navigation is in es",
+   "pass": true,
+   "detail": "Hoy / Programa / Equipo / Descubre"
+  },
+  {
+   "name": "Flow/fr: the Studio offers a publish control in fr",
+   "pass": true,
+   "detail": "Republier / Publier / Publier maintenant"
+  },
+  {
+   "name": "Flow/fr: the published Guest App declares lang=fr",
+   "pass": true,
+   "detail": "{\"lang\":\"fr\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Flow/fr: and dir=ltr",
+   "pass": true,
+   "detail": "{\"lang\":\"fr\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Flow/fr: the guest navigation is in fr",
+   "pass": true,
+   "detail": "Aujourd’hui / Programme / Équipe / Explorer"
+  },
+  {
+   "name": "Flow/he: the Studio offers a publish control in he",
+   "pass": true,
+   "detail": "פרסום מחדש / פרסום / לפרסם עכשיו"
+  },
+  {
+   "name": "Flow/he: the published Guest App declares lang=he",
+   "pass": true,
+   "detail": "{\"lang\":\"he\",\"dir\":\"rtl\"}"
+  },
+  {
+   "name": "Flow/he: and dir=rtl",
+   "pass": true,
+   "detail": "{\"lang\":\"he\",\"dir\":\"rtl\"}"
+  },
+  {
+   "name": "Flow/he: the guest navigation is in he",
+   "pass": true,
+   "detail": "היום / לוח זמנים / הצוות / גלו"
+  },
+  {
+   "name": "Teach/en: the Studio offers a publish control in en",
+   "pass": true,
+   "detail": "Republish / Publish / Publish now"
+  },
+  {
+   "name": "Teach/en: the published Guest App declares lang=en",
+   "pass": true,
+   "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Teach/en: and dir=ltr",
+   "pass": true,
+   "detail": "{\"lang\":\"en\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Teach/en: the guest navigation is in en",
+   "pass": true,
+   "detail": "Home / Schedule / About Me / Explore"
+  },
+  {
+   "name": "Teach/de: the Studio offers a publish control in de",
+   "pass": true,
+   "detail": "Neu veröffentlichen / Veröffentlichen / Jetzt veröffentlichen"
+  },
+  {
+   "name": "Teach/de: the published Guest App declares lang=de",
+   "pass": true,
+   "detail": "{\"lang\":\"de\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Teach/de: and dir=ltr",
+   "pass": true,
+   "detail": "{\"lang\":\"de\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Teach/de: the guest navigation is in de",
+   "pass": true,
+   "detail": "Start / Zeitplan / Über mich / Entdecken"
+  },
+  {
+   "name": "Teach/es: the Studio offers a publish control in es",
+   "pass": true,
+   "detail": "Volver a publicar / Publicar / Publicar ahora"
+  },
+  {
+   "name": "Teach/es: the published Guest App declares lang=es",
+   "pass": true,
+   "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Teach/es: and dir=ltr",
+   "pass": true,
+   "detail": "{\"lang\":\"es\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Teach/es: the guest navigation is in es",
+   "pass": true,
+   "detail": "Inicio / Horarios / Sobre mí / Descubre"
+  },
+  {
+   "name": "Teach/fr: the Studio offers a publish control in fr",
+   "pass": true,
+   "detail": "Republier / Publier / Publier maintenant"
+  },
+  {
+   "name": "Teach/fr: the published Guest App declares lang=fr",
+   "pass": true,
+   "detail": "{\"lang\":\"fr\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Teach/fr: and dir=ltr",
+   "pass": true,
+   "detail": "{\"lang\":\"fr\",\"dir\":\"ltr\"}"
+  },
+  {
+   "name": "Teach/fr: the guest navigation is in fr",
+   "pass": true,
+   "detail": "Accueil / Horaires / À propos de moi / Explorer"
+  },
+  {
+   "name": "Teach/he: the Studio offers a publish control in he",
+   "pass": true,
+   "detail": "פרסום מחדש / פרסום / לפרסם עכשיו"
+  },
+  {
+   "name": "Teach/he: the published Guest App declares lang=he",
+   "pass": true,
+   "detail": "{\"lang\":\"he\",\"dir\":\"rtl\"}"
+  },
+  {
+   "name": "Teach/he: and dir=rtl",
+   "pass": true,
+   "detail": "{\"lang\":\"he\",\"dir\":\"rtl\"}"
+  },
+  {
+   "name": "Teach/he: the guest navigation is in he",
+   "pass": true,
+   "detail": "בית / לוח שיעורים / עליי / גלו"
+  },
+  {
+   "name": "Flow: restored to English for the next run",
+   "pass": true,
+   "detail": "en"
+  },
+  {
+   "name": "Teach: restored to English for the next run",
+   "pass": true,
+   "detail": "en"
+  }
+ ]
+}
