@@ -287,6 +287,50 @@ describe("the French dictionary speaks informally, like the German one", () => {
   });
 });
 
+describe("the Hebrew reading and audio labels say קטעי", () => {
+  // Owner correction: "הקריאות שלי" / "האודיו שלי" read as "my readings" /
+  // "my audio" in a way that is grammatical but not how the content is
+  // referred to; "קטעי הקריאה שלי" / "קטעי האודיו שלי" ("my reading
+  // pieces" / "my audio pieces") is the wording asked for.
+  //
+  // Pinned because three keys carry these two phrases across six surfaces
+  // - Teach Studio nav, Studio module cards, Studio section headers, the
+  // Guest Explore cards, the Guest list screens and their back buttons -
+  // so a revert in one dictionary value would quietly split the wording.
+  it("uses the corrected phrasing in every key that carries it", () => {
+    expect(he.teach.exploreReadings).toBe("קטעי הקריאה שלי");
+    expect(he.teach.exploreAudio).toBe("קטעי האודיו שלי");
+    expect(he.teach.myReadings).toBe("קטעי הקריאה שלי");
+  });
+
+  it("has no Hebrew value left on the old phrasing", () => {
+    const old = new Set(["הקריאות שלי", "האודיו שלי"]);
+    const stale = Object.entries(he).flatMap(([ns, strings]) =>
+      Object.entries(strings)
+        .filter(([, v]) => old.has(v as string))
+        .map(([k]) => `${ns}.${k}`)
+    );
+    expect(stale).toEqual([]);
+  });
+
+  it("changes Hebrew only - the other four dictionaries keep their wording", () => {
+    expect(en.teach.exploreReadings).toBe("My Readings");
+    expect(en.teach.exploreAudio).toBe("My Audio");
+    expect(de.teach.exploreReadings).toBe(DICTIONARY_FOR_TEST.de.teach.exploreReadings);
+    for (const loc of ["de", "es", "fr"] as const) {
+      // not Hebrew, so not touched by this correction
+      expect(DICTIONARY_FOR_TEST[loc].teach.exploreReadings).not.toBe("קטעי הקריאה שלי");
+      expect(DICTIONARY_FOR_TEST[loc].teach.exploreAudio).not.toBe("קטעי האודיו שלי");
+    }
+  });
+
+  it("keeps these surfaces right-to-left", () => {
+    // The strings changed; the direction contract did not.
+    expect(directionOf("he")).toBe("rtl");
+    expect(isSupportedLocale("he")).toBe(true);
+  });
+});
+
 describe("country recommends a language but never locks it", () => {
   it("recommends Hebrew for Israel and German for the DACH countries", () => {
     expect(recommendedLocales("IL")).toEqual(["en", "he"]);
