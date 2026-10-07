@@ -3,3 +3,8 @@
 
 # Local Netlify folder
 .netlify
+
+# Local Vercel folder - the CLI's machine-local project link, not source.
+# Committing it pre-links every clone to one project, which is how a
+# command meant for Staging can end up pointed at Production.
+.vercel
