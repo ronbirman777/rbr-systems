@@ -1,0 +1,269 @@
+"use client";
+
+import { useState, type Dispatch, type SetStateAction } from "react";
+import { ModuleItemPhotoField } from "@/components/module-item-photo-field";
+import { FocalPointPicker } from "@/components/focal-point-picker";
+import { objectPositionStyle } from "@/lib/modules/imagePosition";
+import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
+import type { EditableCustomPage } from "@/lib/modules/customPage";
+import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
+import { STUDIO_HIT_ROW_CLASS, STUDIO_REORDER_BUTTON_CLASS, STUDIO_REORDER_COLUMN_CLASS, STUDIO_INPUT_CLASS, StudioField, StudioHeading, StudioIntro } from "./studio-ui";
+import { EmptyState } from "@/components/studio/empty-state";
+import { saveCustomPages, type SaveCustomPagesState } from "./actions";
+import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
+import { DEFAULT_CUSTOM_PAGES_LIMIT } from "@/lib/entitlements/customPagesLimit";
+
+import { createTranslator } from "@/lib/i18n";
+import { ForwardArrow } from "./studio-ui";
+const initialState: SaveCustomPagesState = { error: null };
+
+export function blankCustomPage(): EditableCustomPage {
+  return { id: crypto.randomUUID(), title: "", body: null, imageRef: null, imageUrl: null, enabled: true, imagePosition: null };
+}
+
+export type CustomPagesStepProps = {
+  tenantId: string;
+  customPages: EditableCustomPage[];
+  setCustomPages: Dispatch<SetStateAction<EditableCustomPage[]>>;
+  onBack: () => void;
+  onContinue: () => void;
+} & StudioSectionEditorProps;
+
+/**
+ * Organizer-created generic information pages - "What to Bring",
+ * "Community Guidelines", whatever titles the organizer chooses. One row
+ * per page (module_items, module_key="customPages"), no new table
+ * regardless of how many pages exist. Same list + expand-to-edit-panel
+ * pattern, reorder via sort_order (drag isn't built this batch - the
+ * up/down buttons already used by FAQ do the same job).
+ */
+export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack, onContinue, onDirty, onSaved, registerSave, locale }: CustomPagesStepProps) {
+  const { t } = createTranslator(locale);
+  const [state, setState] = useState<SaveCustomPagesState>(initialState);
+  const [pending, setPending] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  function update(id: string, patch: Partial<EditableCustomPage>) {
+    onDirty();
+    setCustomPages((items) => items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+  }
+
+  function move(id: string, direction: -1 | 1) {
+    setCustomPages((items) => {
+      const index = items.findIndex((it) => it.id === id);
+      const target = index + direction;
+      if (index < 0 || target < 0 || target >= items.length) return items;
+      const next = [...items];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  function handleAdd() {
+    if (customPages.length >= DEFAULT_CUSTOM_PAGES_LIMIT) return;
+    const item = blankCustomPage();
+    setCustomPages((items) => [...items, item]);
+    persistNewItemStub(tenantId, "customPages", item.id, customPages.length);
+    setEditId(item.id);
+  }
+
+  function handleRemove(id: string) {
+    setCustomPages((items) => items.filter((it) => it.id !== id));
+    persistItemRemoval(tenantId, id);
+    if (editId === id) setEditId(null);
+  }
+
+  async function handleSave(): Promise<boolean> {
+    const formData = new FormData();
+    formData.set("locale", locale);
+    formData.set("tenantId", tenantId);
+    formData.set(
+      "items",
+      JSON.stringify(
+        customPages.map(({ id, title, body, imageRef, enabled, imagePosition }) => ({
+          id,
+          title,
+          body,
+          imageRef,
+          enabled,
+          imagePosition,
+        }))
+      )
+    );
+    const ids = customPages.map((p) => p.id);
+    setPending(true);
+    const result = await enqueueItemsOp(ids, () => saveCustomPages(initialState, formData));
+    setPending(false);
+    setState(result);
+    // A failed save must NOT clear the guard - the edits are still
+    // only in memory, so the section stays dirty and the Unsaved
+    // Changes dialog keeps protecting them.
+    if (result.error) return false;
+    onSaved();
+    return true;
+  }
+
+  useRegisteredSave(registerSave, handleSave);
+
+  const editing = editId ? (customPages.find((p) => p.id === editId) ?? null) : null;
+  const editIdx = editing ? customPages.indexOf(editing) : -1;
+  // UX-only mirror of the real limit enforced server-side in
+  // saveCustomPages() (getCustomPagesLimit) - this constant is read from
+  // the same shared module, not a second hardcoded 3.
+  const atLimit = customPages.length >= DEFAULT_CUSTOM_PAGES_LIMIT;
+
+  return (
+    <div className="max-w-2xl">
+      <StudioHeading>{t("flow", "customPagesStepTitle")}</StudioHeading>
+      <StudioIntro>{t("flow", "customPagesStepBody")}</StudioIntro>
+      <p className="text-[11px] mb-4" style={{ color: GUEST_BASE_PALETTE.mist }}>
+        {t("flow", "pagesUsed", { used: customPages.length, limit: DEFAULT_CUSTOM_PAGES_LIMIT })}
+      </p>
+
+      <div className="space-y-2 mb-4">
+        {customPages.map((page, i) => {
+          const isEditing = editId === page.id;
+          return (
+            <div
+              key={page.id}
+              className="group flex items-center gap-3 rounded-2xl p-4 border bg-white transition-all"
+              style={{
+                borderColor: isEditing ? `${GUEST_BASE_PALETTE.forest}4d` : `${GUEST_BASE_PALETTE.sand}80`,
+                opacity: page.enabled ? 1 : 0.55,
+              }}
+            >
+              <div className={STUDIO_REORDER_COLUMN_CLASS}>
+                <button type="button" onClick={() => move(page.id, -1)} disabled={i === 0} aria-label={t("studio", "moveUp")} className={STUDIO_REORDER_BUTTON_CLASS} style={{ color: GUEST_BASE_PALETTE.mist }}>
+                  ▲
+                </button>
+                <button type="button" onClick={() => move(page.id, 1)} disabled={i === customPages.length - 1} aria-label={t("studio", "moveDown")} className={STUDIO_REORDER_BUTTON_CLASS} style={{ color: GUEST_BASE_PALETTE.mist }}>
+                  ▼
+                </button>
+              </div>
+              <p className="flex-1 min-w-0 text-[13px] font-medium truncate" style={{ color: GUEST_BASE_PALETTE.forest }}>
+                {page.title || t("flow", "untitledPage")}
+              </p>
+              {!page.enabled && (
+                <span className="text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wide font-medium flex-shrink-0" style={{ background: `${GUEST_BASE_PALETTE.sand}80`, color: GUEST_BASE_PALETTE.dusk }}>
+                  {t("common", "disabled")}
+                </span>
+              )}
+              <div className="flex items-center gap-1.5 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button type="button" onClick={() => setEditId(isEditing ? null : page.id)} className="text-[11px] px-2.5 py-1 rounded-lg border" style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}>
+                  {t("common", "edit")}
+                </button>
+                <button type="button" onClick={() => handleRemove(page.id)} className="text-[11px] px-2.5 py-1 rounded-lg border" style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}>
+                  {t("common", "remove")}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {customPages.length === 0 && (
+        <div className="mb-4">
+          <EmptyState
+            title={t("flow", "noCustomPagesYet")}
+            body={t("flow", "noCustomPagesBody")}
+          />
+        </div>
+      )}
+
+      {atLimit ? (
+        <div
+          className="w-full rounded-2xl py-3 px-4 text-[12px] mb-4 text-center"
+          style={{ background: `${GUEST_BASE_PALETTE.sand}40`, color: GUEST_BASE_PALETTE.dusk }}
+        >
+          <p className="font-medium">You&apos;ve reached the {DEFAULT_CUSTOM_PAGES_LIMIT}-page limit.</p>
+          <p className="mt-0.5">{t("flow", "needMorePages")}</p>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={handleAdd}
+          className="w-full border-2 border-dashed rounded-2xl py-3 text-[12px] font-medium transition-all mb-4"
+          style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, color: GUEST_BASE_PALETTE.mist }}
+        >
+          + {t("flow", "addPage")}
+        </button>
+      )}
+
+      {editing && (
+        <div className="rounded-2xl border p-5" style={{ background: GUEST_BASE_PALETTE.parchmentDeep, borderColor: "rgba(45,74,62,0.15)" }}>
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-[14px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
+              {t("studio", "editingItem", { name: editing.title || t("flow", "untitledPage") })}
+            </h4>
+            <button type="button" onClick={() => setEditId(null)} className={`text-[11px] ${STUDIO_HIT_ROW_CLASS}`} style={{ color: GUEST_BASE_PALETTE.mist }}>
+              {t("common", "done")}
+            </button>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <ModuleItemPhotoField
+                locale={locale}
+                tenantId={tenantId}
+                moduleKey="customPages"
+                itemId={editing.id}
+                title={editing.title}
+                description={editing.body}
+                sortOrder={editIdx}
+                imageRef={editing.imageRef}
+                imageUrl={editing.imageUrl}
+                onChange={(patch) => update(editing.id, { ...patch, imagePosition: null })}
+                previewAspect="13/6"
+                previewPosition={objectPositionStyle(editing.imagePosition)}
+                ratioHint={t("studio", "photoLandscape2to1")}
+              />
+              {editing.imageUrl && (
+                <FocalPointPicker
+                  locale={locale}
+                  imageUrl={editing.imageUrl}
+                  position={editing.imagePosition}
+                  onChange={(imagePosition) => update(editing.id, { imagePosition })}
+                  aspect="13/6"
+                  label={`${editing.title || t("flow", "pageLabel")} photo`}
+                />
+              )}
+            </div>
+            <div className="col-span-2 space-y-3">
+              <div>
+                <StudioField label={t("flow", "pageTitle")}>
+                  <input value={editing.title} onChange={(e) => update(editing.id, { title: e.target.value })} placeholder={t("flow", "pageTitlePlaceholder")} className={STUDIO_INPUT_CLASS} />
+                </StudioField>
+              </div>
+              <div>
+                <StudioField label={t("common", "content")}>
+                  <textarea value={editing.body ?? ""} onChange={(e) => update(editing.id, { body: e.target.value || null })} rows={5} className={`${STUDIO_INPUT_CLASS} resize-none`} />
+                </StudioField>
+              </div>
+              <label className="flex items-center gap-2 min-h-11 text-[12px]" style={{ color: GUEST_BASE_PALETTE.dusk }}>
+                <input type="checkbox" checked={editing.enabled} onChange={(e) => update(editing.id, { enabled: e.target.checked })} />
+                {t("studio", "visibleToGuests")}
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {state.error && (
+        <p className="text-sm text-red-700 mt-4" role="alert">
+          {state.error}
+        </p>
+      )}
+
+      <div className="mt-8 flex gap-3 items-center">
+        <button type="button" onClick={onBack} className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3">
+          {t("common", "back")}
+        </button>
+        <button type="button" disabled={pending} onClick={handleSave} className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60">
+          {pending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "moduleCustomPages") })}
+        </button>
+        <button type="button" onClick={onContinue} className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11">
+          {t("common", "next")} <ForwardArrow />
+        </button>
+      </div>
+    </div>
+  );
+}

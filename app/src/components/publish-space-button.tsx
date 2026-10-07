@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import type { PublishState } from "@/app/configurator/retreat/actions";
-import { publishSpaceByType } from "@/app/space/publishActions";
+import type { PublishState } from "@/app/(site)/configurator/retreat/actions";
+import { publishSpaceByType } from "@/app/(site)/space/publishActions";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 
 const initialState: PublishState = { error: null, publishedAt: null };

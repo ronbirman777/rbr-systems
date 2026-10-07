@@ -11,7 +11,7 @@ import { BrandPresetChips } from "./brand-preset-chips";
 import { CollapsibleItemRow } from "./collapsible-item-row";
 import { StudioTopBar } from "./studio-top-bar";
 import { getBrandPresets } from "@/lib/brand/presets";
-import { StudioEyebrowContext, StudioHeading } from "@/app/configurator/retreat/studio-ui";
+import { StudioEyebrowContext, StudioHeading } from "@/app/(site)/configurator/retreat/studio-ui";
 
 const html = (el: Parameters<typeof renderToStaticMarkup>[0]) => renderToStaticMarkup(el);
 const id = "3e6e4978-79a3-4912-98b5-c26d15d30155";
@@ -90,13 +90,16 @@ describe("shared Studio components", () => {
     expect(out).toContain("Publish");
   });
 
-  it("the Studio's small row actions carry a 44x44 hit area", () => {
-    // TASK 029 final hardening. The painted box stays small on purpose -
-    // a compact list should not become a toolbar - so the target is added
-    // with an invisible centred ::after. This asserts the classes that do
-    // it are actually on the three icon controls, because the mistake this
-    // guards against is a refactor that keeps the look and drops the
-    // pseudo-element with it.
+  it("the Studio's small row actions carry a real, non-overlapping 44x44 target", () => {
+    // TASK 029 Production QA. The original version of this guard asserted
+    // an invisible centred 44x44 ::after on each 36x36 control, and it
+    // passed while the feature was broken: three controls sit side by
+    // side, so each pseudo-element overflowed 4px into its neighbours and
+    // the later button in DOM order won that strip. The arrows are now
+    // REAL 44x44 boxes that tile, which is the property worth asserting -
+    // a hit area that is part of the element can never be stolen by a
+    // sibling. The companion elementFromPoint test in
+    // reorderHitArea.browser.test.ts proves the geometry at runtime.
     const props = {
       locale: "en" as const,
       testId: "item-teachAudio",
@@ -108,11 +111,14 @@ describe("shared Studio components", () => {
       children: createElement("span", null, "editor"),
     };
     const out = html(createElement(CollapsibleItemRow, props));
-    // three controls: move up, move down, expand
-    expect(out.match(/after:w-11/g)).toHaveLength(3);
-    expect(out.match(/after:h-11/g)).toHaveLength(3);
-    // and they are still painted at their original 36px
-    expect(out.match(/w-9 h-9/g)).toHaveLength(3);
+    // three controls: move up, move down, expand - each a real 44x44 box
+    expect(out.match(/w-11 h-11/g)).toHaveLength(3);
+    // and no pseudo-element hit area survives on them, because an
+    // expanded target that overflows its own element is exactly the
+    // defect this replaced.
+    expect(out).not.toContain("after:w-11");
+    expect(out).not.toContain("after:h-11");
+    expect(out).not.toContain("w-9 h-9");
   });
 
   it("StudioTopBar reports a publish in flight and refuses a second click", () => {

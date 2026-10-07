@@ -2,7 +2,7 @@ import Link from "next/link";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { MobileNavToggle } from "./mobile-nav-toggle";
 import { createClient } from "@/lib/supabase/server";
-import { signOut } from "@/app/(auth)/actions";
+import { signOut } from "@/app/(site)/(auth)/actions";
 import { LogoutButton } from "@/components/logout-button";
 
 const LINKS = [

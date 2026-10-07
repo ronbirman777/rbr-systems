@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { loadSpaceSettings, saveSpaceSettings } from "@/app/space/spaceSettingsActions";
+import { loadSpaceSettings, saveSpaceSettings } from "@/app/(site)/space/spaceSettingsActions";
 import { LOCALE_LABEL, SUPPORTED_LOCALES, recommendedLocales, type Locale } from "@/lib/i18n";
 
 import { createTranslator, DEFAULT_LOCALE } from "@/lib/i18n";
@@ -32,6 +32,8 @@ import { createTranslator, DEFAULT_LOCALE } from "@/lib/i18n";
  * are not, and conflating them is how a card like this ends up
  * half-switching mid-save.
  */
+type SaveMessage = { ok: true } | { ok: false; text: string };
+
 export function SpaceLanguageCard({
   tenantId,
   uiLocale = DEFAULT_LOCALE,
@@ -57,7 +59,24 @@ export function SpaceLanguageCard({
   const [locale, setLocale] = useState<Locale | null>(null);
   const [country, setCountry] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  /**
+   * The success case stores NO text - only the fact that a save
+   * succeeded - so `t("common", "saved")` is resolved at RENDER time,
+   * against the locale currently on screen.
+   *
+   * It used to store `text: t("common", "saved")`, resolved inside the
+   * transition. `t` is bound to the locale of the render that created the
+   * handler, and `setLocale(next)` has not re-rendered by then, so the
+   * confirmation froze in the PREVIOUS language: switching to French said
+   * "Guardado", switching to Hebrew said "Enregistré". Production QA,
+   * TASK 029.
+   *
+   * The error case still carries its text, because that string comes back
+   * from the server action and there is no key to re-resolve it from. It
+   * reflects the locale of the request that produced it, which is the
+   * closest thing to correct that is available here.
+   */
+  const [message, setMessage] = useState<SaveMessage | null>(null);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
@@ -96,7 +115,7 @@ export function SpaceLanguageCard({
     setMessage(null);
     startTransition(async () => {
       const result = await saveSpaceSettings(tenantId, { locale: next });
-      setMessage(result.error ? { ok: false, text: result.error } : { ok: true, text: t("common", "saved") });
+      setMessage(result.error ? { ok: false, text: result.error } : { ok: true });
     });
   }
 
@@ -146,7 +165,7 @@ export function SpaceLanguageCard({
 
       {message ? (
         <p role={message.ok ? "status" : "alert"} className={`text-[12.5px] ${message.ok ? "text-[#3F6A4C]" : "text-[#8F3B3B]"}`}>
-          {message.text}
+          {message.ok ? t("common", "saved") : message.text}
         </p>
       ) : null}
     </div>

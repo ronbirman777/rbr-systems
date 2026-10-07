@@ -19,19 +19,28 @@ import { CollapsibleItemRow } from "./collapsible-item-row";
 const noop = () => {};
 
 /**
- * TASK 029 final hardening: the ONE deliberate departure from the
- * pre-extraction markup. These three icon buttons were painted 36x36,
- * below the WCAG 2.2 target-size floor, and the reorder arrows measured
- * 10x15 in the Flow editors that do not use this component. The hit area
- * is now 44x44 via an invisible ::after, so the painted box, the layout
- * and the spacing are all still byte-identical to what Teach rendered -
- * only the target grew. Declared here rather than hidden in a diff.
+ * The ONE deliberate departure from the pre-extraction markup, in its
+ * second and final form.
+ *
+ * TASK 029's final hardening grew these three 36x36 icon buttons to a
+ * 44x44 target with an invisible centred ::after, keeping the painted box
+ * byte-identical to what Teach rendered. Production QA then showed why
+ * that was the wrong shape: the three controls sit side by side, so each
+ * 44-wide pseudo-element reached 4px into its neighbours, and the later
+ * button in DOM order won the overlap. The same pattern on the Flow
+ * editors' stacked ▲▼ arrows was total rather than partial - "move up"
+ * moved the item down.
+ *
+ * So the buttons are now REAL 44x44 boxes. The painted box is 8px larger
+ * than Teach's original, which is the deliberate departure declared here
+ * rather than hidden in a diff; everything else - layout, spacing, order,
+ * labels - is still verbatim.
  */
-const ROW_ICON_HIT_AREA =
-  "relative after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-11 after:h-11";
+const ROW_ICON_CONTROL =
+  "w-11 h-11 flex items-center justify-center rounded-lg text-[#6F6C66] hover:bg-black/5";
 
-/** app/configurator/teach/teach-studio-sections.tsx at d3f4bed, verbatim
- *  apart from ROW_ICON_HIT_AREA above. */
+/** app/(site)/configurator/teach/teach-studio-sections.tsx at d3f4bed,
+ *  verbatim apart from ROW_ICON_CONTROL above. */
 function preExtractionRow(opts: {
   locale: Locale;
   moduleKey: string;
@@ -76,7 +85,7 @@ function preExtractionRow(opts: {
                 type: "button",
                 onClick: noop,
                 "aria-label": t("studio", "moveUp"),
-                className: `w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5 ${ROW_ICON_HIT_AREA}`,
+                className: ROW_ICON_CONTROL,
                 disabled: index === 0,
               },
               "↑"
@@ -87,7 +96,7 @@ function preExtractionRow(opts: {
                 type: "button",
                 onClick: noop,
                 "aria-label": t("studio", "moveDown"),
-                className: `w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5 ${ROW_ICON_HIT_AREA}`,
+                className: ROW_ICON_CONTROL,
                 disabled: index === itemsLength - 1,
               },
               "↓"
@@ -100,7 +109,7 @@ function preExtractionRow(opts: {
           type: "button",
           onClick: noop,
           "aria-label": isOpen ? t("studio", "collapse") : t("common", "edit"),
-          className: `w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5 ${ROW_ICON_HIT_AREA}`,
+          className: ROW_ICON_CONTROL,
         },
         isOpen ? "▴" : "▾"
       )

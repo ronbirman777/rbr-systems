@@ -41,7 +41,7 @@ describe("versioned media writers never need Storage UPDATE", () => {
   });
 
   it("every image/audio upload in a Studio action is create-only (upsert: false)", () => {
-    for (const rel of ["app/configurator/retreat/actions.ts", "app/configurator/teach/actions.ts", "lib/media/audioUpload.ts"]) {
+    for (const rel of ["app/(site)/configurator/retreat/actions.ts", "app/(site)/configurator/teach/actions.ts", "lib/media/audioUpload.ts"]) {
       const src = read(rel);
       const uploads = src.match(/\.upload\([^)]*\)/g) ?? [];
       expect(uploads.length).toBeGreaterThan(0);
@@ -50,7 +50,7 @@ describe("versioned media writers never need Storage UPDATE", () => {
   });
 
   it("the retreat image uploads all use a fresh uploadId path", () => {
-    const src = read("app/configurator/retreat/actions.ts");
+    const src = read("app/(site)/configurator/retreat/actions.ts");
     expect((src.match(/newUploadId\(\)/g) ?? []).length).toBeGreaterThanOrEqual(3);
   });
 

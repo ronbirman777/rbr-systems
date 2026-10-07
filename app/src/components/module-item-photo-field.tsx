@@ -6,7 +6,7 @@ import {
   removeModuleItemPhoto,
   type UploadModuleItemPhotoState,
   type RemoveModuleItemPhotoState,
-} from "@/app/configurator/retreat/actions";
+} from "@/app/(site)/configurator/retreat/actions";
 import { enqueueItemOp } from "@/lib/modules/persistItem";
 import { validateImageFile, classifyServerImageError } from "@/lib/media/clientValidation";
 import { ImageUploadErrorDialog } from "@/components/image-upload-error-dialog";

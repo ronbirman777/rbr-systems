@@ -1,6 +1,6 @@
 "use client";
 
-import { createModuleItemStub, deleteModuleItem } from "@/app/configurator/retreat/actions";
+import { createModuleItemStub, deleteModuleItem } from "@/app/(site)/configurator/retreat/actions";
 
 const STUB_INITIAL = { error: null };
 
