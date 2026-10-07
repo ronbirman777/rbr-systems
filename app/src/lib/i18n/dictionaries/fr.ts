@@ -1086,6 +1086,7 @@ export const fr: Dictionary = {
 
     // ---- TASK 029: Guidelines ----
     guidelines: "Règles du lieu",
+    guidelinesShort: "Règles du lieu",
     moduleGuidelinesDesc: "Les règles du lieu et ce qu’il est bon de savoir : heures de silence, téléphones, chaussures.",
     eyebrowGuidelines: "Bon à savoir",
     guidelinesHeading: "Quelques",

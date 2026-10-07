@@ -1067,6 +1067,7 @@ export const de: Dictionary = {
 
     // ---- TASK 029: Guidelines ----
     guidelines: "Hinweise",
+    guidelinesShort: "Hinweise",
     moduleGuidelinesDesc: "Hausregeln und Wissenswertes: Ruhezeiten, Handys, Schuhe.",
     eyebrowGuidelines: "Gut zu wissen",
     guidelinesHeading: "Ein paar",

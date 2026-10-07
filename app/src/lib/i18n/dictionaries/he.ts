@@ -1078,6 +1078,7 @@ export const he: Dictionary = {
 
     // ---- TASK 029: Guidelines ----
     guidelines: "הנחיות",
+    guidelinesShort: "הנחיות",
     moduleGuidelinesDesc: "כללי הבית ודברים שכדאי לדעת: שעות שקט, טלפונים, נעליים.",
     eyebrowGuidelines: "כדאי לדעת",
     guidelinesHeading: "כמה",

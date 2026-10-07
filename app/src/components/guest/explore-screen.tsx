@@ -314,7 +314,10 @@ export function ExploreScreen({
                 onClick={() => setPage("guidelines")}
                 icon={<GuidelinesIcon className="w-4 h-4" />}
                 eyebrow={t("flow", "eyebrowGuidelines")}
-                title={t("flow", "guidelines")}
+                /* The short form, only here: this tile truncates at 18px
+                   and Spanish's full name does not fit on a phone. The
+                   detail screen it opens keeps the full name. */
+                title={t("flow", "guidelinesShort")}
                 imageUrl={guidelinesImage}
                 imagePosition={guidelinesImagePosition}
               />

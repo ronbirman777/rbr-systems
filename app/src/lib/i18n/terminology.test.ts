@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { translate } from ".";
 import { SUPPORTED_LOCALES } from "./locales";
 import { en } from "./dictionaries/en";
@@ -144,6 +146,51 @@ describe("terminology decisions", () => {
     expect(translate("es", "flow", "moduleFacilitatorsLabel")).toBe("Equipo / profesores");
   });
 
+  it("gives the Explore card a short Guidelines label, and only there", () => {
+    // The Explore tile is two-up with an 18px truncating title. Spanish's
+    // approved "Normas de convivencia" needs 187px against the 153px it
+    // gets at 430, so it ellipsised to "Normas de conviv…" on every common
+    // phone. The owner split the surfaces rather than shorten the term:
+    // the card says "Normas", everything with room says the full thing.
+    expect(translate("es", "flow", "guidelinesShort")).toBe("Normas");
+    expect(translate("es", "flow", "guidelines")).toBe("Normas de convivencia");
+
+    // Only Spanish diverges. The short key exists so ONE language can be
+    // shorter in ONE place - if these ever stop matching, someone has
+    // started a second set of module names by accident.
+    for (const locale of ["en", "de", "fr", "he"] as const) {
+      expect(
+        translate(locale, "flow", "guidelinesShort"),
+        `${locale} should not need a separate short Guidelines label`
+      ).toBe(translate(locale, "flow", "guidelines"));
+    }
+  });
+
+  it("wires the short label to the Explore card and the full one everywhere else", () => {
+    // A string assertion cannot tell which surface renders which key, so
+    // this reads the call sites. The card is the ONLY place the short form
+    // is allowed, and the detail screen it opens must keep the full name -
+    // tapping "Normas" and landing on a heading that says something else
+    // would read as a different page.
+    const read = (rel: string) => readFileSync(join(SRC, rel), "utf8");
+
+    const explore = read("components/guest/explore-screen.tsx");
+    expect(explore).toContain('title={t("flow", "guidelinesShort")}');
+    expect(explore).not.toContain('title={t("flow", "guidelines")}');
+
+    const detail = read("components/guest/guidelines-screen.tsx");
+    expect(detail).toContain('title={t("flow", "guidelines")}');
+    expect(detail).not.toContain("guidelinesShort");
+
+    const step = read("app/(site)/configurator/retreat/guidelines-step.tsx");
+    expect(step).toContain('t("flow", "guidelines")');
+    expect(step).not.toContain("guidelinesShort");
+
+    // The Studio's step label and Modules card both come from moduleLabel(),
+    // which must keep pointing at the full name.
+    expect(read("lib/modules/catalog.ts")).toContain('guidelines: "guidelines"');
+  });
+
   it("Spanish keeps collection module names plural", () => {
     // "Mi audio" sat next to "Mis lecturas" in the same Explore list and
     // named the same kind of thing - a library of tracks - in the
@@ -167,6 +214,8 @@ describe("terminology decisions", () => {
     }
   });
 });
+
+const SRC = join(__dirname, "..", "..");
 
 /** Every string a locale ships, flattened, for whole-dictionary guards. */
 function allStrings(locale: string): string {

@@ -1078,6 +1078,7 @@ export const es: Dictionary = {
 
     // ---- TASK 029: Guidelines ----
     guidelines: "Normas de convivencia",
+    guidelinesShort: "Normas",
     moduleGuidelinesDesc: "Normas de la casa y cosas que conviene saber: horas de silencio, móviles, calzado.",
     eyebrowGuidelines: "Bueno saberlo",
     guidelinesHeading: "Unas pocas",
