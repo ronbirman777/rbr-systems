@@ -18,9 +18,11 @@ import { he } from "./dictionaries/he";
  * See docs/tasks/029/terminology-glossary.md for the full five-locale
  * table and the recommendations still waiting on the product owner.
  *
- * EVERY JUDGEMENT HERE IS AI-REVIEWED, NOT NATIVE-SPEAKER VERIFIED,
- * except where the owner has ruled - which is true of the Hebrew
- * "קטעי הקריאה שלי" benchmark below and nothing else in this file.
+ * Every wording below was APPROVED BY THE PRODUCT OWNER (TASK 029, R1-R11).
+ * Approval is not native-speaker verification: the strings were reviewed
+ * by the owner and by AI, and no professional speaker of German, Spanish
+ * or French has signed them off. he.ts still carries its own UNREVIEWED
+ * banner for the same reason.
  */
 describe("terminology decisions", () => {
   it("Hebrew names a COLLECTION of readings, not the act of reading", () => {
@@ -37,6 +39,109 @@ describe("terminology decisions", () => {
     // retreat, not to the organizer reading them. Teach's are a
     // teacher's own, which is why only Teach says "שלי".
     expect(translate("he", "flow", "readings")).not.toContain("שלי");
+  });
+
+  it("names Facilities after rooms, not equipment (R1)", () => {
+    // Every one of these used to be contradicted by the module's own
+    // description sitting directly underneath it: German said
+    // "Einrichtungen" over "die Räume um sie herum", Spanish said
+    // "Instalaciones" over "los espacios que les rodean", Hebrew said
+    // "מתקנים" - installations, gym apparatus - over "המרחבים סביבם".
+    // French was already right and is the register the others moved to.
+    expect(translate("de", "flow", "facilities")).toBe("Räume");
+    expect(translate("es", "flow", "facilities")).toBe("Espacios");
+    expect(translate("fr", "flow", "facilities")).toBe("Lieux");
+    expect(translate("he", "flow", "facilities")).toBe("מרחבים ומתקנים");
+    // The name and its description must not drift apart again.
+    expect(translate("de", "flow", "moduleFacilitiesDesc")).toContain("Räume");
+    expect(translate("es", "flow", "moduleFacilitiesDesc")).toContain("espacios");
+    expect(translate("he", "flow", "moduleFacilitiesDesc")).toContain("מרחבים");
+  });
+
+  it("keeps one German word for a piece of writing across both products (R3)", () => {
+    // Flow called it a "Lesestück" and Teach called it a "Text". One
+    // product, one word.
+    expect(translate("de", "flow", "readings")).toBe("Texte");
+    expect(translate("de", "teach", "exploreReadings")).toBe("Meine Texte");
+    // And recordings are Aufnahmen, not the colloquial "Audios".
+    expect(translate("de", "teach", "exploreAudio")).toBe("Meine Aufnahmen");
+  });
+
+  it("distinguishes a class timetable from a retreat programme in German (R5)", () => {
+    // The other four locales already made this distinction; German used
+    // the generic "Zeitplan" for both.
+    expect(translate("de", "teach", "navSchedule")).toBe("Kursplan");
+    expect(translate("de", "flow", "navSchedule")).toBe("Zeitplan");
+  });
+
+  it("keeps guest navigation labels short enough for a four-up tab bar (R6)", () => {
+    // "À propos de moi" was 15 characters against 4-8 for every other
+    // label sharing that bar.
+    expect(translate("fr", "teach", "navAbout")).toBe("À propos");
+    for (const locale of SUPPORTED_LOCALES) {
+      for (const key of ["navHome", "navSchedule", "navAbout", "navExplore"] as const) {
+        expect(
+          translate(locale, "teach", key).length,
+          `teach.${key} is too long for the tab bar in ${locale}`
+        ).toBeLessThanOrEqual(12);
+      }
+    }
+  });
+
+  it("names the Hebrew Explore tab with a noun, not an imperative (R7)", () => {
+    // Hebrew tab bars name things. "גלו" ("discover!") read as a command
+    // in a place that is otherwise a list of nouns - and it has to work
+    // as a back-destination too: common.backTo gives "חזרה לתכנים".
+    expect(translate("he", "teach", "navExplore")).toBe("תכנים");
+    expect(translate("he", "common", "backTo", { label: translate("he", "teach", "navExplore") }))
+      .toBe("חזרה לתכנים");
+  });
+
+  it("says the guests LISTEN to audio rather than broadcast it (R8)", () => {
+    // "להשמיע" is to play something so others hear it.
+    const he = translate("he", "flow", "moduleAudioDesc");
+    expect(he).toContain("להאזין");
+    expect(he).not.toContain("להשמיע");
+    // French never had the bug - it already said "écouter".
+    expect(translate("fr", "flow", "moduleAudioDesc")).toContain("écouter");
+  });
+
+  it("uses German's own noun instead of a calque (R9)", () => {
+    const de = translate("de", "flow", "moduleGuidelinesDesc");
+    expect(de).toContain("Wissenswertes");
+    expect(de).not.toContain("Gut-zu-wissen");
+  });
+
+  it("keeps the French audio description plural in KIND, not just number (R10)", () => {
+    // "enseignements" replaces the dated "causeries", but it sits as ONE
+    // of three kinds beside meditations and practices - the module holds
+    // conversations and meditations too, and the sentence must not claim
+    // everything in it is a teaching.
+    const fr = translate("fr", "flow", "moduleAudioDesc");
+    expect(fr).toBe("Méditations, enseignements et pratiques que tes invités peuvent écouter.");
+    expect(fr).not.toContain("causeries");
+  });
+
+  it("calls the Guest App by a Hebrew name, with feminine agreement (R11)", () => {
+    // The term was "ה-Guest App" in 15 strings. "אפליקציה" is feminine,
+    // and several of those strings agreed with it in the masculine - so
+    // this was never a find-and-replace.
+    const he = JSON.stringify(dictionaryOf("he"));
+    expect(he, "a Latin \"Guest App\" survives in Hebrew").not.toContain("Guest App");
+    expect(translate("he", "studio", "guestAppLink")).toBe("קישור לאפליקציית האורחים");
+    expect(translate("he", "studio", "openGuestApp")).toBe("פתיחת אפליקציית האורחים");
+    expect(translate("he", "flow", "viewLiveGuestApp")).toBe("צפייה באפליקציית האורחים החיה");
+    // The five that carried a masculine agreement, now feminine:
+    expect(translate("he", "flow", "previewPublishBody")).toContain("החיה מתעדכנת");
+    expect(translate("he", "flow", "needCoverImage")).toContain("שאפליקציית האורחים תקבל");
+    expect(translate("he", "studio", "contrastPolicy")).toContain("בוחרת");
+    expect(translate("he", "teach", "draftPreviewBody")).toContain("האמיתית");
+    expect(translate("he", "teach", "shareYourGuestApp")).toBe("שיתוף אפליקציית האורחים");
+  });
+
+  it("Spanish warms the house rules and drops the school register (R2, R4)", () => {
+    expect(translate("es", "flow", "guidelines")).toBe("Normas de convivencia");
+    expect(translate("es", "flow", "moduleFacilitatorsLabel")).toBe("Equipo / profesores");
   });
 
   it("Spanish keeps collection module names plural", () => {
@@ -65,6 +170,10 @@ describe("terminology decisions", () => {
 
 /** Every string a locale ships, flattened, for whole-dictionary guards. */
 function allStrings(locale: string): string {
+  return JSON.stringify(dictionaryOf(locale));
+}
+
+function dictionaryOf(locale: string): unknown {
   const dictionaries: Record<string, unknown> = { en, de, es, fr, he };
-  return JSON.stringify(dictionaries[locale]);
+  return dictionaries[locale];
 }

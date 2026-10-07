@@ -114,7 +114,7 @@ export const de: Dictionary = {
 
   teach: {
     navHome: "Start",
-    navSchedule: "Zeitplan",
+    navSchedule: "Kursplan",
     navAbout: "Über mich",
     navExplore: "Entdecken",
 
@@ -128,7 +128,7 @@ export const de: Dictionary = {
     fromTeacher: "Von {name}",
 
     exploreReadings: "Meine Texte",
-    exploreAudio: "Meine Audios",
+    exploreAudio: "Meine Aufnahmen",
     exploreContact: "Kontakt aufnehmen",
     exploreHeading: "Entdecken",
     moreFrom: "Mehr von {name}",
@@ -661,7 +661,7 @@ export const de: Dictionary = {
     arrivalInfo: "Ankunft",
     meals: "Mahlzeiten",
     treatments: "Behandlungen",
-    facilities: "Einrichtungen",
+    facilities: "Räume",
     faq: "Fragen",
     stayConnected: "In Kontakt bleiben",
     contact: "Kontakt",
@@ -1002,7 +1002,7 @@ export const de: Dictionary = {
     openRetreatHome: "Retreat-Start öffnen",
 
     // ---- TASK 029: Readings ----
-    readings: "Lesestücke",
+    readings: "Texte",
     moduleReadingsDesc: "Kurze Texte zum Lesen vor, während oder nach dem Retreat.",
     eyebrowReadings: "Lesen",
     readingsHeading: "Etwas zum",
@@ -1067,7 +1067,7 @@ export const de: Dictionary = {
 
     // ---- TASK 029: Guidelines ----
     guidelines: "Hinweise",
-    moduleGuidelinesDesc: "Hausregeln und Gut-zu-wissen: Ruhezeiten, Handys, Schuhe.",
+    moduleGuidelinesDesc: "Hausregeln und Wissenswertes: Ruhezeiten, Handys, Schuhe.",
     eyebrowGuidelines: "Gut zu wissen",
     guidelinesHeading: "Ein paar",
     guidelinesHeadingEm: "Hinweise",

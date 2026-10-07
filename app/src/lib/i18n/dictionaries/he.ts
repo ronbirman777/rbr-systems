@@ -10,12 +10,28 @@ import type { Dictionary } from "./en";
  * finished copy - see the CP3 report's open items. Nothing here is
  * machine-translated at runtime, and no user content is ever translated.
  *
- * Terminology decisions, fixed once so the product stays consistent:
+ * Terminology decisions, fixed once so the product stays consistent.
+ * Owner-approved, TASK 029 - see docs/tasks/029/terminology-glossary.md:
  *   Space        מרחב        (not "אזור" or "עמוד")
- *   Guest App    אפליקציית האורחים
+ *   Guest App    אפליקציית האורחים   (R11 - was "ה-Guest App". The noun is
+ *                FEMININE, so anything agreeing with it agrees in the
+ *                feminine: "החיה", "מתעדכנת", "תקבל", "בוחרת", "האמיתית".)
  *   Schedule     לוח שיעורים (Teach) / לוח זמנים (Flow retreat)
  *   Class        שיעור
- *   Reading      קריאה / הרהור  -> "הרהורים ומאמרים" for the section
+ *   Readings     קטעי קריאה (Flow) / קטעי הקריאה שלי (Teach)
+ *                A collection, never the ACT of reading - the owner's own
+ *                correction, and the benchmark the rest of the review used.
+ *                Flow's is not possessive: a retreat's readings belong to
+ *                the retreat, not to the organizer reading them.
+ *   Audio        אודיו (Flow) / קטעי האודיו שלי (Teach)
+ *   Facilities   מרחבים ומתקנים   (R1 - was "מתקנים", which names equipment,
+ *                not rooms. NOTE the deliberate overlap with "מרחב" for
+ *                Space above: the compound keeps "מתקנים" alongside so the
+ *                two read apart in context - Facilities is a guest-facing
+ *                module name, Space is the organizer's own word for their
+ *                whole Space.)
+ *   Explore      תכנים       (R7 - Teach guest nav. A noun, not the
+ *                imperative "גלו": Hebrew tab bars name things.)
  *   Practice     תרגול
  *   Publish      פרסום
  */
@@ -111,7 +127,7 @@ export const he: Dictionary = {
     navHome: "בית",
     navSchedule: "לוח שיעורים",
     navAbout: "עליי",
-    navExplore: "גלו",
+    navExplore: "תכנים",
 
     todaysClasses: "השיעורים של היום",
     noClassesToday: "אין שיעורים היום",
@@ -303,7 +319,7 @@ export const he: Dictionary = {
     identityEyebrow: "מרחב ההוראה שלי",
     identityBody: "השם שלכם, איך אתם מתארים את ההוראה, ואיפה האורחים מוצאים אתכם.",
     whoYouAre: "מי אתם",
-    whoYouAreBody: "מוצג בראש מסך הבית של ה-Guest App ובעליי.",
+    whoYouAreBody: "מוצג בראש מסך הבית של אפליקציית האורחים ובעליי.",
     myName: "השם שלי",
     myNamePlaceholder: "מאיה לוין",
     teacherType: "סוג המורה",
@@ -624,10 +640,10 @@ export const he: Dictionary = {
     publishedNow: "פורסם — האורחים רואים את הגרסה הזו עכשיו.",
     publishNow: "לפרסם עכשיו",
     notPublishedYet: "עוד לא פורסם.",
-    shareYourGuestApp: "שיתוף ה-Guest App",
-    shareGuestAppBody: "שלחו לאורחים את הקישור או תנו להם לסרוק את קוד ה-QR. הוא לא מכיל אסימון גישה - זו פשוט הכתובת הציבורית של ה-Guest App.",
+    shareYourGuestApp: "שיתוף אפליקציית האורחים",
+    shareGuestAppBody: "שלחו לאורחים את הקישור או תנו להם לסרוק את קוד ה-QR. הוא לא מכיל אסימון גישה - זו פשוט הכתובת הציבורית של אפליקציית האורחים.",
     draftPreview: "תצוגה מקדימה של הטיוטה",
-    draftPreviewBody: "ה-Guest App האמיתי עם הטיוטה הנוכחית. פריסת נייד למטה; האפליקציה החיה עוברת לשתי עמודות במסכים רחבים.",
+    draftPreviewBody: "אפליקציית האורחים האמיתית עם הטיוטה הנוכחית. פריסת נייד למטה; האפליקציה החיה עוברת לשתי עמודות במסכים רחבים.",
 
     // ---- Studio: directory opt-in ----
     listMeOnInnerDwes: "להציג אותי ב-InnerDweS",
@@ -656,7 +672,7 @@ export const he: Dictionary = {
     arrivalInfo: "פרטי הגעה",
     meals: "ארוחות",
     treatments: "טיפולים",
-    facilities: "מתקנים",
+    facilities: "מרחבים ומתקנים",
     faq: "שאלות",
     stayConnected: "נשארים בקשר",
     contact: "יצירת קשר",
@@ -824,11 +840,11 @@ export const he: Dictionary = {
     linkMustBeHttps: "הזינו קישור מלא שמתחיל ב-https:// (או השאירו ריק).",
 
     // ---- Studio: Preview & Publish step ----
-    previewPublishBody: "עברו על השינויים ופרסמו כשאתם מוכנים. ה-Guest App החי מתעדכן רק כשאתם בוחרים לפרסם.",
+    previewPublishBody: "עברו על השינויים ופרסמו כשאתם מוכנים. אפליקציית האורחים החיה מתעדכנת רק כשאתם בוחרים לפרסם.",
     publishedNow: "פורסם — האורחים רואים את הגרסה הזו עכשיו.",
-    guestAppIsLive: "ה-Guest App שלכם באוויר",
-    viewGuestApp: "צפייה ב-Guest App",
-    viewLiveGuestApp: "צפייה ב-Guest App החי",
+    guestAppIsLive: "אפליקציית האורחים שלכם באוויר",
+    viewGuestApp: "צפייה באפליקציית האורחים",
+    viewLiveGuestApp: "צפייה באפליקציית האורחים החיה",
     chooseAddressInIdentity: "בחרו כתובת במסך הזהות",
     shareAndQr: "שיתוף וקוד QR",
     resumeDraftLater: "להמשיך את הטיוטה הזו בהמשך בקישור הזה",
@@ -836,7 +852,7 @@ export const he: Dictionary = {
     // ---- Studio: readiness checklist ----
     needRetreatName: "הוסיפו את שם הריטריט במסך הזהות.",
     needAddress: "בחרו כתובת במסך הזהות.",
-    needCoverImage: "הוסיפו תמונה ראשית במסך המיתוג כדי שה-Guest App יקבל רושם ראשוני מזמין.",
+    needCoverImage: "הוסיפו תמונה ראשית במסך המיתוג כדי שאפליקציית האורחים תקבל רושם ראשוני מזמין.",
     needSchedule: "הוסיפו לפחות פריט אחד ללוח הזמנים כדי שהאורחים ידעו מה קורה.",
     needFacilitators: "הוסיפו את מי שמנחה את הריטריט.",
     navContent: "תוכן",
@@ -1037,7 +1053,7 @@ export const he: Dictionary = {
     eyebrowAudio: "להאזין",
     audioHeading: "משהו",
     audioHeadingEm: "להאזין",
-    moduleAudioDesc: "מדיטציות, שיחות ותרגולים שהאורחים יכולים להשמיע.",
+    moduleAudioDesc: "מדיטציות, שיחות ותרגולים שהאורחים יכולים להאזין להם.",
     audioStepTitle: "שמע",
     audioStepBody: "הקלטות שהאורחים יכולים להאזין להן — מדיטציה ללילה הראשון, תרגול לבוקר.",
     addTrack: "הוספת שמע",
@@ -1160,8 +1176,8 @@ export const he: Dictionary = {
     draft: "טיוטה",
     readyToPublish: "מוכנים לפרסם?",
     shareYourSpace: "שיתוף המרחב",
-    guestAppLink: "קישור ל-Guest App",
-    guestAppAddress: "הכתובת של ה-Guest App",
+    guestAppLink: "קישור לאפליקציית האורחים",
+    guestAppAddress: "הכתובת של אפליקציית האורחים",
     anyoneWithLink: "כל מי שיש לו את הקישור",
     featuredOnInnerDwes: "מוצג ב-InnerDweS",
     lastPublished: "פורסם לאחרונה {timestamp}",
@@ -1226,7 +1242,7 @@ export const he: Dictionary = {
 
     // Guest Access panel
     guestAccess: "גישת אורחים",
-    guestAccessBody: "בחרו מי יכול לפתוח את ה-Guest App עם הקישור שלמעלה.",
+    guestAccessBody: "בחרו מי יכול לפתוח את אפליקציית האורחים עם הקישור שלמעלה.",
     requireCode: "לדרוש קוד בן 6 ספרות",
     noCodeNeeded: "האורחים יכולים לפתוח את האפליקציה עם הקישור בלבד - בלי קוד.",
     codeIsSet: "מוגדר קוד. הוא לא נשמר בצורה שאפשר להציג שוב - צרו חדש אם האורחים צריכים אותו.",
@@ -1365,18 +1381,18 @@ export const he: Dictionary = {
     contrastUsable: "שמיש, אבל ניגודיות חזקה יותר תיקרא טוב יותר.",
     contrastHeadingsOnly: "מתאים לכותרות ולכפתורים, נמוך מדי לטקסט גוף קטן.",
     contrastTooLow: "נמוך מדי לקריאה אמינה — האפליקציה תחליף כאן בצבע קריא.",
-    contrastPolicy: "הצבעים שלכם נשמרים בדיוק כפי שבחרתם. כששילוב יהיה קשה לקריאה, ה-Guest App בוחר צבע טקסט קריא מעליו ולא משנה את הצבע שלכם.",
+    contrastPolicy: "הצבעים שלכם נשמרים בדיוק כפי שבחרתם. כששילוב יהיה קשה לקריאה, אפליקציית האורחים בוחרת צבע טקסט קריא מעליו ולא משנה את הצבע שלכם.",
     startFromPreset: "להתחיל מלוח מוכן",
     downloadQr: "הורדת קוד QR",
     hideRegistrationQr: "הסתרת קוד ה-QR להרשמה",
     registrationQrForClass: "קוד QR להרשמה לשיעור הזה",
     registrationQrAlt: "קוד QR שפותח וואטסאפ עם פנייה לשיעור הזה",
     registrationQrHint: "הדפיסו את זה ליד השיעור. סריקה פותחת וואטסאפ עם הפנייה כבר מנוסחת — האורח עדיין לוחץ שליחה.",
-    openGuestApp: "פתיחת ה-Guest App",
+    openGuestApp: "פתיחת אפליקציית האורחים",
     opensInNewTab: "(נפתח בלשונית חדשה)",
     linkGoesLiveOnPublish: "הקישור עולה לאוויר כשמפרסמים. עד אז האורחים לא יכולים לפתוח אותו.",
     qrCode: "קוד QR",
-    qrCodeAlt: "קוד QR לקישור ה-Guest App שלכם",
+    qrCodeAlt: "קוד QR לקישור אפליקציית האורחים שלכם",
     needsAttentionLabel: "דורש טיפול:",
     shareCard: "כרטיס שיתוף",
     yourShareCard: "כרטיס השיתוף שלכם",
