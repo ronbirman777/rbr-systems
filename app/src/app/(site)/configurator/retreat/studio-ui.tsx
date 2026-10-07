@@ -66,7 +66,11 @@ export const STUDIO_HIT_ROW_CLASS =
  */
 export const STUDIO_REORDER_COLUMN_CLASS = "flex flex-col flex-shrink-0 w-11";
 export const STUDIO_REORDER_BUTTON_CLASS =
-  "w-11 h-[22px] flex items-center justify-center text-[10px] leading-none disabled:opacity-20";
+  "w-11 h-[22px] flex items-center justify-center text-[10px] leading-none disabled:opacity-20 " +
+  // Keyboard users get the same control pointer users do. The ring is
+  // inset so it stays inside the 44x22 half and cannot be mistaken for
+  // the sibling arrow's focus.
+  "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current rounded-sm";
 
 export const STUDIO_INPUT_CLASS =
   "w-full bg-white border border-[#D4C5A9]/70 rounded-xl px-3.5 py-2.5 text-[13px] text-[#2D4A3E] outline-none focus:ring-2 focus:ring-[#2D4A3E]/15 focus:border-[#2D4A3E]/30 placeholder:text-[#9B8E84]/60 transition-all";
