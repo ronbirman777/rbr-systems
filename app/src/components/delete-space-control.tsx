@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { deleteSpace } from "@/app/configurator/retreat/lifecycleActions";
-import { INITIAL_LIFECYCLE_STATE } from "@/app/configurator/retreat/lifecycleActionsState";
+import { deleteSpace } from "@/app/(site)/configurator/retreat/lifecycleActions";
+import { INITIAL_LIFECYCLE_STATE } from "@/app/(site)/configurator/retreat/lifecycleActionsState";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 
 /**

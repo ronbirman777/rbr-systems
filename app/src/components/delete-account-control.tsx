@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import { deleteAccount, type DeleteAccountState } from "@/app/(auth)/actions";
+import { deleteAccount, type DeleteAccountState } from "@/app/(site)/(auth)/actions";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 
 const INITIAL_STATE: DeleteAccountState = { error: null };

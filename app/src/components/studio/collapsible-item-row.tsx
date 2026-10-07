@@ -76,17 +76,24 @@ export function CollapsibleItemRow({
           <span className="block text-[14px] font-semibold text-[#192B21] truncate">{title || t("common", "untitled")}</span>
           <span className="block text-[11.5px] text-[#8C8A84] truncate">{sub}</span>
         </button>
+        {/* Real 44x44 boxes that TILE - never a centred ::after that
+            overflows its own button. These sit side by side, so a 44-wide
+            hit area on a 36-wide button reached 4px into each neighbour and
+            the later button in DOM order won that strip: the same defect
+            Production QA found on the Flow ▲▼ arrows, where it was total
+            rather than partial. See STUDIO_REORDER_* in
+            configurator/retreat/studio-ui.tsx. */}
         {move ? (
           <span className="flex">
-            <button type="button" onClick={move.up} aria-label={t("studio", "moveUp")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5 relative after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-11 after:h-11" disabled={move.upDisabled}>
+            <button type="button" onClick={move.up} aria-label={t("studio", "moveUp")} className="w-11 h-11 flex items-center justify-center rounded-lg text-[#6F6C66] hover:bg-black/5" disabled={move.upDisabled}>
               ↑
             </button>
-            <button type="button" onClick={move.down} aria-label={t("studio", "moveDown")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5 relative after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-11 after:h-11" disabled={move.downDisabled}>
+            <button type="button" onClick={move.down} aria-label={t("studio", "moveDown")} className="w-11 h-11 flex items-center justify-center rounded-lg text-[#6F6C66] hover:bg-black/5" disabled={move.downDisabled}>
               ↓
             </button>
           </span>
         ) : null}
-        <button type="button" onClick={onToggle} aria-label={open ? t("studio", "collapse") : t("common", "edit")} className="w-9 h-9 rounded-lg text-[#6F6C66] hover:bg-black/5 relative after:content-[''] after:absolute after:left-1/2 after:top-1/2 after:-translate-x-1/2 after:-translate-y-1/2 after:w-11 after:h-11">
+        <button type="button" onClick={onToggle} aria-label={open ? t("studio", "collapse") : t("common", "edit")} className="w-11 h-11 flex items-center justify-center rounded-lg text-[#6F6C66] hover:bg-black/5">
           {open ? "▴" : "▾"}
         </button>
       </div>

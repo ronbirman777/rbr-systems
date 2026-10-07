@@ -141,7 +141,7 @@ export const es: Dictionary = {
 
     // Explore
     exploreReadings: "Mis lecturas",
-    exploreAudio: "Mi audio",
+    exploreAudio: "Mis audios",
     exploreContact: "Escríbeme",
     exploreHeading: "Descubre",
     moreFrom: "Más de {name}",
@@ -678,7 +678,7 @@ export const es: Dictionary = {
     arrivalInfo: "Información de llegada",
     meals: "Comidas",
     treatments: "Tratamientos",
-    facilities: "Instalaciones",
+    facilities: "Espacios",
     faq: "Preguntas",
     stayConnected: "Sigue en contacto",
     contact: "Contacto",
@@ -882,7 +882,7 @@ export const es: Dictionary = {
     myRetreatFallback: "Mi retiro",
 
     // ---- Module catalog labels ----
-    moduleFacilitatorsLabel: "Equipo / profesorado",
+    moduleFacilitatorsLabel: "Equipo / profesores",
     moduleResources: "Recursos",
     moduleAudio: "Audio",
     moduleAnnouncements: "Avisos",
@@ -1077,7 +1077,8 @@ export const es: Dictionary = {
     noFileYet: "sin archivo todavía",
 
     // ---- TASK 029: Guidelines ----
-    guidelines: "Normas",
+    guidelines: "Normas de convivencia",
+    guidelinesShort: "Normas",
     moduleGuidelinesDesc: "Normas de la casa y cosas que conviene saber: horas de silencio, móviles, calzado.",
     eyebrowGuidelines: "Bueno saberlo",
     guidelinesHeading: "Unas pocas",

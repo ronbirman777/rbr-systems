@@ -63,7 +63,7 @@ describe("canonical brand presets", () => {
 
 describe("no alternate Flow palette", () => {
   it("Flow's configurator and the theme tokens carry no separate preset/swatch list", () => {
-    const flow = readFileSync(join(__dirname, "..", "..", "app", "configurator", "retreat", "retreat-configurator.tsx"), "utf8");
+    const flow = readFileSync(join(__dirname, "..", "..", "app", "(site)", "configurator", "retreat", "retreat-configurator.tsx"), "utf8");
     const tokens = readFileSync(join(__dirname, "..", "theme", "tokens.ts"), "utf8");
     expect(flow).not.toContain("BRAND_COLOR_PRESETS");
     expect(tokens).not.toContain("BRAND_COLOR_PRESETS");

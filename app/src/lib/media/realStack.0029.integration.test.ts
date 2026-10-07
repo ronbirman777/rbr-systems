@@ -178,8 +178,8 @@ describe.skipIf(!ENABLED)("0029 Storage policy - real authenticated sessions", (
 
 // ---------------------------------------------------------------------------
 describe.skipIf(!ENABLED)("application publish flows under 0029 (zero Storage UPDATE dependency)", () => {
-  type Actions = typeof import("@/app/configurator/retreat/actions");
-  type TeachActions = typeof import("@/app/configurator/teach/actions");
+  type Actions = typeof import("@/app/(site)/configurator/retreat/actions");
+  type TeachActions = typeof import("@/app/(site)/configurator/teach/actions");
   let retreat: Actions;
   let teach: TeachActions;
   const PREV = { error: null, imageRef: null, imageUrl: null } as never;
@@ -218,8 +218,8 @@ describe.skipIf(!ENABLED)("application publish flows under 0029 (zero Storage UP
   };
 
   beforeAll(async () => {
-    retreat = await import("@/app/configurator/retreat/actions");
-    teach = await import("@/app/configurator/teach/actions");
+    retreat = await import("@/app/(site)/configurator/retreat/actions");
+    teach = await import("@/app/(site)/configurator/teach/actions");
     await reset(1, T(1));
     await reset(2, T(2));
     // Normalise both live snapshots to "no media" so exact-set assertions hold on a reused database.

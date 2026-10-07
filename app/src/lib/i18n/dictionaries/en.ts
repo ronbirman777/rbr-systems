@@ -1069,6 +1069,17 @@ export const en = {
 
     // ---- TASK 029: Guidelines ----
     guidelines: "Guidelines",
+    /**
+     * The Explore card only. That tile is two-up with an 18px
+     * truncating title, and Spanish's full "Normas de convivencia"
+     * needs 187px against the 153px it gets at 430 - so it ellipsised
+     * on every common phone width. Every other locale repeats its own
+     * full name here on purpose: this key exists so ONE language can
+     * be shorter in ONE place, not so five names can drift apart.
+     * Studio steps, the Modules card, the Save button and the
+     * detail-screen heading all keep `guidelines`.
+     */
+    guidelinesShort: "Guidelines",
     moduleGuidelinesDesc: "House rules and good-to-knows: quiet hours, phones, shoes.",
     eyebrowGuidelines: "Good to know",
     guidelinesHeading: "A few",

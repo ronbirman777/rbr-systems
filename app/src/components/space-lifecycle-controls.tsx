@@ -6,8 +6,8 @@ import {
   restoreSpace,
   replaceSpace,
   type LifecycleActionState,
-} from "@/app/configurator/retreat/lifecycleActions";
-import { INITIAL_LIFECYCLE_STATE } from "@/app/configurator/retreat/lifecycleActionsState";
+} from "@/app/(site)/configurator/retreat/lifecycleActions";
+import { INITIAL_LIFECYCLE_STATE } from "@/app/(site)/configurator/retreat/lifecycleActionsState";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 
 /**

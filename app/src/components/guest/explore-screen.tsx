@@ -314,7 +314,10 @@ export function ExploreScreen({
                 onClick={() => setPage("guidelines")}
                 icon={<GuidelinesIcon className="w-4 h-4" />}
                 eyebrow={t("flow", "eyebrowGuidelines")}
-                title={t("flow", "guidelines")}
+                /* The short form, only here: this tile truncates at 18px
+                   and Spanish's full name does not fit on a phone. The
+                   detail screen it opens keeps the full name. */
+                title={t("flow", "guidelinesShort")}
                 imageUrl={guidelinesImage}
                 imagePosition={guidelinesImagePosition}
               />
@@ -542,7 +545,19 @@ function SolidTile({
               direction rather than inherit the Space's. EntryCard above
               needs no equivalent: meals, treatments and facilities are
               the only callers and all three titles are system strings. */}
-          <h3 dir="auto" className="text-[18px] leading-tight mt-0.5 truncate" style={{ fontFamily: "var(--rbr-font-display)", color: v.onColor }}>
+          {/* Two lines, not one.
+              `truncate` cut every module name that did not fit a half-width
+              tile, and at 320px that was most of them in every language -
+              English included ("Stay connected", "Custom Pages"). German
+              "Meine Aufnahmen" and Spanish "Sigue en contacto" still lost
+              their ends at 390. The tile has the room: 140px, with a 32px
+              icon and 16px padding, leaves ~76px for an 11px eyebrow and
+              the title, and two lines of 18px at leading-tight come to 45.
+              So the fix is layout, not shorter words - the approved
+              translations stay exactly as the owner wrote them.
+              `break-words` catches the one case wrapping cannot help, a
+              single word wider than the tile. */}
+          <h3 dir="auto" className="text-[18px] leading-tight mt-0.5 line-clamp-2 break-words" style={{ fontFamily: "var(--rbr-font-display)", color: v.onColor }}>
             {title}
           </h3>
         </div>

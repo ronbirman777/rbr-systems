@@ -1,6 +1,6 @@
 "use client";
 
-import { createScheduleItemStub, deleteScheduleItem } from "@/app/configurator/retreat/actions";
+import { createScheduleItemStub, deleteScheduleItem } from "@/app/(site)/configurator/retreat/actions";
 import { enqueueItemOp } from "@/lib/modules/persistItem";
 
 const STUB_INITIAL = { error: null };

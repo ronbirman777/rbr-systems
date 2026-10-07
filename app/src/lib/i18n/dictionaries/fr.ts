@@ -134,7 +134,7 @@ export const fr: Dictionary = {
     // Guest navigation
     navHome: "Accueil",
     navSchedule: "Horaires",
-    navAbout: "À propos de moi",
+    navAbout: "À propos",
     navExplore: "Explorer",
 
     // Guest home
@@ -1061,7 +1061,7 @@ export const fr: Dictionary = {
     eyebrowAudio: "Écouter",
     audioHeading: "Quelque chose à",
     audioHeadingEm: "écouter",
-    moduleAudioDesc: "Méditations, causeries et pratiques que tes invités peuvent écouter.",
+    moduleAudioDesc: "Méditations, enseignements et pratiques que tes invités peuvent écouter.",
     audioStepTitle: "Audio",
     audioStepBody: "Des enregistrements que tes invités peuvent écouter : une méditation pour le premier soir, une pratique pour le matin.",
     addTrack: "Ajouter un audio",
@@ -1086,6 +1086,7 @@ export const fr: Dictionary = {
 
     // ---- TASK 029: Guidelines ----
     guidelines: "Règles du lieu",
+    guidelinesShort: "Règles du lieu",
     moduleGuidelinesDesc: "Les règles du lieu et ce qu’il est bon de savoir : heures de silence, téléphones, chaussures.",
     eyebrowGuidelines: "Bon à savoir",
     guidelinesHeading: "Quelques",

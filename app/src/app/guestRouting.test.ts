@@ -49,8 +49,8 @@ vi.mock("@/components/guest/guest-access-screen", () => ({ GuestAccessScreen: fu
 import { PublishedSpaceScreen } from "@/components/guest/published-space-screen";
 import { TeachPublishedSpaceScreen } from "@/components/teach/teach-published-screen";
 import { GuestAccessScreen } from "@/components/guest/guest-access-screen";
-import GuestByTenantPage from "./g/[tenantId]/page";
-import GuestBySlugPage from "./s/[slug]/page";
+import GuestByTenantPage from "./(guest)/g/[tenantId]/page";
+import GuestBySlugPage from "./(guest)/s/[slug]/page";
 
 const TENANT = "11111111-2222-4333-8444-555555555555";
 

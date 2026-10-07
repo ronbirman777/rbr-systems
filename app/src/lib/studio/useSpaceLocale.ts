@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DEFAULT_LOCALE, directionOf, type Direction, type Locale } from "@/lib/i18n";
 
 /**
@@ -27,5 +27,51 @@ export function useSpaceLocale(initial: Locale = DEFAULT_LOCALE): {
 } {
   const [locale, setState] = useState<Locale>(initial);
   const setLocale = useCallback((next: Locale) => setState(next), []);
-  return { locale, dir: directionOf(locale), setLocale };
+  const dir = directionOf(locale);
+
+  /**
+   * Keep the DOCUMENT's own language and direction in step with the
+   * Studio's.
+   *
+   * The Studio renders its own `dir` on an inner container, so the layout
+   * already mirrors correctly. What stayed wrong is `<html lang>`: the
+   * root layout hardcodes "en" for every route, so a fully German or
+   * Hebrew Studio still announced itself as English to a screen reader,
+   * and `lang`-dependent typography (hyphenation, quotation marks, font
+   * fallback) resolved against the wrong language. Production QA, TASK 029.
+   *
+   * This is an effect rather than server-rendered markup ON PURPOSE, and
+   * the distinction matters:
+   *
+   *   - The GUEST document's locale is known at request time, so it
+   *     belongs in server-rendered markup, not here. See the Phase D note
+   *     in the task report - it needs a per-branch root layout, which is a
+   *     routing change, not a one-line one.
+   *   - The STUDIO's locale is client state that changes with no server
+   *     round trip at all: pressing "Deutsch" must re-language the
+   *     interface immediately. There is no render pass on the server to
+   *     carry that, so the only correct mechanism is to write the
+   *     attributes after the switch. Writing them in an effect also keeps
+   *     the server and the first client render byte-identical, so it
+   *     cannot introduce a hydration mismatch.
+   *
+   * The cleanup restores whatever was there before, so navigating out of
+   * the Studio - to My Spaces, say - does not leave the rest of the app
+   * claiming to be Hebrew.
+   */
+  useEffect(() => {
+    const root = document.documentElement;
+    const previousLang = root.getAttribute("lang");
+    const previousDir = root.getAttribute("dir");
+    root.setAttribute("lang", locale);
+    root.setAttribute("dir", dir);
+    return () => {
+      if (previousLang === null) root.removeAttribute("lang");
+      else root.setAttribute("lang", previousLang);
+      if (previousDir === null) root.removeAttribute("dir");
+      else root.setAttribute("dir", previousDir);
+    };
+  }, [locale, dir]);
+
+  return { locale, dir, setLocale };
 }

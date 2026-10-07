@@ -24,7 +24,7 @@ import { de } from "./dictionaries/de";
 import { es } from "./dictionaries/es";
 import { fr } from "./dictionaries/fr";
 import { he } from "./dictionaries/he";
-import { validateAdditionalLinks } from "@/app/configurator/retreat/featuredValidation";
+import { validateAdditionalLinks } from "@/app/(site)/configurator/retreat/featuredValidation";
 import { DIRECTIONAL_ICONS, iconTransform, isDirectionalIcon } from "./direction";
 import { formatLongDateLocalized, formatNumberLocalized, formatShortDateLocalized, formatTimeLocalized, shortWeekdayName } from "./datetime";
 import { recurrenceSummary } from "@/lib/teach/recurrenceText";
