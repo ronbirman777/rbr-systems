@@ -114,5 +114,178 @@
    "everythingElseMd5": "0d381fe810e07f6e5fb22410c6987c45 (identical both sides)",
    "cause": "A user change, not the release: the owner set the Space locale at 07:50:05 UTC, five minutes AFTER the 07:45:26 publish. The stored snapshot was not touched."
   }
+ },
+ "phase4_merge": {
+  "mainDriftBeforeMerge": 0,
+  "mainBefore": "d3f4bed",
+  "merged": "3ae07f4 (approved) + 4f7df76 (gate evidence, docs only)",
+  "mergeCommit": "78ffed4",
+  "strategy": "--no-ff",
+  "validationOnTheMergeResult": {
+   "firstAttempt": "FAILED: temporal-polyfill missing, 77 test failures. The main worktree's node_modules predated the dependency. Not a code problem - npm ci from the merged lockfile fixed it. Recorded because the first run genuinely failed.",
+   "afterNpmCi": {
+    "typegen": "ok",
+    "tsc": "clean",
+    "eslint": "0 errors, 3 pre-existing warnings",
+    "vitest": "1685 passed, 6 skipped",
+    "countryData": "up to date",
+    "build": "ok"
+   }
+  }
+ },
+ "phase5_deploy": {
+  "mainSha": "78ffed4",
+  "pushed": "d3f4bed..78ffed4, no force",
+  "deploymentId": "dpl_3QiS2UsdkopXB3jUzg1XU2gyJRh2",
+  "state": "READY",
+  "sha": "78ffed4",
+  "url": "innerdwes-5q91gftj1-inner-dwe-s.vercel.app",
+  "aliases": [
+   "innerdwes.com",
+   "app.innerdwes.com",
+   "*.innerdwes.com",
+   "innerdwes.vercel.app"
+  ],
+  "note": "innerdwes.com and app.innerdwes.com 307 to /preview-access - the site-wide gate, which exempts /s/, /g/ and /api/media."
+ },
+ "phase6_smoke_unauthenticated": {
+  "teachGuest": {
+   "url": "/s/teacherexample",
+   "http": 200,
+   "lang": "en",
+   "dir": "ltr",
+   "nav": [
+    "Home",
+    "Schedule",
+    "About Me",
+    "Explore"
+   ],
+   "teacherNamePresent": true
+  },
+  "flowGuest": {
+   "url": "/s/example",
+   "http": 200,
+   "lang": "en",
+   "dir": "ltr",
+   "nav": [
+    "Today",
+    "Schedule",
+    "Team",
+    "Explore"
+   ],
+   "zeroThirtyThreeModulesShown": "none (Readings, Audio, Guidelines all absent - unconfigured)"
+  },
+  "studioRoutes": {
+   "/configurator/teach": 307,
+   "/space": 307,
+   "target": "/preview-access"
+  },
+  "blocked": "Authenticated Studio smoke could not be run: Production sits behind the /preview-access gate AND needs a Production account login. I hold neither, and the established constraint is that no Production equivalent of the synthetic QA owner is created. Not attempted."
+ },
+ "phase9_media_security": {
+  "published": {
+   "http": 307,
+   "cacheControl": "public, max-age=60, immutable",
+   "varyCookie": "absent"
+  },
+  "draftDenied": 404,
+  "crossSpaceDenied": 404,
+  "unknownRefDenied": 404,
+  "malformedDenied": 404,
+  "signedUrlHost": "qzmsclkzbxrfohuxnitc.supabase.co (Production)",
+  "signedTtlSeconds": 180,
+  "responsiveLadder": {
+   "original": 105126,
+   "w320": 15450,
+   "w640": 44833,
+   "w1920": 105126,
+   "w4000": 105126
+  },
+  "noUpscale": "w=1920 and w=4000 both return the 105126-byte source, so nothing is upscaled",
+  "audio": {
+   "draftDenied": 404,
+   "unknownPublishedDenied": 404,
+   "malformedDenied": 404,
+   "servePath": "no published audio exists on Production yet - the module is new - so the serve path was proven on Staging with a real 2s MP3 (200 audio/mpeg); only the deny paths could be exercised here",
+   "autoplay": "no autoPlay anywhere in the audio components"
+  }
+ },
+ "phase10_lena": {
+  "publishedSnapshot": "byte-identical to the pre-release baseline",
+  "publishedModulesMd5": "85103a2983cb700f2333657abae8dc2d",
+  "publishedModulesLen": 20642,
+  "publishedAt": "2026-10-06 07:45:26.182006+00",
+  "publishedName": "Lena Hoffmann",
+  "publishedThemeMd5": "e3164cd2553982c38a4e8536f9d75fef",
+  "items": 20,
+  "itemsMd5": "217170c984fac0274230f70567558a37",
+  "itemsLastEdit": "2026-10-06 07:42:06.397809+00 (unchanged)",
+  "configsMd5": "7cbbba9309c1c5aa2a0b13ead6532011 (unchanged)",
+  "oneDifference": {
+   "field": "draft spaceSettings.locale",
+   "from": "en",
+   "to": "he",
+   "at": "2026-10-07 01:46:40.57+00",
+   "classification": "USER ACTION, not the release",
+   "evidence": [
+    "only spaceSettings changed; the other seven settings objects and all 20 items are byte-identical",
+    "the PUBLISHED snapshot is untouched, so the live Guest App still serves English - verified: lang=en, English nav, no Hebrew",
+    "publish_space() never writes module_settings (its on-conflict is on published_spaces)",
+    "it happened ~10 hours after the deployment, and I never authenticated to Production"
+   ],
+   "action": "left exactly as found - it is the owner's unpublished change"
+  },
+  "liveGuestApp": {
+   "lang": "en",
+   "dir": "ltr",
+   "englishNav": true,
+   "hebrewNav": false
+  }
+ },
+ "phase11_final": {
+  "migrationHead": "0033",
+  "ledger": "0033,0032,0031,0030,0029",
+  "ledgerRows": 32,
+  "timestampRows": 0,
+  "publish_space": {
+   "md5": "f5c39adfa718ce91969e273e2381f1f0",
+   "len": 18229,
+   "matchesPinned": true
+  },
+  "build_teach_payload": {
+   "md5": "8e1ef4a0b4e54494fa9503285a68c14b",
+   "len": 2089,
+   "unchanged": true
+  },
+  "counts": {
+   "tables": 17,
+   "policies": 32,
+   "functions": 31
+  },
+  "scheduleItems": {
+   "rows": 43,
+   "metadataEmpty": 43,
+   "metadataNull": 0
+  },
+  "qaMarkersInProduction": {
+   "items": 0,
+   "settings": 0,
+   "schedule": 0,
+   "snapshots": 0
+  },
+  "deployment": "dpl_3QiS2UsdkopXB3jUzg1XU2gyJRh2 READY (78ffed4)",
+  "rollback": "not required; 0033_flow_content_expansion_rollback.sql remains the rehearsed path"
+ },
+ "blocked": {
+  "phases": [
+   "6 (authenticated Studio smoke)",
+   "7 (Republish Production QA)",
+   "8 (five-locale Production QA)"
+  ],
+  "reason": "Two gates, no credentials for either: the site-wide /preview-access password, and a Production Studio account. Creating a Production QA account is ruled out by the standing constraint, and resetting a real user's password was not authorized. Nothing was attempted.",
+  "whatWouldUnblockIt": [
+   "the /preview-access password, plus either an existing Production QA account's credentials",
+   "or explicit authorization to create a synthetic Production QA owner and a safe Production QA Space"
+  ]
  }
 }
