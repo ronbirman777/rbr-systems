@@ -141,7 +141,7 @@ export const es: Dictionary = {
 
     // Explore
     exploreReadings: "Mis lecturas",
-    exploreAudio: "Mi audio",
+    exploreAudio: "Mis audios",
     exploreContact: "Escríbeme",
     exploreHeading: "Descubre",
     moreFrom: "Más de {name}",

@@ -997,7 +997,7 @@ export const he: Dictionary = {
     openRetreatHome: "פתיחת בית הריטריט",
 
     // ---- TASK 029: Readings ----
-    readings: "קריאה",
+    readings: "קטעי קריאה",
     moduleReadingsDesc: "טקסטים קצרים לקריאה לפני הריטריט, במהלכו או אחריו.",
     eyebrowReadings: "לקרוא",
     readingsHeading: "משהו",
