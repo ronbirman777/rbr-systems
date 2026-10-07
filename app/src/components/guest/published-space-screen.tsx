@@ -11,6 +11,7 @@ import { facilitySchema, type DisplayFacility } from "@/lib/modules/facility";
 import { arrivalInfoSchema, EMPTY_ARRIVAL_INFO, type ArrivalInfo } from "@/lib/modules/arrival";
 import { publishedFaqItemSchema, type DisplayFaqItem } from "@/lib/modules/faq";
 import { publishedCustomPageSchema, type DisplayCustomPage } from "@/lib/modules/customPage";
+import { parsePublishedInspirations } from "@/lib/modules/dailyInspiration";
 import { publishedGuidelineSchema, type DisplayGuideline } from "@/lib/modules/guideline";
 import {
   parseFlowReadings,
@@ -99,6 +100,8 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
   // publish_space() can never blank a guest's whole screen.
   const guidelinesParsed = z.array(publishedGuidelineSchema).safeParse(modules.guidelines);
   const guidelines: DisplayGuideline[] = guidelinesParsed.success ? guidelinesParsed.data : [];
+
+  const dailyInspirations = parsePublishedInspirations(modules.dailyInspiration);
 
   const readings: DisplayFlowReading[] = parseFlowReadings(modules.readings).map((r) => ({
     ...r,
@@ -217,6 +220,7 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
           retreatProfile={retreatProfile}
           moduleIntros={moduleIntros}
           guidelines={guidelines}
+          dailyInspirations={dailyInspirations}
           readings={readings}
           audio={audio}
           moduleCoverImages={moduleCoverImages}

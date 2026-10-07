@@ -23,6 +23,7 @@ import {
   type ModuleIntros,
 } from "@/lib/modules/moduleIntro";
 import { GUIDELINES_KEY, type EditableGuideline } from "@/lib/modules/guideline";
+import { DAILY_INSPIRATION_KEY, type EditableInspirationItem } from "@/lib/modules/dailyInspiration";
 import {
   FLOW_AUDIO_KEY,
   FLOW_READINGS_KEY,
@@ -105,6 +106,7 @@ export default async function ResumeRetreatConfiguratorPage({
     { data: retreatProfileRow },
     { data: moduleIntrosRow },
     { data: guidelineRows },
+    { data: inspirationRows },
     { data: readingRows },
     { data: audioRows },
   ] = await Promise.all([
@@ -204,6 +206,12 @@ export default async function ResumeRetreatConfiguratorPage({
       .select("id, title, description")
       .eq("tenant_id", tenantId)
       .eq("module_key", GUIDELINES_KEY)
+      .order("sort_order"),
+    supabase
+      .from("module_items")
+      .select("id, title, description, metadata")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", DAILY_INSPIRATION_KEY)
       .order("sort_order"),
     supabase
       .from("module_items")
@@ -367,6 +375,16 @@ export default async function ResumeRetreatConfiguratorPage({
     ),
   ]);
 
+  const initialDailyInspirations: EditableInspirationItem[] = (inspirationRows ?? []).map((r) => {
+    const meta = (r.metadata ?? {}) as Record<string, unknown>;
+    return {
+      id: r.id,
+      label: r.title ?? "",
+      text: r.description ?? "",
+      enabled: typeof meta.enabled === "boolean" ? meta.enabled : true,
+    };
+  });
+
   const initialGuidelines: EditableGuideline[] = (guidelineRows ?? []).map((r) => ({
     id: r.id,
     title: r.title,
@@ -516,6 +534,7 @@ export default async function ResumeRetreatConfiguratorPage({
         initialRetreatProfile={initialRetreatProfile}
         initialModuleIntros={initialModuleIntros}
         initialGuidelines={initialGuidelines}
+        initialDailyInspirations={initialDailyInspirations}
         initialReadings={initialReadings}
         initialAudio={initialAudio}
         initialEnabledModules={initialEnabledModules}

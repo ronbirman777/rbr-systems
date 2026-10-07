@@ -368,15 +368,23 @@ export function TodayScreen({
             >
               &ldquo;
             </span>
-            <p className="text-[15px] leading-relaxed italic" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text-on-primary-soft)" }}>
+            <p
+              className="text-[15px] leading-relaxed italic [overflow-wrap:anywhere]"
+              style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text-on-primary-soft)" }}
+              dir={dailyQuote.custom ? "auto" : undefined}
+              data-testid="daily-quote-text"
+            >
               {dailyQuote.text}
             </p>
-            <p
-              className="text-[10px] tracking-[0.18em] uppercase font-medium mt-3"
-              style={{ fontFamily: "var(--rbr-font-ui)", color: "color-mix(in srgb, var(--rbr-text-on-primary-soft) 45%, var(--rbr-mist))" }}
-            >
-              {dailyQuote.source}
-            </p>
+            {dailyQuote.source && (
+              <p
+                className="text-[10px] tracking-[0.18em] uppercase font-medium mt-3 [overflow-wrap:anywhere]"
+                style={{ fontFamily: "var(--rbr-font-ui)", color: "color-mix(in srgb, var(--rbr-text-on-primary-soft) 45%, var(--rbr-mist))" }}
+                dir={dailyQuote.custom ? "auto" : undefined}
+              >
+                {dailyQuote.source}
+              </p>
+            )}
           </div>
         </div>
       )}

@@ -6,7 +6,13 @@
  * editable, so it needs no persistence of its own; only the per-tenant
  * on/off state lives in module_configs (module_key "dailyInspiration").
  */
-export type DailyQuote = { text: string; source: string };
+export type DailyQuote = {
+  text: string;
+  source: string;
+  /** True for organizer-authored text (TASK 030 W1.5): rendered dir="auto"
+   * and untranslated, with no attribution line when `source` is empty. */
+  custom?: boolean;
+};
 
 export const DAILY_QUOTES: readonly DailyQuote[] = [
   { text: "The journey of a thousand miles begins with a single step.", source: "Lao Tzu · Tao Te Ching" },
@@ -78,4 +84,42 @@ export function getDailyQuoteFrom(
   const start = Date.UTC(d.getUTCFullYear(), 0, 1, 12);
   const dayOfYear = Number.isNaN(d.getTime()) ? 0 : Math.round((d.getTime() - start) / 86_400_000);
   return { text: quotes[dayOfYear % quotes.length], source: source ?? "" };
+}
+
+/**
+ * Time to Flow (TASK 030 W1.5): the quote of the day when a Space has
+ * authored its own reflections.
+ *
+ * No custom reflections -> exactly the built-in getDailyQuote(), so every
+ * existing Flow Space renders what it always did.
+ *
+ * With reflections the choice is still one-per-calendar-day in the Space's
+ * timezone, identical for every guest, but it is anchored to the
+ * RETREAT rather than the calendar year when the Space has a schedule:
+ * the first scheduled day shows the first reflection, the second day the
+ * second, and so on, cycling when the list is shorter than the stay. That
+ * is what lets an organizer write "Day 1 ... Day 7" and have it land on
+ * those days. Before the first scheduled day (or with no schedule at all)
+ * it falls back to day-of-year rotation, which needs no anchor.
+ * `anchorIso` must be a YYYY-MM-DD date; anything else is ignored.
+ */
+export function getFlowDailyQuote(
+  dateIso: string,
+  custom: readonly { text: string; label: string | null }[],
+  anchorIso: string | null = null
+): DailyQuote {
+  const items = custom.filter((c) => c.text.trim());
+  if (items.length === 0) return getDailyQuote(dateIso);
+  const ISO = /^\d{4}-\d{2}-\d{2}$/;
+  let index: number;
+  if (anchorIso && ISO.test(anchorIso) && ISO.test(dateIso) && dateIso >= anchorIso) {
+    const days = Math.round((Date.parse(`${dateIso}T12:00:00Z`) - Date.parse(`${anchorIso}T12:00:00Z`)) / 86_400_000);
+    index = days % items.length;
+  } else {
+    const picked = getDailyQuoteFrom(dateIso, items.map((i) => i.text));
+    index = items.findIndex((i) => i.text.trim() === picked?.text);
+    if (index < 0) index = 0;
+  }
+  const item = items[index];
+  return { text: item.text.trim(), source: item.label?.trim() ?? "", custom: true };
 }

@@ -77,6 +77,7 @@ export default async function NewRetreatConfiguratorPage() {
         initialRetreatProfile={EMPTY_RETREAT_PROFILE}
         initialModuleIntros={EMPTY_MODULE_INTROS}
         initialGuidelines={[]}
+        initialDailyInspirations={[]}
         initialReadings={[]}
         initialAudio={[]}
         initialEnabledModules={[]}
