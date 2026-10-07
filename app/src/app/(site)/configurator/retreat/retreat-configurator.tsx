@@ -13,6 +13,7 @@ import { persistNewScheduleItemStub, persistScheduleItemRemoval } from "@/lib/mo
 import { HomeStep } from "./home-step";
 import { MealsStep } from "./meals-step";
 import { GuidelinesStep } from "./guidelines-step";
+import { DailyInspirationStep } from "./daily-inspiration-step";
 import { ReadingsStep } from "./readings-step";
 import { AudioStep } from "./audio-step";
 import { TreatmentsStep } from "./treatments-step";
@@ -57,6 +58,7 @@ import type { StayConnected } from "@/lib/modules/stayConnected";
 import { listToText, textToList, type RetreatProfile } from "@/lib/modules/retreatProfile";
 import type { ModuleIntros } from "@/lib/modules/moduleIntro";
 import type { EditableGuideline } from "@/lib/modules/guideline";
+import { visibleInspirations, type EditableInspirationItem } from "@/lib/modules/dailyInspiration";
 import type { EditableFlowReading, EditableFlowTrack } from "@/lib/modules/flowLibrary";
 import { SOCIAL_PLATFORMS, socialPlatformLabel, isLikelyValidUrl, type SocialPlatform } from "@/lib/modules/socialLinks";
 import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
@@ -119,6 +121,7 @@ export type RetreatConfiguratorProps = {
   initialRetreatProfile: RetreatProfile;
   initialModuleIntros: ModuleIntros;
   initialGuidelines: EditableGuideline[];
+  initialDailyInspirations: EditableInspirationItem[];
   initialReadings: EditableFlowReading[];
   initialAudio: EditableFlowTrack[];
   initialEnabledModules: OptionalModuleKey[];
@@ -188,6 +191,7 @@ type StepKey =
   | "facilities"
   | "arrivalInfo"
   | "guidelines"
+  | "dailyInspiration"
   | "faq"
   | "readings"
   | "audio"
@@ -217,6 +221,7 @@ const STEP_LABEL_KEYS: Record<
   | "facilities"
   | "moduleArrivalInfo"
   | "guidelines"
+  | "moduleDailyInspiration"
   | "faq"
   | "readings"
   | "audioStepTitle"
@@ -230,6 +235,7 @@ const STEP_LABEL_KEYS: Record<
   facilities: "facilities",
   arrivalInfo: "moduleArrivalInfo",
   guidelines: "guidelines",
+  dailyInspiration: "moduleDailyInspiration",
   faq: "faq",
   readings: "readings",
   audio: "audioStepTitle",
@@ -1229,6 +1235,7 @@ export function RetreatConfigurator({
   initialRetreatProfile,
   initialModuleIntros,
   initialGuidelines,
+  initialDailyInspirations,
   initialReadings,
   initialAudio,
   initialEnabledModules,
@@ -1353,6 +1360,7 @@ export function RetreatConfigurator({
   const [retreatProfile, setRetreatProfile] = useState<RetreatProfile>(initialRetreatProfile);
   const [moduleIntros, setModuleIntros] = useState<ModuleIntros>(initialModuleIntros);
   const [guidelines, setGuidelines] = useState<EditableGuideline[]>(initialGuidelines);
+  const [dailyInspirations, setDailyInspirations] = useState<EditableInspirationItem[]>(initialDailyInspirations);
   const [readings, setReadings] = useState<EditableFlowReading[]>(initialReadings);
   const [audioTracks, setAudioTracks] = useState<EditableFlowTrack[]>(initialAudio);
   /**
@@ -2735,6 +2743,17 @@ export function RetreatConfigurator({
           />
         )}
 
+        {step === "dailyInspiration" && tenantId && (
+          <DailyInspirationStep
+            tenantId={tenantId}
+            items={dailyInspirations}
+            setItems={setDailyInspirations}
+            onBack={() => goToStep(-1)}
+            onContinue={() => goToStep(1)}
+            {...moduleSectionProps.dailyInspiration}
+          />
+        )}
+
         {step === "readings" && tenantId && (
           <ReadingsStep
             tenantId={tenantId}
@@ -2974,6 +2993,7 @@ export function RetreatConfigurator({
                     retreatProfile={retreatProfile}
                     moduleIntros={moduleIntros}
                     guidelines={guidelines}
+                    dailyInspirations={visibleInspirations(dailyInspirations)}
                     readings={readingsForPreview}
                     audio={audioForPreview}
                     moduleCoverImages={moduleCoverImagesForPreview}
@@ -3065,6 +3085,7 @@ export function RetreatConfigurator({
             retreatProfile={retreatProfile}
             moduleIntros={moduleIntros}
             guidelines={guidelines}
+            dailyInspirations={visibleInspirations(dailyInspirations)}
             readings={readingsForPreview}
             audio={audioForPreview}
             moduleCoverImages={moduleCoverImagesForPreview}

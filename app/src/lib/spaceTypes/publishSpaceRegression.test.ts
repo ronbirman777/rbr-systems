@@ -159,6 +159,14 @@ function strip0033(body: string): string {
     .replace(COVER_ALLOWLIST_0033, COVER_ALLOWLIST_0032);
 }
 
+/**
+ * TASK 030 W1.5's addition (0034): the one conditional dailyInspiration
+ * block. Stripping it takes the 0034 body back to 0033's exactly, which is
+ * what proves 0034 added that block and changed nothing else.
+ */
+const DAILY_INSPIRATION_BLOCK_0034 = /if 'dailyInspiration' = any\(v_enabled_modules\)[\s\S]*?end if;/i;
+const strip0034 = (body: string) => body.replace(DAILY_INSPIRATION_BLOCK_0034, "");
+
 describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Phase 4A)", () => {
   const latest = latestFunctionDefinition(migrations, "publish_space")!;
   const base = extractFunctionBody(migrations.find((m) => m.name.startsWith("0025_"))!.sql, "publish_space")!;
@@ -171,8 +179,18 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     expect(teachPayload.file).toMatch(/^0028_/);
   });
 
-  it("publish_space() is last redefined by 0033", () => {
-    expect(latest.file).toMatch(/^0033_/);
+  it("publish_space() is last redefined by 0034", () => {
+    expect(latest.file).toMatch(/^0034_/);
+  });
+
+  it("0034's body is 0033's plus only the conditional dailyInspiration block", () => {
+    const zero33 = extractFunctionBody(migrations.find((m) => m.name.startsWith("0033_"))!.sql, "publish_space")!;
+    expect(DAILY_INSPIRATION_BLOCK_0034.test(latest.body)).toBe(true);
+    expect(norm(strip0034(latest.body))).toBe(norm(zero33));
+    // Conditional on the module, never emitted for Teach, never unguarded.
+    const block = norm(DAILY_INSPIRATION_BLOCK_0034.exec(latest.body)![0]);
+    expect(block).toContain("and v_tenant.product_type is distinct from 'teach'");
+    expect(block).toContain("exists (");
   });
 
   it("0032's own body is still 0031 plus only the shared Surface role", () => {
@@ -188,7 +206,7 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
 
   it("0033's body is 0032's plus only the Flow content-expansion blocks", () => {
     const zero32 = extractFunctionBody(migrations.find((m) => m.name.startsWith("0032_"))!.sql, "publish_space")!;
-    expect(norm(strip0033(latest.body))).toBe(norm(zero32));
+    expect(norm(strip0033(strip0034(latest.body)))).toBe(norm(zero32));
   });
 
   it("each new 0033 module publishes only while switched on in module_configs", () => {
@@ -294,7 +312,7 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
 
   it("the Retreat branch is byte-for-byte 0025's body once every later additive block is removed (moduleCovers, imagePosition, snapshot shape untouched)", () => {
     expect(TEACH_BLOCK.test(latest.body)).toBe(true);
-    const retreatOnly = strip0033(latest.body)
+    const retreatOnly = strip0033(strip0034(latest.body))
       .replace(TEACH_BLOCK, "")
       .replace(SPACE_SETTINGS_BLOCK, "")
       .replace(SURFACE_SELECT, "custom_navigation, custom_text,")
@@ -305,7 +323,7 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
 
   it("the only edit inside the Retreat branch is the customPages gate, which skips ONLY Teach (retreat and client_hub still emit it)", () => {
     expect(TEACH_CUSTOM_PAGES_GATE.test(latest.body)).toBe(true);
-    expect(norm(latest.body).match(/is distinct from 'teach'/g)).toHaveLength(1);
+    expect(norm(strip0034(latest.body)).match(/is distinct from 'teach'/g)).toHaveLength(1);
     expect(norm(latest.body)).not.toMatch(/product_type (=|<>|!=) 'retreat'/);
   });
 
@@ -368,7 +386,7 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     }
   });
 
-  it("migration chain: one migration per number, 0033 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
+  it("migration chain: one migration per number, 0034 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
     const names = migrations.map((m) => m.name);
     expect(names.filter((n) => n.startsWith("0028_"))).toEqual(["0028_teach_foundation.sql"]);
     expect(names.filter((n) => n.startsWith("0029_"))).toEqual(["0029_versioned_media_update_deny.sql"]);
@@ -378,7 +396,8 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     expect(names.filter((n) => n.startsWith("0033_"))).toEqual(["0033_flow_content_expansion.sql"]);
     // Nothing beyond the current head, and historical numbers are never
     // renumbered or back-filled.
-    expect(names.some((n) => /^00(3[4-9]|[4-9]\d)_/.test(n))).toBe(false);
+    expect(names.filter((n) => n.startsWith("0034_"))).toEqual(["0034_flow_daily_inspiration.sql"]);
+    expect(names.some((n) => /^00(3[5-9]|[4-9]\d)_/.test(n))).toBe(false);
     expect(names.filter((n) => n.startsWith("0019_"))).toEqual(["0019_signup_profile.sql"]);
     expect(names.some((n) => n.startsWith("0023_"))).toBe(false);
   });

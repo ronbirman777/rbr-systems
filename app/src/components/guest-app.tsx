@@ -26,7 +26,8 @@ import { playableTracks, type DisplayFlowReading, type DisplayFlowTrack } from "
 import { EMPTY_RETREAT_PROFILE, retreatWelcome, retreatWhatToBring, type RetreatProfile } from "@/lib/modules/retreatProfile";
 import { moduleIntro, type ModuleIntros } from "@/lib/modules/moduleIntro";
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
-import { getDailyQuote } from "@/lib/content/dailyQuotes";
+import { getFlowDailyQuote } from "@/lib/content/dailyQuotes";
+import type { DisplayInspirationItem } from "@/lib/modules/dailyInspiration";
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import type { ImagePosition } from "@/lib/modules/imagePosition";
 
@@ -66,6 +67,9 @@ export type GuestAppProps = {
   retreatProfile?: RetreatProfile;
   moduleIntros?: ModuleIntros;
   guidelines?: DisplayGuideline[];
+  /** TASK 030 W1.5 - the Space's own reflections. Absent or empty means the
+   * built-in list, exactly as before this existed. */
+  dailyInspirations?: DisplayInspirationItem[];
   readings?: DisplayFlowReading[];
   audio?: DisplayFlowTrack[];
   /** Explore module hero/cover images (added alongside Task 015) -
@@ -135,7 +139,16 @@ const GUEST_TABS: TabDef[] = [
         )}
         whatToExpect={props.retreatProfile?.whatToExpect ?? []}
         onViewSchedule={props.enabledModules.includes("schedule") ? () => goTo("schedule") : undefined}
-        dailyQuote={props.enabledModules.includes("dailyInspiration") ? getDailyQuote(props.todayIso) : null}
+        dailyQuote={
+          props.enabledModules.includes("dailyInspiration")
+            ? getFlowDailyQuote(
+                props.todayIso,
+                props.dailyInspirations ?? [],
+                // The retreat's first scheduled day: Day 1 shows the first reflection.
+                props.schedule.reduce<string | null>((min, s) => (min === null || s.date < min ? s.date : min), null)
+              )
+            : null
+        }
         locale={props.locale ?? DEFAULT_LOCALE}
       />
     ),

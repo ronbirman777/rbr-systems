@@ -23,6 +23,8 @@ const EDITOR_FILES: Record<StudioModuleSection, string> = {
   // TASK 029 - four more editors, covered by the same contract.
   home: "home-step.tsx",
   guidelines: "guidelines-step.tsx",
+  // TASK 030 W1.5 - custom Flow Daily Inspiration.
+  dailyInspiration: "daily-inspiration-step.tsx",
   readings: "readings-step.tsx",
   audio: "audio-step.tsx",
   meals: "meals-step.tsx",
@@ -41,12 +43,13 @@ function editorSource(section: StudioModuleSection): string {
 const configuratorSource = readFileSync(path.join(DIR, "retreat-configurator.tsx"), "utf8");
 
 describe("STUDIO_MODULE_SECTIONS", () => {
-  it("names exactly the eleven module editors the guard must cover", () => {
+  it("names exactly the twelve module editors the guard must cover", () => {
     expect([...STUDIO_MODULE_SECTIONS].sort()).toEqual(
       [
         "arrival",
         "audio",
         "customPages",
+        "dailyInspiration",
         "facilities",
         "faq",
         "guidelines",

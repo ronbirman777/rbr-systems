@@ -22,6 +22,7 @@ export type StudioModuleSection =
   | "facilities"
   | "faq"
   | "guidelines"
+  | "dailyInspiration"
   | "readings"
   | "audio"
   | "customPages"
@@ -42,6 +43,7 @@ export const STUDIO_MODULE_SECTIONS: readonly StudioModuleSection[] = [
   "facilities",
   "arrival",
   "guidelines",
+  "dailyInspiration",
   "faq",
   "readings",
   "audio",

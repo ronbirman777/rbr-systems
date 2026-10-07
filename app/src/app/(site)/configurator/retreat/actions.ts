@@ -17,6 +17,7 @@ import { socialLinksSchema } from "@/lib/modules/socialLinks";
 import { retreatProfileSchema, RETREAT_PROFILE_KEY } from "@/lib/modules/retreatProfile";
 import { moduleIntrosSchema, pruneModuleIntros, MODULE_INTROS_KEY } from "@/lib/modules/moduleIntro";
 import { guidelineSchema, GUIDELINES_KEY } from "@/lib/modules/guideline";
+import { inspirationItemSchema, DAILY_INSPIRATION_KEY } from "@/lib/modules/dailyInspiration";
 import {
   FLOW_AUDIO_FOLDER_KEY,
   FLOW_AUDIO_KEY,
@@ -1870,6 +1871,40 @@ export async function saveGuidelines(
     metadata: {},
   }));
   return saveModuleItemsGeneric(ctx.supabase, tenantId, GUIDELINES_KEY, rows);
+}
+
+export type SaveDailyInspirationState = SaveModuleItemsState;
+
+/**
+ * TASK 030 W1.5. Same shape as saveFaq: the text is `description`, the
+ * optional label is `title` (NOT NULL in the table, so "" when absent),
+ * and metadata.enabled is rebuilt from the full parsed item on every save
+ * so it can never be dropped by a partial write. Saved to the DRAFT rows;
+ * guests see nothing until Republish.
+ */
+export async function saveDailyInspiration(
+  _prevState: SaveDailyInspirationState,
+  formData: FormData
+): Promise<SaveDailyInspirationState> {
+  const t = studioMessages(localeFromFormData(formData));
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const ctx = await retreatActionContext(tenantId);
+  if (!ctx.ok) return { error: t(ctx.reason) };
+
+  const parsed = parseItemsWithIds(formData, inspirationItemSchema);
+  if ("error" in parsed) return { error: parsed.error };
+
+  const rows = parsed.data.map((item, i) => ({
+    id: item.id,
+    tenant_id: tenantId,
+    module_key: DAILY_INSPIRATION_KEY,
+    title: item.label.trim(),
+    subtitle: null,
+    description: item.text,
+    sort_order: i,
+    metadata: { enabled: item.enabled },
+  }));
+  return saveModuleItemsGeneric(ctx.supabase, tenantId, DAILY_INSPIRATION_KEY, rows);
 }
 
 /** The envelope a Readings/Audio row is validated against on write. */
