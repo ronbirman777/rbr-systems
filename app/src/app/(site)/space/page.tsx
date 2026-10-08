@@ -9,7 +9,7 @@ import { deriveCommercialAvailability } from "@/lib/entitlements/availability";
 import type { SpaceEntitlementRow } from "@/lib/entitlements/types";
 import { SpaceThumbnail } from "@/components/space-thumbnail";
 import { MEDIA_BUCKET } from "@/lib/media/path";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { CARD_SETTINGS_KEYS, resolveSpaceCardImage, type CardImage, type CardSettings } from "@/lib/spaces/cardImage";
 import { getSpaceSlotSummary } from "@/app/(site)/configurator/retreat/lifecycleActions";
 import { SpaceLifecycleControls } from "@/components/space-lifecycle-controls";
 import { SpaceOpenLink } from "@/components/space-open-link";
@@ -19,15 +19,6 @@ import { DeleteSpaceControl } from "@/components/delete-space-control";
 import { DeleteAccountControl } from "@/components/delete-account-control";
 
 type PublishedRow = { published_at: string } | { published_at: string }[] | null;
-
-/** Same signed-URL-via-RLS-scoped-session pattern used everywhere else a
- * draft Storage object is previewed to its own organizer (see
- * configurator/retreat/[tenantId]/page.tsx's resolveImageUrl). */
-async function resolveSpaceImageUrl(supabase: SupabaseClient, imageRef: string | null): Promise<string | null> {
-  if (!imageRef) return null;
-  const { data: signed } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(imageRef, 3600);
-  return signed?.signedUrl ?? null;
-}
 
 // Task 011 (logout requirement): explicit, matching the same declaration
 // already on /g/[tenantId] - this route reads cookies (auth.getUser())
@@ -81,7 +72,12 @@ export default async function MySpacePage() {
   // independent of each other - run together rather than one after the
   // other.
   const tenantIds = (tenants ?? []).map((t) => t.id);
-  const [{ data: entitlementRows }, { data: brandRows }] = await Promise.all([
+  // TASK 031 (W2): only Teach Spaces need their settings read (their image can
+  // come from the teacher's profile photo or a cover, none of which lives on
+  // brand_configs). One batched query for ALL of them, and none at all for an
+  // account with only Flow Spaces.
+  const teachIds = (tenants ?? []).filter((t) => t.product_type === "teach").map((t) => t.id);
+  const [{ data: entitlementRows }, { data: brandRows }, { data: settingRows }] = await Promise.all([
     // Commercial Access Phase 1: one additive query for every listed
     // tenant's entitlement row, fed through the same
     // deriveCommercialAvailability() authority publish_space() enforces
@@ -99,19 +95,38 @@ export default async function MySpacePage() {
     // brand_configs row, then resolved in parallel below.
     supabase
       .from("brand_configs")
-      .select("tenant_id, space_image_ref")
+      .select("tenant_id, space_image_ref, hero_image_ref")
       .in("tenant_id", tenantIds.length > 0 ? tenantIds : ["00000000-0000-0000-0000-000000000000"]),
+    teachIds.length > 0
+      ? supabase.from("module_settings").select("tenant_id, module_key, data").in("tenant_id", teachIds).in("module_key", [...CARD_SETTINGS_KEYS])
+      : Promise.resolve({ data: [] as { tenant_id: string; module_key: string; data: unknown }[] }),
   ]);
   const entitlementByTenant = new Map<string, SpaceEntitlementRow>(
     (entitlementRows ?? []).map((row) => [row.tenant_id, row as SpaceEntitlementRow])
   );
-  const spaceImageUrlByTenant = new Map<string, string | null>(
-    await Promise.all(
-      (brandRows ?? []).map(
-        async (row) => [row.tenant_id, await resolveSpaceImageUrl(supabase, row.space_image_ref)] as const
-      )
-    )
-  );
+  // Which single image represents each Space (lib/spaces/cardImage.ts - a fixed,
+  // deterministic order), then ONE batched signing call for exactly those
+  // objects. Signed through the signed-in user's own RLS-scoped session, a
+  // fresh URL per request and never persisted; draft refs never go anywhere
+  // near /api/media or a public URL.
+  const settingsByTenant = new Map<string, CardSettings>();
+  for (const row of settingRows ?? []) {
+    const bucket = settingsByTenant.get(row.tenant_id) ?? {};
+    bucket[row.module_key as keyof CardSettings] = row.data;
+    settingsByTenant.set(row.tenant_id, bucket);
+  }
+  const brandByTenant = new Map((brandRows ?? []).map((r) => [r.tenant_id, r]));
+  const cardImageByTenant = new Map<string, CardImage>();
+  for (const t of tenants ?? []) {
+    const image = resolveSpaceCardImage({ tenantId: t.id, productType: t.product_type, brand: brandByTenant.get(t.id), settings: settingsByTenant.get(t.id) });
+    if (image) cardImageByTenant.set(t.id, image);
+  }
+  const refsToSign = [...new Set([...cardImageByTenant.values()].map((i) => i.ref))];
+  const signedByRef = new Map<string, string>();
+  if (refsToSign.length > 0) {
+    const { data: signed } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrls(refsToSign, 3600);
+    for (const entry of signed ?? []) if (entry.path && entry.signedUrl && !entry.error) signedByRef.set(entry.path, entry.signedUrl);
+  }
 
   function publishedAt(row: PublishedRow): string | null {
     if (!row) return null;
@@ -199,7 +214,8 @@ export default async function MySpacePage() {
             const previewLink = studioHref(t.product_type, t.id, { publish: true });
             const publishAvailability = getPublishAvailability(t.product_type);
             const availability = deriveCommercialAvailability(entitlementByTenant.get(t.id) ?? null);
-            const spaceImageUrl = spaceImageUrlByTenant.get(t.id) ?? null;
+            const cardImage = cardImageByTenant.get(t.id) ?? null;
+            const spaceImageUrl = cardImage ? (signedByRef.get(cardImage.ref) ?? null) : null;
             const isArchived = t.status === "archived";
             const isOwner = roleByTenant.get(t.id) === "owner";
 
@@ -224,6 +240,8 @@ export default async function MySpacePage() {
                 <div className="flex items-start gap-4 pr-11">
                   <SpaceThumbnail
                     imageUrl={spaceImageUrl}
+                    focal={cardImage?.position ?? null}
+                    size={80}
                     alt={`${t.name} cover`}
                     className={`w-20 h-20 rounded-xl shrink-0 ${isArchived ? "opacity-50" : ""}`}
                   />
