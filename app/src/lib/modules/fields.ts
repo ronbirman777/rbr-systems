@@ -31,3 +31,22 @@ export const optText = (max: number) =>
 
 /** A calendar date with no time or zone, "YYYY-MM-DD". */
 export const isoDateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+/**
+ * Whether "YYYY-MM-DD" names a real calendar day. `isoDateString` only
+ * checks the shape, so "2027-02-31" passes it; this rejects such dates
+ * without ever constructing a Date from the local zone (the day is
+ * rebuilt in UTC and compared field by field).
+ */
+export function isValidIsoDate(value: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) return false;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const t = new Date(Date.UTC(y, mo - 1, d, 12));
+  return t.getUTCFullYear() === y && t.getUTCMonth() === mo - 1 && t.getUTCDate() === d;
+}
+
+/** A real calendar date, "YYYY-MM-DD". */
+export const calendarDateString = isoDateString.refine(isValidIsoDate, "Not a real calendar date.");

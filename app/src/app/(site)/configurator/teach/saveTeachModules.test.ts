@@ -39,12 +39,12 @@ describe("saveTeachModules: hiding a module never deletes its content", () => {
     const writes = state.ops.filter((o) => o.op !== "select");
     expect(writes.map((o) => `${o.table}:${o.op}`)).toEqual(["module_configs:upsert"]);
     const rows = writes[0].payload as { module_key: string; enabled: boolean }[];
-    expect(Object.fromEntries(rows.map((r) => [r.module_key, r.enabled]))).toEqual({ teachReadings: false, teachAudio: true, teachContact: false, customPages: false });
+    expect(Object.fromEntries(rows.map((r) => [r.module_key, r.enabled]))).toEqual({ teachReadings: false, teachAudio: true, teachContact: false, customPages: false, teachRetreats: false });
   });
 
   it("re-enabling is the same single flag write, so the earlier content is simply visible again", async () => {
     await saveTeachModules(T, []);
-    await saveTeachModules(T, ["teachReadings", "teachAudio", "teachContact", "customPages"]);
+    await saveTeachModules(T, ["teachReadings", "teachAudio", "teachContact", "customPages", "teachRetreats"]);
     const writes = state.ops.filter((o) => o.op !== "select");
     expect(writes.every((o) => o.table === "module_configs" && o.op === "upsert")).toBe(true);
     expect((writes[1].payload as { enabled: boolean }[]).every((r) => r.enabled)).toBe(true);

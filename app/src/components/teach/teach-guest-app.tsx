@@ -36,6 +36,7 @@ import {
   ReadingDetailScreen,
   ReadingsScreen,
 } from "./teach-library";
+import { RetreatDetailScreen, RetreatsScreen } from "./teach-retreats";
 import { Chip, DailyQuoteBlock, DisplayHeading, EmptyState, Eyebrow, OrganicShapes, PillButton, PillLink, SectionHeader } from "./teach-ui";
 
 type Tab = "home" | "schedule" | "about" | "explore";
@@ -45,6 +46,8 @@ type Page =
   | { kind: "audio" }
   | { kind: "track"; id: string }
   | { kind: "contact" }
+  | { kind: "retreats" }
+  | { kind: "retreat"; id: string }
   | { kind: "page"; id: string };
 
 /** `labelKey` resolves through the Space locale at render time. */
@@ -139,6 +142,10 @@ export function teachPrefetchItems(
       const sizes = key === "teachReadings" ? EXPLORE_FEATURE_CARD_SIZES : EXPLORE_CARD_SIZES;
       items.push({ src: url(cards[key]?.imageRef ?? null), sizes });
     }
+    if (exploreModuleStatus(data, "teachRetreats") === "visible") {
+      const lead = data.retreats.find((r) => url(r.imageRef));
+      if (lead) items.push({ src: url(lead.imageRef), sizes: EXPLORE_CARD_SIZES });
+    }
     if (exploreModuleStatus(data, "customPages") === "visible") {
       for (const page of data.customPages) {
         items.push({ src: url(page.imageRef), sizes: EXPLORE_CARD_SIZES });
@@ -203,6 +210,10 @@ export function TeachGuestApp({
   else if (page?.kind === "reading") {
     const item = data.readings.find((r) => r.id === page.id);
     body = item ? <ReadingDetailScreen data={data} item={item} onBack={back} /> : null;
+  } else if (page?.kind === "retreats") body = <RetreatsScreen data={data} onBack={back} onOpen={(id) => open({ kind: "retreat", id })} title={t("teach", "myRetreats")} />;
+  else if (page?.kind === "retreat") {
+    const item = data.retreats.find((r) => r.id === page.id);
+    body = item ? <RetreatDetailScreen data={data} item={item} onBack={back} /> : null;
   } else if (page?.kind === "audio") body = <AudioListScreen data={data} onBack={back} onOpen={(id) => open({ kind: "track", id })} title={exploreTitle(data, "teachAudio", t("teach", "exploreAudio"))} />;
   else if (page?.kind === "track") {
     const item = data.audio.find((a) => a.id === page.id);
@@ -1130,6 +1141,12 @@ function ExploreScreen({ data, url, open }: { data: TeachGuestData; url: (r: str
   if (on("teachAudio")) {
     const c = cards.teachAudio;
     tiles.push(<ExploreCard key="a" tall title={c?.title ?? t("teach", "exploreAudio")} subtitle={c?.subtitle ?? t("teach", "audioEyebrow")} icon="headphones" image={url(c?.imageRef ?? null)} focal={c?.imagePosition ?? null} fallback={fb(c?.fallbackColor, "var(--rbr-primary-dark)")} onClick={() => open({ kind: "audio" })} />);
+  }
+  if (on("teachRetreats")) {
+    // No card settings of its own (like Custom Pages): the card wears the first
+    // retreat that has a cover, and falls back to the theme colour without one.
+    const lead = data.retreats.find((r) => url(r.imageRef)) ?? null;
+    tiles.push(<ExploreCard key="rt" title={t("teach", "myRetreats")} subtitle={t("teach", "retreatsEyebrow")} icon="leaf" image={lead ? url(lead.imageRef) : null} focal={lead?.metadata.imagePosition ?? null} fallback="var(--rbr-primary-dark)" onClick={() => open({ kind: "retreats" })} />);
   }
   if (on("teachContact")) {
     const c = cards.teachContact;

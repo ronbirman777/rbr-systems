@@ -183,3 +183,41 @@ export function ordinalDayLocalized(day: number, locale: Locale): string {
 export function capitalizeFirst(text: string): string {
   return text.length === 0 ? text : text[0].toLocaleUpperCase() + text.slice(1);
 }
+
+/**
+ * A retreat's dates: "14-20 Oct 2027", "28 Oct - 3 Nov 2027",
+ * "30 Dec 2027 - 2 Jan 2028", or a single day when there is no distinct end.
+ *
+ * English is hand-assembled for the same hydration reason as every other
+ * English format in this file; other locales use Intl's own range
+ * formatting with an explicit locale tag and UTC, so the calendar day can
+ * never move with the viewer's zone. Both ends are plain "YYYY-MM-DD".
+ */
+export function formatDateRangeLocalized(startIso: string, endIso: string | null, locale: Locale): string {
+  const a = parseIsoDate(startIso);
+  if (!a) return startIso;
+  const b = endIso && endIso !== startIso ? parseIsoDate(endIso) : null;
+  if (!b || b.getTime() < a.getTime()) return formatDayMonthYearLocalized(startIso, locale);
+
+  if (locale === "en") {
+    const dash = "\u2013";
+    const ay = a.getUTCFullYear();
+    const by = b.getUTCFullYear();
+    const am = a.getUTCMonth();
+    const bm = b.getUTCMonth();
+    if (ay === by && am === bm) {
+      return `${a.getUTCDate()}${dash}${b.getUTCDate()} ${SHORT_MONTHS_EN[bm]} ${by}`;
+    }
+    if (ay === by) {
+      return `${a.getUTCDate()} ${SHORT_MONTHS_EN[am]} ${dash} ${b.getUTCDate()} ${SHORT_MONTHS_EN[bm]} ${by}`;
+    }
+    return `${formatDayMonthYearLocalized(startIso, locale)} ${dash} ${formatDayMonthYearLocalized(endIso as string, locale)}`;
+  }
+
+  return new Intl.DateTimeFormat(LOCALE_TAG[locale], {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).formatRange(a, b);
+}

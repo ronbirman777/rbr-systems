@@ -45,6 +45,7 @@ import {
   ModulesSection,
   PublishSection,
   ReadingsSection,
+  RetreatsSection,
   ScheduleSection,
 } from "./teach-studio-sections";
 
@@ -76,6 +77,7 @@ export type SectionKey =
   | "about"
   | "modules"
   | "readings"
+  | "retreats"
   | "audio"
   | "contact"
   | "pages"
@@ -104,6 +106,7 @@ const NAV: { groupKey: TeachKey; items: { key: SectionKey; labelKey: TeachKey }[
     items: [
       { key: "modules", labelKey: "sectionModules" },
       { key: "readings", labelKey: "myReadings" },
+      { key: "retreats", labelKey: "myRetreats" },
       { key: "audio", labelKey: "exploreAudio" },
       { key: "contact", labelKey: "howToContactMeTitle" },
       { key: "pages", labelKey: "customPagesTitle" },
@@ -120,6 +123,7 @@ const PREVIEW_TAB: Record<SectionKey, "home" | "schedule" | "about" | "explore">
   about: "about",
   modules: "explore",
   readings: "explore",
+  retreats: "explore",
   audio: "explore",
   contact: "explore",
   pages: "explore",
@@ -312,6 +316,8 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
         return run(saveTeachModules(tenantId, enabledExplore, spaceLocale), saveTeachSettings(tenantId, "teachExplore", settings.teachExplore, spaceLocale));
       case "readings":
         return run(saveTeachItems(tenantId, "teachReadings", stripItems(items.teachReadings), spaceLocale));
+      case "retreats":
+        return run(saveTeachItems(tenantId, "teachRetreats", stripItems(items.teachRetreats), spaceLocale));
       case "audio":
         return run(saveTeachItems(tenantId, "teachAudio", stripItems(items.teachAudio), spaceLocale));
       case "contact":
@@ -539,6 +545,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
       gallery: items.teachGallery.filter((g) => g.imageRef),
       certificates: items.teachCertificates,
       customPages: items.customPages.filter((p) => p.metadata.enabled),
+      retreats: items.teachRetreats.filter((r) => r.metadata.enabled),
       enabledExplore,
       mediaUrls,
     };
@@ -569,6 +576,9 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
       break;
     case "readings":
       content = <ReadingsSection {...sectionProps} />;
+      break;
+    case "retreats":
+      content = <RetreatsSection {...sectionProps} />;
       break;
     case "audio":
       content = <AudioSection {...sectionProps} />;

@@ -5,6 +5,7 @@ import type {
   AvailabilityMetadata,
   ClassMetadata,
   ContactMethod,
+  Registration,
   RegistrationMethod,
   TeachContact,
   Venue,
@@ -237,6 +238,47 @@ export function buildRegistrationCta(
       break;
     case "venueLink":
       href = venueBookingUrl(meta.venue);
+      break;
+  }
+  if (!href) return null;
+  return { href, label, method, external: !href.startsWith("mailto:") };
+}
+
+/**
+ * The external registration button for a retreat (TASK 031), or null when
+ * nothing valid is configured. Same method -> href mapping as a class's CTA
+ * (so a WhatsApp number is normalised, a bare web address gets https://, an
+ * email becomes mailto:), minus the venue method which has no meaning here.
+ * A label the teacher typed always wins over system copy.
+ */
+export function buildRetreatRegistrationCta(
+  registration: Registration,
+  retreatName: string,
+  teacherName: string,
+  locale: Locale = DEFAULT_LOCALE
+): RegistrationCta | null {
+  const { method, value, buttonLabel, whatsappTemplate } = registration;
+  if (!method || method === "venueLink") return null;
+  const label = buttonLabel ?? defaultButtonLabel(locale)[method];
+  const message = renderTemplate(whatsappTemplate ?? translate(locale, "teach", "retreatWhatsappTemplate"), {
+    teacher_name: teacherName,
+    class_name: retreatName,
+  });
+  let href: string | null = null;
+  switch (method) {
+    case "whatsapp":
+      href = whatsappUrl(value, message);
+      break;
+    case "email":
+      href = mailtoUrl(value, retreatName, message);
+      break;
+    case "instagram":
+      href = instagramUrl(value);
+      break;
+    case "website":
+    case "facebook":
+    case "bookingLink":
+      href = safeHttpUrl(value);
       break;
   }
   if (!href) return null;
