@@ -1,6 +1,9 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// The shared back control uses the app router; component tests render outside Next.
+vi.mock("next/navigation", () => ({ useRouter: () => ({ push: () => {}, prefetch: () => {} }) }));
 import { EmptyState } from "./empty-state";
 import { ReadinessChecklist } from "./readiness-checklist";
 import { StatusPill } from "./status-pill";

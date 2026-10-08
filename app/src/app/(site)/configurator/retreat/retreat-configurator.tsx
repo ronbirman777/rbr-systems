@@ -29,6 +29,7 @@ import type { FeaturedSubmission } from "./featuredActions";
 import { useStudioDirtyState } from "./useStudioDirtyState";
 import { STUDIO_MODULE_SECTIONS, type StudioModuleSection, type StudioSectionEditorProps } from "./studioSection";
 import { UnsavedChangesDialog } from "./unsaved-changes-dialog";
+import { PendingNavLink } from "@/components/nav/pending-nav-link";
 import { BrandImageField } from "./brand-image-field";
 import { PALETTES, GUEST_BASE_PALETTE, type AtmosphereKey, type PaletteKey } from "@/lib/theme/tokens";
 import { safeTextColor, meetsAA } from "@/lib/theme/contrast";
@@ -1750,7 +1751,7 @@ export function RetreatConfigurator({
         fallbackName={t("flow", "myRetreatFallback")}
         productBadge="Time to Flow"
         saveStatus={saveStatusLabel({ saving: publishPending, dirty: dirty.isDirtyAnywhere }, spaceLocale)}
-        onBack={() => attemptNavigate(() => router.push("/space"))}
+        onBeforeBack={(go) => attemptNavigate(go)}
         /**
          * TASK 029 final hardening: this button used to be labelled
          * "Republish" and only navigate to the publish step. A button that
@@ -1858,17 +1859,19 @@ export function RetreatConfigurator({
             routed through attemptNavigate, the same dirty-change guard as
             every other cross-section move in the Studio - never a bare
             Link that could bypass it. */}
-        <button
-          type="button"
-          onClick={() => attemptNavigate(() => router.push("/space"))}
-          aria-label={t("studio", "backToMySpaces")}
-          className="flex items-center gap-1 min-h-11 pl-1 pr-2.5 -ml-1 rounded-lg text-idw-forest active:bg-idw-forest/10 transition-colors shrink-0"
+        <PendingNavLink
+          href="/space"
+          beforeNavigate={(go) => attemptNavigate(go)}
+          ariaLabel={t("studio", "backToMySpaces")}
+          pendingLabel={t("studio", "openingMySpaces")}
+          testId="studio-back-mobile"
+          className="gap-1 ps-1 pe-2.5 -ms-1 text-idw-forest shrink-0"
         >
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0 rtl-mirror">
             <path d="M12.5 15.5L7 10l5.5-5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           <span className="text-sm font-semibold whitespace-nowrap">{t("studio", "mySpaces")}</span>
-        </button>
+        </PendingNavLink>
         <span className="ml-auto text-xs font-semibold text-idw-forest/60 truncate max-w-[28%]">
           {steps.find((s) => s.key === step)?.label ??
             (step === "share" ? t("studio", "shareYourSpace") : step === "featured" ? t("studio", "featuredOnInnerDwes") : "")}
@@ -1902,20 +1905,22 @@ export function RetreatConfigurator({
                   ×
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={() => {
+              <PendingNavLink
+                href="/space"
+                beforeNavigate={(go) => {
                   setMobileNavOpen(false);
-                  attemptNavigate(() => router.push("/space"));
+                  attemptNavigate(go);
                 }}
-                aria-label={t("studio", "backToMySpaces")}
-                className="w-full flex items-center gap-1.5 min-h-11 px-3 mb-4 rounded-lg text-sm font-semibold text-idw-forest/70 active:bg-idw-forest/10 hover:bg-idw-forest/5"
+                ariaLabel={t("studio", "backToMySpaces")}
+                pendingLabel={t("studio", "openingMySpaces")}
+                testId="studio-back-drawer"
+                className="w-full gap-1.5 px-3 mb-4 text-sm font-semibold text-idw-forest/70 hover:bg-idw-forest/5"
               >
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0">
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0 rtl-mirror">
                   <path d="M12.5 15.5L7 10l5.5-5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 {t("studio", "mySpaces")}
-              </button>
+              </PendingNavLink>
               {sidebarGroups.map((group) => (
                 <div key={group.label} className="mb-6">
                   <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-idw-forest/40 mb-2">

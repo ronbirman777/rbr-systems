@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { PendingNavLink } from "@/components/nav/pending-nav-link";
+import { UnsavedChangesDialog } from "@/app/(site)/configurator/retreat/unsaved-changes-dialog";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 const noopSubscribe = () => () => {};
@@ -220,6 +221,9 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
   const [saving, setSaving] = useState<SectionKey | null>(null);
   const [publishedAt, setPublishedAt] = useState(initial.publishedAt);
   const [toast, setToast] = useState<{ kind: "ok" | "error" | "warn"; text: string } | null>(null);
+  // TASK 031 (W3): leaving the Studio with unsaved edits asks first, exactly as the Flow Studio does.
+  // Holds the "continue to My Spaces" callback while the dialog is open.
+  const [pendingLeave, setPendingLeave] = useState<(() => void) | null>(null);
   const [mobileNav, setMobileNav] = useState(false);
   const [mobilePreview, setMobilePreview] = useState(false);
   // Preview "now" is only computed on the client (never during SSR) so
@@ -638,10 +642,20 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
           <button type="button" className="lg:hidden min-h-11 px-2 -ml-2 text-[13px] font-semibold text-[#192B21]" onClick={() => setMobileNav((v) => !v)} aria-expanded={mobileNav}>
             ☰ Menu
           </button>
-          <Link href="/space" className="hidden sm:flex items-center gap-2 min-h-11 text-[12.5px] font-medium text-[#192B21]">
+          <PendingNavLink
+            href="/space"
+            beforeNavigate={(go) => (dirty.size > 0 ? setPendingLeave(() => go) : go())}
+            pendingLabel={t("studio", "openingMySpaces")}
+            testId="studio-back"
+            className="gap-2 pe-3 text-[12.5px] font-medium text-[#192B21] hover:bg-[#192B21]/5"
+          >
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="sm:hidden shrink-0 rtl-mirror">
+              <path d="M12.5 15.5L7 10l5.5-5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
             <InnerDweSMark size={20} />
-            {t("studio", "mySpaces")}
-          </Link>
+            <span className="hidden sm:inline">{t("studio", "mySpaces")}</span>
+            <span className="sr-only sm:hidden">{t("studio", "backToMySpaces")}</span>
+          </PendingNavLink>
           <span className="hidden sm:inline text-[#8C8A84]">/</span>
           <span className="truncate text-[16px] italic text-[#192B21]" style={{ fontFamily: "var(--font-fraunces), serif" }}>
             {name || t("teach", "myTeachingSpace")}
@@ -699,6 +713,25 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
           </div>
         </div>
       ) : null}
+
+      <UnsavedChangesDialog
+        locale={spaceLocale}
+        open={pendingLeave !== null}
+        onSaveAndContinue={async () => {
+          const err = await saveAll();
+          if (err) return false;
+          const go = pendingLeave;
+          setPendingLeave(null);
+          go?.();
+          return true;
+        }}
+        onLeaveWithoutSaving={() => {
+          const go = pendingLeave;
+          setPendingLeave(null);
+          go?.();
+        }}
+        onCancel={() => setPendingLeave(null)}
+      />
 
       {toast ? (
         <div role={toast.kind === "error" ? "alert" : "status"} className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-full text-[13px] font-semibold shadow-lg ${toast.kind === "ok" ? "bg-[#192B21] text-white" : toast.kind === "warn" ? "bg-[#FBF1DC] text-[#5E3F0E] max-w-[min(92vw,560px)] rounded-2xl" : "bg-[#8F3B3B] text-white"}`}>

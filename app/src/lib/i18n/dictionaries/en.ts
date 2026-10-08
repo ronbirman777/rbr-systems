@@ -1184,6 +1184,7 @@ export const en = {
     mySpaces: "My Spaces",
     mySpace: "My Space",
     backToMySpaces: "Back to My Spaces",
+    openingMySpaces: "Opening My Spaces…",
     studioMenu: "Studio menu",
     openStudioMenu: "Open Studio menu",
     closeStudioMenu: "Close Studio menu",

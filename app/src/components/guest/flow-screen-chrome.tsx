@@ -61,7 +61,7 @@ export function FlowBackButton({ label, onClick }: { label: string; onClick: () 
       type="button"
       onClick={onClick}
       style={{ color: "var(--rbr-mist)", fontFamily: "var(--rbr-font-ui)" }}
-      className="flex items-center gap-1.5 px-6 pt-5 pb-1 text-[11px] font-medium tracking-[0.08em] uppercase shrink-0 min-h-11"
+      className="flex items-center gap-1.5 px-6 pt-5 pb-1 text-[11px] font-medium tracking-[0.08em] uppercase shrink-0 min-h-11 touch-manipulation transition-opacity active:opacity-60"
     >
       <ChevronLeftIcon />
       {label}

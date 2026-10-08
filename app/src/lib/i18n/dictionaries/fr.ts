@@ -1191,6 +1191,7 @@ export const fr: Dictionary = {
     mySpaces: "Mes Espaces",
     mySpace: "Mon Espace",
     backToMySpaces: "Retour à Mes Espaces",
+    openingMySpaces: "Ouverture de Mes Espaces…",
     studioMenu: "Menu du Studio",
     openStudioMenu: "Ouvrir le menu du Studio",
     closeStudioMenu: "Fermer le menu du Studio",
