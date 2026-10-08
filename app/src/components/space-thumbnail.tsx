@@ -27,7 +27,8 @@ import { objectPositionStyle, type ImagePosition } from "@/lib/modules/imagePosi
  *    it loads (or if it is slow) the card shows the brand surface rather
  *    than an empty hole.
  *  - If the image fails to load - an expired signed URL, a deleted object -
- *    the card quietly becomes the fallback instead of a broken-image icon.
+ *    the card quietly becomes the fallback instead of a broken-image icon
+ *    (including a failure that happened before hydration).
  */
 const FALLBACK_BACKGROUND = "linear-gradient(160deg, #192B21, #3E5C4B)";
 
@@ -46,6 +47,14 @@ export function SpaceThumbnail({
 }) {
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
   if (imageUrl && failedUrl !== imageUrl) {
+    // An image that failed BEFORE React hydrated (an expired signed URL, a
+    // deleted object) has already fired its error event, so onError would
+    // never run. The ref callback checks the settled state on mount instead:
+    // a finished load with no pixels is a failure. Found by driving a real
+    // browser; server-rendered tests cannot see this.
+    const onMount = (el: HTMLImageElement | null) => {
+      if (el && el.complete && el.naturalWidth === 0) setFailedUrl(imageUrl);
+    };
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
@@ -55,6 +64,7 @@ export function SpaceThumbnail({
         height={size}
         loading="lazy"
         decoding="async"
+        ref={onMount}
         onError={() => setFailedUrl(imageUrl)}
         className={`object-cover ${className}`}
         style={{ background: FALLBACK_BACKGROUND, objectPosition: objectPositionStyle(focal) }}

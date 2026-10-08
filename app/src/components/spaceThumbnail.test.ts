@@ -35,6 +35,15 @@ describe("SpaceThumbnail (My Spaces card image)", () => {
     expect(out).toContain("linear-gradient(160deg, #192B21, #3E5C4B)");
   });
 
+  it("catches an image that failed BEFORE hydration (its error event is already gone) by checking the settled state on mount", async () => {
+    // Server-rendered tests cannot see this; the real-browser harness proves the behaviour. This pins that the
+    // mount check exists, so nobody "simplifies" the ref callback away and reintroduces a stuck broken-image icon.
+    const src = (await import("node:fs")).readFileSync(new URL("./space-thumbnail.tsx", import.meta.url), "utf8");
+    expect(src).toContain("el.complete && el.naturalWidth === 0");
+    expect(src).toContain("ref={onMount}");
+    expect(src).toContain("onError={() => setFailedUrl(imageUrl)}");
+  });
+
   it("is backward compatible: the original three props still work", () => {
     expect(() => render({ imageUrl: null, alt: "x", className: "c" })).not.toThrow();
   });
