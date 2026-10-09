@@ -397,10 +397,15 @@ async function main() {
     const box = p.locator("input[inputmode=numeric], input[autocomplete=one-time-code]").last();
     await box.fill(totp(secret)); await p.getByRole("button", { name: /verify|confirm|continue/i }).last().click();
     // By design a successful re-verify reloads the page (CodeForm), so the form is empty again: the admin re-enters it.
-    await p.waitForLoadState("load").catch(() => {}); await p.waitForLoadState("networkidle").catch(() => {}); await p.waitForTimeout(1500);
-    await p.locator("input[name=code]").fill(cS); await p.locator("input[name=percentOff]").fill("60");
-    await p.locator("select[name=usageRule]").selectOption("once_per_user"); await p.locator("select[name=durationType]").selectOption("once");
-    await p.getByRole("button", { name: /create coupon|save|create/i }).first().click(); await p.waitForTimeout(3000);
+    await p.waitForLoadState("load").catch(() => {}); await p.waitForLoadState("networkidle").catch(() => {});
+    const stepUpBox = p.locator("form[aria-label]:has(input[autocomplete=one-time-code]), form[aria-label]:has(input[inputmode=numeric])");
+    for (let i = 0; i < 40 && (await stepUpBox.count()) > 0; i++) await p.waitForTimeout(500);
+    const stepUpLeft = await stepUpBox.count();
+    if (stepUpLeft) console.log("step-up box still open after verify:", (await stepUpBox.first().innerText()).slice(0, 160));
+    const couponForm = p.locator("form:has(input[name=percentOff])");
+    await couponForm.locator("input[name=code]").fill(cS); await couponForm.locator("input[name=percentOff]").fill("60");
+    await couponForm.locator("select[name=usageRule]").selectOption("once_per_user"); await couponForm.locator("select[name=durationType]").selectOption("once");
+    await couponForm.getByRole("button", { name: /create coupon|save|create/i }).first().click(); await p.waitForTimeout(3000);
     const { data: made2 } = await admin.from("coupons").select("id").eq("normalized_code", cS);
     check("F2 after re-verifying, the same action succeeds", (made2 ?? []).length === 1);
     await c.close();
