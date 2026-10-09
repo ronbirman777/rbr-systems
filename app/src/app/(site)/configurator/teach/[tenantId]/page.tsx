@@ -4,7 +4,7 @@ import { DEFAULT_LOCALE } from "@/lib/i18n";
 import { loadStudioTenant } from "@/lib/configurator/studioTenant";
 import { MEDIA_BUCKET } from "@/lib/media/path";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
-import { deriveCommercialAvailability } from "@/lib/entitlements/availability";
+import { combineCommercialAvailability, getSpaceSubscription } from "@/lib/billing/commercialAccess";
 import { getSpaceEntitlement } from "@/lib/entitlements/getSpaceEntitlement";
 import { getCustomPagesLimit } from "@/lib/entitlements/customPagesLimit";
 import {
@@ -44,7 +44,7 @@ export default async function TeachStudioPage({
   const { supabase, tenant } = await loadStudioTenant(tenantId, TEACH_PRODUCT_TYPE);
   if (tenant.status === "archived") redirect("/space");
 
-  const [{ data: brand }, { data: settingsRows }, { data: itemRows }, { data: configRows }, { data: published }, entitlement, { data: directoryRow }, { data: spaceSettingsRow }] =
+  const [{ data: brand }, { data: settingsRows }, { data: itemRows }, { data: configRows }, { data: published }, entitlement, subscription, { data: directoryRow }, { data: spaceSettingsRow }] =
     await Promise.all([
       supabase
         .from("brand_configs")
@@ -62,6 +62,7 @@ export default async function TeachStudioPage({
       supabase.from("module_configs").select("module_key, enabled").eq("tenant_id", tenantId),
       supabase.from("published_spaces").select("published_at").eq("tenant_id", tenantId).maybeSingle(),
       getSpaceEntitlement(supabase, tenantId),
+      getSpaceSubscription(supabase, tenantId),
       supabase.from("module_settings").select("data").eq("tenant_id", tenantId).eq("module_key", TEACH_DIRECTORY_KEY).maybeSingle(),
       // Space Settings (shared, product-neutral): the Studio preview must
       // render in the Space's own language, not always English.
@@ -92,7 +93,7 @@ export default async function TeachStudioPage({
     for (const s of signed ?? []) if (s.path && s.signedUrl) mediaUrls[s.path] = s.signedUrl;
   }
 
-  const availability = deriveCommercialAvailability(entitlement);
+  const availability = combineCommercialAvailability(entitlement, subscription);
 
   const initial: TeachStudioInitial = {
     tenantId: tenant.id,

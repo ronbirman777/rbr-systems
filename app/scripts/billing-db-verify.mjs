@@ -543,6 +543,63 @@ async function main() {
   await admin.from("billing_email_outbox").delete().eq("dedupe_key", dk);
   const noCard = await admin.from("billing_invoices").select("*").limit(1);
   check("J16 the invoice ledger has no card-data columns", !Object.keys(noCard.data?.[0] ?? {}).some((k) => /card|pan|cvc|cvv|last4|fingerprint/i.test(k)), Object.keys(noCard.data?.[0] ?? {}).join(","));
+
+  // ------------------------------------------------------------------ K. event / email / transition primitives
+  const evId = `evt_QA32${runId}k1`;
+  const claim = (id = evId, extra = {}) => admin.rpc("billing_claim_event", { p_mode: "test", p_event_id: id, p_type: "invoice.paid", ...extra }).then((r) => r.error ? r.error.message : r.data);
+  const claims = await Promise.all([1, 2, 3, 4, 5, 6, 7, 8].map(() => claim()));
+  check("K1 eight simultaneous deliveries of one Stripe event -> exactly one 'claimed', rest 'in_progress'", claims.filter((x) => x === "claimed").length === 1 && claims.filter((x) => x === "in_progress").length === 7, JSON.stringify(claims));
+  await admin.rpc("billing_finish_event", { p_mode: "test", p_event_id: evId, p_status: "processed" });
+  check("K2 after processing, a redelivery is 'duplicate' (no side effects)", (await claim()) === "duplicate");
+  const evF = `evt_QA32${runId}k2`;
+  await claim(evF);
+  await admin.rpc("billing_finish_event", { p_mode: "test", p_event_id: evF, p_status: "failed", p_error_code: "boom", p_error_detail: "x" });
+  check("K3 a FAILED event is re-claimed on retry", (await claim(evF)) === "claimed");
+  const { data: evRow } = await admin.from("billing_events").select("attempts,status").eq("stripe_event_id", evF).single();
+  check("K4 the retry is counted and the event is processing again", evRow.attempts === 2 && evRow.status === "processing", JSON.stringify(evRow));
+  await admin.from("billing_events").update({ processing_started_at: H(-1) }).eq("stripe_event_id", evF);
+  check("K5 a stale 'processing' claim (crashed worker) is taken over", (await claim(evF)) === "claimed");
+  const badFin = await admin.rpc("billing_finish_event", { p_mode: "test", p_event_id: evF, p_status: "received" });
+  check("K6 an invalid final status is refused", !!badFin.error);
+
+  const dk2 = `qa032:${runId}:mail`;
+  const enq = () => admin.rpc("billing_enqueue_email", { p_dedupe_key: dk2, p_template: "payment_confirmation", p_user_id: uG2, p_tenant_id: null, p_subscription_id: null, p_locale: "de", p_payload: { a: 1 } }).then((r) => r.data);
+  const enqs = await Promise.all([enq(), enq(), enq(), enq()]);
+  check("K7 four simultaneous enqueues of the same email -> exactly one inserted", enqs.filter((x) => x === true).length === 1, JSON.stringify(enqs));
+  for (let i = 0; i < 6; i++) await admin.rpc("billing_enqueue_email", { p_dedupe_key: `qa032:${runId}:m${i}`, p_template: "payment_failed", p_user_id: uG2, p_tenant_id: null, p_subscription_id: null, p_locale: "en", p_payload: {} });
+  const [c1, c2] = await Promise.all([admin.rpc("billing_claim_emails", { p_limit: 4 }), admin.rpc("billing_claim_emails", { p_limit: 4 })]);
+  const idsA = (c1.data ?? []).map((x) => x.id), idsB = (c2.data ?? []).map((x) => x.id);
+  check("K8 two workers claiming at once never lease the same email", idsA.filter((x) => idsB.includes(x)).length === 0, JSON.stringify([idsA.length, idsB.length]));
+  check("K9 claimed emails are marked sending with a lease timestamp and an attempt", [...(c1.data ?? []), ...(c2.data ?? [])].every((x) => x.status === "sending" && x.attempts === 1 && !!x.claimed_at));
+  if (idsA[0]) {
+    await admin.rpc("billing_finish_email", { p_id: idsA[0], p_status: "sent", p_provider_id: "re_QA32" });
+    await admin.rpc("billing_finish_email", { p_id: idsA[0], p_status: "failed", p_error: "late" });
+    const { data: done } = await admin.from("billing_email_outbox").select("status,provider_message_id,sent_at").eq("id", idsA[0]).single();
+    check("K10 a sent email stays sent (a late 'failed' cannot overwrite it)", done.status === "sent" && done.provider_message_id === "re_QA32" && !!done.sent_at, JSON.stringify(done));
+  }
+  const cLate = await admin.rpc("billing_claim_emails", { p_limit: 100 });
+  check("K11 already-leased emails are not handed out again within the lease window", (cLate.data ?? []).every((x) => ![...idsA, ...idsB].includes(x.id)), String((cLate.data ?? []).length));
+
+  // transition guard
+  const uT = await mkUser("ut"); const ckT = await mkCheckout(uT, "teach", { status: "created" });
+  const cT = await mkCoupon({ usage_rule: "once_per_user" });
+  await reserve(uT, cT.code, ckT.id);
+  const tr1 = await admin.rpc("billing_transition_checkout", { p_id: ckT.id, p_allowed_from: ["created"], p_to: "checkout_created", p_session_id: `cs_test_QA32${runId}`, p_customer_id: "cus_QA32t" });
+  check("K12 created -> checkout_created attaches the Stripe session", tr1.data === true);
+  const tr2 = await admin.rpc("billing_transition_checkout", { p_id: ckT.id, p_allowed_from: ["created"], p_to: "awaiting_payment" });
+  check("K13 a transition from the wrong state is refused (no-op)", tr2.data === false);
+  const tr3 = await admin.rpc("billing_transition_checkout", { p_id: ckT.id, p_allowed_from: ["checkout_created", "awaiting_payment"], p_to: "canceled" });
+  const { data: rel } = await admin.from("coupon_redemptions").select("status").eq("pending_checkout_id", ckT.id).single();
+  check("K14 cancelling the checkout releases its coupon reservation", tr3.data === true && rel.status === "released", JSON.stringify(rel));
+  const trBad = await admin.rpc("billing_transition_checkout", { p_id: ckT.id, p_allowed_from: ["canceled"], p_to: "provisioned" });
+  check("K15 a checkout can never be moved to 'provisioned' through the transition helper", !!trBad.error);
+  const tr4 = await admin.rpc("billing_transition_checkout", { p_id: ckPv.id, p_allowed_from: ["provisioned"], p_to: "canceled" });
+  check("K16 a provisioned checkout can never be cancelled/expired afterwards", tr4.data === false);
+  const dupSess = await admin.from("pending_space_checkouts").update({ stripe_checkout_session_id: `cs_test_QA32${runId}` }).eq("id", ckA1.id);
+  check("K17 one Stripe session id maps to exactly one pending checkout", !!dupSess.error && dupSess.error.code === "23505", JSON.stringify(dupSess.error));
+  const np = await admin.rpc("billing_set_next_payment_attempt", { p_subscription_id: pI.data.subscription_id, p_at: H(24) });
+  const { data: npRow } = await admin.from("space_subscriptions").select("next_payment_attempt_at").eq("id", pI.data.subscription_id).single();
+  check("K18 the next Stripe retry date can be recorded", !np.error && !!npRow.next_payment_attempt_at, JSON.stringify(np.error));
 }
 
 try {

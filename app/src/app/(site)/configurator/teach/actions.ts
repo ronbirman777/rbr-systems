@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { getSpaceEntitlement } from "@/lib/entitlements/getSpaceEntitlement";
-import { deriveCommercialAvailability } from "@/lib/entitlements/availability";
+import { getSpaceCommercialAvailability } from "@/lib/billing/commercialAccess";
 import { getCustomPagesLimit } from "@/lib/entitlements/customPagesLimit";
 import {
   MEDIA_BUCKET,
@@ -803,7 +803,7 @@ export async function publishTeachSpace(tenantId: string,
   const publishGate = getPublishAvailability(TEACH_PRODUCT_TYPE);
   if (!publishGate.available) return { error: publishGate.message, publishedAt: null };
 
-  const availability = deriveCommercialAvailability(await getSpaceEntitlement(supabase, tenantId));
+  const availability = await getSpaceCommercialAvailability(supabase, tenantId);
   if (!availability.canPublish) {
     return { error: t("needsActiveAccess"), publishedAt: null };
   }

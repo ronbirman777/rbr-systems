@@ -1,7 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getSpaceEntitlement } from "./getSpaceEntitlement";
-import { deriveCommercialAvailability } from "./availability";
+import { getSpaceCommercialAvailability } from "@/lib/billing/commercialAccess";
 
 /**
  * The single authority every Guest entry point (/s/[slug], /g/[tenantId],
@@ -38,8 +37,11 @@ export async function isSpacePubliclyAvailable(tenantId: string): Promise<boolea
     const { data: tenant } = await admin.from("tenants").select("status").eq("id", tenantId).maybeSingle();
     if (tenant?.status === "archived") return false;
 
-    const entitlement = await getSpaceEntitlement(admin, tenantId);
-    return deriveCommercialAvailability(entitlement).isPubliclyAvailable;
+    // TASK 032: the unified decision - a Space with a billing row is governed
+    // by billing (24h payment-failure Guest suspension, ended subscriptions,
+    // explicit exemptions); a Space without one keeps the legacy entitlement
+    // derivation unchanged.
+    return (await getSpaceCommercialAvailability(admin, tenantId)).isPubliclyAvailable;
   } catch {
     // Fail closed: an unexpected error reading commercial status (network
     // failure, unexpected client exception - not the ordinary "no row"

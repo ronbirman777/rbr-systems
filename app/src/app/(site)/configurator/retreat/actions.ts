@@ -37,7 +37,7 @@ import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modu
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { normalizeSlug, slugFormatError, isReservedSlug } from "@/lib/slug";
 import { getSpaceEntitlement } from "@/lib/entitlements/getSpaceEntitlement";
-import { deriveCommercialAvailability } from "@/lib/entitlements/availability";
+import { getSpaceCommercialAvailability } from "@/lib/billing/commercialAccess";
 import { getCustomPagesLimit } from "@/lib/entitlements/customPagesLimit";
 import {
   MEDIA_BUCKET,
@@ -1523,8 +1523,7 @@ export async function publishSpace(
   // the authoritative enforcement is inside publish_space() itself (the
   // RPC call at the end of this function), which cannot be bypassed even
   // if this check were removed or called incorrectly.
-  const entitlement = await getSpaceEntitlement(supabase, tenantId);
-  const availability = deriveCommercialAvailability(entitlement);
+  const availability = await getSpaceCommercialAvailability(supabase, tenantId);
   if (!availability.canPublish) {
     return {
       error: t("needsCommercialAccess"),

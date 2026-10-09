@@ -60,4 +60,16 @@ export type CommercialAvailability = {
   canManage: boolean;
   canPublish: boolean;
   isPubliclyAvailable: boolean;
+  /**
+   * TASK 032: present ONLY when the Space has a billing row (a paid
+   * subscription, or an explicit internal/legacy exemption) - the unified
+   * billing decision (src/lib/billing/access.ts) then governs every boolean
+   * above. Absent for legacy Spaces, which keep the entitlement derivation
+   * exactly as before.
+   */
+  billing?: {
+    reason: import("@/lib/billing/access").AccessReason;
+    /** May the owner write Studio content, upload media and publish. */
+    studioWritable: boolean;
+  };
 };
