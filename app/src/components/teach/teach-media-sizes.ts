@@ -61,6 +61,12 @@ export const TEACH_SIZES = {
   /** Contact and custom-page covers: full bleed. */
   pageCover: "100vw",
 
+  /** My Retreats list card: one column on a phone, two from @40rem, three from @4xl. */
+  retreatCard: "(min-width: 896px) 380px, (min-width: 640px) 50vw, 100vw",
+
+  /** My Retreats detail cover: full bleed. */
+  retreatCover: "100vw",
+
   /** Class-card thumbnail: `w-[76px]`, fixed. */
   classCardThumb: "76px",
 } as const;

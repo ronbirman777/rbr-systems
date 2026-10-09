@@ -33,10 +33,10 @@ describe("Explore module visibility (Studio hint and Guest App share one rule)",
     const d = guest({
       enabled: [...TEACH_EXPLORE_MODULES],
       settings: { teachContact: { enabled: ["email"], methods: { email: "maya@example.com" } } },
-      items: { teachReadings: [reading], teachAudio: [track(`${TENANT}/teachAudio/a1/x/published.mp3`)], customPages: [{ id: "p1", title: "Workshop", metadata: { enabled: true } }] },
+      items: { teachReadings: [reading], teachAudio: [track(`${TENANT}/teachAudio/a1/x/published.mp3`)], customPages: [{ id: "p1", title: "Workshop", metadata: { enabled: true } }], teachRetreats: [{ id: "r1", title: "Autumn retreat", metadata: { enabled: true } }] },
     });
     const states = Object.fromEntries(TEACH_EXPLORE_MODULES.map((k) => [k, exploreModuleStatus(d, k)])) as Record<TeachExploreModule, string>;
-    expect(states).toEqual({ teachReadings: "visible", teachAudio: "visible", teachContact: "visible", customPages: "visible" });
+    expect(states).toEqual({ teachReadings: "visible", teachAudio: "visible", teachContact: "visible", customPages: "visible", teachRetreats: "visible" });
   });
 
   it("audio without an attached file does not count as content", () => {

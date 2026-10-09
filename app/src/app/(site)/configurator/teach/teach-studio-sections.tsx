@@ -55,6 +55,7 @@ import { styleLabels } from "@/lib/teach/style";
 import {
   TEMPLATE_VARIABLES,
   buildRegistrationCta,
+  buildRetreatRegistrationCta,
   classTemplateValues,
   contactMethodLabel,
   defaultClassWhatsappTemplate,
@@ -72,6 +73,7 @@ import { SectionHeader } from "@/components/studio/section-header";
 import { CollapsibleItemRow } from "@/components/studio/collapsible-item-row";
 import { createTranslator, translate, type Locale, type TranslationKey } from "@/lib/i18n";
 import { formatShortDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime";
+import { retreatDateSummary, formatRetreatPrice } from "@/lib/teach/retreats";
 import { formatPublishedAtUtc } from "@/lib/studio/status";
 import { PRESET_LABEL } from "@/lib/brand/presetLabels";
 import {
@@ -1467,6 +1469,9 @@ const MODULE_INFO: Record<
   teachAudio: { labelKey: "exploreAudio", descKey: "myAudioBody", defaultTitleKey: "exploreAudio", defaultSubtitleKey: "audioEyebrow" },
   teachContact: { labelKey: "howToContactMeTitle", descKey: "contactDestinationBody", defaultTitleKey: "contactCardTitle", defaultSubtitleKey: "howToReachMe" },
   customPages: { labelKey: "customPagesTitle", descKey: "customPagesBody", defaultTitleKey: null, defaultSubtitleKey: null },
+  // Like Custom Pages, the card is derived from the retreats themselves (the first retreat's cover),
+  // so there is no per-module card title/cover to configure.
+  teachRetreats: { labelKey: "myRetreats", descKey: "myRetreatsBody", defaultTitleKey: null, defaultSubtitleKey: null },
 };
 
 const FALLBACK_SWATCHES = ["#5B7A6E", "#2D4A3E", "#7E6A57", "#A9553A", "#6A4C6B", "#2F5D7C"];
@@ -1483,6 +1488,7 @@ export function ModulesSection({ api }: Props) {
     readings: api.items.teachReadings,
     audio: api.items.teachAudio,
     customPages: api.items.customPages.filter((p) => p.metadata.enabled),
+    retreats: api.items.teachRetreats.filter((r) => r.metadata.enabled),
     settings: api.settings,
   };
   return (
@@ -1491,12 +1497,13 @@ export function ModulesSection({ api }: Props) {
       {(Object.keys(MODULE_INFO) as TeachExploreModule[]).map((k) => {
         const on = api.enabledExplore.includes(k);
         const info = MODULE_INFO[k];
-        const card = k === "customPages" ? null : cards[k];
+        const hasOwnCard = k !== "customPages" && k !== "teachRetreats";
+        const card = hasOwnCard ? cards[k] : null;
         return (
           <Card key={k} title={t("teach", info.labelKey)} description={t("teach", info.descKey)}>
             <Toggle checked={on} onChange={(v) => api.setEnabledExplore(v ? [...api.enabledExplore, k] : api.enabledExplore.filter((x) => x !== k))} label={on ? t("teach", "shownInExplore") : t("teach", "hiddenLabel")} />
             {exploreModuleStatus(statusInput, k) === "empty" ? <Hint>{EXPLORE_MODULE_EMPTY_HINT[k]}</Hint> : null}
-            {on && k !== "customPages" ? (
+            {on && hasOwnCard ? (
               <>
                 <Grid>
                   <TextField label={t("teach", "cardTitle")} value={str(card?.title)} onChange={(v) => setCard(k, { title: nul(v) })} placeholder={info.defaultTitleKey ? t("teach", info.defaultTitleKey) : ""} maxLength={60} />
@@ -1525,6 +1532,7 @@ export function ModulesSection({ api }: Props) {
               </>
             ) : null}
             {on && k === "customPages" ? <Hint>{t("teach", "editPagesInCustomPages")}</Hint> : null}
+            {on && k === "teachRetreats" ? <Hint>{t("teach", "editRetreatsInMyRetreats")}</Hint> : null}
           </Card>
         );
       })}
@@ -1856,6 +1864,154 @@ export function CustomPagesSection({ api }: Props) {
         />
       </Card>
       <SaveBar api={api} section="pages" />
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// My Retreats (TASK 031)
+// ---------------------------------------------------------------------------
+
+/**
+ * The price box keeps its own text so typing "1250." or "1250,5" is never
+ * rewritten under the teacher's fingers; only a valid amount is pushed into
+ * the item (an invalid one leaves the last good value and says so).
+ */
+function RetreatPriceField({ locale, price, onChange }: { locale: Locale; price: number | null; onChange: (v: number | null) => void }) {
+  const { t } = createTranslator(locale);
+  const [text, setText] = useState(price === null ? "" : String(price));
+  const [bad, setBad] = useState(false);
+  return (
+    <TextField
+      label={t("teach", "price")}
+      value={text}
+      inputMode="decimal"
+      dir="ltr"
+      placeholder="700"
+      hint={bad ? <span role="alert">{t("teach", "retreatPriceInvalid")}</span> : t("teach", "retreatPriceHint")}
+      onChange={(v) => {
+        setText(v);
+        const cleaned = v.trim().replace(",", ".");
+        if (!cleaned) {
+          setBad(false);
+          return onChange(null);
+        }
+        const n = Number(cleaned);
+        if (/^\d+(\.\d{1,2})?$/.test(cleaned) && Number.isFinite(n)) {
+          setBad(false);
+          onChange(n);
+        } else setBad(true);
+      }}
+    />
+  );
+}
+
+export function RetreatEditor({ api, item, update, index }: { api: StudioApi; item: EditableTeachItem<"teachRetreats">; update: (p: Patch<EditableTeachItem<"teachRetreats">>) => void; index: number }) {
+  const { t } = createTranslator(api.locale);
+  const m = item.metadata;
+  const setM = (patch: Partial<typeof m>) => update((cur) => ({ metadata: { ...cur.metadata, ...patch } }));
+  const reg = m.registration;
+  const setReg = (patch: Partial<typeof reg>) => setM({ registration: { ...reg, ...patch } });
+  const cta = buildRetreatRegistrationCta(reg, item.title || t("teach", "myRetreats"), api.name, api.locale);
+  const methods = REGISTRATION_METHODS.filter((k) => k !== "venueLink");
+  const orderProblem = Boolean(m.startDate && m.endDate && m.endDate < m.startDate);
+  return (
+    <>
+      <Toggle checked={m.enabled} onChange={(v) => setM({ enabled: v })} label={t("studio", "visibleToGuests")} />
+      <TextField label={t("teach", "retreatName")} value={item.title} onChange={(v) => update({ title: v })} maxLength={160} placeholder={t("teach", "retreatNamePlaceholder")} dir="auto" />
+      <TextArea label={t("teach", "retreatShortDescription")} value={str(item.description)} onChange={(v) => update({ description: nul(v) })} rows={3} maxLength={600} hint={t("teach", "retreatShortDescriptionHint")} dir="auto" />
+      <ItemImage api={api} moduleKey="teachRetreats" section="retreats" item={item} index={index} update={update} label={t("studio", "coverImage")} previewClassName="w-[180px] h-[110px] rounded-xl" />
+      <Grid>
+        <TextField label={t("common", "location")} value={str(m.location)} onChange={(v) => setM({ location: nul(v) })} maxLength={160} placeholder={t("teach", "retreatLocationPlaceholder")} dir="auto" />
+        <TextField label={t("teach", "retreatDuration")} value={str(m.durationLabel)} onChange={(v) => setM({ durationLabel: nul(v) })} maxLength={60} placeholder={t("teach", "retreatDurationPlaceholder")} dir="auto" />
+      </Grid>
+      <Grid>
+        <TextField label={t("teach", "startDate")} type="date" value={str(m.startDate)} onChange={(v) => setM({ startDate: v || null })} />
+        <TextField label={t("teach", "retreatEndDate")} type="date" value={str(m.endDate)} onChange={(v) => setM({ endDate: v || null })} hint={t("teach", "retreatDatesHint")} />
+      </Grid>
+      {orderProblem ? (
+        <p role="alert" className="text-[12.5px] px-3 py-2 rounded-lg bg-[#F6E3E0] text-[#8F3B3B]">
+          {t("teach", "retreatDateOrderWarning")}
+        </p>
+      ) : null}
+      <Grid>
+        <RetreatPriceField key={item.id} locale={api.locale} price={m.price} onChange={(v) => setM({ price: v })} />
+        <TextField label={t("teach", "retreatCurrency")} value={str(m.currency)} onChange={(v) => setM({ currency: v.trim() ? v.trim().toUpperCase().slice(0, 3) : null })} maxLength={3} placeholder={t("teach", "retreatCurrencyPlaceholder")} dir="ltr" />
+      </Grid>
+      <div className="flex flex-col gap-4 p-4 rounded-xl border border-[#E2DACD] bg-white">
+        <h3 className="text-[16px] text-[#192B21]" style={{ fontFamily: "var(--font-fraunces), serif" }}>
+          {t("teach", "registration")}
+        </h3>
+        <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={t("teach", "registrationMethod")}>
+          <button type="button" role="radio" aria-checked={reg.method === null} onClick={() => setReg({ method: null })} className={`px-3 min-h-11 rounded-full text-[12px] font-semibold ${reg.method === null ? "bg-[#192B21] text-white" : "border border-[#E2DACD] text-[#192B21]"}`}>
+            {t("common", "none")}
+          </button>
+          {methods.map((k) => (
+            <button key={k} type="button" role="radio" aria-checked={reg.method === k} onClick={() => setReg({ method: k })} className={`px-3 min-h-11 rounded-full text-[12px] font-semibold ${reg.method === k ? "bg-[#192B21] text-white" : "border border-[#E2DACD] text-[#192B21]"}`}>
+              {registrationMethodLabel(api.locale)[k]}
+            </button>
+          ))}
+        </div>
+        {reg.method ? (
+          <Grid>
+            <TextField
+              label={t("teach", REG_VALUE_LABEL_KEY[reg.method] ?? "bookingLink")}
+              value={str(reg.value)}
+              onChange={(v) => setReg({ value: nul(v) })}
+              inputMode={reg.method === "whatsapp" ? "tel" : reg.method === "email" ? "email" : "url"}
+              dir="ltr"
+              placeholder={reg.method === "whatsapp" ? "+972 50 000 0000" : ""}
+              hint={reg.method === "whatsapp" ? t("teach", "internationalFormat") : undefined}
+            />
+            <TextField label={t("teach", "buttonLabelOptional")} value={str(reg.buttonLabel)} onChange={(v) => setReg({ buttonLabel: nul(v) })} maxLength={60} placeholder={cta?.label ?? ""} dir="auto" />
+          </Grid>
+        ) : null}
+        {reg.method === "whatsapp" || reg.method === "email" ? (
+          <TemplateEditor
+            locale={api.locale}
+            value={reg.whatsappTemplate}
+            onChange={(v) => setReg({ whatsappTemplate: v })}
+            fallback={translate(api.locale, "teach", "retreatWhatsappTemplate")}
+            previewValues={{ teacher_name: api.name || t("teach", "yourName"), class_name: item.title || t("teach", "myRetreats") }}
+          />
+        ) : null}
+        {reg.method ? (
+          cta ? (
+            <p className="text-[12px] text-[#3F6A4C]">✓ {t("teach", "retreatRegistrationPreview", { label: cta.label })}</p>
+          ) : (
+            <p className="text-[12px] text-[#A8643C]" role="alert">
+              {t("teach", "methodIncomplete")}
+            </p>
+          )
+        ) : null}
+      </div>
+      <TextField label={t("teach", "retreatFlowLink")} value={str(m.flowGuestUrl)} onChange={(v) => setM({ flowGuestUrl: nul(v) })} maxLength={300} inputMode="url" dir="ltr" placeholder={t("teach", "retreatFlowLinkPlaceholder")} hint={t("teach", "retreatFlowLinkHint")} />
+    </>
+  );
+}
+
+export function RetreatsSection({ api }: Props) {
+  const { t } = createTranslator(api.locale);
+  return (
+    <>
+      <SectionHeader eyebrow={t("teach", "exploreLibrary")} title={t("teach", "myRetreats")} intro={t("teach", "myRetreatsBody")} />
+      {!api.enabledExplore.includes("teachRetreats") ? <ModuleOffNotice api={api} /> : null}
+      <Card title={t("teach", "myRetreats")}>
+        <ItemList
+          api={api}
+          moduleKey="teachRetreats"
+          section="retreats"
+          addLabel={t("teach", "addRetreat")}
+          emptyText={t("teach", "noRetreatsYet")}
+          summary={(r) => ({
+            title: r.title,
+            sub: [r.metadata.location, retreatDateSummary(r.metadata, api.locale), formatRetreatPrice(r.metadata, api.locale), r.metadata.enabled ? null : t("common", "disabled")].filter(Boolean).join(" · "),
+            thumb: api.mediaUrl(r.imageRef),
+          })}
+          editor={(item, update, index) => <RetreatEditor api={api} item={item} update={update} index={index} />}
+        />
+      </Card>
+      <SaveBar api={api} section="retreats" />
     </>
   );
 }

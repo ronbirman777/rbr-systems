@@ -9,9 +9,10 @@ export const EXPLORE_MODULE_EMPTY_HINT: Record<TeachExploreModule, string> = {
   teachAudio: "This module is on, but guests won't see a card until a track has its audio file attached.",
   teachContact: "This module is on, but guests won't see a card until you add a contact method or address.",
   customPages: "This module is on, but guests won't see a card until you add a page and mark it visible.",
+  teachRetreats: "This module is on, but guests won't see a card until you add a retreat and mark it visible.",
 };
 
-type StatusInput = Pick<TeachGuestData, "enabledExplore" | "readings" | "audio" | "customPages" | "settings">;
+type StatusInput = Pick<TeachGuestData, "enabledExplore" | "readings" | "audio" | "customPages" | "retreats" | "settings">;
 
 /** Whether an Explore module has anything to show. Shared by the Guest App and the Studio so they cannot disagree. */
 export function exploreModuleHasContent(data: StatusInput, k: TeachExploreModule): boolean {
@@ -24,6 +25,8 @@ export function exploreModuleHasContent(data: StatusInput, k: TeachExploreModule
       return contactEntries(data.settings.teachContact).length > 0 || Boolean(data.settings.teachContact.address);
     case "customPages":
       return data.customPages.length > 0;
+    case "teachRetreats":
+      return data.retreats.length > 0;
   }
 }
 

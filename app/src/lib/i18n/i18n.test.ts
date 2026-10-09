@@ -142,6 +142,11 @@ describe("translation and fallback", () => {
     // "Pause" and "Team" are the same word in German; "Team" and
     // "WhatsApp" are in everyday use in Hebrew-language interfaces too.
     const allowed = new Set([
+      // My Retreats (TASK 031): "Retreats" is the German word too, "Dates" the French one, and a
+      // URL placeholder is Latin script in every language.
+      "teach.retreatsEyebrow",
+      "teach.retreatDatesLabel",
+      "teach.retreatFlowLinkPlaceholder",
       "flow.whatsapp",
       "flow.navTeam",
       "common.optional",

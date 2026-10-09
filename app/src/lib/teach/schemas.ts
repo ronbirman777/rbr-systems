@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { optionalFocalPointSchema } from "@/lib/media/focalPoint";
-import { isoDateString as isoDate, optText } from "@/lib/modules/fields";
+import { isoDateString as isoDate, calendarDateString, optText } from "@/lib/modules/fields";
 import { audioItemFields, audioNoteField, libraryItemFieldsSchema, parseLibraryItem, readingMetadataSchema } from "@/lib/modules/library";
 import { socialLinksSchema } from "@/lib/modules/socialLinks";
 import { BRAND_PRESET_KEYS } from "@/lib/brand/presets";
@@ -32,6 +32,8 @@ export const TEACH_ITEM_KEYS = [
   "teachAudio",
   "teachGallery",
   "teachCertificates",
+  /** TASK 031: the retreats a teacher offers (presentation + registration link, no booking). */
+  "teachRetreats",
 ] as const;
 export type TeachItemKey = (typeof TEACH_ITEM_KEYS)[number];
 /** Item keys the Teach Studio edits - its own plus the shared Custom Pages module. */
@@ -61,7 +63,7 @@ export const teachDirectorySchema = z.object({
 export type TeachDirectory = z.infer<typeof teachDirectorySchema>;
 
 /** Explore modules a teacher can switch on (module_configs rows). */
-export const TEACH_EXPLORE_MODULES = ["teachReadings", "teachAudio", "teachContact", "customPages"] as const;
+export const TEACH_EXPLORE_MODULES = ["teachReadings", "teachAudio", "teachContact", "customPages", "teachRetreats"] as const;
 export type TeachExploreModule = (typeof TEACH_EXPLORE_MODULES)[number];
 
 /** Items whose storage folder may hold media (image_ref and/or audio). */
@@ -71,6 +73,7 @@ export const TEACH_MEDIA_ITEM_KEYS: readonly TeachEditableItemKey[] = [
   "teachAudio",
   "teachGallery",
   "teachCertificates",
+  "teachRetreats",
   "customPages",
 ];
 
@@ -530,6 +533,53 @@ export const customPageMetadataSchema = z.object({
 });
 export type CustomPageMetadata = z.infer<typeof customPageMetadataSchema>;
 
+/**
+ * TASK 031 - one retreat a teacher offers ("My Retreats").
+ *
+ * module_items: title = retreat name, description = the short description
+ * (required, enforced on save - the shared envelope keeps it optional so a
+ * half-written draft still round-trips), image_ref = cover. Everything else
+ * is optional on purpose: a retreat may have no dates, no price, and no
+ * InnerDweS Flow Space behind it.
+ *
+ * Dates are plain "YYYY-MM-DD" calendar days, never instants, so no viewer
+ * timezone can shift them. The money fields are informational text only:
+ * there is no checkout and nothing here is billing.
+ *
+ * Every field is tolerant on READ (`.catch`), so one bad value drops itself
+ * rather than the whole retreat; the strict rules (end >= start, price needs
+ * a currency, a Flow link must be public) live in validateRetreatMetadata()
+ * and are enforced on SAVE.
+ */
+export const retreatMetadataSchema = z.object({
+  enabled: z.boolean().default(true),
+  location: optText(160),
+  startDate: calendarDateString.nullable().catch(null).default(null),
+  endDate: calendarDateString.nullable().catch(null).default(null),
+  /** Free text, e.g. "7 days" - the teacher's own words, never translated. */
+  durationLabel: optText(60),
+  price: z.number().finite().min(0).max(1_000_000_000).nullable().catch(null).default(null),
+  /** ISO 4217 style code, e.g. "THB". Any three capitals: the list of codes is not ours to police. */
+  currency: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .regex(/^[A-Z]{3}$/)
+    .nullable()
+    .catch(null)
+    .default(null),
+  /** External registration, same shape as a class's (method + value + optional button label). */
+  registration: registrationSchema,
+  /**
+   * Canonical URL of a PUBLIC InnerDweS Flow Guest App for this retreat.
+   * Validated on save (lib/teach/flowLink.ts) and re-checked when the guest
+   * page renders, so a Space that later goes private is never linked.
+   */
+  flowGuestUrl: optText(300),
+  imagePosition: optionalFocalPointSchema,
+});
+export type RetreatMetadata = z.infer<typeof retreatMetadataSchema>;
+
 export const TEACH_ITEM_METADATA_SCHEMAS = {
   teachClasses: classMetadataSchema,
   teachAvailability: availabilityMetadataSchema,
@@ -537,6 +587,7 @@ export const TEACH_ITEM_METADATA_SCHEMAS = {
   teachAudio: audioMetadataSchema,
   teachGallery: imageOnlyMetadataSchema,
   teachCertificates: certificateMetadataSchema,
+  teachRetreats: retreatMetadataSchema,
   customPages: customPageMetadataSchema,
 } as const;
 
@@ -547,6 +598,7 @@ export type TeachItemMetadata = {
   teachAudio: AudioMetadata;
   teachGallery: z.infer<typeof imageOnlyMetadataSchema>;
   teachCertificates: CertificateMetadata;
+  teachRetreats: RetreatMetadata;
   customPages: CustomPageMetadata;
 };
 
@@ -558,6 +610,7 @@ const TITLE_REQUIRED: Record<TeachEditableItemKey, boolean> = {
   teachAudio: true,
   teachGallery: false,
   teachCertificates: true,
+  teachRetreats: true,
   customPages: true,
 };
 
@@ -619,6 +672,7 @@ export function blankTeachMetadata<K extends TeachEditableItemKey>(key: K, today
     teachAudio: {},
     teachGallery: {},
     teachCertificates: {},
+    teachRetreats: { enabled: true },
     customPages: { enabled: true },
   };
   return (TEACH_ITEM_METADATA_SCHEMAS[key] as unknown as z.ZodType<TeachItemMetadata[K]>).parse(base[key]);

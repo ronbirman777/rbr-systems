@@ -573,7 +573,7 @@ function ExploreSubPage({ vars, onBack, children, locale }: { vars: CSSPropertie
         type="button"
         onClick={onBack}
         style={{ color: "var(--rbr-mist)", fontFamily: "var(--rbr-font-ui)" }}
-        className="flex items-center gap-1.5 px-5 pt-5 pb-1 text-[11px] font-medium tracking-[0.08em] uppercase shrink-0"
+        className="flex items-center gap-1.5 px-5 pt-5 pb-1 min-h-11 text-[11px] font-medium tracking-[0.08em] uppercase shrink-0 touch-manipulation transition-opacity active:opacity-60"
       >
         <ChevronLeftIcon />
         {translate(locale, "flow", "navExplore")}

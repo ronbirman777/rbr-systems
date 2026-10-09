@@ -170,13 +170,30 @@ const strip0034 = (body: string) => body.replace(DAILY_INSPIRATION_BLOCK_0034, "
 describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Phase 4A)", () => {
   const latest = latestFunctionDefinition(migrations, "publish_space")!;
   const base = extractFunctionBody(migrations.find((m) => m.name.startsWith("0025_"))!.sql, "publish_space")!;
-  // build_teach_payload() is still owned by 0028; 0031 redefines only
-  // publish_space(), so the Teach-payload assertions below keep reading
-  // the file that actually defines it.
+  // build_teach_payload() was owned by 0028 until TASK 031's 0035 added
+  // 'teachRetreats'; 0031-0034 redefine only publish_space(), so the
+  // Teach-payload assertions below keep reading the file that actually
+  // defines it.
   const teachPayload = latestFunctionDefinition(migrations, "build_teach_payload")!;
 
-  it("build_teach_payload() still comes from the Teach foundation migration and nothing later redefines it", () => {
-    expect(teachPayload.file).toMatch(/^0028_/);
+  it("build_teach_payload() is last redefined by 0035, and 0035 is 0028's body plus only the My Retreats additions", () => {
+    expect(teachPayload.file).toMatch(/^0035_/);
+    const zero28 = extractFunctionBody(migrations.find((m) => m.name.startsWith("0028_"))!.sql, "build_teach_payload")!;
+    const stripped = teachPayload.body
+      .replace(/,\s*'teachRetreats'\s*\]\)/, "\n])")
+      .replace("'customPages', 'teachRetreats')", "'customPages')")
+      .replace("'customPages', 'teachRetreats')", "'customPages')");
+    // Every difference is the one added key; nothing else in the function moved.
+    expect(norm(stripped).replace(/\s+/g, "")).toBe(norm(zero28).replace(/\s+/g, ""));
+  });
+
+  it("0035 touches only build_teach_payload: publish_space() is still 0034's, so Flow publishing cannot have changed", () => {
+    const zero35 = stripSqlComments(migrations.find((m) => m.name.startsWith("0035_"))!.sql).toLowerCase();
+    expect(zero35).not.toContain("function public.publish_space");
+    for (const forbidden of ["create table", "alter table", "drop ", "create policy", "alter policy", "insert into", "update public", "delete from"]) {
+      expect(zero35).not.toContain(forbidden);
+    }
+    expect(latest.file).toMatch(/^0034_/);
   });
 
   it("publish_space() is last redefined by 0034", () => {
@@ -386,7 +403,7 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     }
   });
 
-  it("migration chain: one migration per number, 0034 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
+  it("migration chain: one migration per number, 0035 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
     const names = migrations.map((m) => m.name);
     expect(names.filter((n) => n.startsWith("0028_"))).toEqual(["0028_teach_foundation.sql"]);
     expect(names.filter((n) => n.startsWith("0029_"))).toEqual(["0029_versioned_media_update_deny.sql"]);
@@ -397,7 +414,8 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     // Nothing beyond the current head, and historical numbers are never
     // renumbered or back-filled.
     expect(names.filter((n) => n.startsWith("0034_"))).toEqual(["0034_flow_daily_inspiration.sql"]);
-    expect(names.some((n) => /^00(3[5-9]|[4-9]\d)_/.test(n))).toBe(false);
+    expect(names.filter((n) => n.startsWith("0035_"))).toEqual(["0035_teach_my_retreats.sql"]);
+    expect(names.some((n) => /^00(3[6-9]|[4-9]\d)_/.test(n))).toBe(false);
     expect(names.filter((n) => n.startsWith("0019_"))).toEqual(["0019_signup_profile.sql"]);
     expect(names.some((n) => n.startsWith("0023_"))).toBe(false);
   });

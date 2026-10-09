@@ -1,7 +1,7 @@
 "use client";
 
 import type { MouseEvent, ReactNode } from "react";
-import Link from "next/link";
+import { PendingNavLink } from "@/components/nav/pending-nav-link";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
@@ -17,7 +17,7 @@ export function StudioTopBar({
   fallbackName,
   productBadge,
   saveStatus,
-  onBack,
+  onBeforeBack,
   onPublish,
   publishLabel,
   publishPending = false,
@@ -31,7 +31,11 @@ export function StudioTopBar({
   fallbackName: string;
   productBadge: string;
   saveStatus: ReactNode;
-  onBack?: () => void;
+  /**
+   * An unsaved-changes guard for the back control: receives `go`, and
+   * navigates only if (and when) it calls it. Absent, the control just goes.
+   */
+  onBeforeBack?: (go: () => void) => void;
   /**
    * Receives the click. With `publishFormId` set the button is a real
    * submit, so a handler that wants to stop it (an unsaved-changes guard,
@@ -73,15 +77,15 @@ export function StudioTopBar({
       data-testid="studio-top-bar"
     >
       <div className="flex items-center gap-3 min-w-0">
-        {onBack ? (
-          <button type="button" onClick={onBack} className="flex items-center gap-2 min-h-11 text-[12.5px] font-medium text-[#192B21]">
-            {back}
-          </button>
-        ) : (
-          <Link href={backHref} className="flex items-center gap-2 min-h-11 text-[12.5px] font-medium text-[#192B21]">
-            {back}
-          </Link>
-        )}
+        <PendingNavLink
+          href={backHref}
+          beforeNavigate={onBeforeBack}
+          pendingLabel={t("studio", "openingMySpaces")}
+          testId="studio-back"
+          className="gap-2 pe-3 text-[12.5px] font-medium text-[#192B21] hover:bg-[#192B21]/5"
+        >
+          {back}
+        </PendingNavLink>
         <span className="text-[#8C8A84]">/</span>
         <span className="truncate text-[16px] italic text-[#192B21]" style={{ fontFamily: "var(--font-fraunces), serif" }}>
           {name || fallbackName}

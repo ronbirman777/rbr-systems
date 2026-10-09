@@ -48,10 +48,13 @@ import {
   type TeachEditableItemKey,
   type TeachSettingsKey,
   type ClassMetadata,
+  type RetreatMetadata,
   RECURRENCE_MAX_EXCEPTIONS,
   isInvalidStored,
 } from "@/lib/teach/schemas";
 import { computeClassTimes } from "@/lib/teach/classTime";
+import { validateRetreatMetadata, type RetreatIssue } from "@/lib/teach/retreats";
+import { checkFlowGuestUrl } from "@/lib/teach/flowLinkServer";
 import { validateRecurrence } from "@/lib/teach/recurrence";
 import { DEFAULT_TEACH_PRESET } from "@/lib/teach/style";
 import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
@@ -379,6 +382,21 @@ async function itemDraftRefs(supabase: SupabaseClient, tenantId: string, itemIds
   return refs;
 }
 
+/** My Retreats: which system string explains each save-time problem. */
+const RETREAT_ISSUE_KEY = {
+  startRequiredForEnd: "retreatErrStartRequired",
+  endBeforeStart: "retreatErrEndBeforeStart",
+  badDate: "retreatErrDate",
+  priceNeedsCurrency: "retreatErrPriceCurrency",
+  badRegistration: "retreatErrRegistration",
+} as const satisfies Record<RetreatIssue, string>;
+const RETREAT_FLOW_KEY = {
+  invalid: "retreatErrFlowInvalid",
+  notFound: "retreatErrFlowNotFound",
+  notFlow: "retreatErrFlowNotFlow",
+  notPublic: "retreatErrFlowNotPublic",
+} as const;
+
 /**
  * Upsert-by-id / delete-only-removed, exactly like Time to Flow's
  * saveModuleItemsGeneric - and like it, Save never writes image_ref (owned
@@ -446,6 +464,36 @@ export async function saveTeachItems(
       }
       metadata = { ...(times.metadata as unknown as Record<string, unknown>), recurrence: recurrenceOut, exceptions: exceptionsOut, occurrence: null };
       for (const w of times.warnings) warnings.push(`“${parsed.data.title}”: ${w.message}`);
+    }
+    // My Retreats (TASK 031). The shared envelope keeps description optional so
+    // a half-written draft round-trips; a retreat that is SAVED must have one.
+    // The read schema is tolerant (a bad date or amount quietly becomes null),
+    // which is exactly why the RAW values are compared here: a teacher must be
+    // told their date was wrong, never have it silently dropped.
+    if (moduleKey === "teachRetreats") {
+      const meta = parsed.data.metadata as RetreatMetadata;
+      const name = parsed.data.title;
+      const rawMeta = ((raw as { metadata?: Record<string, unknown> })?.metadata ?? {}) as Record<string, unknown>;
+      const filled = (v: unknown) => v !== null && v !== undefined && v !== "";
+      if (!parsed.data.description) return { error: translate(locale, "teach", "retreatErrDescription", { name }) };
+      if ((filled(rawMeta.startDate) && !meta.startDate) || (filled(rawMeta.endDate) && !meta.endDate)) {
+        return { error: translate(locale, "teach", "retreatErrDate", { name }) };
+      }
+      if (filled(rawMeta.price) && meta.price === null) return { error: translate(locale, "teach", "retreatErrPrice", { name }) };
+      if (filled(rawMeta.currency) && !meta.currency) return { error: translate(locale, "teach", "retreatErrCurrency", { name }) };
+      const issue = validateRetreatMetadata(meta);
+      if (issue) return { error: translate(locale, "teach", RETREAT_ISSUE_KEY[issue], { name }) };
+      // The linked InnerDweS retreat must be a PUBLIC Flow Space. Only an enabled
+      // retreat is held to it (a hidden draft may point at something not live
+      // yet), and the stored value is always OUR canonical address, never
+      // whatever the teacher pasted.
+      if (meta.flowGuestUrl) {
+        if (meta.enabled) {
+          const check = await checkFlowGuestUrl(meta.flowGuestUrl);
+          if (!check.ok) return { error: translate(locale, "teach", RETREAT_FLOW_KEY[check.reason], { name }) };
+          metadata = { ...meta, flowGuestUrl: check.canonicalUrl };
+        }
+      }
     }
     rows.push({
       id,

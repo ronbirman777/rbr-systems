@@ -36,6 +36,7 @@ export function TextField({
   maxLength,
   suffix,
   inputMode,
+  dir,
 }: {
   label: string;
   value: string;
@@ -45,7 +46,9 @@ export function TextField({
   type?: string;
   maxLength?: number;
   suffix?: string;
-  inputMode?: "text" | "tel" | "email" | "url" | "numeric";
+  inputMode?: "text" | "tel" | "email" | "url" | "numeric" | "decimal";
+  /** "auto" for text the teacher authors (a Hebrew name in an English Studio, and the reverse). */
+  dir?: "auto" | "ltr" | "rtl";
 }) {
   const id = useId();
   return (
@@ -59,6 +62,7 @@ export function TextField({
           maxLength={maxLength}
           inputMode={inputMode}
           placeholder={placeholder}
+          dir={dir}
           onChange={(e) => onChange(e.target.value)}
           className={`${INPUT} ${suffix ? "pr-32" : ""}`}
         />
@@ -77,6 +81,7 @@ export function TextArea({
   hint,
   rows = 4,
   maxLength,
+  dir,
 }: {
   label: string;
   value: string;
@@ -85,12 +90,13 @@ export function TextArea({
   hint?: ReactNode;
   rows?: number;
   maxLength?: number;
+  dir?: "auto" | "ltr" | "rtl";
 }) {
   const id = useId();
   return (
     <div className="min-w-0">
       <Label htmlFor={id}>{label}</Label>
-      <textarea id={id} value={value} rows={rows} maxLength={maxLength} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} className={`${INPUT} leading-relaxed resize-y`} />
+      <textarea id={id} value={value} rows={rows} maxLength={maxLength} placeholder={placeholder} dir={dir} onChange={(e) => onChange(e.target.value)} className={`${INPUT} leading-relaxed resize-y`} />
       {hint ? <Hint>{hint}</Hint> : null}
     </div>
   );

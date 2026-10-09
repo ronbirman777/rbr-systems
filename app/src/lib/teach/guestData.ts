@@ -49,6 +49,8 @@ export type TeachGuestData = {
   gallery: TeachItem<"teachGallery">[];
   certificates: TeachItem<"teachCertificates">[];
   customPages: TeachItem<"customPages">[];
+  /** Enabled retreats only, in the teacher's order. Past retreats are kept - hiding them is a product decision nobody has made. */
+  retreats: TeachItem<"teachRetreats">[];
   enabledExplore: TeachExploreModule[];
   mediaUrls: Record<string, string>;
 };
@@ -128,6 +130,7 @@ export function parsePublishedTeachSpace(space: PublishedTeachRow): TeachGuestDa
     gallery: parseTeachItems("teachGallery", itemsRaw.teachGallery).filter((g) => g.imageRef),
     certificates: parseTeachItems("teachCertificates", itemsRaw.teachCertificates),
     customPages: parseTeachItems("customPages", itemsRaw.customPages).filter((p) => p.metadata.enabled),
+    retreats: parseTeachItems("teachRetreats", itemsRaw.teachRetreats).filter((r) => r.metadata.enabled),
     enabledExplore: enabledExploreFrom(space.enabled_modules),
   };
 

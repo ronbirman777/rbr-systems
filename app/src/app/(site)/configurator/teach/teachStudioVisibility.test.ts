@@ -26,7 +26,7 @@ function makeApi(over: { enabledExplore?: TeachExploreModule[]; about?: Record<s
   const setEnabledExplore = vi.fn();
   const api = {
     settings,
-    items: { teachReadings: [], teachAudio: [], customPages: [], teachGallery: [], teachCertificates: [], teachClasses: [], teachAvailability: [], ...over.items },
+    items: { teachReadings: [], teachAudio: [], customPages: [], teachRetreats: [], teachGallery: [], teachCertificates: [], teachClasses: [], teachAvailability: [], ...over.items },
     enabledExplore: over.enabledExplore ?? [],
     updateSetting,
     setEnabledExplore,

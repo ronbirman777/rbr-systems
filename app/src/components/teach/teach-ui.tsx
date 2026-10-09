@@ -129,7 +129,7 @@ export function Chip({ children, active = false, onClick }: { children: ReactNod
 
 export function BackButton({ label, onClick }: { label: string; onClick: () => void }) {
   return (
-    <button type="button" onClick={onClick} className="inline-flex items-center gap-1 min-h-11 pe-3 text-[13px] font-semibold" style={{ color: "var(--rbr-primary)" }}>
+    <button type="button" onClick={onClick} className="inline-flex items-center gap-1 min-h-11 min-w-11 pe-3 text-[13px] font-semibold touch-manipulation transition-opacity active:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2" style={{ color: "var(--rbr-primary)" }}>
       <TeachIcon name="chevronLeft" size={20} strokeWidth={2} />
       {label}
     </button>
