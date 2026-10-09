@@ -395,8 +395,12 @@ async function main() {
     check("F1 with a STALE MFA timestamp a very large discount is REFUSED and an inline re-verify box appears", (made ?? []).length === 0 && /confirm|verify|authenticator|code/i.test(t) && /coupons\/new/.test(p.url()), t.slice(0, 120));
     await waitNextStep();
     const box = p.locator("input[inputmode=numeric], input[autocomplete=one-time-code]").last();
-    await box.fill(totp(secret)); await p.getByRole("button", { name: /verify|confirm|continue/i }).last().click(); await p.waitForTimeout(2500);
-    await p.getByRole("button", { name: /create coupon|save|create/i }).first().click(); await p.waitForTimeout(2500);
+    await box.fill(totp(secret)); await p.getByRole("button", { name: /verify|confirm|continue/i }).last().click();
+    // By design a successful re-verify reloads the page (CodeForm), so the form is empty again: the admin re-enters it.
+    await p.waitForLoadState("load").catch(() => {}); await p.waitForLoadState("networkidle").catch(() => {}); await p.waitForTimeout(1500);
+    await p.locator("input[name=code]").fill(cS); await p.locator("input[name=percentOff]").fill("60");
+    await p.locator("select[name=usageRule]").selectOption("once_per_user"); await p.locator("select[name=durationType]").selectOption("once");
+    await p.getByRole("button", { name: /create coupon|save|create/i }).first().click(); await p.waitForTimeout(3000);
     const { data: made2 } = await admin.from("coupons").select("id").eq("normalized_code", cS);
     check("F2 after re-verifying, the same action succeeds", (made2 ?? []).length === 1);
     await c.close();

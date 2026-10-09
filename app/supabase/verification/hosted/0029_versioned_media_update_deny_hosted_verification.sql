@@ -47,8 +47,12 @@ begin
     count(*) = 4 and count(distinct polcmd) = 4 and bool_and(polpermissive)
     and bool_and(pg_get_expr(coalesce(polqual, polwithcheck), polrelid) ~ 'is_tenant_member')
     from pg_policy where polrelid = 'storage.objects'::regclass and polname like 'tenant members can %';
-  insert into _r (name, ok) select 'storage.objects has exactly the 4 permissive + 1 restrictive policy',
-    count(*) = 5 from pg_policy where polrelid = 'storage.objects'::regclass;
+  -- TASK 032 (0039) adds exactly 3 restrictive 'tenant media: billing allows studio writes (...)' policies;
+  -- they are allowed by name and counted separately so any OTHER extra policy still fails this check.
+  insert into _r (name, ok) select 'storage.objects has exactly the 4 permissive + 1 restrictive policy (+ the 3 named TASK 032 billing policies when 0039 is applied)',
+    count(*) filter (where polname not like 'tenant media: billing allows studio writes (%)') = 5
+    and count(*) filter (where polname like 'tenant media: billing allows studio writes (%)') in (0, 3)
+    from pg_policy where polrelid = 'storage.objects'::regclass;
   insert into _r (name, ok) select 'is_versioned_media_object: immutable, SECURITY INVOKER, pinned search_path, no public execute',
     p.provolatile = 'i' and not p.prosecdef and array_to_string(p.proconfig, ',') = 'search_path=""'
     and not has_function_privilege('anon', p.oid, 'execute')
