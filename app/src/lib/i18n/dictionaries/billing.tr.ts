@@ -1,5 +1,220 @@
 import type { billingEn } from "./billing.en";
-import { billingEn as source } from "./billing.en";
 
-/** PLACEHOLDER (English) until the researched tr translation replaces this file. */
-export const billingTr: { [K in keyof typeof billingEn]: string } = source;
+/**
+ * `billing` namespace - Turkish (TASK 032).
+ *
+ * TRANSLATION STATUS: UNREVIEWED. Researched against Turkish product copy
+ * (Netflix TR, Spotify TR, iyzico, Turkish retreat sites) but not yet checked
+ * by a native Turkish speaker. See docs/localization/GLOSSARY-tr.md.
+ * Register: formal "siz". Brand names (InnerDweS, Time to Teach, Time to Flow),
+ * "Space", "Studio", coupon codes, Space names, money and dates are never
+ * translated or reformatted. Sentences avoid attaching suffixes to
+ * {placeholders} (they use "için", "tarihinde" etc.) because Turkish
+ * suffix harmony depends on the unknown word.
+ */
+export const billingTr: { [K in keyof typeof billingEn]: string } = {
+  // --- shared ---
+  languageLabel: "Dil",
+  backToSpaces: "Space'lerime dön",
+  perMonth: "/ ay",
+  priceMonthly: "Aylık {price}",
+  perSpaceNote: "Her Space için geçerlidir. İstediğiniz zaman iptal edebilirsiniz; ödemesini yaptığınız dönemin sonuna kadar erişiminiz devam eder.",
+  taxNote: "Varsa vergiler güvenli ödeme adımında hesaplanır ve gösterilir.",
+  productTeach: "Time to Teach",
+  productFlow: "Time to Flow",
+
+  // --- Create New Space ---
+  createTitle: "Ne oluşturmak istersiniz?",
+  createSubtitle: "Önce göz atın; canlı örnekler ücretsizdir. Yalnızca Space'inizi oluşturmaya hazır olduğunuzda ödeme yaparsınız.",
+  teachTagline: "Eğitmenlik pratiğiniz için güzel bir uygulama.",
+  teachPoint1: "Programınız, dersleriniz ve inzivalarınız tek bir yerde",
+  teachPoint2: "Öğrencilerinizin saklayabileceği metinler ve ses kayıtları",
+  teachPoint3: "Öğrencilerin size kolayca ulaşabileceği bir yol",
+  flowTagline: "İnzivalar ve sağlıklı yaşam programları için bir misafir uygulaması.",
+  flowPoint1: "Günlük program, öğünler ve terapiler",
+  flowPoint2: "Varış bilgileri ve olanaklar",
+  flowPoint3: "Misafirlerinizle QR kod veya bağlantı ile paylaşın",
+  viewExample: "Canlı örneği görüntüle",
+  createTeachCta: "Time to Teach Space'i oluştur",
+  createFlowCta: "Time to Flow Space'i oluştur",
+  checkoutUnavailable: "Ödeme sayfası geçici olarak kullanılamıyor. Lütfen kısa süre sonra tekrar deneyin.",
+  checkoutProblem: "Ödeme sayfasını hazırlayamadık. Lütfen tekrar deneyin veya destek ekibiyle iletişime geçin.",
+
+  // --- pre-checkout ---
+  summaryTitle: "{product} Space'iniz",
+  summaryIntro: "Ayrıntıları gözden geçirin, ardından güvenli ödemeye geçin.",
+  dueToday: "Bugün ödenecek tutar",
+  then: "Sonrasında",
+  firstCycle: "İlk faturalama dönemi",
+  firstCycles: "İlk {count} faturalama dönemi",
+  everyCycle: "Her faturalama dönemi",
+  couponLabel: "Kupon kodu",
+  couponApply: "Uygula",
+  couponRemove: "Kaldır",
+  couponApplied: "{code} uygulandı",
+  consentImmediate: "Space'imin ödemenin hemen ardından oluşturulmasını ve etkinleştirilmesini istiyorum.",
+  consentWithdrawal: "Hizmet tamamen ifa edildiğinde, yasaların izin verdiği ölçüde yasal cayma hakkımı kaybedebileceğimi anlıyorum.",
+  termsLine: "Devam ederek Hizmet Şartları'nı, Gizlilik Politikası'nı ve Faturalama ve İptal koşullarını kabul etmiş olursunuz.",
+  continueToPayment: "Güvenli ödemeye geç",
+  preparingCheckout: "Güvenli ödeme hazırlanıyor…",
+  consentRequired: "Devam etmek için lütfen her iki ifadeyi de onaylayın.",
+  checkoutCanceled: "Ödeme iptal edildi. Hesabınızdan ücret alınmadı.",
+
+  // --- coupon feedback ---
+  couponInvalid: "Bu kupon kodu geçerli değil.",
+  couponInactive: "Bu kupon artık etkin değil.",
+  couponNotStarted: "Bu kupon henüz kullanılabilir değil.",
+  couponExpired: "Bu kuponun süresi dolmuş.",
+  couponNotApplicable: "Bu kupon bu satın alma için uygulanamıyor.",
+  couponUnavailable: "Bu kupon şu anda uygulanamıyor.",
+  couponAlreadyUsed: "Bu kuponu daha önce kullandınız.",
+  couponInUseElsewhere: "Bu kupon, başka bir ödeme işleminiz için zaten ayrılmış durumda.",
+  couponLimitReached: "Bu kupon kullanım sınırına ulaştı.",
+  couponCheckoutClosed: "Bu ödeme oturumunun süresi doldu. Lütfen baştan başlayın.",
+
+  // --- after payment ---
+  settingUpTitle: "Space'iniz hazırlanıyor…",
+  paymentConfirmed: "Ödeme onaylandı",
+  settingUpHint: "Bu işlem genellikle birkaç saniye sürer.",
+  stillPreparing: "Ödemeniz alındı. Space'iniz hâlâ hazırlanıyor. Bu sayfa kendiliğinden güncellenir; lütfen tekrar ödeme yapmayın.",
+  noPaymentYet: "Bu ödeme işlemi için henüz bir ödeme almadık.",
+  checkoutExpired: "Bu ödeme oturumunun süresi doldu. Hesabınızdan ücret alınmadı.",
+  returnToSpaces: "Space'lerime git",
+  readyTitle: "Space'iniz hazır",
+  continueToStudio: "Devam et",
+  referenceLabel: "Referans",
+
+  // --- onboarding ---
+  onboardTitle: "Space'inize bir ad verin",
+  onboardBody: "Bunu istediğiniz zaman Studio'dan değiştirebilirsiniz.",
+  spaceNameLabel: "Space adı",
+  saveAndOpenStudio: "Kaydet ve Studio'yu aç",
+  skipForNow: "Şimdilik geç",
+
+  // --- Billing / Plan page ---
+  billingTitle: "Faturalama ve plan",
+  planLabel: "Plan",
+  statusLabel: "Abonelik durumu",
+  periodLabel: "Geçerli faturalama dönemi",
+  nextBilling: "Sonraki faturalama tarihi",
+  nextCharge: "Sonraki tahsilat (vergi öncesi)",
+  couponSection: "Kupon",
+  discountProgress: "{total} indirimli ödemenin {done} tanesi kullanıldı",
+  discountForever: "Her ödemede geçerli",
+  discountDone: "İndirim tamamlandı - planınız artık aylık {price}",
+  discountRemaining: "{count} indirimli ödeme kaldı",
+  discountRemainingPlural: "{count} indirimli ödeme kaldı",
+  includedTitle: "Planınıza dahil olanlar",
+  includedAudio: "{library} dakikalık ses kütüphanesi, kayıt başına en fazla {max} dakika, ayda {listening} dakika dinleme.",
+  statusActive: "Etkin",
+  statusPaymentIssue: "Ödeme sorunu",
+  statusGuestSuspended: "Misafir Uygulaması kullanılamıyor",
+  statusStudioSuspended: "Studio askıya alındı",
+  statusCanceling: "{date} tarihinde sona erecek",
+  statusEnded: "Sona erdi",
+  statusExempt: "Dahil",
+  statusSettingUp: "Hazırlanıyor",
+  nextActionTitle: "Sırada ne var",
+  nextActionRenewal: "{date} tarihinde yenilenir",
+  nextActionDiscountCycle: "İndirimli yenileme: {date}",
+  nextActionDiscountEnds: "{date} tarihinden itibaren tam fiyat",
+  nextActionCancelAtPeriodEnd: "Erişim {date} tarihinde sona erer",
+  nextActionPaymentRetry: "Sonraki ödeme denemesi: {date}",
+  nextActionGuestSuspension: "Misafir Uygulaması {date} tarihinde kullanılamaz hale gelir",
+  nextActionStudioSuspension: "Studio {date} tarihinde askıya alınır",
+  nextActionDeletionWarning: "Son uyarı: {date}",
+  nextActionDeletionEligible: "{date} tarihinden itibaren silinebilir",
+  nextActionNone: "Planlanmış bir işlem yok",
+  cancelSection: "Aboneliği iptal et",
+  cancelBody: "İptal ettiğinizde sonraki ödemeler durdurulur. Ödemesini yaptığınız dönemin sonuna kadar tüm özelliklere erişiminiz sürer. Geçerli dönem için iade yapılmaz.",
+  cancelButton: "Dönem sonunda iptal et",
+  cancelConfirmTitle: "{space} bu faturalama döneminin sonunda iptal edilsin mi?",
+  cancelConfirmBody: "{date} tarihine kadar tüm özelliklere erişiminiz sürer. O tarihten önce aboneliğinizi yeniden başlatabilirsiniz.",
+  cancelConfirmYes: "Evet, dönem sonunda iptal et",
+  cancelConfirmNo: "Aboneliğimi koru",
+  cancelScheduled: "İptal planlandı. Erişiminiz {date} tarihine kadar devam eder.",
+  resumeButton: "Aboneliği yeniden başlat",
+  resumed: "Aboneliğiniz devam edecek.",
+  updatePayment: "Ödeme yöntemini güncelle",
+  historyTitle: "Ödeme geçmişi",
+  historyEmpty: "Henüz ödeme yok.",
+  colDate: "Tarih",
+  colAmount: "Tutar",
+  colStatus: "Durum",
+  colReference: "Referans",
+  colDocument: "Belge",
+  viewInvoice: "Faturayı / makbuzu görüntüle",
+  invoicePaid: "Ödendi",
+  invoiceOpen: "Beklemede",
+  invoiceFailed: "Başarısız",
+  invoiceVoid: "Geçersiz",
+  invoiceUncollectible: "Tahsil edilemedi",
+  refundedAmount: "İade edilen: {amount}",
+  billingErrorGeneric: "Bir şeyler ters gitti. Lütfen tekrar deneyin.",
+
+  // --- suspension / payment notices ---
+  paymentIssueBanner: "Son ödemenizi işleyemedik. Sorun çözülmezse Misafir Uygulamanız {date} tarihinde kullanılamaz hale gelir.",
+  guestSuspendedBanner: "Bir ödeme sorunu nedeniyle Misafir Uygulamanız şu anda kullanılamıyor. Studio {date} tarihine kadar açık kalır.",
+  studioSuspendedTitle: "Ödeme gerekiyor",
+  studioSuspendedBody: "{space} için Studio, bir ödeme tamamlanamadığı için geçici olarak askıya alındı. İçerikleriniz güvende; sorunu çözdüğünüzde hepsi yerinde olacak.",
+  studioSuspendedDeadline: "Sorun çözülmezse Space {date} tarihinden itibaren silinebilir hale gelir.",
+  resolvePayment: "Ödemeyi tamamla",
+  endedTitle: "Bu abonelik sona erdi",
+  endedBody: "{space} artık kullanılamıyor. İçerikleriniz saklandı.",
+
+  // --- My Spaces chips ---
+  chipPaymentIssue: "Ödeme sorunu",
+  chipGuestSuspended: "Misafir kullanılamıyor",
+  chipStudioSuspended: "Studio askıda",
+  chipCanceling: "Bitiş: {date}",
+  chipEnded: "Sona erdi",
+  billingLink: "Faturalama",
+
+  // --- emails ---
+  emailGreeting: "Merhaba,",
+  emailFooter: "InnerDweS · Bu e-postayı {space} aboneliğiniz nedeniyle alıyorsunuz.",
+  emailManageBilling: "Faturalamayı yönet",
+  emailViewInvoice: "Faturayı / makbuzu görüntüle",
+  emailOfficialDocument: "Resmî faturanız / makbuzunuz yukarıdaki bağlantıdaki güvenli sayfadadır. Ödeme hizmeti sağlayıcımızdan ayrıca bir makbuz e-postası almazsınız.",
+  emailRowSpace: "Space",
+  emailRowType: "Tür",
+  emailRowPlan: "Plan",
+  emailRowAmountPaid: "Ödenen tutar",
+  emailRowDiscount: "İndirim",
+  emailRowDiscountProgress: "İndirim durumu",
+  emailRowNextBilling: "Sonraki faturalama tarihi",
+  emailRowNextCharge: "Beklenen sonraki tahsilat",
+  emailRowStatus: "Abonelik durumu",
+  emailRowInvoice: "Fatura",
+  emailDiscountValue: "{code} - {amount} indirim",
+  emailDiscountProgressValue: "{total} ödemenin {done}. ödemesi",
+  emailDiscountProgressForever: "Her ödemede geçerli",
+
+  emailPaymentFirstSubject: "Ödeme onaylandı - {space}",
+  emailPaymentFirstIntro: "Teşekkür ederiz. Ödemeniz onaylandı ve Space'iniz hazır.",
+  emailPaymentRenewalSubject: "Ödeme alındı - {space}",
+  emailPaymentRenewalIntro: "Teşekkür ederiz. Abonelik ödemenizi aldık.",
+  emailPaymentRecoveredSubject: "Ödeme alındı - {space} yeniden etkin",
+  emailPaymentRecoveredIntro: "Teşekkür ederiz. Ödemeniz tamamlandı ve Space'iniz yeniden etkin; Misafir Uygulamanız ve Studio kullanılabilir durumda.",
+  emailPaymentFinalSubject: "Son ödeme alındı - {space}",
+  emailPaymentFinalIntro: "Teşekkür ederiz. Bu son ödemenizdir: iptal planladığınız için erişiminiz {date} tarihine kadar devam eder, ardından abonelik sona erer.",
+
+  emailFailedSubject: "Ödeme başarısız - {space}",
+  emailFailedIntro: "{space} için ödemenizi işleyemedik. Space'iniz şimdilik kullanılabilir durumda ve ödemeyi otomatik olarak yeniden deneyeceğiz. Sorun çözülmezse Misafir Uygulamanız yaklaşık 24 saat sonra kullanılamaz hale gelir, Studio ise 7 gün sonra askıya alınır.",
+  emailFailedCta: "Ödeme yöntemini güncelle",
+
+  emailGuestSubject: "{space}: Misafir Uygulaması kullanılamıyor",
+  emailGuestIntro: "Ödemeniz hâlâ tamamlanmadığı için {space} Misafir Uygulaması şu anda kullanılamıyor. Studio {date} tarihine kadar açık kalır. Ödeme tamamlanır tamamlanmaz her şey hemen eski haline döner; hiçbir şey kaybolmaz.",
+
+  emailStudioSubject: "{space}: Studio askıya alındı",
+  emailStudioIntro: "Ödemeniz tamamlanana kadar {space} için Studio askıya alındı. İçerikleriniz güvende. Sorun çözülmezse Space {date} tarihinden itibaren silinebilir hale gelir.",
+
+  emailFinalSubject: "Son bildirim - {space}",
+  emailFinalIntro: "Bu bir son bildirimdir. {space} için ödeme tamamlanmazsa Space {date} tarihinden itibaren silinebilir hale gelir. Ödemeyi şimdi tamamlarsanız her şey geri yüklenir.",
+
+  emailCancelSubject: "İptal planlandı - {space}",
+  emailCancelIntro: "{space} aboneliğiniz {date} tarihinde sona erecek. O zamana kadar tüm özelliklere erişiminiz sürer ve sona ermeden önce istediğiniz zaman aboneliğinizi yeniden başlatabilirsiniz.",
+
+  emailEndedSubject: "Abonelik sona erdi - {space}",
+  emailEndedIntro: "{space} aboneliğiniz sona erdi ve Space artık kullanılamıyor. İçerikleriniz saklandı.",
+};
