@@ -31,7 +31,7 @@ const TONES: Record<Tone, string> = {
   neutral: "bg-idw-linen text-idw-forest",
 };
 export function Badge({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
-  return <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ${TONES[tone]}`}>{children}</span>;
+  return <span className={`inline-block max-w-full break-words rounded-full px-2.5 py-0.5 text-xs font-semibold ${TONES[tone]}`}>{children}</span>;
 }
 
 export function Stat({ label, value, caption, tone }: { label: string; value: ReactNode; caption: string; tone?: Tone }) {

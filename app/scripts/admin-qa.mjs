@@ -340,7 +340,7 @@ async function main() {
         await lc.addCookies([{ name: "idw_locale", value: loc, url: APP_BASE }]);
         for (const p of pages) {
           await status(lp, p);
-          if (await overflow(lp)) bad.push(`overflow ${p.replace(/[0-9a-f-]{36}/, ":id")}@${w}`);
+          if (await overflow(lp)) bad.push(`overflow ${p.replace(/[0-9a-f-]{36}/, ":id")}@${w} {${(await offenders(lp)).slice(0, 2).join(" | ")}}`);
           const t = await bodyText(lp);
           if (/\{[a-zA-Z]+\}/.test(t)) bad.push(`placeholder ${p}@${w}`);
           if (w === 390) {
