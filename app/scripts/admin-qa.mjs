@@ -282,7 +282,7 @@ async function main() {
     check("C11 confirming disables the coupon for NEW checkouts (UI confirms; database agrees)", /coupon disabled/i.test(await bodyText(page)) && cRow.active === false, JSON.stringify(cRow)); }
   { await status(page, "/admin/billing/audit"); const t = await bodyText(page);
     check("C12 TASK 032 QA/test audit entries are hidden by default and offered via a labelled toggle", /Include TASK 032 QA\/test entries/i.test(t) && !t.includes(c10));
-    await page.getByRole("link", { name: /Include TASK 032 QA/i }).click(); await page.waitForLoadState("networkidle");
+    await page.getByRole("link", { name: /Include TASK 032 QA/i }).click(); await page.waitForURL(/qa=1/, { timeout: 20000 }).catch(() => {}); await page.waitForLoadState("networkidle"); await page.waitForTimeout(1500);
     const t2 = await bodyText(page);
     const badges = (t2.match(/QA \/ test entry/gi) ?? []).length;
     check("C12b with the toggle on they appear, each badged as a QA/test entry (create/update/disable of this run's coupons)", badges >= 3 && /coupon\.create/.test(t2) && /coupon\.disable/.test(t2), `badges=${badges}`); }

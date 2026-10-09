@@ -5,7 +5,7 @@ import { formatMoney } from "../money";
 
 /**
  * Pure rendering of every billing email: (template, locale, payload) -> subject +
- * plain text + HTML. No I/O, so it is unit-tested directly in all five locales.
+ * plain text + HTML. No I/O, so it is unit-tested directly in all seven locales.
  *
  * Safety:
  *   - every dynamic value is HTML-escaped (Space names and coupon codes are user/Admin text);
