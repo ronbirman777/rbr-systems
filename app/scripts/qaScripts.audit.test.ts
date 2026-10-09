@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 const ROOT = path.resolve(__dirname, "..");
 const read = (rel: string) => readFileSync(path.join(ROOT, rel), "utf8");
-const QA_SCRIPTS = ["scripts/billing-db-verify.mjs", "src/lib/billing/integration/journeys.int.test.ts"];
+const QA_SCRIPTS = ["scripts/billing-db-verify.mjs", "scripts/admin-qa.mjs", "src/lib/billing/integration/journeys.int.test.ts"];
 
 describe("QA scripts that use service-role access (safety audit, pinned)", () => {
   it.each(QA_SCRIPTS)("%s asserts the Staging target BEFORE any client can write", (rel) => {
