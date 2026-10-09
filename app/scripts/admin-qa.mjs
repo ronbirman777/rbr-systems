@@ -329,6 +329,32 @@ async function main() {
     await status(mp, "/admin/mfa/enroll"); const o = await overflow(mp);
     check(`D2 MFA enrolment page has no horizontal overflow at ${w}px`, !o); await mc.close();
   }
+  // D4: locale sweep (en/tr/it/he/de) x 7 widths over the Admin pages: overflow, lang/dir, unfilled placeholders, translated (not English) body.
+  { const pages = ["/admin/billing", "/admin/billing/coupons", detail, "/admin/billing/subscriptions", "/admin/billing/audit", "/admin/billing/settings"];
+    const want = { en: ["en", "ltr"], tr: ["tr", "ltr"], it: ["it", "ltr"], he: ["he", "rtl"], de: ["de", "ltr"] };
+    const enText = {};
+    for (const loc of ["en", "tr", "it", "he", "de"]) {
+      const bad = [];
+      for (const w of [320, 360, 390, 430, 768, 820, 1440]) {
+        const { page: lp, ctx: lc } = await newPage(adminCookies, { width: w, height: 900 });
+        await lc.addCookies([{ name: "idw_locale", value: loc, url: APP_BASE }]);
+        for (const p of pages) {
+          await status(lp, p);
+          if (await overflow(lp)) bad.push(`overflow ${p.replace(/[0-9a-f-]{36}/, ":id")}@${w}`);
+          const t = await bodyText(lp);
+          if (/\{[a-zA-Z]+\}/.test(t)) bad.push(`placeholder ${p}@${w}`);
+          if (w === 390) {
+            const [lang, dir] = await ev(lp, () => [document.querySelector("div[lang][dir]")?.getAttribute("lang"), document.querySelector("div[lang][dir]")?.getAttribute("dir")]);
+            if (lang !== want[loc][0] || dir !== want[loc][1]) bad.push(`lang/dir ${p}: ${lang}/${dir}`);
+            const key = p.replace(/[0-9a-f-]{36}/, ":id");
+            if (loc === "en") enText[key] = t; else if (t === enText[key]) bad.push(`untranslated ${key}`);
+          }
+        }
+        await lc.close();
+      }
+      check(`D4 Admin in ${loc}: no overflow at 320/360/390/430/768/820/1440, correct lang/dir, no placeholders, translated`, bad.length === 0, bad.slice(0, 6).join(" | "));
+    }
+  }
   check("D3 no browser console errors / page errors during the whole run", consoleErrors.length === 0, consoleErrors.slice(0, 3).join(" | "));
   await ctx.close();
 

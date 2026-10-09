@@ -12,5 +12,5 @@ export const metadata = { title: "InnerDweS Admin", robots: { index: false, foll
  */
 export default async function AdminRootLayout({ children }: { children: ReactNode }) {
   const { locale, dir } = await getAdminI18n();
-  return <div lang={locale} dir={dir} className="flex-1 bg-idw-parchment">{children}</div>;
+  return <div lang={locale} dir={dir} className="flex-1 min-w-0 bg-idw-parchment [overflow-wrap:anywhere]">{children}</div>;
 }
