@@ -7,6 +7,7 @@ vi.mock("@/lib/teach/fonts", () => ({ TEACH_FONT_VARIABLES: "" }));
 import {
   DEFAULT_LOCALE,
   LOCALE_LABEL,
+  SPACE_SELECTABLE_LOCALES,
   SUPPORTED_LOCALES,
   createTranslator,
   directionOf,
@@ -39,10 +40,10 @@ import { TeachGuestApp } from "@/components/teach/teach-guest-app";
 const DICTIONARY_FOR_TEST = { en, de, es, fr, he } as const;
 
 describe("supported locales", () => {
-  it("is exactly en/de/es/fr/he, in selector order, with English as the fallback", () => {
-    // The order is the selector's display order and is deliberately
-    // fixed: Hebrew last because it is the only RTL language here.
-    expect(SUPPORTED_LOCALES).toEqual(["en", "de", "es", "fr", "he"]);
+  it("the platform registry is the seven locales; a Space can choose only the five fully translated ones (until TASK 033)", () => {
+    expect(SUPPORTED_LOCALES).toEqual(["en", "de", "es", "fr", "he", "tr", "it"]);
+    // Order is the selector's display order and is deliberately fixed: Hebrew is the only RTL language.
+    expect(SPACE_SELECTABLE_LOCALES).toEqual(["en", "de", "es", "fr", "he"]);
     expect(DEFAULT_LOCALE).toBe("en");
   });
 
@@ -52,6 +53,8 @@ describe("supported locales", () => {
     expect(directionOf("es")).toBe("ltr");
     expect(directionOf("fr")).toBe("ltr");
     expect(directionOf("he")).toBe("rtl");
+    expect(directionOf("tr")).toBe("ltr");
+    expect(directionOf("it")).toBe("ltr");
   });
 
   it("labels each language in its own script", () => {
@@ -61,17 +64,21 @@ describe("supported locales", () => {
       es: "Español",
       fr: "Français",
       he: "עברית",
+      tr: "Türkçe",
+      it: "Italiano",
     });
   });
 
   it("resolves anything unrecognised to English instead of throwing", () => {
-    for (const bad of [null, undefined, "", "it", "EN", "es-MX", 42, {}]) {
+    for (const bad of [null, undefined, "", "pt", "EN", "es-MX", 42, {}]) {
       expect(resolveLocale(bad), String(bad)).toBe("en");
     }
     expect(isSupportedLocale("he")).toBe(true);
     expect(isSupportedLocale("es")).toBe(true);
     expect(isSupportedLocale("fr")).toBe(true);
-    expect(isSupportedLocale("it")).toBe(false);
+    expect(isSupportedLocale("pt")).toBe(false);
+    expect(isSupportedLocale("tr")).toBe(true);
+    expect(isSupportedLocale("it")).toBe(true);
   });
 });
 
@@ -97,7 +104,7 @@ describe("translation and fallback", () => {
   });
 
   it("falls back to English for an unknown locale, never to the key", () => {
-    const t = createTranslator("it");
+    const t = createTranslator("pt");
     expect(t.locale).toBe("en");
     expect(t.t("common", "save")).toBe("Save");
   });
@@ -105,7 +112,7 @@ describe("translation and fallback", () => {
   it("has complete dictionaries for every non-English locale", () => {
     // A missing key would silently fall back to English, which is correct
     // behaviour but hides an untranslated surface - so it is asserted.
-    for (const locale of SUPPORTED_LOCALES) {
+    for (const locale of SPACE_SELECTABLE_LOCALES) {
       expect(missingKeys(locale), locale).toEqual([]);
     }
   });
@@ -121,7 +128,7 @@ describe("translation and fallback", () => {
     for (const [namespace, strings] of Object.entries(en)) {
       for (const [key, value] of Object.entries(strings)) {
         const expected = placeholders(value as string);
-        for (const locale of SUPPORTED_LOCALES) {
+        for (const locale of SPACE_SELECTABLE_LOCALES) {
           if (locale === "en") continue;
           const got = placeholders(
             (DICTIONARY_FOR_TEST[locale] as Record<string, Record<string, string>>)[namespace][key]
@@ -372,15 +379,15 @@ describe("country recommends a language but never locks it", () => {
     // restriction, so every supported language stays available.
     for (const country of ["IL", "DE", "ES", "MX", "FR", "CA", "JP", null]) {
       const recommended = recommendedLocales(country);
-      expect(recommended.every((l) => SUPPORTED_LOCALES.includes(l))).toBe(true);
-      expect(SUPPORTED_LOCALES.length).toBe(5);
+      expect(recommended.every((l) => SPACE_SELECTABLE_LOCALES.includes(l as (typeof SPACE_SELECTABLE_LOCALES)[number]))).toBe(true);
+      expect(SPACE_SELECTABLE_LOCALES.length).toBe(5);
     }
   });
 });
 
 describe("locale persistence lives in the shared Space settings", () => {
   it("parses a supported locale and rejects anything else to null", () => {
-    for (const locale of SUPPORTED_LOCALES) {
+    for (const locale of SPACE_SELECTABLE_LOCALES) {
       expect(parseSpaceSettings({ locale }).locale, locale).toBe(locale);
     }
     expect(parseSpaceSettings({ locale: "it" }).locale).toBeNull();
@@ -410,7 +417,7 @@ function guest(locale?: string) {
 
 describe("the Guest App reads locale from published data only", () => {
   it("takes the locale from the published spaceSettings object", () => {
-    for (const locale of SUPPORTED_LOCALES) {
+    for (const locale of SPACE_SELECTABLE_LOCALES) {
       expect(guest(locale).locale, locale).toBe(locale);
     }
   });
@@ -423,7 +430,7 @@ describe("the Guest App reads locale from published data only", () => {
   });
 
   it("ignores an unsupported stored locale rather than breaking", () => {
-    expect(guest("it").locale).toBe("en");
+    expect(guest("pt").locale).toBe("en");
     expect(guest("es-MX").locale).toBe("en");
   });
 
@@ -487,7 +494,7 @@ describe("the Guest Access gate speaks the Space language", () => {
     // The gate is shown before a visitor may see the Space, so it must
     // not distinguish Teach from an unsupported type. Translating must
     // not quietly add a third variant.
-    for (const locale of SUPPORTED_LOCALES) {
+    for (const locale of SPACE_SELECTABLE_LOCALES) {
       const teach = guestAccessCopy("teach", locale);
       expect(guestAccessCopy("client_hub", locale)).toEqual(teach);
       expect(guestAccessCopy("sanctuary", locale)).toEqual(teach);
@@ -507,13 +514,13 @@ describe("the Guest Access gate speaks the Space language", () => {
 
 describe("published locale is read from the snapshot only", () => {
   it("takes the locale from modules.spaceSettings", () => {
-    for (const locale of SUPPORTED_LOCALES) {
+    for (const locale of SPACE_SELECTABLE_LOCALES) {
       expect(localeFromPublishedModules({ spaceSettings: { locale } }), locale).toBe(locale);
     }
   });
 
   it("defaults to English for anything else, never throwing", () => {
-    for (const bad of [null, undefined, {}, { spaceSettings: null }, { spaceSettings: { locale: "it" } }, "nonsense"]) {
+    for (const bad of [null, undefined, {}, { spaceSettings: null }, { spaceSettings: { locale: "pt" } }, "nonsense"]) {
       expect(localeFromPublishedModules(bad), String(bad)).toBe("en");
     }
   });
@@ -529,7 +536,7 @@ describe("Server Actions answer in the Space language", () => {
   it("falls back to English for a missing, stale or hand-edited value", () => {
     // The posted locale only selects message text - it carries no
     // authority - so anything unrecognised must resolve, never throw.
-    for (const bad of [undefined, "", "it", "EN", "../../etc", "he;de"]) {
+    for (const bad of [undefined, "", "pt", "EN", "../../etc", "he;de"]) {
       const fd = new FormData();
       if (bad !== undefined) fd.set("locale", bad);
       expect(localeFromFormData(fd), String(bad)).toBe("en");
@@ -548,7 +555,7 @@ describe("Server Actions answer in the Space language", () => {
   });
 
   it("interpolates a limit into a quota message in every language", () => {
-    for (const locale of SUPPORTED_LOCALES) {
+    for (const locale of SPACE_SELECTABLE_LOCALES) {
       expect(studioMessages(locale)("pageLimitReached", { limit: 8 }), locale).toContain("8");
     }
   });
@@ -609,7 +616,7 @@ describe("date and time localization is presentation only", () => {
   it("keeps stored wall-clock times exactly as stored", () => {
     // A class at 09:00 is at 09:00 in every language - only the writing
     // changes, never the instant, the timezone or the recurrence.
-    for (const locale of SUPPORTED_LOCALES) {
+    for (const locale of SPACE_SELECTABLE_LOCALES) {
       expect(formatTimeLocalized("09:00", locale)).toContain("09");
       expect(formatTimeLocalized("17:30", locale)).toContain("17");
     }

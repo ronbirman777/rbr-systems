@@ -13,7 +13,7 @@ export function assertMinor(value: number, label = "amount"): Minor {
   return value;
 }
 
-const LOCALE_TAG: Record<Locale, string> = { en: "en-US", de: "de-DE", es: "es-ES", fr: "fr-FR", he: "he-IL" };
+const LOCALE_TAG: Record<Locale, string> = { en: "en-US", de: "de-DE", es: "es-ES", fr: "fr-FR", he: "he-IL", tr: "tr-TR", it: "it-IT" };
 
 /**
  * Locale-aware display of a minor amount (server-side / email use). The

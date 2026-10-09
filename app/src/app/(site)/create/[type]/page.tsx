@@ -6,6 +6,7 @@ import { getBasePlanPrice, getCreateMode } from "@/lib/billing/funnelMode";
 import { FUNNEL_ERROR_CODES, funnelErrorKey } from "@/lib/billing/checkoutView";
 import { getAccountLocale } from "@/lib/i18n/accountLocale";
 import { directionOf, translate, type TranslationKey } from "@/lib/i18n";
+import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 import { createClient } from "@/lib/supabase/server";
 import { CheckoutForm, type CheckoutFormLabels } from "./checkout-form";
 
@@ -29,7 +30,7 @@ export default async function PreCheckoutPage({
   if ((await getCreateMode()) !== "paid") redirect("/create");
 
   const [locale, price] = await Promise.all([getAccountLocale(), getBasePlanPrice()]);
-  const t = (k: TranslationKey<"billing">, v?: Record<string, string | number>) => translate(locale, "billing", k, v);
+  const t = (k: AccountKey<"billing">, v?: Record<string, string | number>) => translateAccount(locale, "billing", k, v);
   if (!price) {
     return (
       <main dir={directionOf(locale)} lang={locale} className="flex-1 bg-idw-parchment px-4 sm:px-6 py-16 text-center">

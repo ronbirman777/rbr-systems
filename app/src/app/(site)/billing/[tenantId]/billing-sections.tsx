@@ -1,5 +1,6 @@
 import type { BillingPageModel } from "@/lib/billing/billingPageModel";
 import { translate, type Locale, type TranslationKey } from "@/lib/i18n";
+import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 
 const card = "rounded-2xl border border-idw-forest/10 bg-white p-5 sm:p-6";
 
@@ -28,7 +29,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
  * (buildBillingPageModel); this component only lays it out. Server component, no client code.
  */
 export function BillingSections({ model, locale }: { model: BillingPageModel; locale: Locale }) {
-  const t = (k: TranslationKey<"billing">) => translate(locale, "billing", k);
+  const t = (k: AccountKey<"billing">) => translateAccount(locale, "billing", k);
   const tone = CHIP_TONE[model.state] ?? CHIP_TONE.active;
 
   return (
@@ -85,7 +86,7 @@ export function BillingSections({ model, locale }: { model: BillingPageModel; lo
 }
 
 function History({ model, locale }: { model: BillingPageModel; locale: Locale }) {
-  const t = (k: TranslationKey<"billing">) => translate(locale, "billing", k);
+  const t = (k: AccountKey<"billing">) => translateAccount(locale, "billing", k);
   return (
     <section aria-labelledby="history-heading" className={card}>
       <h2 id="history-heading" className="text-sm font-semibold text-idw-forest">{t("historyTitle")}</h2>

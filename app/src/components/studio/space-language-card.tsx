@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { loadSpaceSettings, saveSpaceSettings } from "@/app/(site)/space/spaceSettingsActions";
-import { LOCALE_LABEL, SUPPORTED_LOCALES, recommendedLocales, type Locale } from "@/lib/i18n";
+import { LOCALE_LABEL, SPACE_SELECTABLE_LOCALES, recommendedLocales, type Locale } from "@/lib/i18n";
 
 import { createTranslator, DEFAULT_LOCALE } from "@/lib/i18n";
 /**
@@ -107,7 +107,7 @@ export function SpaceLanguageCard({
    * their language sits would have to find it again. See
    * `recommendedLocales` for the rest of that reasoning.
    */
-  const ordered: Locale[] = [...SUPPORTED_LOCALES];
+  const ordered: Locale[] = [...SPACE_SELECTABLE_LOCALES];
 
   function commit(next: Locale) {
     setLocale(next);

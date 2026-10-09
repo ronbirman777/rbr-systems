@@ -1,12 +1,13 @@
 import { translate, type Locale, type TranslationKey } from "@/lib/i18n";
+import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 import type { BillingViewModel, CustomerBillingState, InvoiceRow } from "./customerView";
 import { formatBillingDate, safeHttpsUrl } from "./displayDate";
 import { formatMoney } from "./money";
 import type { NextAction } from "./types";
 
-type T = (key: TranslationKey<"billing">, values?: Record<string, string | number>) => string;
+type T = (key: AccountKey<"billing">, values?: Record<string, string | number>) => string;
 
-const NEXT_ACTION_KEY: Record<NextAction, TranslationKey<"billing">> = {
+const NEXT_ACTION_KEY: Record<NextAction, AccountKey<"billing">> = {
   renewal: "nextActionRenewal",
   discount_cycle: "nextActionDiscountCycle",
   discount_ends: "nextActionDiscountEnds",
@@ -35,7 +36,7 @@ export function statusLabel(state: CustomerBillingState, t: T, cancelDate: strin
 
 /** My Spaces chip: nothing for healthy ("active") and internal ("exempt") Spaces. */
 export function chipLabel(state: CustomerBillingState, locale: Locale, endDate: Date | null): string | null {
-  const t: T = (k, v) => translate(locale, "billing", k, v);
+  const t: T = (k, v) => translateAccount(locale, "billing", k, v);
   switch (state) {
     case "payment_issue": return t("chipPaymentIssue");
     case "guest_suspended": return t("chipGuestSuspended");
@@ -88,7 +89,7 @@ export type BillingPageModel = {
 
 /** All numbers, dates and phrases the Billing page shows, formatted on the server. Pure. */
 export function buildBillingPageModel(view: BillingViewModel, locale: Locale): BillingPageModel {
-  const t: T = (k, v) => translate(locale, "billing", k, v);
+  const t: T = (k, v) => translateAccount(locale, "billing", k, v);
   const sub = view.subscription;
   const exempt = sub.status === "exempt";
   const ended = view.state === "ended";
@@ -155,7 +156,7 @@ export function buildBillingPageModel(view: BillingViewModel, locale: Locale): B
       ? []
       : view.invoices.map((i) => {
           const kind = invoiceStatusKind(i);
-          const statusKey: Record<InvoiceStatusKind, TranslationKey<"billing">> = {
+          const statusKey: Record<InvoiceStatusKind, AccountKey<"billing">> = {
             paid: "invoicePaid", pending: "invoiceOpen", failed: "invoiceFailed", void: "invoiceVoid", uncollectible: "invoiceUncollectible",
           };
           const minor = i.status === "paid" ? i.amountPaidMinor : i.totalMinor;

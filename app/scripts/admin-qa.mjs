@@ -234,7 +234,7 @@ async function main() {
     await page.locator("input[name=code]").fill("x"); await page.locator("input[name=percentOff]").fill("150").catch(() => {});
     await page.getByRole("button", { name: /create coupon|save|create/i }).first().click(); await page.waitForTimeout(2500);
     const invalid = await page.locator("input:invalid, select:invalid").count(); // browser-side validation, or server field errors below
-    const madeBad = (await admin.from("coupons").select("id").ilike("normalized_code", "X")).data ?? [];
+    const madeBad = (await admin.from("coupons").select("id").eq("normalized_code", "X")).data ?? [];
     check("C4 invalid input is refused (browser or server validation), the user stays on the form and nothing is created", (invalid > 0 || /valid|required|invalid|must|between/i.test(await bodyText(page))) && /coupons\/new/.test(page.url()) && madeBad.length === 0, `invalidFields=${invalid}`);
   }
 

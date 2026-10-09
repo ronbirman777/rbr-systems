@@ -1,4 +1,4 @@
-import type { TranslationKey } from "@/lib/i18n";
+import type { AccountKey } from "@/lib/i18n/account";
 
 /** Every error code the funnel actions can return (mirrors FunnelError without importing a "use server" module). */
 export type FunnelErrorCode =
@@ -11,7 +11,7 @@ export const FUNNEL_ERROR_CODES: readonly FunnelErrorCode[] = [
 ];
 
 /** The billing-namespace key that explains a funnel error. Total: an unknown code falls back to the generic problem. */
-export function funnelErrorKey(code: string): TranslationKey<"billing"> {
+export function funnelErrorKey(code: string): AccountKey<"billing"> {
   switch (code) {
     case "consent": return "consentRequired";
     case "invalid": return "couponInvalid";

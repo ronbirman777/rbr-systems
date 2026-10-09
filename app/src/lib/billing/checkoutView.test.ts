@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { FUNNEL_ERROR_CODES, funnelErrorKey, isCouponError, quoteRows } from "./checkoutView";
 import { translate } from "@/lib/i18n";
+import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 
 const labels = { dueToday: "Due today", then: "Then", firstCycle: "First billing cycle", firstCycles: "First {count} billing cycles", everyCycle: "Every billing cycle" };
 
 describe("funnelErrorKey", () => {
   it("maps every code to a key that exists in every locale's resolved copy", () => {
     for (const code of FUNNEL_ERROR_CODES) {
-      for (const l of ["en", "de", "es", "fr", "he"] as const) expect(translate(l, "billing", funnelErrorKey(code)).length).toBeGreaterThan(0);
+      for (const l of ["en", "de", "es", "fr", "he"] as const) expect(translateAccount(l, "billing", funnelErrorKey(code)).length).toBeGreaterThan(0);
     }
     expect(funnelErrorKey("consent")).toBe("consentRequired");
     expect(funnelErrorKey("whatever")).toBe("checkoutProblem");

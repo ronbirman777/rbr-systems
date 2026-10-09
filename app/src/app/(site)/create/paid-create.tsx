@@ -7,9 +7,10 @@ import { demoUrl } from "@/lib/billing/demos";
 import { formatMoney } from "@/lib/billing/money";
 import type { BasePlanPrice } from "@/lib/billing/funnelMode";
 import { directionOf, translate, type Locale, type TranslationKey } from "@/lib/i18n";
+import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
 
-const t = (locale: Locale, key: TranslationKey<"billing">, values?: Record<string, string | number>) => translate(locale, "billing", key, values);
+const t = (locale: Locale, key: AccountKey<"billing">, values?: Record<string, string | number>) => translateAccount(locale, "billing", key, values);
 
 /** Create New Space when paid checkout is enabled: two product cards, price, live example, CTA. No Studio link anywhere. */
 export function PaidCreate({ locale, price }: { locale: Locale; price: BasePlanPrice | null }) {

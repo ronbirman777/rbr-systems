@@ -1,5 +1,6 @@
 import { formatLongDateLocalized } from "@/lib/i18n/datetime";
 import { directionOf, translate, type Locale } from "@/lib/i18n";
+import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 import { formatMoney } from "../money";
 
 /**
@@ -45,7 +46,7 @@ const dateOf = (iso: unknown, locale: Locale) => {
 };
 
 function statusLabel(locale: Locale, status: unknown): string {
-  const t = (k: Parameters<typeof translate<"billing">>[2]) => translate(locale, "billing", k);
+  const t = (k: AccountKey<"billing">) => translateAccount(locale, "billing", k);
   switch (status) {
     case "active": case "trialing": return t("statusActive");
     case "past_due": case "unpaid": return t("statusPaymentIssue");
@@ -75,7 +76,7 @@ function layout(locale: Locale, o: { subject: string; heading: string; intro: st
 }
 
 export function renderBillingEmail(template: EmailTemplate, locale: Locale, payload: P): RenderedEmail {
-  const t = <K extends Parameters<typeof translate<"billing">>[2]>(k: K, v?: Record<string, string | number>) => translate(locale, "billing", k, v);
+  const t = <K extends AccountKey<"billing">>(k: K, v?: Record<string, string | number>) => translateAccount(locale, "billing", k, v);
   const space = str(payload.spaceName) ?? "";
   const billingUrl = safeHttpsUrl(payload.billingUrl);
   const footer = t("emailFooter", { space });

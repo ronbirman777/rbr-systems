@@ -6,6 +6,7 @@ import { buildBillingPageModel } from "@/lib/billing/billingPageModel";
 import { loadBillingView } from "@/lib/billing/customerView";
 import { getAccountLocale } from "@/lib/i18n/accountLocale";
 import { directionOf, translate, type TranslationKey } from "@/lib/i18n";
+import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { BillingControls } from "./billing-controls";
@@ -25,7 +26,7 @@ export default async function BillingPage({ params }: { params: Promise<{ tenant
   if (!view) notFound();
 
   const locale = await getAccountLocale();
-  const t = (k: TranslationKey<"billing">, v?: Record<string, string | number>) => translate(locale, "billing", k, v);
+  const t = (k: AccountKey<"billing">, v?: Record<string, string | number>) => translateAccount(locale, "billing", k, v);
   const model = buildBillingPageModel(view, locale);
 
   return (

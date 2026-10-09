@@ -11,6 +11,7 @@ import { chipLabel } from "@/lib/billing/billingPageModel";
 import { SUBSCRIPTION_SELECT, toSubscriptionRecord, type SubscriptionRecord, type SubscriptionRow } from "@/lib/billing/types";
 import { getAccountLocale } from "@/lib/i18n/accountLocale";
 import { translate } from "@/lib/i18n";
+import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 import type { SpaceEntitlementRow } from "@/lib/entitlements/types";
 import { SpaceThumbnail } from "@/components/space-thumbnail";
 import { MEDIA_BUCKET } from "@/lib/media/path";
@@ -389,7 +390,7 @@ export default async function MySpacePage() {
                       href={`/billing/${t.id}`}
                       className="inline-flex items-center justify-center min-h-11 px-4 rounded-full border border-idw-forest/20 text-idw-forest active:scale-[0.97] active:bg-idw-forest/10 transition-transform"
                     >
-                      {translate(accountLocale, "billing", "billingLink")}
+                      {translateAccount(accountLocale, "billing", "billingLink")}
                     </Link>
                   )}
                   {isOwner && (

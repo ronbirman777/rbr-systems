@@ -3,6 +3,7 @@ import { z } from "zod";
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { getAccountLocale } from "@/lib/i18n/accountLocale";
 import { directionOf, translate, type TranslationKey } from "@/lib/i18n";
+import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 import { createClient } from "@/lib/supabase/server";
 import { nameSpaceAction } from "../actions";
 
@@ -19,7 +20,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ tenant
   if (!tenant) notFound();
 
   const locale = await getAccountLocale();
-  const t = (k: TranslationKey<"billing">) => translate(locale, "billing", k);
+  const t = (k: AccountKey<"billing">) => translateAccount(locale, "billing", k);
 
   return (
     <main dir={directionOf(locale)} lang={locale} className="flex-1 bg-idw-parchment px-4 sm:px-6 py-16 sm:py-20 flex flex-col items-center">

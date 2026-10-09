@@ -1,6 +1,7 @@
 import { lifecycleDeadlines } from "./lifecycle";
 import { formatBillingDate } from "./displayDate";
 import { translate, type Locale, type TranslationKey } from "@/lib/i18n";
+import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 import type { SubscriptionRecord } from "./types";
 
 export type StudioSuspendedLabels = {
@@ -25,7 +26,7 @@ export function buildStudioSuspendedLabels(args: {
   subscription: Pick<SubscriptionRecord, "paymentFailedAt"> | null;
 }): StudioSuspendedLabels {
   const { locale, spaceName, reason, subscription } = args;
-  const t = (k: TranslationKey<"billing">, v?: Record<string, string>) => translate(locale, "billing", k, v);
+  const t = (k: AccountKey<"billing">, v?: Record<string, string>) => translateAccount(locale, "billing", k, v);
   if (reason === "subscription_ended") {
     return { title: t("endedTitle"), body: t("endedBody", { space: spaceName }), deadline: null, resolvePayment: null, backToSpaces: t("backToSpaces") };
   }

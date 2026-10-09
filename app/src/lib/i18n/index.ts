@@ -1,8 +1,10 @@
-import { en, type Dictionary, type Namespace } from "./dictionaries/en";
+import { en, type Dictionary, type Namespace, type PartialDictionary } from "./dictionaries/en";
 import { he } from "./dictionaries/he";
 import { de } from "./dictionaries/de";
 import { es } from "./dictionaries/es";
 import { fr } from "./dictionaries/fr";
+import { tr } from "./dictionaries/tr";
+import { it } from "./dictionaries/it";
 import { DEFAULT_LOCALE, directionOf, resolveLocale, type Direction, type Locale } from "./locales";
 
 export * from "./locales";
@@ -27,7 +29,7 @@ export type { Dictionary, Namespace };
  *   this function at all.
  */
 
-const DICTIONARIES: Record<Locale, Dictionary> = { en, de, es, fr, he };
+const DICTIONARIES: Record<Locale, PartialDictionary> = { en, de, es, fr, he, tr, it };
 
 export type TranslationKey<N extends Namespace> = keyof Dictionary[N];
 
@@ -103,7 +105,7 @@ export function untranslatedKeys(locale: Locale): string[] {
   const same: string[] = [];
   for (const namespace of Object.keys(en) as Namespace[]) {
     for (const [key, value] of Object.entries(en[namespace])) {
-      const localized = (dictionary[namespace] as Record<string, string>)[key];
+      const localized = (dictionary[namespace] as Record<string, string> | undefined)?.[key];
       if (localized === value) same.push(`${namespace}.${key}`);
     }
   }

@@ -1,6 +1,4 @@
 import type { Dictionary } from "./en";
-import { billingFr } from "./billing.fr";
-
 /**
  * French (Français).
  *
@@ -1510,5 +1508,9 @@ export const fr: Dictionary = {
     imageFormats8mb: "JPG, PNG ou WebP jusqu’à 8 Mo.",
   },
 
-  billing: billingFr,
+  attribution: {
+    // The Guest App signature. "InnerDweS" is a link and is never translated: the brand arrives as {brand}.
+    createdWith: "Créé avec {brand}",
+    linkLabel: "{brand} : s’ouvre dans un nouvel onglet",
+  },
 };

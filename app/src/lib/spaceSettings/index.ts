@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { isSupportedCountry } from "@/lib/countries";
 
-import { SUPPORTED_LOCALES, resolveLocale, type Locale } from "@/lib/i18n";
+import { SPACE_SELECTABLE_LOCALES, resolveLocale, type Locale } from "@/lib/i18n";
 /**
  * Space Settings - the product-neutral home for Space-level preferences
  * that are not specific to Flow, Teach or Heal.
@@ -45,7 +45,7 @@ const countryCode = z
  * instead of throwing, so a value written by a newer build never breaks
  * an older one.
  */
-const localeCode = z.enum(SUPPORTED_LOCALES);
+const localeCode = z.enum(SPACE_SELECTABLE_LOCALES);
 
 export const spaceSettingsSchema = z.object({
   /**

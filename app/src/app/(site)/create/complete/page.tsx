@@ -4,6 +4,7 @@ import { InnerDweSMark } from "@/components/brand/wordmark";
 import { LanguageSwitch } from "@/components/billing/language-switch";
 import { getAccountLocale } from "@/lib/i18n/accountLocale";
 import { directionOf, translate, type TranslationKey } from "@/lib/i18n";
+import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 import { createClient } from "@/lib/supabase/server";
 import { CompleteStatus, type CompleteLabels } from "./complete-status";
 
@@ -18,7 +19,7 @@ export default async function CompletePage({ searchParams }: { searchParams: Pro
   if (!parsed.success) redirect("/create");
 
   const locale = await getAccountLocale();
-  const t = (k: TranslationKey<"billing">) => translate(locale, "billing", k);
+  const t = (k: AccountKey<"billing">) => translateAccount(locale, "billing", k);
   const labels: CompleteLabels = {
     settingUp: t("settingUpTitle"), hint: t("settingUpHint"), confirmed: t("paymentConfirmed"), stillPreparing: t("stillPreparing"),
     noPaymentYet: t("noPaymentYet"), expired: t("checkoutExpired"), canceled: t("checkoutCanceled"), generic: t("billingErrorGeneric"),

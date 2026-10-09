@@ -16,8 +16,6 @@
  * Only system-authored UI text lives here. Nothing an organizer typed is
  * ever a translation key - see the i18n README rule on user content.
  */
-import { billingEn } from "./billing.en";
-
 export const en = {
   common: {
     // Actions
@@ -1514,7 +1512,11 @@ export const en = {
     imageFormats8mb: "JPG, PNG or WebP up to 8 MB.",
   },
 
-  billing: billingEn,
+  attribution: {
+    // The Guest App signature. "InnerDweS" is a link and is never translated: the brand arrives as {brand}.
+    createdWith: "Created with {brand}",
+    linkLabel: "{brand} - opens in a new tab",
+  },
 } as const;
 
 /**
@@ -1525,3 +1527,5 @@ export const en = {
  */
 export type Dictionary = { [N in keyof typeof en]: { [K in keyof (typeof en)[N]]: string } };
 export type Namespace = keyof Dictionary;
+/** A locale that has not translated every namespace yet: missing keys fall back to English at read time. */
+export type PartialDictionary = { [N in keyof Dictionary]?: Partial<Dictionary[N]> };

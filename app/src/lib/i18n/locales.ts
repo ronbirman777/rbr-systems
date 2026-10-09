@@ -26,8 +26,24 @@
  * options differently per Space, and an organizer who learned where
  * their language sits would have to find it again.
  */
-export const SUPPORTED_LOCALES = ["en", "de", "es", "fr", "he"] as const;
+export const SUPPORTED_LOCALES = ["en", "de", "es", "fr", "he", "tr", "it"] as const;
 export type Locale = (typeof SUPPORTED_LOCALES)[number];
+
+/**
+ * The languages an organizer can currently pick for a SPACE (its Studio and its
+ * Guest App), in selector order.
+ *
+ * Turkish and Italian are full platform locales as of TASK 032 - account-level
+ * surfaces (the Create New Space funnel, Billing, Admin, billing emails) and the
+ * Guest "Created with InnerDweS" attribution are complete in all seven. The
+ * Teach, Flow and Studio interface strings for tr/it are NOT translated yet
+ * (that is TASK 033's localization-quality work), so offering them for a Space
+ * today would publish a half-English Guest App. Until TASK 033 they are
+ * therefore not selectable for a Space, and the Space-settings schema refuses to
+ * store them. This is the single switch: add "tr" and "it" here when TASK 033
+ * has translated every Space-facing namespace.
+ */
+export const SPACE_SELECTABLE_LOCALES = ["en", "de", "es", "fr", "he"] as const satisfies readonly Locale[];
 
 export const DEFAULT_LOCALE: Locale = "en";
 
@@ -39,6 +55,8 @@ const DIRECTION: Record<Locale, Direction> = {
   es: "ltr",
   fr: "ltr",
   he: "rtl",
+  tr: "ltr",
+  it: "ltr",
 };
 
 /** Endonyms: a language is listed the way its own speakers write it. */
@@ -48,6 +66,8 @@ export const LOCALE_LABEL: Record<Locale, string> = {
   es: "Español",
   fr: "Français",
   he: "עברית",
+  tr: "Türkçe",
+  it: "Italiano",
 };
 
 /**
@@ -64,6 +84,8 @@ export const LOCALE_TAG: Record<Locale, string> = {
   es: "es-419",
   fr: "fr-FR",
   he: "he-IL",
+  tr: "tr-TR",
+  it: "it-IT",
 };
 
 export function isSupportedLocale(value: unknown): value is Locale {
