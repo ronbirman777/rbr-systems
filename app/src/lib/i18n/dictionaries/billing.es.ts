@@ -166,6 +166,7 @@ export const billingEs: { [K in keyof typeof billingEn]: string } = {
   chipCanceling: "Termina el {date}",
   chipEnded: "Finalizado",
   billingLink: "Facturación",
+  lifecycleBillingLocked: "Resuelve la facturación de este Espacio antes de restaurarlo o reemplazarlo.",
 
   // --- emails ---
   emailGreeting: "Hola:",
@@ -187,8 +188,8 @@ export const billingEs: { [K in keyof typeof billingEn]: string } = {
   emailDiscountProgressValue: "Pago {done} de {total}",
   emailDiscountProgressForever: "Se aplica a todos los pagos",
 
-  emailPaymentFirstSubject: "Pago confirmado: {space}",
-  emailPaymentFirstIntro: "Gracias. Hemos confirmado tu pago y tu Espacio está listo.",
+  emailPaymentFirstSubject: "Pago confirmado: {space} ya está activo",
+  emailPaymentFirstIntro: "Gracias. Hemos confirmado tu pago y tu suscripción ha comenzado: {space} ya está activo y listo para ti.",
   emailPaymentRenewalSubject: "Pago recibido: {space}",
   emailPaymentRenewalIntro: "Gracias. Hemos recibido el pago de tu suscripción.",
   emailPaymentRecoveredSubject: "Pago recibido: {space} vuelve a estar activo",

@@ -169,6 +169,7 @@ export const billingTr: { [K in keyof typeof billingEn]: string } = {
   chipCanceling: "Bitiş: {date}",
   chipEnded: "Sona erdi",
   billingLink: "Faturalama",
+  lifecycleBillingLocked: "Bu Space'i geri yüklemeden veya değiştirmeden önce faturalamasını çözün.",
 
   // --- emails ---
   emailGreeting: "Merhaba,",
@@ -190,8 +191,8 @@ export const billingTr: { [K in keyof typeof billingEn]: string } = {
   emailDiscountProgressValue: "{total} ödemenin {done}. ödemesi",
   emailDiscountProgressForever: "Her ödemede geçerli",
 
-  emailPaymentFirstSubject: "Ödeme onaylandı - {space}",
-  emailPaymentFirstIntro: "Teşekkür ederiz. Ödemeniz onaylandı ve Space'iniz hazır.",
+  emailPaymentFirstSubject: "Ödeme onaylandı - {space} etkin",
+  emailPaymentFirstIntro: "Teşekkür ederiz. Ödemeniz onaylandı ve aboneliğiniz başladı: {space} etkin ve kullanıma hazır.",
   emailPaymentRenewalSubject: "Ödeme alındı - {space}",
   emailPaymentRenewalIntro: "Teşekkür ederiz. Abonelik ödemenizi aldık.",
   emailPaymentRecoveredSubject: "Ödeme alındı - {space} yeniden etkin",

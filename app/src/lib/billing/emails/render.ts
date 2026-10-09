@@ -2,6 +2,9 @@ import { formatLongDateLocalized } from "@/lib/i18n/datetime";
 import { directionOf, translate, type Locale } from "@/lib/i18n";
 import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 import { formatMoney } from "../money";
+import type { EmailTemplate, PaymentVariant } from "./templates";
+
+export type { EmailTemplate } from "./templates";
 
 /**
  * Pure rendering of every billing email: (template, locale, payload) -> subject +
@@ -15,10 +18,6 @@ import { formatMoney } from "../money";
  *   - Hebrew gets dir="rtl";
  *   - user-authored text (Space name, coupon code) is never translated.
  */
-
-export type EmailTemplate =
-  | "payment_confirmation" | "payment_failed" | "guest_unavailable" | "studio_suspended"
-  | "final_warning" | "cancellation_scheduled" | "subscription_ended";
 
 export type RenderedEmail = { subject: string; text: string; html: string; dir: "ltr" | "rtl"; lang: string };
 
@@ -84,7 +83,7 @@ export function renderBillingEmail(template: EmailTemplate, locale: Locale, payl
 
   switch (template) {
     case "payment_confirmation": {
-      const variant = (str(payload.variant) ?? "renewal") as "first" | "renewal" | "recovered" | "final";
+      const variant = (str(payload.variant) ?? "renewal") as PaymentVariant;
       const currency = str(payload.currency) ?? "USD";
       const accessEnds = dateOf(payload.nextBillingDate, locale);
       const subject = t(({ first: "emailPaymentFirstSubject", renewal: "emailPaymentRenewalSubject", recovered: "emailPaymentRecoveredSubject", final: "emailPaymentFinalSubject" } as const)[variant], { space });
@@ -102,7 +101,8 @@ export function renderBillingEmail(template: EmailTemplate, locale: Locale, payl
       if (dc) {
         rows.push({ label: t("emailRowDiscountProgress"), value: dc.total == null ? t("emailDiscountProgressForever") : t("emailDiscountProgressValue", { done: dc.completed, total: dc.total }) });
       }
-      if (variant !== "final") {
+      // No next-charge rows when nothing will be charged next (final payment, or a cancellation already scheduled).
+      if (variant !== "final" && payload.cancelsAtPeriodEnd !== true) {
         if (accessEnds) rows.push({ label: t("emailRowNextBilling"), value: accessEnds });
         const nextCharge = num(payload.nextExpectedChargeMinor);
         if (nextCharge != null) rows.push({ label: t("emailRowNextCharge"), value: formatMoney(nextCharge, currency, locale) });

@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { getSpaceEntitlement } from "@/lib/entitlements/getSpaceEntitlement";
 import { getSpaceCommercialAvailability } from "@/lib/billing/commercialAccess";
+import { loadAudioQuotaPolicy } from "@/lib/billing/audioQuota.server";
+import { audioQuotaMessageKey, audioQuotaMessageValues, checkAudioAttach, checkAudioPublish } from "@/lib/billing/audioQuota";
 import { getCustomPagesLimit } from "@/lib/entitlements/customPagesLimit";
 import {
   MEDIA_BUCKET,
@@ -510,6 +512,25 @@ export async function saveTeachItems(
     });
   }
 
+  // TASK B4 - on a quota-enforced (paid) Space the audio FILE fields are
+  // owned by attachTeachAudio/detachTeachAudio, exactly as Flow's Save
+  // already does: a client snapshot can never set audioRef/durationSeconds
+  // and so cannot skip the attach-time entitlement check. Legacy/exempt
+  // Spaces keep the previous behaviour.
+  if (moduleKey === "teachAudio" && rows.length > 0 && (await loadAudioQuotaPolicy(tenantId)).mode !== "unenforced") {
+    const { data: stored, error: storedError } = await supabase
+      .from("module_items")
+      .select("id, metadata")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", "teachAudio");
+    if (storedError || !stored) return { error: t("audioAllowanceUnavailable") };
+    const fileById = new Map((stored as { id: string; metadata: Record<string, unknown> | null }[]).map((r) => [r.id, r.metadata ?? {}]));
+    for (const row of rows) {
+      const file = fileById.get(row.id);
+      row.metadata = { ...row.metadata, audioRef: file?.audioRef ?? null, durationSeconds: file?.durationSeconds ?? null };
+    }
+  }
+
   const incoming = new Set(rows.map((r) => r.id));
   const { data: existing } = await supabase
     .from("module_items")
@@ -707,7 +728,6 @@ export async function attachTeachAudio(tenantId: string, itemId: string, ref: st
   const row = await loadTeachItemRow(supabase, tenantId, itemId);
   if (!row || row.module_key !== "teachAudio") return { error: t("missingItem") };
   const previousRef = currentAudioRef(row);
-  const duration = typeof durationSeconds === "number" && Number.isFinite(durationSeconds) && durationSeconds >= 0 && durationSeconds <= 60 * 60 * 12 ? Math.round(durationSeconds) : null;
 
   // The upload is browser -> Storage, so the real size/type limits are
   // enforced here against what Storage actually stored. Anything that
@@ -724,6 +744,24 @@ export async function attachTeachAudio(tenantId: string, itemId: string, ref: st
   if (AUDIO_ALLOWED_TYPES[normalizeMimeType(String(info.contentType ?? ""))] !== parts.ext) {
     return reject(t("unsupportedAudio"));
   }
+
+  // TASK B4 - audio entitlement (paid Spaces only; legacy/exempt unchanged).
+  // Per-recording maximum and library total, checked against what Storage
+  // actually holds (size floor) and the Space's other audio items.
+  const quota = await loadAudioQuotaPolicy(tenantId);
+  let otherAudio: { id: string; metadata: Record<string, unknown> | null }[] = [];
+  if (quota.mode === "enforced") {
+    const { data: audioRows, error: audioError } = await supabase
+      .from("module_items")
+      .select("id, metadata")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", "teachAudio");
+    if (audioError || !audioRows) return reject(t("audioAllowanceUnavailable"));
+    otherAudio = (audioRows as typeof otherAudio).filter((r) => r.id !== itemId);
+  }
+  const quotaCheck = checkAudioAttach(quota, { claimedSeconds: durationSeconds, sizeBytes: Number(info.size), ext: parts.ext, otherItems: otherAudio });
+  if (!quotaCheck.ok) return reject(t(audioQuotaMessageKey(quotaCheck.issue, "attach"), audioQuotaMessageValues(quotaCheck.issue)));
+  const duration = quotaCheck.durationSeconds;
 
   if (ref !== previousRef) {
     // A published object already living in this upload's folder is never a
@@ -825,6 +863,17 @@ export async function publishTeachSpace(tenantId: string,
     supabase.from("module_settings").select("module_key, data").eq("tenant_id", tenantId).in("module_key", Object.keys(SETTINGS_IMAGE_SLOTS)),
     supabase.from("module_configs").select("image_ref").eq("tenant_id", tenantId),
   ]);
+
+  // TASK B4 - re-check the audio entitlement over every attached file
+  // before anything is copied (paid Spaces only; legacy/exempt unchanged).
+  const audioQuota = await loadAudioQuotaPolicy(tenantId);
+  const audioCheck = checkAudioPublish(
+    audioQuota,
+    itemRows ? itemRows.filter((r) => r.module_key === "teachAudio").map((r) => ({ metadata: r.metadata as Record<string, unknown> | null })) : null
+  );
+  if (!audioCheck.ok) {
+    return { error: t(audioQuotaMessageKey(audioCheck.issue, "publish"), audioQuotaMessageValues(audioCheck.issue)), publishedAt: null };
+  }
 
   const settingsByKey = new Map((settingsRows ?? []).map((r) => [r.module_key as string, r.data as Record<string, unknown>]));
   const slotRef = (key: string, slot: string): string | null => {

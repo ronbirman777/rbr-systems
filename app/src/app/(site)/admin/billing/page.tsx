@@ -37,6 +37,12 @@ export default async function OverviewPage() {
         {t("ovSnapshot", { time: formatUtc(o.generatedAt, c) })}
       </PageHeader>
 
+      {o.metricsTruncated ? (
+        <p role="alert" className="mb-6 max-w-3xl rounded-lg border border-amber-700/40 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          {t("ovMetricsTruncated", { rows: new Intl.NumberFormat(locale).format(o.metricRowsRead) })}
+        </p>
+      ) : null}
+
       <h2 className="mb-2 font-ui text-lg text-idw-forest">{t("ovOperations")}</h2>
       <ul className="mb-8 flex flex-wrap gap-2" aria-label={t("ovOperationalAria")}>
         <li><Link href="/admin/billing/settings" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm"><span>{t("ovPaidCheckout")}</span> <Badge tone={o.paidCheckoutEnabled ? "good" : "neutral"}>{o.paidCheckoutEnabled ? t("ovEnabled") : t("ovDisabled")}</Badge></Link></li>

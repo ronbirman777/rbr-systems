@@ -201,6 +201,7 @@ export const adminTr: { [K in keyof typeof adminEn]: string } = {
   // --- Overview page ---
   ovTitle: "Faturalama genel bakışı",
   ovSnapshot: "{time} tarihli anlık görünüm. Aşağıdaki her sayının tanımı altında yer alır; tutarlar para birimi bazında gösterilir ve farklı para birimleri hiçbir zaman toplanmaz.",
+  ovMetricsTruncated: "Gelir rakamları eksik: yalnızca ilk {rows} ücretli abonelik okundu; bu nedenle liste MRR, güncel MRR ve indirimli abonelik sayısı olduğundan düşük görünüyor. Bu sayfadaki diğer tüm sayımlar kesindir.",
   ovOperations: "Operasyonlar",
   ovOperationalAria: "Operasyon durumu",
   ovPaidCheckout: "Ücretli ödeme",

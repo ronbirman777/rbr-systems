@@ -201,6 +201,7 @@ export const adminIt: { [K in keyof typeof adminEn]: string } = {
   // --- Overview page ---
   ovTitle: "Panoramica della fatturazione",
   ovSnapshot: "Situazione al {time}. Ogni numero è definito sotto di esso; gli importi sono mostrati per valuta e non vengono mai sommati tra valute diverse.",
+  ovMetricsTruncated: "I dati sui ricavi sono incompleti: sono stati letti solo i primi {rows} abbonamenti a pagamento, quindi MRR di listino, MRR attuale e abbonamenti scontati risultano sottostimati. Tutti gli altri conteggi di questa pagina sono esatti.",
   ovOperations: "Operatività",
   ovOperationalAria: "Stato operativo",
   ovPaidCheckout: "Acquisto a pagamento",

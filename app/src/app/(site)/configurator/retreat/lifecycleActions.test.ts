@@ -20,6 +20,21 @@ const mockFromCountSelect = vi.fn();
 const mockStorageList = vi.fn();
 const mockStorageRemove = vi.fn();
 const mockTenantSelect = vi.fn();
+// TASK 032 (B2): launch-flag mode + the billing rows the paid-mode gate reads.
+const billing = vi.hoisted(() => ({
+  mode: "legacy" as "legacy" | "paid" | "unavailable",
+  /** tenant_id -> space_subscriptions row (snake_case, as PostgREST returns it). */
+  subs: {} as Record<string, Record<string, unknown>>,
+  subsError: null as { message: string } | null,
+  modeReads: 0,
+}));
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/billing/funnelMode", () => ({
+  getCreateMode: async () => {
+    billing.modeReads++;
+    return billing.mode;
+  },
+}));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
@@ -34,6 +49,19 @@ vi.mock("@/lib/supabase/server", () => ({
       }
       if (table === "tenant_members") {
         return { select: () => ({ eq: () => ({ eq: mockFromCountSelect }) }) };
+      }
+      if (table === "space_subscriptions") {
+        return {
+          select: () => ({
+            eq: (_c: string, id: string) => ({
+              maybeSingle: async () => ({ data: billing.subsError ? null : (billing.subs[id] ?? null), error: billing.subsError }),
+            }),
+            in: async (_c: string, ids: string[]) => ({
+              data: billing.subsError ? null : ids.map((id) => billing.subs[id]).filter(Boolean),
+              error: billing.subsError,
+            }),
+          }),
+        };
       }
       throw new Error(`unexpected table in test: ${table}`);
     },
@@ -66,6 +94,10 @@ describe("lifecycleActions - Task 011", () => {
     // about Storage cleanup specifics reach delete_space() unimpeded.
     mockStorageList.mockResolvedValue({ data: [], error: null });
     mockTenantSelect.mockResolvedValue({ data: { product_type: "retreat" } });
+    billing.mode = "legacy";
+    billing.subs = {};
+    billing.subsError = null;
+    billing.modeReads = 0;
   });
 
   describe("getSpaceSlotSummary", () => {
@@ -667,6 +699,155 @@ describe("lifecycleActions - Task 011", () => {
         expect(result.error).toBeTruthy();
         expect(mockStorageList).not.toHaveBeenCalled();
         expect(mockRpc).not.toHaveBeenCalled();
+      });
+    });
+  });
+
+  /**
+   * TASK 032 (B2): Restore / Replace under the launch flag. Flag off must be
+   * byte-for-byte the Task 011 behaviour; flag on follows the unified billing
+   * decision (lib/billing/lifecycleAccess.ts).
+   */
+  describe("Restore / Replace - TASK 032 billing modes", () => {
+    const T = "11111111-1111-4111-8111-111111111111";
+    const OTHER = "22222222-2222-4222-8222-222222222222";
+    const confirmed = { tenantId: T, expectedName: "Real Name", confirmName: "Real Name", newName: "New" };
+    const sub = (tenantId: string, over: Record<string, unknown> = {}) => ({
+      id: `sub-${tenantId}`, tenant_id: tenantId, billing_owner_user_id: "user-1", plan_id: "p", stripe_mode: "test",
+      stripe_subscription_id: "sub_x", stripe_price_id: "price_x", status: "active", currency: "USD", base_amount_minor: 2500,
+      current_effective_amount_minor: 2500, current_period_start: null, current_period_end: "2099-01-01T00:00:00Z",
+      cancel_at_period_end: false, cancel_at: null, canceled_at: null, ended_at: null, payment_failed_at: null,
+      guest_suspended_at: null, studio_suspended_at: null, deletion_warning_at: null, eligible_for_deletion_at: null,
+      recovered_at: null, next_action: "renewal", next_action_at: null, next_expected_charge_minor: null,
+      next_payment_attempt_at: null, last_paid_invoice_id: null, exempt_reason: null, exempt_expires_at: null, ...over,
+    });
+    const days = (n: number) => new Date(Date.now() - n * 86_400_000).toISOString();
+
+    describe("flag OFF (legacy) - unchanged", () => {
+      it("restore goes straight to restore_space and reads no billing row", async () => {
+        billing.subs[T] = sub(T, { status: "canceled" }); // must be ignored in legacy mode
+        mockRpc.mockResolvedValue({ error: null });
+        const { restoreSpace } = await loadActions();
+        const result = await restoreSpace({ error: null }, formData({ tenantId: T }));
+        expect(mockRpc).toHaveBeenCalledWith("restore_space", { p_tenant_id: T });
+        expect(mockFromSelect).not.toHaveBeenCalled();
+        expect(result.success).toBe(true);
+      });
+
+      it("a DB slot refusal still reads as 'no slot' (Task 011 copy)", async () => {
+        mockRpc.mockResolvedValue({ error: { hint: "SLOT_LIMIT_REACHED" } });
+        const { restoreSpace } = await loadActions();
+        const result = await restoreSpace({ error: null }, formData({ tenantId: T }));
+        expect(result).toMatchObject({ slotLimitReached: true });
+        expect(result.billingLocked).toBeUndefined();
+      });
+
+      it("replace of a billing-ended Space is not pre-blocked (the 0039 RLS / RPC stay the authority)", async () => {
+        billing.subs[T] = sub(T, { status: "canceled" });
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        mockRpc.mockResolvedValue({ error: null });
+        const { replaceSpace } = await loadActions();
+        const result = await replaceSpace({ error: null }, formData(confirmed));
+        expect(mockRpc).toHaveBeenCalledWith("replace_space", { p_tenant_id: T, p_new_name: "New" });
+        expect(result.success).toBe(true);
+      });
+    });
+
+    describe.each([["paid"], ["unavailable"]] as const)("flag ON (%s)", (mode) => {
+      beforeEach(() => {
+        billing.mode = mode;
+      });
+
+      it("active paid Space: restore is allowed without consulting the legacy slot allowance", async () => {
+        billing.subs[T] = sub(T);
+        mockRpc.mockResolvedValue({ error: null });
+        const { restoreSpace } = await loadActions();
+        const result = await restoreSpace({ error: null }, formData({ tenantId: T }));
+        expect(mockFromSelect).not.toHaveBeenCalled();
+        expect(mockRpc).toHaveBeenCalledWith("restore_space", { p_tenant_id: T });
+        expect(result.success).toBe(true);
+      });
+
+      it("active paid Space: a DB slot refusal (0017 counting paid Spaces) is never shown as 'no slot'", async () => {
+        billing.subs[T] = sub(T);
+        mockRpc.mockResolvedValue({ error: { hint: "SLOT_LIMIT_REACHED" } });
+        const { restoreSpace } = await loadActions();
+        const result = await restoreSpace({ error: null }, formData({ tenantId: T }));
+        expect(result.slotLimitReached).toBeUndefined();
+        expect(result.error).toBe("Couldn't restore this Space. Please try again.");
+      });
+
+      it.each([
+        ["canceled", { status: "canceled" }],
+        ["incomplete", { status: "incomplete" }],
+        ["studio suspended (8 days unpaid)", { status: "past_due", payment_failed_at: days(8) }],
+        ["ended after cancel-at-period-end", { cancel_at_period_end: true, current_period_end: days(2) }],
+      ])("%s: restore and replace are refused before any RPC or Storage change", async (_label, over) => {
+        billing.subs[T] = sub(T, over);
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        const { restoreSpace, replaceSpace } = await loadActions();
+        const r1 = await restoreSpace({ error: null }, formData({ tenantId: T }));
+        const r2 = await replaceSpace({ error: null }, formData(confirmed));
+        expect(r1).toMatchObject({ billingLocked: true, error: "Resolve billing for this Space before restoring or replacing it." });
+        expect(r2).toMatchObject({ billingLocked: true });
+        expect(mockRpc).not.toHaveBeenCalled();
+        expect(mockStorageList).not.toHaveBeenCalled();
+        expect(mockStorageRemove).not.toHaveBeenCalled();
+      });
+
+      it("guest-suspended / payment issue (Studio still writable): a paying customer is not blocked", async () => {
+        billing.subs[T] = sub(T, { status: "past_due", payment_failed_at: days(2) });
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        mockRpc.mockResolvedValue({ error: null });
+        const { replaceSpace } = await loadActions();
+        expect((await replaceSpace({ error: null }, formData(confirmed))).success).toBe(true);
+      });
+
+      it("exempt internal Space (Lena / Return to Balance / QA): allowed, no slot check", async () => {
+        billing.subs[T] = sub(T, { status: "exempt", stripe_subscription_id: null, exempt_reason: "internal demo" });
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        mockRpc.mockResolvedValue({ error: null });
+        const { restoreSpace, replaceSpace } = await loadActions();
+        expect((await restoreSpace({ error: null }, formData({ tenantId: T }))).success).toBe(true);
+        expect((await replaceSpace({ error: null }, formData(confirmed))).success).toBe(true);
+        expect(mockFromSelect).not.toHaveBeenCalled();
+      });
+
+      it("legacy Space: restore counts only legacy Spaces - a bought Space does not use up the free slot", async () => {
+        billing.subs[OTHER] = sub(OTHER); // paid
+        mockFromSelect.mockResolvedValue({ data: { slots_allowed: 1 }, error: null });
+        mockFromCountSelect.mockResolvedValue({ data: [{ tenant_id: T }, { tenant_id: OTHER }], error: null });
+        mockRpc.mockResolvedValue({ error: null });
+        const { restoreSpace } = await loadActions();
+        const result = await restoreSpace({ error: null }, formData({ tenantId: T }));
+        expect(mockRpc).toHaveBeenCalledWith("restore_space", { p_tenant_id: T });
+        expect(result.success).toBe(true);
+      });
+
+      it("legacy Space: still over the legacy allowance -> 'no slot', no RPC", async () => {
+        mockFromSelect.mockResolvedValue({ data: { slots_allowed: 1 }, error: null });
+        mockFromCountSelect.mockResolvedValue({ data: [{ tenant_id: T }, { tenant_id: OTHER }], error: null });
+        const { restoreSpace } = await loadActions();
+        const result = await restoreSpace({ error: null }, formData({ tenantId: T }));
+        expect(result).toMatchObject({ slotLimitReached: true });
+        expect(mockRpc).not.toHaveBeenCalled();
+      });
+
+      it("legacy Space: replace stays available (it never changes slot usage)", async () => {
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        mockRpc.mockResolvedValue({ error: null });
+        const { replaceSpace } = await loadActions();
+        expect((await replaceSpace({ error: null }, formData(confirmed))).success).toBe(true);
+      });
+
+      it("an unreadable billing row fails closed for both actions", async () => {
+        billing.subsError = { message: "boom" };
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        const { restoreSpace, replaceSpace } = await loadActions();
+        expect((await restoreSpace({ error: null }, formData({ tenantId: T }))).error).toBe("Couldn't restore this Space. Please try again.");
+        expect((await replaceSpace({ error: null }, formData(confirmed))).error).toBe("Couldn't replace this Space. Please try again.");
+        expect(mockRpc).not.toHaveBeenCalled();
+        expect(mockStorageList).not.toHaveBeenCalled();
       });
     });
   });

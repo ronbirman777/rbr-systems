@@ -77,7 +77,7 @@ Response codes: 400 bad signature; 200 `duplicate`; 409 `in progress` (Stripe re
 
 ## Outbox
 
-`billing_enqueue_email` (insert `ON CONFLICT (dedupe_key) DO NOTHING`) then `billing_claim_emails` (leases up to 20 due rows, `attempts < 5`, `FOR UPDATE SKIP LOCKED`; a `sending` row is re-leased only if its own `claimed_at` is older than 10 minutes) then `billing_finish_email` (only lands on a still-`sending` row). No `RESEND_API_KEY`/`BILLING_EMAIL_FROM` means no sender: emails stay queued. A recipient without an address is `skipped`. Templates in the DB allow-list: `subscription_started`, `payment_confirmation`, `payment_failed`, `guest_unavailable`, `studio_suspended`, `final_warning`, `cancellation_scheduled`, `subscription_ended`, `payment_recovered`. The renderer handles seven of them: `subscription_started` and `payment_recovered` have no renderer and would be marked `skipped` ("unsupported template"); nothing in the code enqueues them.
+`billing_enqueue_email` (insert `ON CONFLICT (dedupe_key) DO NOTHING`) then `billing_claim_emails` (leases up to 20 due rows, `attempts < 5`, `FOR UPDATE SKIP LOCKED`; a `sending` row is re-leased only if its own `claimed_at` is older than 10 minutes) then `billing_finish_email` (only lands on a still-`sending` row). No `RESEND_API_KEY`/`BILLING_EMAIL_FROM` means no sender: emails stay queued. A recipient without an address is `skipped`. Templates in the DB allow-list: `subscription_started`, `payment_confirmation`, `payment_failed`, `guest_unavailable`, `studio_suspended`, `final_warning`, `cancellation_scheduled`, `subscription_ended`, `payment_recovered`. Seven are live (`EMAIL_TEMPLATES` in `lib/billing/emails/templates.ts`). `subscription_started` and `payment_recovered` are **retired** (kept in the DB check for compatibility, no migration): activation is the `first` variant and recovery the `recovered` variant of `payment_confirmation`, so a separate email would duplicate it. Enqueue refuses them, and a stray row is marked `skipped` ("retired template") by the outbox. See EMAILS-INVOICES.md.
 
 ## Unified access decision (SQL and TS parity)
 
@@ -108,4 +108,4 @@ Spaces without a billing row (every Space existing before 0036) take the legacy 
 - Paid add-ons are not sold; no code writes `space_subscription_addons`.
 - Audio entitlements (240/60/100000) are computed for display (`customerView.ts`); no enforcement against uploads or listening was found.
 - The 14-day "deletion eligible" stamp opens a workflow only; no deletion job exists (see LIFECYCLE.md).
-- `subscription_started` and `payment_recovered` emails are allowed by the DB but not rendered or enqueued.
+- `subscription_started` and `payment_recovered` are retired templates (allowed by the DB, never enqueued or rendered; see EMAILS-INVOICES.md).

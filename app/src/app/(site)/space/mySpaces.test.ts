@@ -9,6 +9,9 @@ const state = vi.hoisted(() => ({
   user: { id: "u1", email: "owner@example.test" } as { id: string; email: string } | null,
   tenants: [] as unknown[],
   roles: [] as unknown[],
+  mode: "legacy" as "legacy" | "paid" | "unavailable",
+  subs: [] as unknown[],
+  slots: { slotsUsed: 1, slotsAllowed: 2, slotsAvailable: 1 },
 }));
 
 class Redirect extends Error {}
@@ -36,6 +39,7 @@ vi.mock("@/lib/supabase/server", () => ({
         select: () => {
           if (table === "tenants") return resolveTo(state.tenants);
           if (table === "tenant_members") return resolveTo(state.roles);
+          if (table === "space_subscriptions") return resolveTo(state.subs);
           return resolveTo([]);
         },
       }),
@@ -43,8 +47,9 @@ vi.mock("@/lib/supabase/server", () => ({
   },
 }));
 vi.mock("@/app/(site)/configurator/retreat/lifecycleActions", () => ({
-  getSpaceSlotSummary: async () => ({ slotsUsed: 1, slotsAllowed: 2, slotsAvailable: 1 }),
+  getSpaceSlotSummary: async () => state.slots,
 }));
+vi.mock("@/lib/billing/funnelMode", () => ({ getCreateMode: async () => state.mode }));
 vi.mock("@/components/brand/wordmark", () => ({ InnerDweSMark: function Mark() { return null; } }));
 vi.mock("@/components/publish-space-button", () => ({ PublishSpaceButton: function Publish() { return null; } }));
 vi.mock("@/components/space-thumbnail", () => ({ SpaceThumbnail: function Thumb() { return null; } }));
@@ -85,6 +90,9 @@ beforeEach(() => {
   state.user = { id: "u1", email: "owner@example.test" };
   state.tenants = [];
   state.roles = [];
+  state.mode = "legacy";
+  state.subs = [];
+  state.slots = { slotsUsed: 1, slotsAllowed: 2, slotsAvailable: 1 };
 });
 
 describe("My Spaces - registry-aware (TASK 027.5 Phase 2B)", () => {
@@ -173,5 +181,74 @@ describe("My Spaces - registry-aware (TASK 027.5 Phase 2B)", () => {
     const mod = await import("./page");
     expect(mod.dynamic).toBe("force-dynamic");
     expect(collectElements(await render([])).length).toBeGreaterThan(0);
+  });
+});
+
+/** TASK 032 (B2): Restore / Replace visibility per launch-flag mode. */
+describe("My Spaces - Restore / Replace under billing (TASK 032 B2)", () => {
+  const PAID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  const subRow = (tenantId: string, over: Record<string, unknown> = {}) => ({
+    id: `s-${tenantId}`, tenant_id: tenantId, status: "active", cancel_at_period_end: false,
+    current_period_end: "2099-01-01T00:00:00Z", payment_failed_at: null, exempt_expires_at: null, next_action: "renewal", ...over,
+  });
+  const controls = (tree: unknown) =>
+    Object.fromEntries(findByType(tree, SpaceLifecycleControls).map((e) => [e.props.tenantId, e.props]));
+
+  it("flag OFF: exactly the Task 011 rule - live Space shows Replace only when no slot is free; archived shows both", async () => {
+    state.slots = { slotsUsed: 1, slotsAllowed: 2, slotsAvailable: 1 };
+    let c = controls(await render([tenant({ id: "live" }), tenant({ id: "arch", status: "archived" })]));
+    expect(c.live).toMatchObject({ showRestore: false, showReplace: false, billingLockedNote: null });
+    expect(c.arch).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null });
+
+    state.slots = { slotsUsed: 2, slotsAllowed: 2, slotsAvailable: 0 };
+    c = controls(await render([tenant({ id: "live" })]));
+    expect(c.live).toMatchObject({ showReplace: true });
+  });
+
+  it("flag OFF: a billing row does not change anything (no lock note, slot copy kept)", async () => {
+    state.subs = [subRow(ID, { status: "canceled" })];
+    const tree = await render([tenant({ status: "archived" })]);
+    expect(controls(tree)[ID]).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null });
+    expect(textOf(tree)).toContain("Still uses one Space slot");
+  });
+
+  it.each([["paid"], ["unavailable"]] as const)("flag ON (%s): an active paid Space offers Replace regardless of slots; archived offers Restore", async (mode) => {
+    state.mode = mode;
+    state.slots = { slotsUsed: 3, slotsAllowed: 1, slotsAvailable: 0 };
+    state.subs = [subRow(ID), subRow(PAID)];
+    const tree = await render([tenant({ id: ID }), tenant({ id: PAID, status: "archived" })]);
+    const c = controls(tree);
+    expect(c[ID]).toMatchObject({ showRestore: false, showReplace: true, billingLockedNote: null });
+    expect(c[PAID]).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null });
+    expect(textOf(tree)).not.toContain("Still uses one Space slot");
+    expect(textOf(tree)).not.toContain("slot used");
+  });
+
+  it("flag ON: an archived Space whose subscription ended shows neither action, only the billing note", async () => {
+    state.mode = "paid";
+    state.subs = [subRow(ID, { status: "canceled" })];
+    const c = controls(await render([tenant({ status: "archived" })]));
+    expect(c[ID]).toMatchObject({
+      showRestore: false,
+      showReplace: false,
+      billingLockedNote: "Resolve billing for this Space before restoring or replacing it.",
+    });
+  });
+
+  it("flag ON: an exempt internal Space behaves like a paying one", async () => {
+    state.mode = "paid";
+    state.slots = { slotsUsed: 5, slotsAllowed: 1, slotsAvailable: 0 };
+    state.subs = [subRow(ID, { status: "exempt", current_period_end: null })];
+    const c = controls(await render([tenant({ status: "archived" })]));
+    expect(c[ID]).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null });
+  });
+
+  it("flag ON: a legacy Space's Restore is judged against legacy Spaces only", async () => {
+    state.mode = "paid";
+    // allowance 1: the legacy archived Space + one bought Space -> still fine
+    state.slots = { slotsUsed: 2, slotsAllowed: 1, slotsAvailable: 0 };
+    state.subs = [subRow(PAID)];
+    const c = controls(await render([tenant({ id: ID, status: "archived" }), tenant({ id: PAID })]));
+    expect(c[ID]).toMatchObject({ showRestore: true, showReplace: true });
   });
 });

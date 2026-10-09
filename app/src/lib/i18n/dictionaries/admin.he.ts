@@ -206,6 +206,7 @@ export const adminHe: { [K in keyof typeof adminEn]: string } = {
   // --- Overview page ---
   ovTitle: "סקירת חיוב",
   ovSnapshot: "תמונת מצב נכון ל-{time}. כל מספר להלן מוגדר מתחתיו; הסכומים מוצגים לפי מטבע ולעולם לא מסוכמים בין מטבעות.",
+  ovMetricsTruncated: "נתוני ההכנסות חלקיים: נקראו רק {rows} המנויים בתשלום הראשונים, ולכן MRR לפי מחירון, MRR נוכחי ומספר המנויים בהנחה נמוכים מהערך האמיתי. כל שאר הספירות בדף זה מדויקות.",
   ovOperations: "תפעול",
   ovOperationalAria: "מצב תפעולי",
   ovPaidCheckout: "תשלום ברכישה",

@@ -1,6 +1,7 @@
 import type { BillingDeps } from "../deps";
 import type { InvoiceDTO } from "../stripe/gateway";
 import { buildBillingUrl } from "../urls";
+import { emailDedupeKey, isSendableTemplate, paymentConfirmationVariant, type EmailTemplate } from "./templates";
 
 /**
  * Queue billing emails through the transactional outbox. EVERY email has a
@@ -14,9 +15,12 @@ import { buildBillingUrl } from "../urls";
  *   - Stripe's own invoice/receipt emails must stay OFF in the Stripe Dashboard
  *     (Settings > Billing > Emails), so the customer receives exactly one email
  *     per payment. The official document is Stripe's hosted invoice page and PDF.
+ *   - There is NO separate welcome/activation email and NO separate recovery email:
+ *     the first paid invoice's confirmation (variant 'first') IS the activation
+ *     message, and a paid invoice ending a failure episode (variant 'recovered') IS
+ *     the recovery message. `subscription_started` / `payment_recovered` are retired
+ *     (see ./templates.ts).
  */
-
-export type PaymentVariant = "first" | "renewal" | "recovered";
 
 const LOCALE_FALLBACK = "en";
 
@@ -25,9 +29,14 @@ async function recipientLocale(deps: BillingDeps, userId: string): Promise<strin
   return c?.locale ?? LOCALE_FALLBACK;
 }
 
+/** Defence in depth: a retired (or unknown) template can never reach the outbox. */
+function assertSendable(template: string): asserts template is EmailTemplate {
+  if (!isSendableTemplate(template)) throw new Error(`billing email template not enqueueable: ${template}`);
+}
+
 export async function enqueuePaymentConfirmation(
   deps: BillingDeps,
-  a: { invoice: InvoiceDTO; subscriptionId: string; tenantId: string; userId: string; variant: PaymentVariant }
+  a: { invoice: InvoiceDTO; subscriptionId: string; tenantId: string; userId: string; wasInFailure: boolean }
 ) {
   const [sub, redemption, space] = await Promise.all([
     deps.store.getSubscriptionById(a.subscriptionId),
@@ -39,7 +48,7 @@ export async function enqueuePaymentConfirmation(
   const inv = a.invoice;
   const finalPayment = sub.cancelAtPeriodEnd;
   const payload = {
-    variant: finalPayment ? "final" : a.variant,
+    variant: paymentConfirmationVariant({ billingReason: inv.billingReason, wasInFailure: a.wasInFailure, cancelAtPeriodEnd: finalPayment }),
     spaceName: space?.name ?? "",
     spaceType: space?.productType ?? "",
     planName: plan?.displayName ?? "",
@@ -61,7 +70,7 @@ export async function enqueuePaymentConfirmation(
     billingUrl: buildBillingUrl(deps.appUrl, a.tenantId),
   };
   return deps.store.enqueueEmail({
-    dedupeKey: `payment_confirmation:${inv.id}`, template: "payment_confirmation", userId: a.userId, tenantId: a.tenantId,
+    dedupeKey: emailDedupeKey.paymentConfirmation(inv.id), template: "payment_confirmation", userId: a.userId, tenantId: a.tenantId,
     subscriptionId: a.subscriptionId, locale: await recipientLocale(deps, a.userId), payload,
   });
 }
@@ -73,6 +82,7 @@ export async function enqueueSimpleNotice(
   deps: BillingDeps,
   a: { template: SimpleNoticeTemplate; dedupeKey: string; subscriptionId: string; tenantId: string; userId: string; extra?: Record<string, unknown> }
 ) {
+  assertSendable(a.template);
   const [sub, space] = await Promise.all([deps.store.getSubscriptionById(a.subscriptionId), deps.store.getTenantSummary(a.tenantId)]);
   const payload = {
     spaceName: space?.name ?? "",

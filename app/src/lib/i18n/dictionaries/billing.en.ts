@@ -171,6 +171,7 @@ export const billingEn = {
   chipCanceling: "Ends {date}",
   chipEnded: "Ended",
   billingLink: "Billing",
+  lifecycleBillingLocked: "Resolve billing for this Space before restoring or replacing it.",
 
   // --- emails ---
   emailGreeting: "Hello,",
@@ -192,8 +193,8 @@ export const billingEn = {
   emailDiscountProgressValue: "Payment {done} of {total}",
   emailDiscountProgressForever: "Applies to every payment",
 
-  emailPaymentFirstSubject: "Payment confirmed - {space}",
-  emailPaymentFirstIntro: "Thank you. Your payment was confirmed and your Space is ready.",
+  emailPaymentFirstSubject: "Payment confirmed - {space} is active",
+  emailPaymentFirstIntro: "Thank you. Your payment was confirmed and your subscription has started: {space} is active and ready for you.",
   emailPaymentRenewalSubject: "Payment received - {space}",
   emailPaymentRenewalIntro: "Thank you. We received your subscription payment.",
   emailPaymentRecoveredSubject: "Payment received - {space} is active again",

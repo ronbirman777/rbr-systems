@@ -2,7 +2,8 @@ import type { BillingDeps } from "./deps";
 import { reconcileCheckout } from "./reconcile";
 import { refreshNextAction } from "./nextActionService";
 import { syncSubscription } from "./sync";
-import { enqueueSimpleNotice, type SimpleNoticeTemplate } from "./emails/enqueue";
+import { enqueueSimpleNotice } from "./emails/enqueue";
+import { emailDedupeKey } from "./emails/templates";
 import { flushEmailOutbox, type EmailSender } from "./emails/outbox";
 
 export type JobReport = {
@@ -15,7 +16,7 @@ export type JobReport = {
   errors: string[];
 };
 
-const ACTION_TO_TEMPLATE: Partial<Record<string, SimpleNoticeTemplate>> = {
+const ACTION_TO_TEMPLATE: Partial<Record<string, "guest_unavailable" | "studio_suspended" | "final_warning">> = {
   guest_suspended: "guest_unavailable",
   studio_suspended: "studio_suspended",
   deletion_warning: "final_warning",
@@ -70,7 +71,7 @@ export async function runBillingJobs(deps: BillingDeps, sender: EmailSender | nu
         const sub = await deps.store.getSubscriptionById(a.subscriptionId);
         // The dedupe key carries the failure episode, so a NEW episode after a recovery can notify again.
         await enqueueSimpleNotice(deps, {
-          template, dedupeKey: `${template}:${a.subscriptionId}:${sub?.paymentFailedAt?.toISOString() ?? "na"}`,
+          template, dedupeKey: emailDedupeKey.lifecycle(template, a.subscriptionId, sub?.paymentFailedAt ?? null),
           subscriptionId: a.subscriptionId, tenantId: a.tenantId, userId: a.userId,
         });
       }

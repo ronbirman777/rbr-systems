@@ -200,6 +200,7 @@ export const adminDe: { [K in keyof typeof adminEn]: string } = {
   // --- Overview page ---
   ovTitle: "Abrechnungsübersicht",
   ovSnapshot: "Stand: {time}. Jede Zahl unten ist darunter erklärt; Beträge werden je Währung angezeigt und nie über Währungen hinweg addiert.",
+  ovMetricsTruncated: "Die Umsatzzahlen sind unvollständig: Es wurden nur die ersten {rows} bezahlten Abonnements gelesen, daher sind Listen-MRR, aktueller MRR und rabattierte Abonnements zu niedrig. Alle anderen Zahlen auf dieser Seite sind exakt.",
   ovOperations: "Betrieb",
   ovOperationalAria: "Betriebsstatus",
   ovPaidCheckout: "Kostenpflichtiger Checkout",

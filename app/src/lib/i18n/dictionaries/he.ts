@@ -1369,6 +1369,13 @@ export const he: Dictionary = {
     couldNotPublishMediaWhy: "לא ניתן לפרסם את המדיה - {reason}",
     couldNotPublishPhotos: "לא ניתן לפרסם את התמונות.",
     couldNotPublishPhotosWhy: "לא ניתן לפרסם את התמונות - {reason}",
+    audioRecordingTooLong: "כל הקלטה יכולה להיות באורך של עד {max} דקות. נא להעלות קובץ קצר יותר.",
+    audioLibraryFull: "ההקלטה הזו תחרוג ממכסת ספריית האודיו של {limit} דקות (כבר נוצלו {used} דקות).",
+    audioDurationUnknown: "לא הצלחנו לקרוא את אורך ההקלטה. נסו קובץ MP3 או M4A.",
+    audioAllowanceUnavailable: "לא הצלחנו לבדוק כרגע את מכסת האודיו. נסו שוב.",
+    publishAudioRecordingTooLong: "אחת ההקלטות ארוכה מ-{max} דקות. יש להחליף אותה בקובץ קצר יותר לפני הפרסום.",
+    publishAudioLibraryFull: "ההקלטות מסתכמות ב-{used} דקות, מעל מכסת האודיו של המרחב ({limit} דקות). יש להסיר חלק מהאודיו לפני הפרסום.",
+    publishAudioDurationUnknown: "לחלק מההקלטות אין אורך ידוע. יש להעלות אותן שוב לפני הפרסום.",
 
     // Publishing and commercial access
     cannotPublishFromHere: "לא ניתן לפרסם את המרחב מכאן.",

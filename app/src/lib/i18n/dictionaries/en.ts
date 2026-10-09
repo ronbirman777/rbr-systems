@@ -1371,6 +1371,13 @@ export const en = {
     couldNotPublishMediaWhy: "Could not publish your media - {reason}",
     couldNotPublishPhotos: "Could not publish your photos.",
     couldNotPublishPhotosWhy: "Could not publish your photos - {reason}",
+    audioRecordingTooLong: "Each recording can be up to {max} minutes long. Please upload a shorter file.",
+    audioLibraryFull: "This recording would take your audio library over its {limit}-minute allowance ({used} minutes already used).",
+    audioDurationUnknown: "We couldn't read how long this recording is. Please try an MP3 or M4A file.",
+    audioAllowanceUnavailable: "We couldn't check your audio allowance just now. Please try again.",
+    publishAudioRecordingTooLong: "A recording is longer than {max} minutes. Replace it with a shorter file before publishing.",
+    publishAudioLibraryFull: "Your recordings add up to {used} minutes, over this Space's {limit}-minute audio allowance. Remove some audio before publishing.",
+    publishAudioDurationUnknown: "Some recordings have no known length. Upload them again before publishing.",
 
     // Publishing and commercial access
     cannotPublishFromHere: "This Space can't be published from here.",

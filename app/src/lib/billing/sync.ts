@@ -3,6 +3,7 @@ import { refreshNextAction } from "./nextActionService";
 import type { InvoiceDTO, SubscriptionDTO } from "./stripe/gateway";
 import type { SubscriptionStateInput, SubscriptionStateResult } from "./store";
 import { enqueuePaymentConfirmation, enqueueSimpleNotice } from "./emails/enqueue";
+import { emailDedupeKey } from "./emails/templates";
 
 const iso = (d: Date | null | undefined) => (d ? d.toISOString() : null);
 
@@ -67,13 +68,13 @@ export async function syncSubscription(
 
     if (!applied.cancelAtPeriodEndBefore && applied.cancelAtPeriodEndAfter && applied.userId) {
       await enqueueSimpleNotice(deps, {
-        template: "cancellation_scheduled", dedupeKey: `cancellation_scheduled:${dto.id}:${iso(dto.currentPeriodEnd)}`,
+        template: "cancellation_scheduled", dedupeKey: emailDedupeKey.cancellationScheduled(dto.id, iso(dto.currentPeriodEnd)),
         subscriptionId: applied.subscriptionId, tenantId: applied.tenantId, userId: applied.userId,
       });
     }
     if (applied.ended && applied.userId) {
       await enqueueSimpleNotice(deps, {
-        template: "subscription_ended", dedupeKey: `subscription_ended:${dto.id}`,
+        template: "subscription_ended", dedupeKey: emailDedupeKey.subscriptionEnded(dto.id),
         subscriptionId: applied.subscriptionId, tenantId: applied.tenantId, userId: applied.userId,
       });
     }
@@ -91,7 +92,9 @@ export async function syncSubscription(
  *   4. apply the subscription's current state (recovery / failure start),
  *   5. queue the customer email - ONLY from this verified invoice, never from a
  *      browser redirect, and with a per-invoice dedupe key so Stripe's webhook
- *      retries can never send it twice.
+ *      retries can never send it twice. A paid invoice gets exactly ONE email,
+ *      `payment_confirmation`, whose variant also covers activation (`first`)
+ *      and recovery (`recovered`) - there is no second welcome/recovery email.
  *
  * An invoice can arrive BEFORE the Space is provisioned (checkout events race
  * invoice events). It is then recorded unmapped; provisioning calls this same
@@ -117,12 +120,12 @@ export async function processInvoice(deps: BillingDeps, inv: InvoiceDTO, ctx: { 
   if (inv.status === "paid" && row.subscriptionId && row.userId && row.tenantId) {
     await enqueuePaymentConfirmation(deps, {
       invoice: inv, subscriptionId: row.subscriptionId, tenantId: row.tenantId, userId: row.userId,
-      variant: wasInFailure ? "recovered" : inv.billingReason === "subscription_create" ? "first" : "renewal",
+      wasInFailure,
     });
   }
   if (row.newlyFailed && row.subscriptionId && row.userId && row.tenantId && inv.billingReason !== "subscription_create") {
     await enqueueSimpleNotice(deps, {
-      template: "payment_failed", dedupeKey: `payment_failed:${inv.id}`, subscriptionId: row.subscriptionId, tenantId: row.tenantId, userId: row.userId,
+      template: "payment_failed", dedupeKey: emailDedupeKey.paymentFailed(inv.id), subscriptionId: row.subscriptionId, tenantId: row.tenantId, userId: row.userId,
       extra: { amountMinor: inv.amountDueMinor, currency: inv.currency, hostedInvoiceUrl: inv.hostedInvoiceUrl },
     });
   }

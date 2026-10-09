@@ -167,6 +167,7 @@ export const billingHe: { [K in keyof typeof billingEn]: string } = {
   chipCanceling: "מסתיים ב-{date}",
   chipEnded: "הסתיים",
   billingLink: "חיוב",
+  lifecycleBillingLocked: "יש להסדיר את החיוב של המרחב הזה לפני שחזור או החלפה.",
 
   // --- emails ---
   emailGreeting: "שלום,",
@@ -188,8 +189,8 @@ export const billingHe: { [K in keyof typeof billingEn]: string } = {
   emailDiscountProgressValue: "תשלום {done} מתוך {total}",
   emailDiscountProgressForever: "חל על כל תשלום",
 
-  emailPaymentFirstSubject: "התשלום אושר – {space}",
-  emailPaymentFirstIntro: "תודה. התשלום שלכם אושר והמרחב מוכן.",
+  emailPaymentFirstSubject: "התשלום אושר – {space} פעיל",
+  emailPaymentFirstIntro: "תודה. התשלום שלכם אושר והמנוי התחיל: {space} פעיל ומוכן עבורכם.",
   emailPaymentRenewalSubject: "התשלום התקבל – {space}",
   emailPaymentRenewalIntro: "תודה. קיבלנו את תשלום המנוי שלכם.",
   emailPaymentRecoveredSubject: "התשלום התקבל – {space} פעיל שוב",

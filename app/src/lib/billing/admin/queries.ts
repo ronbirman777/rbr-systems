@@ -2,7 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeNextAction, type RedemptionState } from "../nextAction";
 import { SUBSCRIPTION_SELECT, toSubscriptionRecord, type SubscriptionRecord, type SubscriptionRow } from "../types";
-import { computeOverviewMetrics, type OverviewMetrics } from "./metrics";
+import { computeOverviewMetrics, fetchAllPaged, overviewCountSpecs, type CountedMetric, type CountFilter, type OverviewMetrics } from "./metrics";
 import { qaAuditReason } from "./qaAudit";
 
 /** Read-side for the Admin console. Service-role client; the caller has ALREADY passed requireAdmin*(). */
@@ -24,23 +24,65 @@ export type OverviewData = {
   stuckCheckouts: number;
   paidCheckoutEnabled: boolean;
   generatedAt: Date;
+  /**
+   * True when the row-based metrics (MRR list/current, discounted) hit MAX_METRIC_ROWS and
+   * therefore UNDERCOUNT. Every other headline number is an exact database count and is never
+   * truncated. The page shows a visible warning whenever this is true.
+   */
+  metricsTruncated: boolean;
+  /** Rows actually read for the row-based metrics (shown with the warning). */
+  metricRowsRead: number;
 };
 
+type CountQuery = ReturnType<ReturnType<SupabaseClient["from"]>["select"]>;
+
+function applyCountFilters(q: CountQuery, filters: CountFilter[]): CountQuery {
+  for (const f of filters) {
+    switch (f.op) {
+      case "eq": q = q.eq(f.col, f.value); break;
+      case "neq": q = q.neq(f.col, f.value); break;
+      case "in": q = q.in(f.col, [...f.values]); break;
+      case "notIn": q = q.not(f.col, "in", `(${f.values.join(",")})`); break;
+      case "notNull": q = q.not(f.col, "is", null); break;
+      case "lte": q = q.lte(f.col, f.value); break;
+      case "gt": q = q.gt(f.col, f.value); break;
+    }
+  }
+  return q;
+}
+
+async function exactCount(q: PromiseLike<{ count: number | null; error: { message: string } | null }>, what: string): Promise<number> {
+  const { count, error } = await q;
+  // Fail visibly: a failed count must never render as a confident 0.
+  if (error) throw new Error(`overview count ${what} failed: ${error.message}`);
+  return count ?? 0;
+}
+
 export async function loadOverview(db: SupabaseClient, now: Date = new Date()): Promise<OverviewData> {
-  const [{ data: subRows }, { data: discounted }, { count: openCheckouts }, { count: failedEvents }, { count: stuck }, { data: settings }] = await Promise.all([
-    db.from("space_subscriptions").select(SUBSCRIPTION_SELECT).limit(5000),
-    db.from("coupon_redemptions").select("space_subscription_id").eq("status", "redeemed").not("space_subscription_id", "is", null).limit(5000),
-    db.from("pending_space_checkouts").select("*", { count: "exact", head: true }).in("status", ["created", "checkout_created", "awaiting_payment"]),
-    db.from("billing_events").select("*", { count: "exact", head: true }).eq("status", "failed"),
-    db.from("pending_space_checkouts").select("*", { count: "exact", head: true }).in("status", ["payment_confirmed", "provisioning", "failed"]),
+  const specs = overviewCountSpecs(now);
+  const names = Object.keys(specs) as CountedMetric[];
+  const [counts, subsPaged, discountedPaged, openCheckouts, failedEvents, stuck, { data: settings }] = await Promise.all([
+    // Headline counts: exact, head-only (no rows transferred, no cap).
+    Promise.all(names.map((n) => exactCount(applyCountFilters(db.from("space_subscriptions").select("id", { count: "exact", head: true }), specs[n]), n))),
+    // Row-based metrics: only paid (active/trialing) rows feed MRR and `discounted`. Stable order for paging.
+    fetchAllPaged((from, to) => db.from("space_subscriptions").select(SUBSCRIPTION_SELECT).in("status", ["active", "trialing"]).order("id").range(from, to)),
+    fetchAllPaged((from, to) => db.from("coupon_redemptions").select("id, space_subscription_id").eq("status", "redeemed").not("space_subscription_id", "is", null).order("id").range(from, to)),
+    exactCount(db.from("pending_space_checkouts").select("*", { count: "exact", head: true }).in("status", ["created", "checkout_created", "awaiting_payment"]), "openCheckouts"),
+    exactCount(db.from("billing_events").select("*", { count: "exact", head: true }).eq("status", "failed"), "failedEvents"),
+    exactCount(db.from("pending_space_checkouts").select("*", { count: "exact", head: true }).in("status", ["payment_confirmed", "provisioning", "failed"]), "stuckCheckouts"),
     db.from("billing_settings").select("paid_checkout_enabled").eq("singleton", true).maybeSingle(),
   ]);
-  const subs = (subRows ?? []).map((r) => toSubscriptionRecord(r as unknown as SubscriptionRow));
-  const discountedIds = new Set((discounted ?? []).map((d) => d.space_subscription_id as string));
+  const subs = subsPaged.rows.map((r) => toSubscriptionRecord(r as unknown as SubscriptionRow));
+  const discountedIds = new Set(discountedPaged.rows.map((d) => (d as { space_subscription_id: string }).space_subscription_id));
+  // MRR + discounted come from the (possibly truncated) rows; every count is replaced by its exact value.
+  const metrics = computeOverviewMetrics(subs, discountedIds, now);
+  names.forEach((n, i) => { metrics[n] = counts[i]; });
   return {
-    metrics: computeOverviewMetrics(subs, discountedIds, now),
-    openCheckouts: openCheckouts ?? 0, failedEvents: failedEvents ?? 0, stuckCheckouts: stuck ?? 0,
+    metrics,
+    openCheckouts, failedEvents, stuckCheckouts: stuck,
     paidCheckoutEnabled: settings?.paid_checkout_enabled === true, generatedAt: now,
+    metricsTruncated: subsPaged.truncated || discountedPaged.truncated,
+    metricRowsRead: subs.length,
   };
 }
 

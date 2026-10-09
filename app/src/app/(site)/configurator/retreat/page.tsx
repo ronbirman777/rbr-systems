@@ -9,6 +9,7 @@ import { EMPTY_RETREAT_PROFILE } from "@/lib/modules/retreatProfile";
 import { EMPTY_MODULE_INTROS } from "@/lib/modules/moduleIntro";
 import { getSpaceSlotSummary } from "./lifecycleActions";
 import { InnerDweSMark } from "@/components/brand/wordmark";
+import { getCreateMode } from "@/lib/billing/funnelMode";
 
 export default async function NewRetreatConfiguratorPage() {
   const supabase = await createClient();
@@ -22,6 +23,11 @@ export default async function NewRetreatConfiguratorPage() {
   // same honest pre-check applies, not just the one at /create. The real
   // enforcement remains the database trigger; this only avoids letting
   // someone fill out an entire draft before discovering it can't save.
+  // TASK 032: with paid checkout on, a new Space only ever comes from the paid
+  // funnel (the 0038 trigger refuses a direct insert with PAYMENT_REQUIRED), so
+  // this blank Studio would be a form that can never save. Flag off: unchanged.
+  if ((await getCreateMode()) !== "legacy") redirect("/create");
+
   const slots = await getSpaceSlotSummary(user.id);
   if (slots.slotsAvailable <= 0) {
     return (

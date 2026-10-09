@@ -4,6 +4,9 @@ import { MAX_AUDIO_BYTES } from "@/lib/media/audio";
 import { copyDraftAudioToPublished } from "@/lib/media/publish";
 import { parseVersionedMediaPath } from "@/lib/media/path";
 import { uploadAudioDraftObject } from "@/lib/media/audioUpload";
+// TASK B4: these suites exercise legacy (no billing row) Spaces; enforcement has its own suite.
+vi.mock("@/lib/billing/audioQuota.server", () => ({ loadAudioQuotaPolicy: async () => ({ mode: "unenforced", reason: "legacy" }) }));
+
 
 /**
  * Teach audio lifecycle on the versioned (uploadId) media model. Runs the

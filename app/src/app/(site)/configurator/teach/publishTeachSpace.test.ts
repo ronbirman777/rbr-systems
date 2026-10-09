@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { makeFakeSupabase } from "@/lib/media/fakeSupabase.test-util";
 import { collectMediaRefs } from "@/lib/media/path";
+// TASK B4: these suites exercise legacy (no billing row) Spaces; enforcement has its own suite.
+vi.mock("@/lib/billing/audioQuota.server", () => ({ loadAudioQuotaPolicy: async () => ({ mode: "unenforced", reason: "legacy" }) }));
+
 
 /**
  * TASK 027.5 Phase 4A: publishTeachSpace on the versioned (uploadId) media

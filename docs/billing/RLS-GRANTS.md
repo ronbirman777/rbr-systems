@@ -52,4 +52,4 @@ Service-role-only functions: `billing_normalize_coupon_code`, `billing_reserve_c
 | `tenants` | update (uses `id`) |
 | `storage.objects` (bucket `tenant-media` only; first path folder must be the tenant uuid, other buckets and non-uuid folders pass) | insert, update, delete |
 
-Rollback: the 0039 header references `verification/0039_billing_access_enforcement_rollback.sql`, but **that file does not exist in `app/supabase/verification/`** (checked). Only 0033-0035 rollbacks are present there. Until it is written, a rollback of 0039 means dropping the 20 restrictive policies and restoring the 0034 `publish_space` body by hand.
+Rollback: `app/supabase/verification/0039_billing_access_enforcement_rollback.sql` (the file named in the 0039 header) drops the 20 restrictive policies and restores the 0034 `publish_space` body verbatim. Run it only in the order and under the conditions given in `MIGRATION-RECOVERY.md`. Rollback files for 0036-0041 sit beside it.

@@ -1,4 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+// TASK B4: these suites exercise legacy (no billing row) Spaces; enforcement has its own suite.
+vi.mock("@/lib/billing/audioQuota.server", () => ({ loadAudioQuotaPolicy: async () => ({ mode: "unenforced", reason: "legacy" }) }));
+
 
 /**
  * Regression coverage for the Custom Pages limit (Distribution phase,

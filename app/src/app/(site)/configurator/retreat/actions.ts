@@ -38,6 +38,8 @@ import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { normalizeSlug, slugFormatError, isReservedSlug } from "@/lib/slug";
 import { getSpaceEntitlement } from "@/lib/entitlements/getSpaceEntitlement";
 import { getSpaceCommercialAvailability } from "@/lib/billing/commercialAccess";
+import { loadAudioQuotaPolicy } from "@/lib/billing/audioQuota.server";
+import { audioQuotaMessageKey, audioQuotaMessageValues, checkAudioAttach, checkAudioPublish } from "@/lib/billing/audioQuota";
 import { getCustomPagesLimit } from "@/lib/entitlements/customPagesLimit";
 import {
   MEDIA_BUCKET,
@@ -1561,6 +1563,17 @@ export async function publishSpace(
     .eq("tenant_id", tenantId)
     .eq("module_key", FLOW_AUDIO_KEY);
 
+  // TASK B4 - re-check the audio entitlement over every attached file
+  // before anything is copied (paid Spaces only; legacy/exempt unchanged).
+  const audioQuota = await loadAudioQuotaPolicy(tenantId);
+  const audioCheck = checkAudioPublish(
+    audioQuota,
+    audioRows ? audioRows.map((r) => ({ metadata: r.metadata as Record<string, unknown> | null })) : null
+  );
+  if (!audioCheck.ok) {
+    return { error: t(audioQuotaMessageKey(audioCheck.issue, "publish"), audioQuotaMessageValues(audioCheck.issue)), publishedAt: null };
+  }
+
   const { data: brandRow } = await supabase
     .from("brand_configs")
     .select("hero_image_ref, space_image_ref, logo_ref")
@@ -2095,13 +2108,6 @@ export async function attachFlowAudio(
   const row = await loadFlowAudioRow(ctx.supabase, tenantId, itemId);
   if (!row || row.module_key !== FLOW_AUDIO_KEY) return { error: t("missingItem") };
   const previousRef = currentFlowAudioRef(row);
-  const duration =
-    typeof durationSeconds === "number" &&
-    Number.isFinite(durationSeconds) &&
-    durationSeconds >= 0 &&
-    durationSeconds <= 60 * 60 * 12
-      ? Math.round(durationSeconds)
-      : null;
 
   // The upload went browser -> Storage, so the real limits are enforced
   // here against what Storage actually holds. A rejected NEW upload is
@@ -2119,6 +2125,22 @@ export async function attachFlowAudio(
   if (AUDIO_ALLOWED_TYPES[normalizeMimeType(String(info.contentType ?? ""))] !== parts.ext) {
     return reject(t("unsupportedAudio"));
   }
+
+  // TASK B4 - audio entitlement (paid Spaces only; legacy/exempt unchanged).
+  const quota = await loadAudioQuotaPolicy(tenantId);
+  let otherAudio: { id: string; metadata: Record<string, unknown> | null }[] = [];
+  if (quota.mode === "enforced") {
+    const { data: audioRows, error: audioError } = await ctx.supabase
+      .from("module_items")
+      .select("id, metadata")
+      .eq("tenant_id", tenantId)
+      .eq("module_key", FLOW_AUDIO_KEY);
+    if (audioError || !audioRows) return reject(t("audioAllowanceUnavailable"));
+    otherAudio = (audioRows as typeof otherAudio).filter((r) => r.id !== itemId);
+  }
+  const quotaCheck = checkAudioAttach(quota, { claimedSeconds: durationSeconds, sizeBytes: Number(info.size), ext: parts.ext, otherItems: otherAudio });
+  if (!quotaCheck.ok) return reject(t(audioQuotaMessageKey(quotaCheck.issue, "attach"), audioQuotaMessageValues(quotaCheck.issue)));
+  const duration = quotaCheck.durationSeconds;
 
   if (ref !== previousRef) {
     // A published object already in this upload's folder means this is

@@ -1,4 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+// TASK B4: these suites exercise legacy (no billing row) Spaces; enforcement has its own suite.
+vi.mock("@/lib/billing/audioQuota.server", () => ({ loadAudioQuotaPolicy: async () => ({ mode: "unenforced", reason: "legacy" }) }));
+
 
 /**
  * Task 011: saveDraft() creation-path coverage that did not exist before

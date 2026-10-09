@@ -8,6 +8,7 @@ import { PublishSpaceButton } from "@/components/publish-space-button";
 import { getCreateMode } from "@/lib/billing/funnelMode";
 import { combineCommercialAvailability } from "@/lib/billing/commercialAccess";
 import { customerBillingState } from "@/lib/billing/customerView";
+import { decideSpaceLifecycle, isPaidLifecycleMode, lifecycleControlsView, usesLegacySlot } from "@/lib/billing/lifecycleAccess";
 import { chipLabel } from "@/lib/billing/billingPageModel";
 import { SUBSCRIPTION_SELECT, toSubscriptionRecord, type SubscriptionRecord, type SubscriptionRow } from "@/lib/billing/types";
 import { getAccountLocale } from "@/lib/i18n/accountLocale";
@@ -76,7 +77,9 @@ export default async function MySpacePage() {
   ]);
   // TASK 032: with paid checkout on, a Space is bought per Space; the legacy per-user slot counter neither limits
   // creation nor describes what the customer owns, so it must not disable "+ New Space" or be shown.
-  const paidCreate = createMode === "paid";
+  // TASK 032 (B2): the launch FLAG (what the 0038 trigger reads) decides, so "unavailable" (flag on, Stripe missing)
+  // is treated as paid too - slots no longer gate anything there either. Flag off keeps the legacy slot rules exactly.
+  const paidLifecycle = isPaidLifecycleMode(createMode);
   const roleByTenant = new Map<string, string>((ownRoles ?? []).map((r) => [r.tenant_id, r.role]));
 
   // These two both need tenantIds (just resolved above) but are
@@ -88,7 +91,7 @@ export default async function MySpacePage() {
   // brand_configs). One batched query for ALL of them, and none at all for an
   // account with only Flow Spaces.
   const teachIds = (tenants ?? []).filter((t) => t.product_type === "teach").map((t) => t.id);
-  const [{ data: entitlementRows }, { data: brandRows }, { data: settingRows }, { data: subscriptionRows }, accountLocale] = await Promise.all([
+  const [{ data: entitlementRows }, { data: brandRows }, { data: settingRows }, { data: subscriptionRows, error: subscriptionsError }, accountLocale] = await Promise.all([
     // Commercial Access Phase 1: one additive query for every listed
     // tenant's entitlement row, fed through the same
     // deriveCommercialAvailability() authority publish_space() enforces
@@ -126,6 +129,12 @@ export default async function MySpacePage() {
     })
   );
   const billingNow = new Date();
+  // Paid mode: only Spaces outside billing (no row / expired exemption) live in the legacy per-user slot allowance.
+  const ownedTenantIds = (ownRoles ?? []).filter((r) => r.role === "owner").map((r) => r.tenant_id);
+  const legacySlots = {
+    slotsAllowed: slots.slotsAllowed,
+    legacySpacesOwned: ownedTenantIds.filter((id) => usesLegacySlot(subscriptionByTenant.get(id) ?? null, billingNow)).length,
+  };
   const entitlementByTenant = new Map<string, SpaceEntitlementRow>(
     (entitlementRows ?? []).map((row) => [row.tenant_id, row as SpaceEntitlementRow])
   );
@@ -171,7 +180,7 @@ export default async function MySpacePage() {
           <Link href="/" aria-label="Back to InnerDweS home" className="flex items-center">
             <InnerDweSMark size={26} />
           </Link>
-          {paidCreate || slots.slotsAvailable > 0 ? (
+          {paidLifecycle || slots.slotsAvailable > 0 ? (
             <Link
               href="/create"
               className="text-xs font-semibold uppercase tracking-wide text-idw-forest border border-idw-forest/20 rounded-full px-4 py-2 hover:border-idw-forest/50 transition-colors"
@@ -209,7 +218,7 @@ export default async function MySpacePage() {
         <h1 className="font-ui text-3xl text-idw-forest mt-8">My Spaces</h1>
         {/* Task 011: slots used/allowed/available, always derived, never a
             separately-persisted count. */}
-        {paidCreate ? null : (
+        {paidLifecycle ? null : (
           <p className="text-xs text-idw-forest/50 mt-2">
             {slots.slotsUsed} of {slots.slotsAllowed} Space {slots.slotsAllowed === 1 ? "slot" : "slots"} used
             {slots.slotsAvailable > 0 ? ` · ${slots.slotsAvailable} available` : " · none available"}
@@ -249,6 +258,20 @@ export default async function MySpacePage() {
             const spaceImageUrl = cardImage ? (signedByRef.get(cardImage.ref) ?? null) : null;
             const isArchived = t.status === "archived";
             const isOwner = roleByTenant.get(t.id) === "owner";
+            const lifecycleInput = {
+              mode: createMode,
+              subscription,
+              subscriptionUnreadable: Boolean(subscriptionsError),
+              legacySlots,
+              now: billingNow,
+            };
+            const lifecycle = lifecycleControlsView({
+              mode: createMode,
+              isArchived,
+              slotsAvailable: slots.slotsAvailable,
+              restore: decideSpaceLifecycle({ ...lifecycleInput, action: "restore" }),
+              replace: decideSpaceLifecycle({ ...lifecycleInput, action: "replace" }),
+            });
 
             return (
               <div
@@ -331,7 +354,7 @@ export default async function MySpacePage() {
                         )}
                       </>
                     )}
-                    {isArchived && (
+                    {isArchived && !(paidLifecycle && subscription) && (
                       <div className="text-xs text-idw-forest/40 mt-1">
                         Still uses one Space slot. Restore to manage/publish again, or replace it
                         to reuse the slot for something new.
@@ -407,7 +430,11 @@ export default async function MySpacePage() {
                       tenantId={t.id}
                       name={t.name}
                       isArchived={isArchived}
-                      slotsAvailable={slots.slotsAvailable}
+                      showRestore={lifecycle.showRestore}
+                      showReplace={lifecycle.showReplace}
+                      billingLockedNote={
+                        isArchived && lifecycle.billingLocked ? translateAccount(accountLocale, "billing", "lifecycleBillingLocked") : null
+                      }
                       untitledName={spaceType?.copy.untitledName ?? "Untitled Space"}
                     />
                   )}

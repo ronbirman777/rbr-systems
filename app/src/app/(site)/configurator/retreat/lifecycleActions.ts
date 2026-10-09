@@ -5,6 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getSpaceType } from "@/lib/spaceTypes/registry";
 import { revalidatePath } from "next/cache";
 import { removeAllTenantMedia, TenantMediaCleanupError } from "@/lib/media/tenantCleanup";
+import { getCreateMode } from "@/lib/billing/funnelMode";
+import { loadLifecycleDecision, type LifecycleAction, type LifecycleDecision } from "@/lib/billing/lifecycleAccess";
+import { translateAccount } from "@/lib/i18n/account";
 
 import { localeFromFormData, studioMessages } from "@/lib/i18n";
 /** Same "hint" contract as saveDraft's isSlotLimitError (actions.ts) -
@@ -19,8 +22,26 @@ function isSlotLimitError(error: { hint?: string | null } | null | undefined): b
 export type LifecycleActionState = {
   error: string | null;
   slotLimitReached?: boolean;
+  /** TASK 032: paid mode refused because this Space's billing must be resolved first. */
+  billingLocked?: boolean;
   success?: boolean;
 };
+
+/**
+ * TASK 032 (B2): the paid-mode pre-check shared by Restore and Replace (see
+ * lib/billing/lifecycleAccess.ts). Legacy mode returns allowed without any
+ * extra read, so the pre-032 flow is unchanged.
+ */
+async function lifecycleGate(
+  supabase: SupabaseClient,
+  userId: string,
+  tenantId: string,
+  action: LifecycleAction
+): Promise<{ paidMode: boolean; decision: LifecycleDecision }> {
+  const mode = await getCreateMode();
+  if (mode === "legacy") return { paidMode: false, decision: { allowed: true, governedBy: "legacy" } };
+  return { paidMode: true, decision: await loadLifecycleDecision(supabase, { userId, tenantId, action, mode }) };
+}
 
 /** Space Slots (Task 011). `slots_used`/`slots_available` are always
  * derived here, never read from a persisted column - there isn't one.
@@ -103,9 +124,23 @@ export async function restoreSpace(
   const tenantId = String(formData.get("tenantId") ?? "");
   if (!tenantId) return { error: t("missingSpace") };
 
+  const locale = localeFromFormData(formData);
+  const gate = await lifecycleGate(supabase, user.id, tenantId, "restore");
+  if (!gate.decision.allowed) {
+    if (gate.decision.blockedBy === "billing_locked") {
+      return { error: translateAccount(locale, "billing", "lifecycleBillingLocked"), billingLocked: true };
+    }
+    if (gate.decision.blockedBy === "slot_limit") return { error: t("noSlotToRestoreInto"), slotLimitReached: true };
+    return { error: t("restoreFailed") };
+  }
+
   const { error } = await supabase.rpc("restore_space", { p_tenant_id: tenantId });
   if (error) {
-    if (isSlotLimitError(error)) {
+    // Paid mode, billing-governed Space: the app already decided it may be
+    // restored, so a slot refusal here is restore_space() (0017) counting paid
+    // Spaces against the legacy allowance - not something the customer can fix
+    // by freeing a slot. Reported as a DB follow-up; never shown as "no slot".
+    if (isSlotLimitError(error) && !(gate.paidMode && gate.decision.governedBy === "billing")) {
       return {
         error: t("noSlotToRestoreInto"),
         slotLimitReached: true,
@@ -155,6 +190,16 @@ export async function replaceSpace(
   const { data: tenant } = await supabase.from("tenants").select("product_type").eq("id", tenantId).maybeSingle();
   const spaceType = getSpaceType(tenant?.product_type);
   if (!spaceType) return { error: t("replaceFailed") };
+
+  // TASK 032 (B2): in paid mode a billing-governed Space may only be reset
+  // while its Studio is writable - checked BEFORE any Storage or database
+  // change. replace_space() is SECURITY DEFINER and does not consult billing.
+  const gate = await lifecycleGate(supabase, user.id, tenantId, "replace");
+  if (!gate.decision.allowed) {
+    return gate.decision.blockedBy === "billing_locked"
+      ? { error: translateAccount(localeFromFormData(formData), "billing", "lifecycleBillingLocked"), billingLocked: true }
+      : { error: t("replaceFailed") };
+  }
 
   // TASK 024: Replace keeps the tenant identity (same id, slot, membership,
   // entitlement) and only resets its database content, so the old

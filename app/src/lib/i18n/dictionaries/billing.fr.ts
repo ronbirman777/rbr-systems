@@ -165,6 +165,7 @@ export const billingFr: { [K in keyof typeof billingEn]: string } = {
   chipCanceling: "Se termine le {date}",
   chipEnded: "Terminé",
   billingLink: "Facturation",
+  lifecycleBillingLocked: "Règle la facturation de cet Espace avant de le restaurer ou de le remplacer.",
 
   // --- emails ---
   emailGreeting: "Bonjour,",
@@ -186,8 +187,8 @@ export const billingFr: { [K in keyof typeof billingEn]: string } = {
   emailDiscountProgressValue: "Paiement {done} sur {total}",
   emailDiscountProgressForever: "S’applique à chaque paiement",
 
-  emailPaymentFirstSubject: "Paiement confirmé : {space}",
-  emailPaymentFirstIntro: "Merci. Ton paiement est confirmé et ton Espace est prêt.",
+  emailPaymentFirstSubject: "Paiement confirmé : {space} est actif",
+  emailPaymentFirstIntro: "Merci. Ton paiement est confirmé et ton abonnement a commencé : {space} est actif et prêt pour toi.",
   emailPaymentRenewalSubject: "Paiement reçu : {space}",
   emailPaymentRenewalIntro: "Merci. Nous avons bien reçu le paiement de ton abonnement.",
   emailPaymentRecoveredSubject: "Paiement reçu : {space} est de nouveau actif",

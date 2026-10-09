@@ -1363,6 +1363,13 @@ export const es: Dictionary = {
     couldNotPublishMediaWhy: "No se han podido publicar tus archivos: {reason}",
     couldNotPublishPhotos: "No se han podido publicar tus fotos.",
     couldNotPublishPhotosWhy: "No se han podido publicar tus fotos: {reason}",
+    audioRecordingTooLong: "Cada grabación puede durar como máximo {max} minutos. Sube un archivo más corto.",
+    audioLibraryFull: "Con esta grabación tu biblioteca de audio superaría su límite de {limit} minutos (ya usas {used} minutos).",
+    audioDurationUnknown: "No hemos podido leer la duración de esta grabación. Prueba con un archivo MP3 o M4A.",
+    audioAllowanceUnavailable: "Ahora mismo no hemos podido comprobar tu límite de audio. Inténtalo de nuevo.",
+    publishAudioRecordingTooLong: "Una grabación dura más de {max} minutos. Sustitúyela por un archivo más corto antes de publicar.",
+    publishAudioLibraryFull: "Tus grabaciones suman {used} minutos, por encima del límite de audio de {limit} minutos de este Espacio. Quita algo de audio antes de publicar.",
+    publishAudioDurationUnknown: "Algunas grabaciones no tienen una duración conocida. Vuelve a subirlas antes de publicar.",
 
     // Publishing and commercial access
     cannotPublishFromHere: "Este Espacio no se puede publicar desde aquí.",

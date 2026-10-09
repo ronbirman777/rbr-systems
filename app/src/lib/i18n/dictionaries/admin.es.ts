@@ -200,6 +200,7 @@ export const adminEs: { [K in keyof typeof adminEn]: string } = {
   // --- Overview page ---
   ovTitle: "Resumen de facturación",
   ovSnapshot: "Instantánea a {time}. Cada cifra de abajo se define debajo de ella; los importes se muestran por moneda y nunca se suman entre monedas.",
+  ovMetricsTruncated: "Las cifras de ingresos están incompletas: solo se leyeron las primeras {rows} suscripciones de pago, por lo que el MRR de lista, el MRR actual y las suscripciones con descuento están infravalorados. Todos los demás recuentos de esta página son exactos.",
   ovOperations: "Operaciones",
   ovOperationalAria: "Estado operativo",
   ovPaidCheckout: "Checkout de pago",

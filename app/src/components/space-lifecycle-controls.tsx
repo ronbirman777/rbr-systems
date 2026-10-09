@@ -23,13 +23,19 @@ export function SpaceLifecycleControls({
   tenantId,
   name,
   isArchived,
-  slotsAvailable,
+  showRestore,
+  showReplace,
+  billingLockedNote,
   untitledName,
 }: {
   tenantId: string;
   name: string;
   isArchived: boolean;
-  slotsAvailable: number;
+  /** TASK 032 (B2): decided server-side by lifecycleControlsView() - slot-based in legacy mode, billing-based in paid mode. */
+  showRestore: boolean;
+  showReplace: boolean;
+  /** Paid mode: billing must be resolved first. Already translated; null = nothing to say. */
+  billingLockedNote: string | null;
   /** Product-specific default name (Space Type Registry copy.untitledName). */
   untitledName: string;
 }) {
@@ -51,23 +57,34 @@ export function SpaceLifecycleControls({
   if (isArchived) {
     return (
       <div className="flex flex-wrap gap-2.5 items-start">
-        <div className="flex flex-col gap-1">
-          <form action={restoreAction}>
-            <input type="hidden" name="tenantId" value={tenantId} />
-            <button type="submit" disabled={restorePending} className={safeChip}>
-              {restorePending ? "Restoring…" : "Restore"}
+        {showRestore && (
+          <div className="flex flex-col gap-1">
+            <form action={restoreAction}>
+              <input type="hidden" name="tenantId" value={tenantId} />
+              <button type="submit" disabled={restorePending} className={safeChip}>
+                {restorePending ? "Restoring…" : "Restore"}
+              </button>
+            </form>
+            {restoreState.error && (
+              <span className="text-xs text-red-700 normal-case font-normal max-w-[220px]">
+                {restoreState.error}
+              </span>
+            )}
+          </div>
+        )}
+        {showReplace && (
+          <>
+            <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} open={replaceOpen} onOpenChange={setReplaceOpen} />
+            <button type="button" onClick={() => setReplaceOpen(true)} className={safeChip}>
+              Replace
             </button>
-          </form>
-          {restoreState.error && (
-            <span className="text-xs text-red-700 normal-case font-normal max-w-[220px]">
-              {restoreState.error}
-            </span>
-          )}
-        </div>
-        <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} open={replaceOpen} onOpenChange={setReplaceOpen} />
-        <button type="button" onClick={() => setReplaceOpen(true)} className={safeChip}>
-          Replace
-        </button>
+          </>
+        )}
+        {billingLockedNote && (
+          <span className="text-xs text-idw-forest/60 normal-case font-normal max-w-[260px] self-center" role="note">
+            {billingLockedNote}
+          </span>
+        )}
       </div>
     );
   }
@@ -103,11 +120,13 @@ export function SpaceLifecycleControls({
           {archiveState.error && <span className="text-xs text-red-700 block mt-1">{archiveState.error}</span>}
         </div>
       )}
-      <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} open={replaceOpen} onOpenChange={setReplaceOpen} />
-      {slotsAvailable <= 0 && (
-        <button type="button" onClick={() => setReplaceOpen(true)} className={safeChip}>
-          Replace
-        </button>
+      {showReplace && (
+        <>
+          <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} open={replaceOpen} onOpenChange={setReplaceOpen} />
+          <button type="button" onClick={() => setReplaceOpen(true)} className={safeChip}>
+            Replace
+          </button>
+        </>
       )}
     </div>
   );

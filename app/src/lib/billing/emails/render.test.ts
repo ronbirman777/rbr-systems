@@ -70,6 +70,16 @@ describe("billing email content", () => {
     expect(t).toContain("1 December");
     expect(t).not.toContain("Next expected charge");
   });
+  it("the first-payment email is also the activation email: payment confirmed AND subscription started", () => {
+    const m = renderBillingEmail("payment_confirmation", "en", { ...base, variant: "first" });
+    expect(m.subject).toBe("Payment confirmed - Lena's <b>Studio</b> & Co is active");
+    expect(m.text).toContain("your subscription has started");
+  });
+  it("a first payment with cancellation already scheduled shows no next-charge rows", () => {
+    const t = renderBillingEmail("payment_confirmation", "en", { ...base, variant: "first", cancelsAtPeriodEnd: true }).text;
+    expect(t).not.toContain("Next expected charge");
+    expect(t).not.toContain("Next billing date");
+  });
   it("the recovery variant says the Space is active again", () => {
     expect(renderBillingEmail("payment_confirmation", "en", { ...base, variant: "recovered" }).subject).toContain("active again");
   });

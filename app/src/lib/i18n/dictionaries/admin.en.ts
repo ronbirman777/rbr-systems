@@ -209,6 +209,7 @@ export const adminEn = {
   // --- Overview page ---
   ovTitle: "Billing overview",
   ovSnapshot: "Snapshot as of {time}. Every number below is defined under it; amounts are shown per currency and never summed across currencies.",
+  ovMetricsTruncated: "Revenue figures are incomplete: only the first {rows} paid subscriptions were read, so List MRR, Current MRR and Discounted undercount. All other counts on this page are exact.",
   ovOperations: "Operations",
   ovOperationalAria: "Operational status",
   ovPaidCheckout: "Paid checkout",

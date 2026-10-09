@@ -21,5 +21,5 @@ Every step below needs its own explicit owner authorization; "paid checkout" sta
 7. Flip `paid_checkout_enabled` (Admin, step-up MFA) only after 1-6 pass and the owner gives the explicit go.
 ## Rollback
 - Flag OFF restores legacy creation instantly (server-side).
-- Migrations are additive; rollback SQL for 0036-0041 to be prepared and reviewed before Phase 2 (the 0039 rollback file referenced in its header does not exist yet — write it first).
+- Migrations are additive. Rollback SQL for 0036-0041 now exists in `app/supabase/verification/00{36..41}_*_rollback.sql`, with the order, prerequisites, data-destructive steps and verification queries in `MIGRATION-RECOVERY.md`. The files are statically checked but have not yet been executed against any database: rehearse them on a throwaway database or branch, and have them reviewed, before Phase 2. Prefer a forward fix, or setting the flag OFF.
 - Vercel: promote the previous Production deployment.
