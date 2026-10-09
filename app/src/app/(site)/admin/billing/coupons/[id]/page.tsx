@@ -3,11 +3,12 @@ import { notFound } from "next/navigation";
 import { requireAdminPage } from "@/lib/billing/admin/auth";
 import { getCouponDetail } from "@/lib/billing/admin/queries";
 import {
-  couponDiscountLabel, couponStatus, couponSyncState, couponWindowLabel, durationLabel, formatUtc, isUuid, minorToMajorString, nextActionLabel,
+  couponDiscountLabel, couponStatus, couponStatusLabel, couponSyncState, couponWindowLabel, durationLabel, formatUtc, isUuid, minorToMajorString, nextActionLabel,
   redemptionStatusLabel, spaceTypeLabel, toDateTimeLocalUtc, usageRuleLabel, type Tone,
 } from "@/lib/billing/admin/ui/labels";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { currentStripeMode } from "../../../_lib/mode";
+import { adminMetaTitle, getAdminI18n } from "../../../_lib/i18n";
 import { setCouponActiveAction, syncCouponAction } from "../../actions";
 import { ConfirmActionButton } from "../../../_components/ConfirmActionButton";
 import { CouponForm, type CouponFormInitial } from "../../../_components/CouponForm";
@@ -15,119 +16,121 @@ import { Badge, Card, Dl, EmptyRow, PageHeader, RBody, RCell, RHead, RRow, RTabl
 import { linkCls } from "../../../_components/styles";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Coupon - InnerDweS Admin" };
+export const generateMetadata = () => adminMetaTitle("metaCoupon");
 
 const TONE: Record<string, Tone> = { active: "good", scheduled: "warn", expired: "neutral", disabled: "bad" };
 
 export default async function CouponDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await requireAdminPage();
+  const c = await getAdminI18n();
+  const { t } = c;
   const { id } = await params;
   if (!isUuid(id)) notFound();
   const d = await getCouponDetail(createAdminClient(), id);
   if (!d) notFound();
-  const { coupon: c, stats, redemptions } = d;
+  const { coupon: cp, stats, redemptions } = d;
   const mode = currentStripeMode();
-  const st = couponStatus(c, new Date());
-  const sync = couponSyncState(c, mode);
+  const st = couponStatus(cp, new Date());
+  const sync = couponSyncState(cp, mode);
   const used = stats.redemptions + stats.reserved > 0;
-  const code = c.code as string;
+  const code = cp.code as string;
 
   const initial: CouponFormInitial = {
-    code, description: (c.description as string | null) ?? "", discountType: c.discount_type, percentOff: c.percent_off == null ? "" : String(Number(c.percent_off)),
-    amountOff: minorToMajorString(c.amount_off_minor), currency: c.currency ? String(c.currency).trim() : "USD", usageRule: c.usage_rule,
-    durationType: c.duration_type, durationCycles: c.duration_cycles == null ? "" : String(c.duration_cycles), validFrom: toDateTimeLocalUtc(c.valid_from),
-    validUntil: toDateTimeLocalUtc(c.valid_until), globalMaxRedemptions: c.global_max_redemptions == null ? "" : String(c.global_max_redemptions),
-    planKeys: (c.plan_keys as string[] | null) ?? [], spaceTypes: (c.space_types as string[] | null) ?? [],
+    code, description: (cp.description as string | null) ?? "", discountType: cp.discount_type, percentOff: cp.percent_off == null ? "" : String(Number(cp.percent_off)),
+    amountOff: minorToMajorString(cp.amount_off_minor), currency: cp.currency ? String(cp.currency).trim() : "USD", usageRule: cp.usage_rule,
+    durationType: cp.duration_type, durationCycles: cp.duration_cycles == null ? "" : String(cp.duration_cycles), validFrom: toDateTimeLocalUtc(cp.valid_from),
+    validUntil: toDateTimeLocalUtc(cp.valid_until), globalMaxRedemptions: cp.global_max_redemptions == null ? "" : String(cp.global_max_redemptions),
+    planKeys: (cp.plan_keys as string[] | null) ?? [], spaceTypes: (cp.space_types as string[] | null) ?? [],
   };
 
   return (
     <>
-      <p className="mb-2 text-sm"><Link className={linkCls} href="/admin/billing/coupons">&larr; All coupons</Link></p>
+      <p className="mb-2 text-sm"><Link className={linkCls} href="/admin/billing/coupons">&larr; {t("cdBack")}</Link></p>
       <PageHeader
         title={code}
         actions={
           <>
             {sync === "needs_sync" ? (
               <ConfirmActionButton
-                label="Sync to Stripe"
-                title={`Sync ${code} to Stripe?`}
-                message={<>This creates the matching coupon in Stripe ({mode} mode) so customers can use it at checkout. It does not change the terms.</>}
-                confirmLabel="Sync"
+                label={t("cdSyncLabel")}
+                title={t("cdSyncTitle", { code })}
+                message={t("cdSyncMessage", { mode: mode ?? "" })}
+                confirmLabel={t("cdSyncConfirm")}
                 action={syncCouponAction.bind(null, id)}
-                okMessage="Synced to Stripe."
+                okMessage={t("cdSyncOk")}
                 variant="primary"
               />
             ) : null}
-            {c.active ? (
+            {cp.active ? (
               <ConfirmActionButton
-                label="Disable"
-                title={`Disable ${code}?`}
-                message={`Disable ${code} for NEW checkouts? Existing customers will keep their already-redeemed discounts.`}
-                confirmLabel={`Disable ${code}`}
+                label={t("cdDisableLabel")}
+                title={t("cdDisableTitle", { code })}
+                message={t("cdDisableMessage", { code })}
+                confirmLabel={t("cdDisableConfirm", { code })}
                 action={setCouponActiveAction.bind(null, id, false)}
-                okMessage="Coupon disabled."
+                okMessage={t("cdDisableOk")}
                 variant="danger"
               />
             ) : (
               <ConfirmActionButton
-                label="Enable"
-                title={`Enable ${code}?`}
-                message={`Enable ${code} for NEW checkouts? It will be usable again whenever its availability window is open.`}
-                confirmLabel={`Enable ${code}`}
+                label={t("cdEnableLabel")}
+                title={t("cdEnableTitle", { code })}
+                message={t("cdEnableMessage", { code })}
+                confirmLabel={t("cdEnableConfirm", { code })}
                 action={setCouponActiveAction.bind(null, id, true)}
-                okMessage="Coupon enabled."
+                okMessage={t("cdEnableOk")}
                 variant="primary"
               />
             )}
           </>
         }
       >
-        <Badge tone={TONE[st]}>{st}</Badge> {c.description ? <span className="ml-2">{c.description as string}</span> : null}
+        <Badge tone={TONE[st]}>{couponStatusLabel(st, c)}</Badge> {cp.description ? <span className="ms-2">{cp.description as string}</span> : null}
       </PageHeader>
 
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        <Stat label="Successful redemptions" value={<b>{stats.redemptions}</b>} caption="Customers who completed payment with this coupon. The main number." />
-        <Stat label="Checkout attempts / reservations" value={`${stats.attempts} / ${stats.reserved}`} caption="Every checkout that tried the coupon / those still in progress. Not redemptions." />
-        <Stat label="Active discounted subscriptions" value={stats.activeDiscounted} caption="Discount currently running." />
-        <Stat label="Completed discounts" value={stats.completed} caption="Discount ran its full duration." />
-        <Stat label="Canceled subscriptions" value={stats.canceledSubscriptions} caption="Redeemed, then the subscription ended." />
+        <Stat label={t("cdStatRedemptions")} value={<b>{stats.redemptions}</b>} caption={t("cdStatRedemptionsCaption")} />
+        <Stat label={t("cdStatAttempts")} value={`${stats.attempts} / ${stats.reserved}`} caption={t("cdStatAttemptsCaption")} />
+        <Stat label={t("cdStatActive")} value={stats.activeDiscounted} caption={t("cdStatActiveCaption")} />
+        <Stat label={t("cdStatCompleted")} value={stats.completed} caption={t("cdStatCompletedCaption")} />
+        <Stat label={t("cdStatCanceled")} value={stats.canceledSubscriptions} caption={t("cdStatCanceledCaption")} />
       </div>
 
       <div className="mb-6 grid gap-4 lg:grid-cols-2">
-        <Card title="Definition">
+        <Card title={t("cdDefinition")}>
           <Dl items={[
-            ["Discount", couponDiscountLabel(c)],
-            ["Duration of a redemption", durationLabel(c.duration_type, c.duration_cycles)],
-            ["Usage rule", usageRuleLabel(c.usage_rule)],
-            ["Availability window (new redemptions)", couponWindowLabel(c)],
-            ["Total redemption cap", c.global_max_redemptions ?? "none"],
-            ["Applies to", `${(c.plan_keys as string[] | null)?.join(", ") || "all plans"}; ${(c.space_types as string[] | null)?.map(spaceTypeLabel).join(", ") || "all Space types"}`],
-            ["Stripe sync", sync === "no_stripe" ? "Stripe not configured here" : sync === "synced" ? `synced (${mode})` : `needs sync (${mode})`],
-            ["Created", formatUtc(c.created_at)],
+            [t("cdDiscount"), couponDiscountLabel(cp, c)],
+            [t("cdDurationOfRedemption"), durationLabel(cp.duration_type, cp.duration_cycles, c)],
+            [t("cdUsageRule"), usageRuleLabel(cp.usage_rule, c)],
+            [t("cdWindow"), couponWindowLabel(cp, c)],
+            [t("cdTotalCap"), cp.global_max_redemptions ?? t("valueNone")],
+            [t("cdAppliesTo"), t("cdAppliesValue", { plans: (cp.plan_keys as string[] | null)?.join(", ") || t("cdAllPlans"), types: (cp.space_types as string[] | null)?.map((x) => spaceTypeLabel(x, c)).join(", ") || t("cdAllSpaceTypes") })],
+            [t("cdStripeSync"), sync === "no_stripe" ? t("cdSyncNoStripe") : sync === "synced" ? t("cdSyncedMode", { mode: mode ?? "" }) : t("cdNeedsSyncMode", { mode: mode ?? "" })],
+            [t("cdCreated"), formatUtc(cp.created_at, c)],
           ]} />
         </Card>
-        <Card title="Edit">
+        <Card title={t("cdEdit")}>
           <CouponForm mode="edit" couponId={id} initial={initial} lockFinancial={used} />
         </Card>
       </div>
 
-      <Card title={`Redemptions (${redemptions.length})`}>
-        {redemptions.length === 0 ? <EmptyRow>Nobody has used this coupon yet.</EmptyRow> : (
-          <RTable caption="Coupon redemptions">
-            <RHead cols={["Customer", "Space", "Redeemed", "Discount runs", "Cycles", "Status", "Next billing", "Next action"]} />
+      <Card title={t("cdRedemptions", { count: redemptions.length })}>
+        {redemptions.length === 0 ? <EmptyRow>{t("cdNoRedemptions")}</EmptyRow> : (
+          <RTable caption={t("cdRedemptionsCaption")}>
+            <RHead cols={[t("colCustomer"), t("colSpace"), t("colRedeemed"), t("colDiscountRuns"), t("colCycles"), t("colStatus"), t("colNextBilling"), t("colNextAction")]} />
             <RBody>
               {redemptions.map(({ redemption: r, userEmail, nextBillingDate, next }) => {
-                const t = r.tenants as { name?: string; product_type?: string } | null;
+                const tn = r.tenants as { name?: string; product_type?: string } | null;
                 return (
                   <RRow key={r.id as string}>
-                    <RCell label="Customer">{userEmail ?? "-"}</RCell>
-                    <RCell label="Space">{t?.name ?? "-"}<span className="block text-xs text-idw-forest/70">{spaceTypeLabel(t?.product_type)}</span></RCell>
-                    <RCell label="Redeemed">{formatUtc(r.redeemed_at)}</RCell>
-                    <RCell label="Discount runs">{formatUtc(r.discount_starts_at)}<span className="block text-xs">to {r.discount_ends_at ? formatUtc(r.discount_ends_at) : r.cycles_total == null && r.duration_type === "forever" ? "never (forever)" : "-"}</span></RCell>
-                    <RCell label="Cycles">{r.cycles_completed} / {r.cycles_total ?? (r.duration_type === "forever" ? "forever" : "-")}</RCell>
-                    <RCell label="Status">{redemptionStatusLabel(r.status)}</RCell>
-                    <RCell label="Next billing">{formatUtc(nextBillingDate)}</RCell>
-                    <RCell label="Next action">{next ? <>{nextActionLabel(next.action)}<span className="block text-xs">{formatUtc(next.at)}</span></> : "-"}</RCell>
+                    <RCell label={t("colCustomer")}>{userEmail ?? "-"}</RCell>
+                    <RCell label={t("colSpace")}>{tn?.name ?? "-"}<span className="block text-xs text-idw-forest/70">{spaceTypeLabel(tn?.product_type, c)}</span></RCell>
+                    <RCell label={t("colRedeemed")}>{formatUtc(r.redeemed_at, c)}</RCell>
+                    <RCell label={t("colDiscountRuns")}>{formatUtc(r.discount_starts_at, c)}<span className="block text-xs">{t("cdRunsTo", { time: r.discount_ends_at ? formatUtc(r.discount_ends_at, c) : r.cycles_total == null && r.duration_type === "forever" ? t("cdNeverForever") : "-" })}</span></RCell>
+                    <RCell label={t("colCycles")}>{r.cycles_completed} / {r.cycles_total ?? (r.duration_type === "forever" ? t("cdCyclesForever") : "-")}</RCell>
+                    <RCell label={t("colStatus")}>{redemptionStatusLabel(r.status, c)}</RCell>
+                    <RCell label={t("colNextBilling")}>{formatUtc(nextBillingDate, c)}</RCell>
+                    <RCell label={t("colNextAction")}>{next ? <>{nextActionLabel(next.action, c)}<span className="block text-xs">{formatUtc(next.at, c)}</span></> : "-"}</RCell>
                   </RRow>
                 );
               })}

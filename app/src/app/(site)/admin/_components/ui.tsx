@@ -99,9 +99,9 @@ export function EmptyRow({ children }: { children: ReactNode }) {
   return <p className="rounded-xl border border-dashed border-idw-forest/20 p-4 text-sm text-idw-forest/70">{children}</p>;
 }
 
-export function FilterLinks({ base, param, options, current }: { base: string; param: string; options: [string, string][]; current: string | undefined }) {
+export function FilterLinks({ base, param, options, current, label }: { base: string; param: string; options: [string, string][]; current: string | undefined; label: string }) {
   return (
-    <nav aria-label="Filter" className="mb-4 flex flex-wrap gap-2">
+    <nav aria-label={label} className="mb-4 flex flex-wrap gap-2">
       {options.map(([value, label]) => {
         const active = (current ?? "") === value;
         const href = value ? `${base}?${param}=${encodeURIComponent(value)}` : base;

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { createCouponAction, updateCouponAction, type AdminActionResult } from "../billing/actions";
 import { BASE_PLAN_KEY } from "@/lib/billing/constants";
 import { LARGE_DISCOUNT_PERCENT } from "@/lib/billing/admin/policy";
-import { errorMessage, fieldErrors, isLargeDiscount } from "@/lib/billing/admin/ui/labels";
+import { errorMessage, fieldErrors, isLargeDiscount, type AdminKey, type AdminT } from "@/lib/billing/admin/ui/labels";
+import { useAdminI18n } from "./AdminI18n";
 import { ResultNote } from "./ResultNote";
 import { btnPrimary, errCls, hintCls, inputCls, labelCls } from "./styles";
 
@@ -19,6 +20,13 @@ export const EMPTY_COUPON: CouponFormInitial = {
   code: "", description: "", discountType: "percent", percentOff: "", amountOff: "", currency: "USD", usageRule: "once_per_user",
   durationType: "once", durationCycles: "", validFrom: "", validUntil: "", globalMaxRedemptions: "", planKeys: [], spaceTypes: [],
 };
+
+const FIELD_LABEL_KEYS: Record<string, AdminKey> = {
+  code: "cfCode", description: "cfDescription", discountType: "cfType", percentOff: "cfPercentOff", amountOff: "cfAmountOff", amountOffMinor: "cfAmountOff",
+  currency: "cfCurrency", durationType: "cfDuration", durationCycles: "cfCycles", usageRule: "cfUsageLabel", validFrom: "cfFrom", validUntil: "cfUntil",
+  globalMaxRedemptions: "cfCap",
+};
+const fieldLabel = (name: string, t: AdminT) => (FIELD_LABEL_KEYS[name] ? t(FIELD_LABEL_KEYS[name]) : name);
 
 type Act = (prev: AdminActionResult | null, fd: FormData) => Promise<AdminActionResult>;
 
@@ -36,6 +44,8 @@ function Row({ name, label, hint, error, children }: { name: string; label: stri
 }
 
 export function CouponForm({ mode, couponId, initial = EMPTY_COUPON, lockFinancial = false }: { mode: "create" | "edit"; couponId?: string; initial?: CouponFormInitial; lockFinancial?: boolean }) {
+  const c = useAdminI18n();
+  const { t } = c;
   const router = useRouter();
   const action = useMemo<Act>(() => (mode === "edit" && couponId ? updateCouponAction.bind(null, couponId) : createCouponAction), [mode, couponId]);
   const [state, formAction, pending] = useActionState<AdminActionResult | null, FormData>(action, null);
@@ -44,7 +54,7 @@ export function CouponForm({ mode, couponId, initial = EMPTY_COUPON, lockFinanci
   const [percentOff, setPercentOff] = useState(initial.percentOff);
   const L = lockFinancial;
 
-  const fields = fieldErrors(state);
+  const fields = fieldErrors(state, c);
   const fe = (n: string) => fields[n];
   const fieldErrorKeys = Object.keys(fields);
 
@@ -64,45 +74,45 @@ export function CouponForm({ mode, couponId, initial = EMPTY_COUPON, lockFinanci
     <form action={formAction} className="max-w-2xl">
       {state && !state.ok && state.error !== "step_up_required" ? (
         <div role="alert" className="mb-4 rounded-xl border border-idw-clay-text/40 bg-red-50 p-3 text-sm text-red-900">
-          <p className="font-semibold">{errorMessage(state.error)}</p>
-          {fieldErrorKeys.length ? <p className="mt-1 text-xs">Fields to fix: {fieldErrorKeys.map((k) => (k === "amountOffMinor" ? "amountOff" : k)).join(", ")}.</p> : null}
+          <p className="font-semibold">{errorMessage(state.error, c)}</p>
+          {fieldErrorKeys.length ? <p className="mt-1 text-xs">{t("cfFieldsToFix", { fields: fieldErrorKeys.map((k) => fieldLabel(k, t)).join(", ") })}</p> : null}
         </div>
       ) : null}
 
       {L ? (
         <div className="mb-4 rounded-xl border border-idw-forest/20 bg-idw-linen/60 p-3 text-sm text-idw-forest">
-          <p className="font-semibold">Financial terms are locked.</p>
-          <p className="mt-1">Customers have already reserved or redeemed this coupon, so the discount type, value, currency, duration and usage rule cannot change (it would rewrite what they were promised). You can still change the description, availability window, redemption cap and applicability, which only affect NEW redemptions. For different terms, create a new coupon.</p>
+          <p className="font-semibold">{t("cfLockedTitle")}</p>
+          <p className="mt-1">{t("cfLockedBody")}</p>
         </div>
       ) : null}
 
-      <Row name="code" label="Coupon code" hint="3-32 characters: letters, digits, - and _. Codes are matched case-insensitively." error={fe("code")}>
+      <Row name="code" label={t("cfCode")} hint={t("cfCodeHint")} error={fe("code")}>
         {(p) => <input id={p.id} name="code" required minLength={3} maxLength={32} defaultValue={initial.code} autoComplete="off" spellCheck={false} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={`${inputCls} font-mono uppercase`} />}
       </Row>
-      <Row name="description" label="Internal description (optional)" error={fe("description")}>
+      <Row name="description" label={t("cfDescription")} error={fe("description")}>
         {(p) => <input id={p.id} name="description" maxLength={500} defaultValue={initial.description} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={inputCls} />}
       </Row>
 
       <fieldset className="mb-4 rounded-xl border border-idw-forest/15 p-4">
-        <legend className="px-1 text-sm font-semibold text-idw-forest">Discount</legend>
-        <Row name="discountType" label="Type">
+        <legend className="px-1 text-sm font-semibold text-idw-forest">{t("cfDiscountLegend")}</legend>
+        <Row name="discountType" label={t("cfType")}>
           {(p) => (
             <select id={p.id} {...(L ? {} : { name: "discountType" })} {...dis} value={discountType} onChange={(e) => setDiscountType(e.target.value as "percent" | "fixed_amount")} className={`${inputCls} max-w-xs`}>
-              <option value="percent">Percent off</option>
-              <option value="fixed_amount">Fixed amount off</option>
+              <option value="percent">{t("cfTypePercent")}</option>
+              <option value="fixed_amount">{t("cfTypeFixed")}</option>
             </select>
           )}
         </Row>
         {discountType === "percent" ? (
-          <Row name="percentOff" label="Percent off" hint="Greater than 0, at most 100. Up to two decimals." error={fe("percentOff")}>
+          <Row name="percentOff" label={t("cfPercentOff")} hint={t("cfPercentHint")} error={fe("percentOff")}>
             {(p) => <input id={p.id} {...(L ? {} : { name: "percentOff" })} {...dis} type="number" inputMode="decimal" min="0.01" max="100" step="0.01" required value={percentOff} onChange={(e) => setPercentOff(e.target.value)} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={`${inputCls} max-w-[10rem]`} />}
           </Row>
         ) : (
           <div className="grid gap-x-4 sm:grid-cols-2">
-            <Row name="amountOff" label="Amount off (major units)" hint="e.g. 5.00 for five dollars." error={fe("amountOffMinor")}>
+            <Row name="amountOff" label={t("cfAmountOff")} hint={t("cfAmountHint")} error={fe("amountOffMinor")}>
               {(p) => <input id={p.id} {...(L ? {} : { name: "amountOff" })} {...dis} type="number" inputMode="decimal" min="0.01" step="0.01" required defaultValue={initial.amountOff} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={inputCls} />}
             </Row>
-            <Row name="currency" label="Currency (3 letters)" error={fe("currency")}>
+            <Row name="currency" label={t("cfCurrency")} error={fe("currency")}>
               {(p) => <input id={p.id} {...(L ? {} : { name: "currency" })} {...dis} required minLength={3} maxLength={3} pattern="[A-Za-z]{3}" defaultValue={initial.currency} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={`${inputCls} font-mono uppercase`} />}
             </Row>
           </div>
@@ -110,82 +120,82 @@ export function CouponForm({ mode, couponId, initial = EMPTY_COUPON, lockFinanci
       </fieldset>
 
       <fieldset className="mb-4 rounded-xl border border-idw-forest/15 p-4">
-        <legend className="px-1 text-sm font-semibold text-idw-forest">Discount duration</legend>
-        <p className={`${hintCls} mb-3`}>How long ONE redemption keeps its discount after a customer redeems it. Once redeemed, the duration is promised and is not cut short when the availability window below ends.</p>
-        <Row name="durationType" label="Duration">
+        <legend className="px-1 text-sm font-semibold text-idw-forest">{t("cfDurationLegend")}</legend>
+        <p className={`${hintCls} mb-3`}>{t("cfDurationIntro")}</p>
+        <Row name="durationType" label={t("cfDuration")}>
           {(p) => (
             <select id={p.id} {...(L ? {} : { name: "durationType" })} {...dis} value={durationType} onChange={(e) => setDurationType(e.target.value as "once" | "repeating" | "forever")} className={`${inputCls} max-w-xs`}>
-              <option value="once">First billing cycle only</option>
-              <option value="repeating">First N billing cycles</option>
-              <option value="forever">Forever</option>
+              <option value="once">{t("cfDurOnce")}</option>
+              <option value="repeating">{t("cfDurRepeating")}</option>
+              <option value="forever">{t("cfDurForever")}</option>
             </select>
           )}
         </Row>
         {durationType === "repeating" ? (
-          <Row name="durationCycles" label="Number of billing cycles" hint="At least 2, at most 60. For a single cycle choose “First billing cycle only”." error={fe("durationCycles")}>
+          <Row name="durationCycles" label={t("cfCycles")} hint={t("cfCyclesHint", { once: t("cfDurOnce") })} error={fe("durationCycles")}>
             {(p) => <input id={p.id} {...(L ? {} : { name: "durationCycles" })} {...dis} type="number" inputMode="numeric" min={2} max={60} step={1} required defaultValue={initial.durationCycles} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={`${inputCls} max-w-[10rem]`} />}
           </Row>
         ) : null}
       </fieldset>
 
       <fieldset className="mb-4 rounded-xl border border-idw-forest/15 p-4">
-        <legend className="px-1 text-sm font-semibold text-idw-forest">Usage rule</legend>
-        <Row name="usageRule" label="Who can redeem it, and how often" hint={
+        <legend className="px-1 text-sm font-semibold text-idw-forest">{t("cfUsageLegend")}</legend>
+        <Row name="usageRule" label={t("cfUsageLabel")} hint={
           <ul className="list-disc pl-4">
-            <li><b>Once per user</b>: each customer account can redeem it a single time, across all their Spaces.</li>
-            <li><b>Once per Space</b>: a Space can never get it twice, but one customer may use it for different Spaces.</li>
-            <li><b>Unlimited while available</b>: repeatable across Spaces and customers while the availability window is open.</li>
+            <li><b>{t("cfUsage1Name")}</b>: {t("cfUsage1Desc")}</li>
+            <li><b>{t("cfUsage2Name")}</b>: {t("cfUsage2Desc")}</li>
+            <li><b>{t("cfUsage3Name")}</b>: {t("cfUsage3Desc")}</li>
           </ul>
         } error={fe("usageRule")}>
           {(p) => (
             <select id={p.id} {...(L ? {} : { name: "usageRule" })} {...dis} defaultValue={initial.usageRule} aria-describedby={p.describedBy} className={`${inputCls} max-w-md`}>
-              <option value="once_per_user">Once per user</option>
-              <option value="once_per_space">Once per Space</option>
-              <option value="unlimited_during_validity">Unlimited while available</option>
+              <option value="once_per_user">{t("cfUsage1Name")}</option>
+              <option value="once_per_space">{t("cfUsage2Name")}</option>
+              <option value="unlimited_during_validity">{t("cfUsage3Name")}</option>
             </select>
           )}
         </Row>
       </fieldset>
 
       <fieldset className="mb-4 rounded-xl border border-idw-forest/15 p-4">
-        <legend className="px-1 text-sm font-semibold text-idw-forest">Availability window (UTC)</legend>
-        <p className={`${hintCls} mb-3`}>When a NEW redemption may start. Customers who redeemed inside the window keep their full discount duration even after it closes. Leave both empty for always available.</p>
+        <legend className="px-1 text-sm font-semibold text-idw-forest">{t("cfWindowLegend")}</legend>
+        <p className={`${hintCls} mb-3`}>{t("cfWindowIntro")}</p>
         <div className="grid gap-x-4 sm:grid-cols-2">
-          <Row name="validFrom" label="Available from" error={fe("validFrom")}>
+          <Row name="validFrom" label={t("cfFrom")} error={fe("validFrom")}>
             {(p) => <input id={p.id} name="validFrom" type="datetime-local" defaultValue={initial.validFrom} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={inputCls} />}
           </Row>
-          <Row name="validUntil" label="Available until" error={fe("validUntil")}>
+          <Row name="validUntil" label={t("cfUntil")} error={fe("validUntil")}>
             {(p) => <input id={p.id} name="validUntil" type="datetime-local" defaultValue={initial.validUntil} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={inputCls} />}
           </Row>
         </div>
-        <Row name="globalMaxRedemptions" label="Total redemption cap (optional)" hint="Counts successful redemptions only; abandoned checkouts do not use it up." error={fe("globalMaxRedemptions")}>
+        <Row name="globalMaxRedemptions" label={t("cfCap")} hint={t("cfCapHint")} error={fe("globalMaxRedemptions")}>
           {(p) => <input id={p.id} name="globalMaxRedemptions" type="number" inputMode="numeric" min={1} step={1} defaultValue={initial.globalMaxRedemptions} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={`${inputCls} max-w-[10rem]`} />}
         </Row>
       </fieldset>
 
       <fieldset className="mb-4 rounded-xl border border-idw-forest/15 p-4">
-        <legend className="px-1 text-sm font-semibold text-idw-forest">Applies to (leave all unchecked = everything)</legend>
+        <legend className="px-1 text-sm font-semibold text-idw-forest">{t("cfAppliesLegend")}</legend>
         <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm">
           {planOptions.map((k) => (
-            <label key={k} className="inline-flex min-h-11 items-center gap-2"><input type="checkbox" name="planKeys" value={k} defaultChecked={initial.planKeys.includes(k)} className="size-5" /> Plan <code className="font-mono text-xs">{k}</code></label>
+            <label key={k} className="inline-flex min-h-11 items-center gap-2"><input type="checkbox" name="planKeys" value={k} defaultChecked={initial.planKeys.includes(k)} className="size-5" /> <span dir="auto">{t("cfPlanLabel", { key: k })}</span></label>
           ))}
-          {(["teach", "retreat"] as const).map((t) => (
-            <label key={t} className="inline-flex min-h-11 items-center gap-2"><input type="checkbox" name="spaceTypes" value={t} defaultChecked={initial.spaceTypes.includes(t)} className="size-5" /> {t === "teach" ? "Teach Spaces" : "Retreat Spaces"}</label>
+          {(["teach", "retreat"] as const).map((st) => (
+            <label key={st} className="inline-flex min-h-11 items-center gap-2"><input type="checkbox" name="spaceTypes" value={st} defaultChecked={initial.spaceTypes.includes(st)} className="size-5" /> {st === "teach" ? c.t("cfTeachSpaces") : c.t("cfRetreatSpaces")}</label>
           ))}
         </div>
       </fieldset>
 
       {large ? (
         <div role="note" className="mb-4 rounded-xl border border-amber-400 bg-amber-50 p-3 text-sm text-amber-950">
-          <p className="font-semibold">Large discount</p>
+          <p className="font-semibold">{t("cfLargeTitle")}</p>
           <p className="mt-1">
-            {durationType === "forever" ? "A discount that lasts forever" : `A discount of ${LARGE_DISCOUNT_PERCENT}% or more`} is a long or deep commitment to every customer who redeems it, and it cannot be edited afterwards. Saving it will ask you to confirm with a fresh authenticator code.
+            {t("cfLargeBody", { lead: durationType === "forever" ? t("cfLargeForever") : t("cfLargePercent", { percent: LARGE_DISCOUNT_PERCENT }) })}
           </p>
         </div>
       ) : null}
 
-      <button type="submit" disabled={pending} className={btnPrimary}>{pending ? "Saving..." : mode === "create" ? "Create coupon" : "Save changes"}</button>
-      <ResultNote result={state} okMessage={mode === "create" ? "Coupon created. Opening it..." : "Changes saved."} />
+      <button type="submit" disabled={pending} className={btnPrimary}>{pending ? t("fmSaving") : mode === "create" ? t("cfCreate") : t("cfSave")}</button>
+      <ResultNote result={state} okMessage={mode === "create" ? t("cfCreatedOk") : t("cfSavedOk")} />
       {L ? (
         <>
           <input type="hidden" name="discountType" value={initial.discountType} />

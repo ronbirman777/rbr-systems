@@ -1,22 +1,24 @@
 import Link from "next/link";
 import { requireAdminPage } from "@/lib/billing/admin/auth";
 import { loadOverview } from "@/lib/billing/admin/queries";
-import { METRIC_CAPTIONS } from "@/lib/billing/admin/ui/metricCaptions";
+import type { Locale } from "@/lib/i18n/locales";
+import { metricCaption, type MetricName } from "@/lib/billing/admin/ui/metricCaptions";
 import { formatUtc, money } from "@/lib/billing/admin/ui/labels";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { adminMetaTitle, getAdminI18n } from "../_lib/i18n";
 import { Badge, PageHeader, Stat } from "../_components/ui";
 import { linkCls } from "../_components/styles";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Overview - InnerDweS Admin" };
+export const generateMetadata = () => adminMetaTitle("navOverview");
 
-function MoneyList({ by }: { by: Record<string, number> }) {
+function MoneyList({ by, locale }: { by: Record<string, number>; locale: Locale }) {
   const entries = Object.entries(by);
   if (!entries.length) return <>-</>;
   return (
     <>
       {entries.map(([cur, minor]) => (
-        <span key={cur} className="block">{money(minor, cur)} <span className="text-sm font-normal text-idw-forest/70">{cur}</span></span>
+        <span key={cur} className="block">{money(minor, cur, locale)} <span className="text-sm font-normal text-idw-forest/70">{cur}</span></span>
       ))}
     </>
   );
@@ -24,48 +26,56 @@ function MoneyList({ by }: { by: Record<string, number> }) {
 
 export default async function OverviewPage() {
   await requireAdminPage();
+  const c = await getAdminI18n();
+  const { t, locale } = c;
   const o = await loadOverview(createAdminClient());
   const m = o.metrics;
+  const cap = (n: MetricName) => metricCaption(n, c);
   return (
     <>
-      <PageHeader title="Billing overview">
-        Snapshot as of {formatUtc(o.generatedAt)}. Every number below is defined under it; amounts are shown per currency and never summed across currencies.
+      <PageHeader title={t("ovTitle")}>
+        {t("ovSnapshot", { time: formatUtc(o.generatedAt, c) })}
       </PageHeader>
 
-      <h2 className="mb-2 font-ui text-lg text-idw-forest">Operations</h2>
-      <ul className="mb-8 flex flex-wrap gap-2" aria-label="Operational status">
-        <li><Link href="/admin/billing/settings" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm"><span>Paid checkout</span> <Badge tone={o.paidCheckoutEnabled ? "good" : "neutral"}>{o.paidCheckoutEnabled ? "enabled" : "disabled"}</Badge></Link></li>
-        <li className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm" title={METRIC_CAPTIONS.openCheckouts}>Open checkouts <Badge>{o.openCheckouts}</Badge></li>
-        <li className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm" title={METRIC_CAPTIONS.failedEvents}>Failed webhook events <Badge tone={o.failedEvents ? "bad" : "neutral"}>{o.failedEvents}</Badge></li>
-        <li className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm" title={METRIC_CAPTIONS.stuckCheckouts}>Stuck checkouts <Badge tone={o.stuckCheckouts ? "warn" : "neutral"}>{o.stuckCheckouts}</Badge></li>
+      <h2 className="mb-2 font-ui text-lg text-idw-forest">{t("ovOperations")}</h2>
+      <ul className="mb-8 flex flex-wrap gap-2" aria-label={t("ovOperationalAria")}>
+        <li><Link href="/admin/billing/settings" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm"><span>{t("ovPaidCheckout")}</span> <Badge tone={o.paidCheckoutEnabled ? "good" : "neutral"}>{o.paidCheckoutEnabled ? t("ovEnabled") : t("ovDisabled")}</Badge></Link></li>
+        <li className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm" title={cap("openCheckouts")}>{t("ovOpenCheckouts")} <Badge>{o.openCheckouts}</Badge></li>
+        <li className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm" title={cap("failedEvents")}>{t("ovFailedEvents")} <Badge tone={o.failedEvents ? "bad" : "neutral"}>{o.failedEvents}</Badge></li>
+        <li className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm" title={cap("stuckCheckouts")}>{t("ovStuckCheckouts")} <Badge tone={o.stuckCheckouts ? "warn" : "neutral"}>{o.stuckCheckouts}</Badge></li>
       </ul>
       <p className="-mt-6 mb-8 max-w-3xl text-xs text-idw-forest/70">
-        Open checkouts: {METRIC_CAPTIONS.openCheckouts} Failed webhook events: {METRIC_CAPTIONS.failedEvents} Stuck checkouts: {METRIC_CAPTIONS.stuckCheckouts} Paid checkout: {METRIC_CAPTIONS.paidCheckoutFlag}
+        {[
+          t("ovCaptionLine", { label: t("ovOpenCheckouts"), caption: cap("openCheckouts") }),
+          t("ovCaptionLine", { label: t("ovFailedEvents"), caption: cap("failedEvents") }),
+          t("ovCaptionLine", { label: t("ovStuckCheckouts"), caption: cap("stuckCheckouts") }),
+          t("ovCaptionLine", { label: t("ovPaidCheckout"), caption: cap("paidCheckoutFlag") }),
+        ].join(" ")}
       </p>
 
-      <h2 className="mb-2 font-ui text-lg text-idw-forest">Revenue</h2>
+      <h2 className="mb-2 font-ui text-lg text-idw-forest">{t("ovRevenue")}</h2>
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Paid subscriptions" value={m.paidSubscriptions} caption={METRIC_CAPTIONS.paidSubscriptions} />
-        <Stat label="Paid Spaces" value={m.paidSpaces} caption={METRIC_CAPTIONS.paidSpaces} />
-        <Stat label="MRR - list value (gross)" value={<MoneyList by={m.mrr.listMinor} />} caption={METRIC_CAPTIONS.mrrList} />
-        <Stat label="MRR - current, after discounts" value={<MoneyList by={m.mrr.currentMinor} />} caption={METRIC_CAPTIONS.mrrCurrent} />
-        <Stat label="Discounted subscriptions" value={m.discounted} caption={METRIC_CAPTIONS.discounted} />
-        <Stat label="Scheduled cancellations" value={m.scheduledCancellations} caption={METRIC_CAPTIONS.scheduledCancellations} tone={m.scheduledCancellations ? "warn" : undefined} />
+        <Stat label={t("ovPaidSubscriptions")} value={m.paidSubscriptions} caption={cap("paidSubscriptions")} />
+        <Stat label={t("ovPaidSpaces")} value={m.paidSpaces} caption={cap("paidSpaces")} />
+        <Stat label={t("ovMrrList")} value={<MoneyList by={m.mrr.listMinor} locale={locale} />} caption={cap("mrrList")} />
+        <Stat label={t("ovMrrCurrent")} value={<MoneyList by={m.mrr.currentMinor} locale={locale} />} caption={cap("mrrCurrent")} />
+        <Stat label={t("ovDiscounted")} value={m.discounted} caption={cap("discounted")} />
+        <Stat label={t("ovScheduledCancellations")} value={m.scheduledCancellations} caption={cap("scheduledCancellations")} tone={m.scheduledCancellations ? "warn" : undefined} />
       </div>
 
-      <h2 className="mb-2 font-ui text-lg text-idw-forest">Payment problems</h2>
+      <h2 className="mb-2 font-ui text-lg text-idw-forest">{t("ovPaymentProblems")}</h2>
       <div className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Payment failures" value={m.paymentFailures} caption={METRIC_CAPTIONS.paymentFailures} tone={m.paymentFailures ? "warn" : undefined} />
-        <Stat label="Guest-suspended" value={m.guestSuspended} caption={METRIC_CAPTIONS.guestSuspended} tone={m.guestSuspended ? "bad" : undefined} />
-        <Stat label="Studio-suspended" value={m.studioSuspended} caption={METRIC_CAPTIONS.studioSuspended} tone={m.studioSuspended ? "bad" : undefined} />
-        <Stat label="Deletion-eligible" value={m.deletionEligible} caption={METRIC_CAPTIONS.deletionEligible} tone={m.deletionEligible ? "bad" : undefined} />
+        <Stat label={t("ovPaymentFailures")} value={m.paymentFailures} caption={cap("paymentFailures")} tone={m.paymentFailures ? "warn" : undefined} />
+        <Stat label={t("ovGuestSuspended")} value={m.guestSuspended} caption={cap("guestSuspended")} tone={m.guestSuspended ? "bad" : undefined} />
+        <Stat label={t("ovStudioSuspended")} value={m.studioSuspended} caption={cap("studioSuspended")} tone={m.studioSuspended ? "bad" : undefined} />
+        <Stat label={t("ovDeletionEligible")} value={m.deletionEligible} caption={cap("deletionEligible")} tone={m.deletionEligible ? "bad" : undefined} />
       </div>
 
-      <h2 className="mb-2 font-ui text-lg text-idw-forest">Exempt</h2>
+      <h2 className="mb-2 font-ui text-lg text-idw-forest">{t("ovExempt")}</h2>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Exempt Spaces (not counted as paying)" value={m.exempt} caption={METRIC_CAPTIONS.exempt} />
+        <Stat label={t("ovExemptSpaces")} value={m.exempt} caption={cap("exempt")} />
       </div>
-      <p className="mt-6 text-sm"><Link className={linkCls} href="/admin/billing/subscriptions?status=exempt">View exempt Spaces</Link></p>
+      <p className="mt-6 text-sm"><Link className={linkCls} href="/admin/billing/subscriptions?status=exempt">{t("ovViewExempt")}</Link></p>
     </>
   );
 }

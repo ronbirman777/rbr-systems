@@ -5,6 +5,14 @@ import { billingFr } from "./dictionaries/billing.fr";
 import { billingHe } from "./dictionaries/billing.he";
 import { billingTr } from "./dictionaries/billing.tr";
 import { billingIt } from "./dictionaries/billing.it";
+import { adminEn } from "./dictionaries/admin.en";
+import { adminDe } from "./dictionaries/admin.de";
+import { adminEs } from "./dictionaries/admin.es";
+import { adminFr } from "./dictionaries/admin.fr";
+import { adminHe } from "./dictionaries/admin.he";
+import { adminTr } from "./dictionaries/admin.tr";
+import { adminIt } from "./dictionaries/admin.it";
+import { interpolate } from "./interpolate";
 import { DEFAULT_LOCALE, type Locale } from "./locales";
 
 /**
@@ -22,16 +30,12 @@ import { DEFAULT_LOCALE, type Locale } from "./locales";
  */
 const ACCOUNT = {
   billing: { en: billingEn, de: billingDe, es: billingEs, fr: billingFr, he: billingHe, tr: billingTr, it: billingIt },
+  admin: { en: adminEn, de: adminDe, es: adminEs, fr: adminFr, he: adminHe, tr: adminTr, it: adminIt },
 } as const;
 
 export type AccountNamespace = keyof typeof ACCOUNT;
 export type AccountKey<N extends AccountNamespace> = keyof (typeof ACCOUNT)[N]["en"];
 export type AccountValues = Record<string, string | number>;
-
-function interpolate(template: string, values?: AccountValues): string {
-  if (!values) return template;
-  return template.replace(/\{(\w+)\}/g, (m, name: string) => (name in values ? String(values[name]) : m));
-}
 
 export function translateAccount<N extends AccountNamespace>(locale: Locale, namespace: N, key: AccountKey<N>, values?: AccountValues): string {
   const byLocale = ACCOUNT[namespace] as Record<Locale, Record<string, string>>;

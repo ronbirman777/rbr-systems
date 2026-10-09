@@ -1,18 +1,29 @@
-/** One-line definitions shown under each Overview metric. Mirrors the definitions in ../metrics.ts. */
-export const METRIC_CAPTIONS = {
-  paidSubscriptions: "Active or trialing, not exempt. Past-due ones are counted under Payment failures.",
-  paidSpaces: "Distinct Spaces with a non-exempt, not-ended subscription (includes past due).",
-  mrrList: "Gross list value: sum of base plan prices of paid subscriptions, before any discount.",
-  mrrCurrent: "Current recurring amount after discounts in force, same subscriptions as list value.",
-  discounted: "Paid subscriptions with a coupon discount still running.",
-  paymentFailures: "Open payment-failure episode on a subscription that has not ended.",
-  guestSuspended: "Failure unresolved for 24 hours or more: the Guest App is unavailable.",
-  studioSuspended: "Failure unresolved for 7 days or more: Studio is suspended.",
-  scheduledCancellations: "Active subscriptions set to end at the period end.",
-  deletionEligible: "Failure unresolved for 14 days: eligible for the deletion workflow (never an instant delete).",
-  exempt: "Internal/legacy Spaces kept operational without a subscription. Not counted as paying; never in revenue.",
-  openCheckouts: "Checkouts started and awaiting payment.",
-  failedEvents: "Stripe webhook events that failed processing.",
-  stuckCheckouts: "Paid or provisioning checkouts that have not finished creating a Space.",
-  paidCheckoutFlag: "Whether customers can buy a paid Space right now.",
-} as const;
+import type { AdminCtx, AdminKey } from "./labels";
+
+/**
+ * One-line definitions shown under each Overview metric. Mirrors the definitions in ../metrics.ts.
+ * The English text lives in the `admin` dictionary (metric_* keys); this maps a metric to its key.
+ */
+export const METRIC_CAPTION_KEYS = {
+  paidSubscriptions: "metric_paidSubscriptions",
+  paidSpaces: "metric_paidSpaces",
+  mrrList: "metric_mrrList",
+  mrrCurrent: "metric_mrrCurrent",
+  discounted: "metric_discounted",
+  paymentFailures: "metric_paymentFailures",
+  guestSuspended: "metric_guestSuspended",
+  studioSuspended: "metric_studioSuspended",
+  scheduledCancellations: "metric_scheduledCancellations",
+  deletionEligible: "metric_deletionEligible",
+  exempt: "metric_exempt",
+  openCheckouts: "metric_openCheckouts",
+  failedEvents: "metric_failedEvents",
+  stuckCheckouts: "metric_stuckCheckouts",
+  paidCheckoutFlag: "metric_paidCheckoutFlag",
+} as const satisfies Record<string, AdminKey>;
+
+export type MetricName = keyof typeof METRIC_CAPTION_KEYS;
+
+export function metricCaption(name: MetricName, c: AdminCtx): string {
+  return c.t(METRIC_CAPTION_KEYS[name]);
+}

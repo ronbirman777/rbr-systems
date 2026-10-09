@@ -3,6 +3,7 @@
 import { useId, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminActionResult } from "../billing/actions";
+import { useAdminI18n } from "./AdminI18n";
 import { ResultNote } from "./ResultNote";
 import { btnDanger, btnPrimary, btnSecondary } from "./styles";
 
@@ -18,6 +19,7 @@ export function ConfirmActionButton({
   action: () => Promise<AdminActionResult>;
   variant?: "primary" | "secondary" | "danger"; okMessage?: string; disabled?: boolean;
 }) {
+  const { t } = useAdminI18n();
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [result, setResult] = useState<AdminActionResult | null>(null);
@@ -49,7 +51,7 @@ export function ConfirmActionButton({
         className={triggerCls}
         onClick={() => { setResult(null); dialogRef.current?.showModal(); }}
       >
-        {pending ? "Working..." : label}
+        {pending ? t("working") : label}
       </button>
       <dialog
         ref={dialogRef}
@@ -61,8 +63,8 @@ export function ConfirmActionButton({
         <h2 id={`${id}-t`} className="font-ui text-lg">{title}</h2>
         <div id={`${id}-d`} className="mt-2 text-sm text-idw-forest/85">{message}</div>
         <div className="mt-5 flex flex-wrap justify-end gap-2">
-          <button type="button" autoFocus className={btnSecondary} onClick={() => dialogRef.current?.close()}>Cancel</button>
-          <button type="button" disabled={pending} className={variant === "danger" ? btnDanger : btnPrimary} onClick={confirm}>{pending ? "Working..." : confirmLabel}</button>
+          <button type="button" autoFocus className={btnSecondary} onClick={() => dialogRef.current?.close()}>{t("cancelButton")}</button>
+          <button type="button" disabled={pending} className={variant === "danger" ? btnDanger : btnPrimary} onClick={confirm}>{pending ? t("working") : confirmLabel}</button>
         </div>
       </dialog>
       <ResultNote result={result} okMessage={okMessage} />
