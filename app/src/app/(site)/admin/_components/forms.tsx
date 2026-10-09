@@ -35,6 +35,7 @@ export function SetExemptForm() {
   const [state, formAction, pending] = useAct(action);
   const f = fieldErrors(state, c);
   return (
+    <>
     <form action={formAction} noValidate={false}>
       <Field name="tenantId" label={t("fmTenantId")} hint={t("fmTenantIdHint")} error={state && !state.ok && state.error === "invalid" ? f.tenantId ?? t("fmEnterUuid") : undefined}>
         {(p) => <input id={p.id} name="tenantId" required pattern="[0-9a-fA-F\-]{36}" autoComplete="off" spellCheck={false} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={`${inputCls} font-mono`} />}
@@ -46,8 +47,10 @@ export function SetExemptForm() {
         {(p) => <input id={p.id} name="expiresAt" type="datetime-local" aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={`${inputCls} max-w-xs`} />}
       </Field>
       <button type="submit" disabled={pending} className={btnPrimary}>{pending ? t("fmSaving") : t("fmMarkExempt")}</button>
-      <ResultNote result={state} okMessage={t("fmExemptOk")} />
     </form>
+    {/* Kept outside the form element: the step-up box is a form of its own and forms must never nest. */}
+    <ResultNote result={state} okMessage={t("fmExemptOk")} />
+    </>
   );
 }
 
@@ -58,13 +61,16 @@ export function ClearExemptForm({ tenantId }: { tenantId: string }) {
   const [state, formAction, pending] = useAct(action);
   const f = fieldErrors(state, c);
   return (
+    <>
     <form action={formAction}>
       <Field name="reason" label={t("fmClearReason")} hint={t("fmClearHint")} error={f.reason}>
         {(p) => <input id={p.id} name="reason" required minLength={5} maxLength={500} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={inputCls} />}
       </Field>
       <button type="submit" disabled={pending} className={btnPrimary}>{pending ? t("fmSaving") : t("fmRemoveExemption")}</button>
-      <ResultNote result={state} okMessage={t("fmClearOk")} />
     </form>
+    {/* Kept outside the form element: the step-up box is a form of its own and forms must never nest. */}
+    <ResultNote result={state} okMessage={t("fmClearOk")} />
+    </>
   );
 }
 
@@ -74,6 +80,7 @@ export function GrantAdminForm() {
   const [state, formAction, pending] = useAct(grantAdminAction);
   const f = fieldErrors(state, c);
   return (
+    <>
     <form action={formAction}>
       <Field name="email" label={t("fmEmail")} hint={t("fmEmailHint")} error={f.email}>
         {(p) => <input id={p.id} name="email" type="email" required autoComplete="off" aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={inputCls} />}
@@ -87,7 +94,9 @@ export function GrantAdminForm() {
         )}
       </Field>
       <button type="submit" disabled={pending} className={btnPrimary}>{pending ? t("fmSaving") : t("fmGrantButton")}</button>
-      <ResultNote result={state} okMessage={t("fmGrantOk")} />
     </form>
+    {/* Kept outside the form element: the step-up box is a form of its own and forms must never nest. */}
+    <ResultNote result={state} okMessage={t("fmGrantOk")} />
+    </>
   );
 }

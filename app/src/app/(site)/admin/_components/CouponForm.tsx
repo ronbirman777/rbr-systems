@@ -71,6 +71,7 @@ export function CouponForm({ mode, couponId, initial = EMPTY_COUPON, lockFinanci
   const dis = L ? { disabled: true } : {};
 
   return (
+    <>
     <form action={formAction} className="max-w-2xl">
       {state && !state.ok && state.error !== "step_up_required" ? (
         <div role="alert" className="mb-4 rounded-xl border border-idw-clay-text/40 bg-red-50 p-3 text-sm text-red-900">
@@ -195,7 +196,6 @@ export function CouponForm({ mode, couponId, initial = EMPTY_COUPON, lockFinanci
       ) : null}
 
       <button type="submit" disabled={pending} className={btnPrimary}>{pending ? t("fmSaving") : mode === "create" ? t("cfCreate") : t("cfSave")}</button>
-      <ResultNote result={state} okMessage={mode === "create" ? t("cfCreatedOk") : t("cfSavedOk")} />
       {L ? (
         <>
           <input type="hidden" name="discountType" value={initial.discountType} />
@@ -208,5 +208,10 @@ export function CouponForm({ mode, couponId, initial = EMPTY_COUPON, lockFinanci
         </>
       ) : null}
     </form>
+    {/* Kept outside the form element: the step-up box is a form of its own and forms must never nest. */}
+    <div className="max-w-2xl">
+      <ResultNote result={state} okMessage={mode === "create" ? t("cfCreatedOk") : t("cfSavedOk")} />
+    </div>
+    </>
   );
 }
