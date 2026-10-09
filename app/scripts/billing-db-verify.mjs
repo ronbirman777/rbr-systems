@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * TASK 032 - database-level behavioural verification for the billing
- * migrations (0036-0039). STAGING ONLY: the script refuses to run against any
+ * migrations (0036-0042; section L covers the 0042 Restore/Replace guards). STAGING ONLY: the script refuses to run against any
  * project other than the Staging ref, creates its own synthetic users/rows
  * (prefix qa032-), and removes everything it created (and restores the launch
  * flag) in a finally block.
@@ -639,6 +639,104 @@ async function main() {
   const np = await admin.rpc("billing_set_next_payment_attempt", { p_subscription_id: pI.data.subscription_id, p_at: H(24) });
   const { data: npRow } = await admin.from("space_subscriptions").select("next_payment_attempt_at").eq("id", pI.data.subscription_id).single();
   check("K18 the next Stripe retry date can be recorded", !np.error && !!npRow.next_payment_attempt_at, JSON.stringify(np.error));
+
+  // ------------------------------------------------------------------ L. 0042 lifecycle guards (restore / replace)
+  // One account: one LEGACY Space (direct insert, flag off) + one PAID Space, legacy allowance 1. Before 0042,
+  // restore_space() counted both against the allowance (2 > 1) and neither RPC consulted billing.
+  const setFlag = (on) => admin.from("billing_settings").update({ paid_checkout_enabled: on }).eq("singleton", true);
+  const setSlots = (userId, n) => admin.from("user_space_slots").upsert({ user_id: userId, slots_allowed: n });
+  const statusOf = async (id) => (await admin.from("tenants").select("status,name").eq("id", id).single()).data;
+  const locked = (res) => !!res.error && res.error.hint === "BILLING_LOCKED";
+  const slotLimited = (res) => !!res.error && res.error.hint === "SLOT_LIMIT_REACHED";
+
+  const uLc = await mkUser("ulc"); const lc = await userClient(uLc);
+  await setFlag(false);
+  await setSlots(uLc, 1);
+  const legacyT = await lc.from("tenants").insert({ name: "qa032 legacy lifecycle", product_type: "teach", timezone: "UTC" }).select("id").single();
+  if (legacyT.data) created.tenants.push(legacyT.data.id);
+  const ckLc = await mkCheckout(uLc, "retreat");
+  const sLc = subJson(uLc);
+  const pLc = await provision(ckLc.id, sLc, "QA032 paid lifecycle");
+  const paidT = pLc.data?.tenant_id; if (paidT) created.tenants.push(paidT);
+  const legacyId = legacyT.data?.id;
+  check("L0 setup: one legacy + one paid Space for one account, legacy allowance 1", !legacyT.error && !!paidT, JSON.stringify(legacyT.error ?? pLc.error));
+  const subLc = (await admin.from("space_subscriptions").select("id").eq("tenant_id", paidT).single()).data?.id;
+  const setSub = (patch) => admin.from("space_subscriptions").update(patch).eq("id", subLc);
+
+  // Paid (active) Space: restore is allowed although the account is over the legacy allowance, flag OFF and ON.
+  for (const on of [false, true]) {
+    await setFlag(on);
+    await lc.rpc("archive_space", { p_tenant_id: paidT });
+    const res = await lc.rpc("restore_space", { p_tenant_id: paidT });
+    check(`L1 flag ${on ? "ON" : "OFF"}: an active paid Space restores without needing a legacy slot`, !res.error && (await statusOf(paidT))?.status === "draft", JSON.stringify(res.error));
+  }
+
+  // Legacy Space: flag OFF keeps the 0017 count (paid Space included) -> refused exactly as before.
+  await setFlag(false);
+  await lc.rpc("archive_space", { p_tenant_id: legacyId });
+  let lres = await lc.rpc("restore_space", { p_tenant_id: legacyId });
+  check("L2 flag OFF: legacy restore keeps the pre-0042 count (2 owned > 1 allowed -> SLOT_LIMIT_REACHED)", slotLimited(lres) && (await statusOf(legacyId))?.status === "archived", JSON.stringify(lres.error));
+  // Flag ON: only legacy Spaces count -> 1 <= 1 -> allowed.
+  await setFlag(true);
+  lres = await lc.rpc("restore_space", { p_tenant_id: legacyId });
+  check("L3 flag ON: legacy restore counts legacy Spaces only (the paid Space does not eat the free slot)", !lres.error && (await statusOf(legacyId))?.status === "draft", JSON.stringify(lres.error));
+  // Flag ON, still over the legacy allowance -> refused.
+  await setSlots(uLc, 0);
+  await lc.rpc("archive_space", { p_tenant_id: legacyId });
+  lres = await lc.rpc("restore_space", { p_tenant_id: legacyId });
+  check("L4 flag ON: a legacy Space over the legacy allowance is still refused (SLOT_LIMIT_REACHED)", slotLimited(lres) && (await statusOf(legacyId))?.status === "archived", JSON.stringify(lres.error));
+  await setFlag(false);
+  await setSlots(uLc, 2);
+  lres = await lc.rpc("restore_space", { p_tenant_id: legacyId });
+  check("L5 flag OFF: legacy restore with a free slot succeeds (unchanged)", !lres.error && (await statusOf(legacyId))?.status === "draft", JSON.stringify(lres.error));
+  const legacyReplace = await lc.rpc("replace_space", { p_tenant_id: legacyId, p_new_name: "qa032 legacy replaced" });
+  check("L6 legacy Space: replace is unaffected by billing (allowed)", !legacyReplace.error && (await statusOf(legacyId))?.name === "qa032 legacy replaced", JSON.stringify(legacyReplace.error));
+  await setSlots(uLc, 1);
+
+  // Suspended / ended paid Space: restore and replace are refused with BILLING_LOCKED, whatever the flag.
+  const lcItem = await lc.from("module_items").insert({ tenant_id: paidT, module_key: "meals", title: "qa032 keep me" }).select("id").single();
+  for (const [label, patch] of [
+    ["Studio-suspended (failure > 7 days)", { status: "past_due", payment_failed_at: H(-200) }],
+    ["ended (canceled)", { status: "canceled", payment_failed_at: null }],
+  ]) {
+    await setSub({ status: "active", payment_failed_at: null });
+    await lc.rpc("archive_space", { p_tenant_id: paidT });
+    await setSub(patch);
+    for (const on of [false, true]) {
+      await setFlag(on);
+      const rs = await lc.rpc("restore_space", { p_tenant_id: paidT });
+      check(`L7 flag ${on ? "ON" : "OFF"}, ${label}: restore refused with BILLING_LOCKED`, locked(rs) && (await statusOf(paidT))?.status === "archived", JSON.stringify(rs.error));
+      const rp = await lc.rpc("replace_space", { p_tenant_id: paidT, p_new_name: "qa032 tamper" });
+      const after = await statusOf(paidT);
+      const { count: kept } = await admin.from("module_items").select("*", { count: "exact", head: true }).eq("tenant_id", paidT);
+      check(`L8 flag ${on ? "ON" : "OFF"}, ${label}: replace refused with BILLING_LOCKED and nothing was reset`, locked(rp) && after?.name !== "qa032 tamper" && after?.status === "archived" && (lcItem.error || kept >= 1), JSON.stringify(rp.error));
+    }
+  }
+
+  // Guest-suspended (Studio still writable, 24h-7d): a paying customer is not blocked.
+  await setSub({ status: "past_due", payment_failed_at: H(-30) });
+  await setFlag(true);
+  const gs = await lc.rpc("restore_space", { p_tenant_id: paidT });
+  check("L9 Guest-suspended (Studio writable): restore allowed", !gs.error && (await statusOf(paidT))?.status === "draft", JSON.stringify(gs.error));
+
+  // Exempt Space: allowed, no slot check (allowance 1, two owned).
+  await admin.from("space_subscriptions").delete().eq("id", subLc);
+  const exLc = await admin.rpc("billing_set_internal_exempt", { p_tenant_id: paidT, p_reason: "qa032 lifecycle exemption", p_actor: uLc });
+  await lc.rpc("archive_space", { p_tenant_id: paidT });
+  for (const on of [false, true]) {
+    await setFlag(on);
+    if ((await statusOf(paidT))?.status !== "archived") await lc.rpc("archive_space", { p_tenant_id: paidT });
+    const rs = await lc.rpc("restore_space", { p_tenant_id: paidT });
+    check(`L10 flag ${on ? "ON" : "OFF"}: an exempt Space restores without a legacy slot`, !exLc.error && !rs.error && (await statusOf(paidT))?.status === "draft", JSON.stringify(exLc.error ?? rs.error));
+  }
+  const exRp = await lc.rpc("replace_space", { p_tenant_id: paidT, p_new_name: "qa032 exempt replaced" });
+  check("L11 an exempt Space can be replaced", !exRp.error && (await statusOf(paidT))?.name === "qa032 exempt replaced", JSON.stringify(exRp.error));
+  await admin.rpc("billing_clear_internal_exempt", { p_tenant_id: paidT });
+
+  // Non-owners are still refused before any billing logic.
+  const strangerRs = await gc.rpc("restore_space", { p_tenant_id: paidT });
+  check("L12 a non-owner is still refused (42501), never told the billing state", !!strangerRs.error && strangerRs.error.code === "42501" && !locked(strangerRs), JSON.stringify(strangerRs.error));
+  await setFlag(flagWasEnabled);
 }
 
 try {

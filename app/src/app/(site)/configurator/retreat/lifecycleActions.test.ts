@@ -751,6 +751,25 @@ describe("lifecycleActions - Task 011", () => {
         expect(mockRpc).toHaveBeenCalledWith("replace_space", { p_tenant_id: T, p_new_name: "New" });
         expect(result.success).toBe(true);
       });
+
+      it("0042: a DB BILLING_LOCKED refusal of restore reads as the localized billing message (never 'no slot')", async () => {
+        mockRpc.mockResolvedValue({ error: { hint: "BILLING_LOCKED", message: "Billing must be resolved before this Space can be restored" } });
+        const { restoreSpace } = await loadActions();
+        const result = await restoreSpace({ error: null }, formData({ tenantId: T }));
+        expect(result).toMatchObject({ billingLocked: true, error: "Resolve billing for this Space before restoring or replacing it." });
+        expect(result.slotLimitReached).toBeUndefined();
+        expect(mockRevalidatePath).not.toHaveBeenCalled();
+      });
+
+      it("0042: a DB BILLING_LOCKED refusal of replace reads as the localized billing message", async () => {
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        mockRpc.mockResolvedValue({ error: { hint: "BILLING_LOCKED", message: "raw db text" } });
+        const { replaceSpace } = await loadActions();
+        const result = await replaceSpace({ error: null }, formData(confirmed));
+        expect(result).toMatchObject({ billingLocked: true, error: "Resolve billing for this Space before restoring or replacing it." });
+        expect(result.error).not.toContain("raw db text");
+        expect(result.success).toBeUndefined();
+      });
     });
 
     describe.each([["paid"], ["unavailable"]] as const)("flag ON (%s)", (mode) => {
@@ -775,6 +794,14 @@ describe("lifecycleActions - Task 011", () => {
         const result = await restoreSpace({ error: null }, formData({ tenantId: T }));
         expect(result.slotLimitReached).toBeUndefined();
         expect(result.error).toBe("Couldn't restore this Space. Please try again.");
+      });
+
+      it("0042 race: billing locked between the pre-check and the RPC -> the DB refusal is mapped to the billing message", async () => {
+        billing.subs[T] = sub(T);
+        mockRpc.mockResolvedValue({ error: { hint: "BILLING_LOCKED" } });
+        const { restoreSpace } = await loadActions();
+        const result = await restoreSpace({ error: null }, formData({ tenantId: T }));
+        expect(result).toMatchObject({ billingLocked: true, error: "Resolve billing for this Space before restoring or replacing it." });
       });
 
       it.each([

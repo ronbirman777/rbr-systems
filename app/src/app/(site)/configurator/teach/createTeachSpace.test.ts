@@ -16,6 +16,8 @@ const state = vi.hoisted(() => ({
   /** Tenants this user already has; the dedupe lookup reads it and every insert appends to it. */
   existing: [] as { id: string; name: string; product_type: string; created_by: string; created_at: string }[],
   nextId: 1,
+  /** TASK 032: the launch-flag mode getCreateMode() reports. */
+  createMode: "legacy" as "legacy" | "paid" | "unavailable",
 }));
 
 vi.mock("server-only", () => ({}));
@@ -25,6 +27,7 @@ vi.mock("next/navigation", () => ({
   },
 }));
 vi.mock("sharp", () => ({ default: () => ({}) }));
+vi.mock("@/lib/billing/funnelMode", () => ({ getCreateMode: async () => state.createMode }));
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => {
     state.adminUsed++;
@@ -101,6 +104,7 @@ beforeEach(() => {
   state.adminUsed = 0;
   state.existing = [];
   state.nextId = 1;
+  state.createMode = "legacy";
 });
 
 describe("createTeachSpace - shared-invariant audit (TASK 027.5 Phase 2B)", () => {
@@ -223,5 +227,34 @@ describe("createTeachSpace - idempotency and navigation (TASK 027.5 QA correctio
   it("entitlement is irrelevant to navigation: the action reads and writes no entitlement rows", async () => {
     await run();
     expect(state.ops.some((o) => o.table === "space_entitlements")).toBe(false);
+  });
+});
+
+/** TASK 032: with paid checkout on, Time to Teach is created only through the paid funnel. */
+describe("createTeachSpace - paid checkout guard (TASK 032)", () => {
+  it.each(["paid", "unavailable"] as const)("flag ON (%s): redirects to /create before any read or insert", async (mode) => {
+    state.createMode = mode;
+    expect(await run()).toBe("REDIRECT:/create");
+    expect(state.ops).toEqual([]);
+    expect(state.adminUsed).toBe(0);
+  });
+
+  it("flag ON: even a recent untitled Teach Space is not reopened through this path (nothing is read)", async () => {
+    const { SPACE_TYPES } = await import("@/lib/spaceTypes/registry");
+    state.existing.push({ id: "recent", name: SPACE_TYPES.teach.copy.untitledName, product_type: "teach", created_by: "u1", created_at: new Date().toISOString() });
+    state.createMode = "paid";
+    expect(await run()).toBe("REDIRECT:/create");
+    expect(state.ops).toEqual([]);
+  });
+
+  it("signed-out callers still go to log-in first", async () => {
+    state.user = null;
+    state.createMode = "paid";
+    expect(await run()).toBe("REDIRECT:/log-in");
+  });
+
+  it("flag OFF (legacy): unchanged - one tenant insert and into the Teach Studio", async () => {
+    expect(await run()).toBe("REDIRECT:/configurator/teach/new-tenant-1");
+    expect(state.ops.filter((o) => o.table === "tenants" && o.op === "insert")).toHaveLength(1);
   });
 });

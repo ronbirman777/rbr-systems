@@ -7,8 +7,9 @@
 -- migration that corrects the defect) is preferred over this rollback.
 --
 -- ORDER: TASK 032 rollbacks run in strict reverse order, one at a time:
---   0041 (this file) -> 0040 -> 0039 -> 0038 -> 0037 -> 0036.
--- This is the first one; nothing must be rolled back before it.
+--   0042 -> 0041 (this file) -> 0040 -> 0039 -> 0038 -> 0037 -> 0036.
+-- 0042's rollback must already have run (the guard checks it: the restated
+-- restore_space()/replace_space() must no longer carry the BILLING_LOCKED guard).
 --
 -- ===========================================================================
 -- WHAT 0041 ADDED, AND WHAT THIS FILE DOES
@@ -64,6 +65,10 @@ do $$
 begin
   if coalesce(current_setting('idw.rollback_confirm', true), '') <> '0041-exported' then
     raise exception 'ROLLBACK 0041 REFUSED: set idw.rollback_confirm = ''0041-exported'' after exporting (step 0)';
+  end if;
+  if position('BILLING_LOCKED' in pg_get_functiondef('public.restore_space(uuid)'::regprocedure)) > 0
+     or position('BILLING_LOCKED' in pg_get_functiondef('public.replace_space(uuid, text)'::regprocedure)) > 0 then
+    raise exception 'ROLLBACK 0041 REFUSED: 0042 is still applied; run the 0042 rollback first';
   end if;
   if exists (select 1 from public.billing_settings where paid_checkout_enabled) then
     raise exception 'ROLLBACK 0041 REFUSED: paid checkout is ON (billing_settings.paid_checkout_enabled)';

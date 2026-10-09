@@ -425,7 +425,7 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     }
   });
 
-  it("migration chain: one migration per number, 0041 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
+  it("migration chain: one migration per number, 0042 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
     const names = migrations.map((m) => m.name);
     expect(names.filter((n) => n.startsWith("0028_"))).toEqual(["0028_teach_foundation.sql"]);
     expect(names.filter((n) => n.startsWith("0029_"))).toEqual(["0029_versioned_media_update_deny.sql"]);
@@ -437,11 +437,11 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     // renumbered or back-filled.
     expect(names.filter((n) => n.startsWith("0034_"))).toEqual(["0034_flow_daily_inspiration.sql"]);
     expect(names.filter((n) => n.startsWith("0035_"))).toEqual(["0035_teach_my_retreats.sql"]);
-    // TASK 032's billing foundation: 0036-0041, one each, nothing beyond.
-    for (const [n, file] of [["0036", "0036_billing_core_tables.sql"], ["0037", "0037_billing_coupon_engine.sql"], ["0038", "0038_billing_provisioning_lifecycle.sql"], ["0039", "0039_billing_access_enforcement.sql"], ["0040", "0040_billing_payments_invoices.sql"], ["0041", "0041_billing_event_email_primitives.sql"]] as const) {
+    // TASK 032's billing foundation: 0036-0041, plus the 0042 lifecycle guards; one each, nothing beyond.
+    for (const [n, file] of [["0036", "0036_billing_core_tables.sql"], ["0037", "0037_billing_coupon_engine.sql"], ["0038", "0038_billing_provisioning_lifecycle.sql"], ["0039", "0039_billing_access_enforcement.sql"], ["0040", "0040_billing_payments_invoices.sql"], ["0041", "0041_billing_event_email_primitives.sql"], ["0042", "0042_billing_space_lifecycle_guards.sql"]] as const) {
       expect(names.filter((x) => x.startsWith(`${n}_`))).toEqual([file]);
     }
-    expect(names.some((n) => /^00(4[2-9]|[5-9]\d)_/.test(n))).toBe(false);
+    expect(names.some((n) => /^00(4[3-9]|[5-9]\d)_/.test(n))).toBe(false);
     expect(names.filter((n) => n.startsWith("0019_"))).toEqual(["0019_signup_profile.sql"]);
     expect(names.some((n) => n.startsWith("0023_"))).toBe(false);
   });

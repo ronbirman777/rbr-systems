@@ -27,6 +27,7 @@ export function SpaceLifecycleControls({
   showReplace,
   billingLockedNote,
   untitledName,
+  paidMode = false,
 }: {
   tenantId: string;
   name: string;
@@ -38,6 +39,12 @@ export function SpaceLifecycleControls({
   billingLockedNote: string | null;
   /** Product-specific default name (Space Type Registry copy.untitledName). */
   untitledName: string;
+  /**
+   * TASK 032: paid checkout is on. Each Space is its own subscription, so the
+   * dialogs must not talk about "Space slots". false (legacy) keeps the Task 011
+   * text exactly.
+   */
+  paidMode?: boolean;
 }) {
   const [archiveState, archiveAction, archivePending] = useActionState(archiveSpace, INITIAL_LIFECYCLE_STATE);
   const [restoreState, restoreAction, restorePending] = useActionState(restoreSpace, INITIAL_LIFECYCLE_STATE);
@@ -74,7 +81,7 @@ export function SpaceLifecycleControls({
         )}
         {showReplace && (
           <>
-            <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} open={replaceOpen} onOpenChange={setReplaceOpen} />
+            <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} paidMode={paidMode} open={replaceOpen} onOpenChange={setReplaceOpen} />
             <button type="button" onClick={() => setReplaceOpen(true)} className={safeChip}>
               Replace
             </button>
@@ -97,11 +104,18 @@ export function SpaceLifecycleControls({
         </button>
       ) : (
         <div className="rounded-xl border border-idw-forest/15 bg-idw-parchment/60 p-3 max-w-[260px] w-full">
-          <p className="text-xs text-idw-forest/70 normal-case font-normal">
-            Archiving &ldquo;{name}&rdquo; removes it from active/public use. It keeps using its
-            Space slot — archiving does not free capacity for a new Space. Guests will no longer
-            be able to reach it.
-          </p>
+          {paidMode ? (
+            <p className="text-xs text-idw-forest/70 normal-case font-normal">
+              Archiving &ldquo;{name}&rdquo; removes it from active/public use. Guests will no longer
+              be able to reach it. Archiving does not cancel its subscription.
+            </p>
+          ) : (
+            <p className="text-xs text-idw-forest/70 normal-case font-normal">
+              Archiving &ldquo;{name}&rdquo; removes it from active/public use. It keeps using its
+              Space slot — archiving does not free capacity for a new Space. Guests will no longer
+              be able to reach it.
+            </p>
+          )}
           <div className="flex flex-wrap gap-2 mt-2">
             <form action={archiveAction}>
               <input type="hidden" name="tenantId" value={tenantId} />
@@ -122,7 +136,7 @@ export function SpaceLifecycleControls({
       )}
       {showReplace && (
         <>
-          <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} open={replaceOpen} onOpenChange={setReplaceOpen} />
+          <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} paidMode={paidMode} open={replaceOpen} onOpenChange={setReplaceOpen} />
           <button type="button" onClick={() => setReplaceOpen(true)} className={safeChip}>
             Replace
           </button>
@@ -144,12 +158,14 @@ function ReplaceDialog({
   tenantId,
   name,
   untitledName,
+  paidMode,
   open,
   onOpenChange,
 }: {
   tenantId: string;
   name: string;
   untitledName: string;
+  paidMode: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -186,11 +202,19 @@ function ReplaceDialog({
         <h2 id="replace-space-title" className="text-[16px] text-idw-forest font-editorial italic">
           Replace this Space
         </h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-idw-forest/60">
-          This discards &ldquo;{name}&rdquo;&apos;s existing content — its published version,
-          schedule, and module content — and reuses the same Space slot for a new draft. This
-          cannot be undone. Type the Space&apos;s current name to confirm.
-        </p>
+        {paidMode ? (
+          <p className="mt-2 text-[13px] leading-relaxed text-idw-forest/60">
+            This discards &ldquo;{name}&rdquo;&apos;s existing content — its published version,
+            schedule, and module content — and starts a new draft in the same Space. This
+            cannot be undone. Type the Space&apos;s current name to confirm.
+          </p>
+        ) : (
+          <p className="mt-2 text-[13px] leading-relaxed text-idw-forest/60">
+            This discards &ldquo;{name}&rdquo;&apos;s existing content — its published version,
+            schedule, and module content — and reuses the same Space slot for a new draft. This
+            cannot be undone. Type the Space&apos;s current name to confirm.
+          </p>
+        )}
         <form action={formAction} className="mt-4 flex flex-col gap-3">
           <input type="hidden" name="tenantId" value={tenantId} />
           <input type="hidden" name="expectedName" value={name} />

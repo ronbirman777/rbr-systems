@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { getSpaceEntitlement } from "@/lib/entitlements/getSpaceEntitlement";
 import { getSpaceCommercialAvailability } from "@/lib/billing/commercialAccess";
+import { getCreateMode } from "@/lib/billing/funnelMode";
 import { loadAudioQuotaPolicy } from "@/lib/billing/audioQuota.server";
 import { audioQuotaMessageKey, audioQuotaMessageValues, checkAudioAttach, checkAudioPublish } from "@/lib/billing/audioQuota";
 import { getCustomPagesLimit } from "@/lib/entitlements/customPagesLimit";
@@ -113,6 +114,11 @@ const CREATE_DEDUPE_WINDOW_MS = 60_000;
 export async function createTeachSpace(): Promise<void> {
   const { supabase, user } = await requireUser();
   if (!user) redirect("/log-in");
+
+  // TASK 032: with paid checkout on, a new Space only ever comes from the paid
+  // funnel (the 0038 trigger refuses a direct insert with PAYMENT_REQUIRED), so
+  // send the caller there before any read or insert. Flag off: unchanged.
+  if ((await getCreateMode()) !== "legacy") redirect("/create");
 
   // Idempotency: a double click, a slow-network retry or a second tab must not
   // mint a second Space. If this user created a still-untouched Teach Space a

@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import sharp from "sharp";
+import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { brandConfigSchema } from "@/lib/theme/tokens";
@@ -191,6 +192,11 @@ export async function saveDraft(
           slotLimitReached: true,
         };
       }
+      // TASK 032: paid checkout was switched on while this blank Studio was
+      // open (the page itself already redirects in that mode). The 0038 trigger
+      // refused the insert with HINT 'PAYMENT_REQUIRED'; send the owner to the
+      // paid funnel instead of showing the raw database message.
+      if (tenantError?.hint === "PAYMENT_REQUIRED") redirect("/create");
       return { error: tenantError?.message ?? t("couldNotCreateSpace"), tenantId: null };
     }
     tenantId = tenant.id;

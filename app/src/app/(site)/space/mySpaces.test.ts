@@ -198,7 +198,8 @@ describe("My Spaces - Restore / Replace under billing (TASK 032 B2)", () => {
     state.slots = { slotsUsed: 1, slotsAllowed: 2, slotsAvailable: 1 };
     let c = controls(await render([tenant({ id: "live" }), tenant({ id: "arch", status: "archived" })]));
     expect(c.live).toMatchObject({ showRestore: false, showReplace: false, billingLockedNote: null });
-    expect(c.arch).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null });
+    expect(c.arch).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null, paidMode: false });
+    expect(c.live).toMatchObject({ paidMode: false });
 
     state.slots = { slotsUsed: 2, slotsAllowed: 2, slotsAvailable: 0 };
     c = controls(await render([tenant({ id: "live" })]));
@@ -219,7 +220,8 @@ describe("My Spaces - Restore / Replace under billing (TASK 032 B2)", () => {
     const tree = await render([tenant({ id: ID }), tenant({ id: PAID, status: "archived" })]);
     const c = controls(tree);
     expect(c[ID]).toMatchObject({ showRestore: false, showReplace: true, billingLockedNote: null });
-    expect(c[PAID]).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null });
+    expect(c[PAID]).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null, paidMode: true });
+    expect(c[ID]).toMatchObject({ paidMode: true });
     expect(textOf(tree)).not.toContain("Still uses one Space slot");
     expect(textOf(tree)).not.toContain("slot used");
   });

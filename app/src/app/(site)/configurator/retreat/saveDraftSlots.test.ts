@@ -41,6 +41,11 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("sharp", () => ({ default: vi.fn() }));
+vi.mock("next/navigation", () => ({
+  redirect: (to: string) => {
+    throw new Error(`REDIRECT:${to}`);
+  },
+}));
 
 async function loadSaveDraft() {
   const mod = await import("./actions");
@@ -134,5 +139,29 @@ describe("saveDraft - Task 011 slot-limit handling", () => {
     expect(result.tenantId).toBe("existing-tenant-1");
     expect(mockTenantsInsert).not.toHaveBeenCalled();
     expect(mockTenantsUpdate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("saveDraft - TASK 032 paid checkout on (PAYMENT_REQUIRED from the 0038 trigger)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+  });
+
+  it("redirects to the paid funnel instead of surfacing the raw database message, and writes nothing else", async () => {
+    mockTenantsInsert.mockResolvedValue({
+      data: null,
+      error: { message: "Payment is required to create a Space", hint: "PAYMENT_REQUIRED" },
+    });
+    const saveDraft = await loadSaveDraft();
+    await expect(saveDraft({ error: null, tenantId: null }, formData(baseFields))).rejects.toThrow("REDIRECT:/create");
+    expect(mockBrandUpsert).not.toHaveBeenCalled();
+  });
+
+  it("a slot refusal is still the Task 011 'no slots' state (not a redirect)", async () => {
+    mockTenantsInsert.mockResolvedValue({ data: null, error: { message: "No available Space slots", hint: "SLOT_LIMIT_REACHED" } });
+    const saveDraft = await loadSaveDraft();
+    const result = await saveDraft({ error: null, tenantId: null }, formData(baseFields));
+    expect(result.slotLimitReached).toBe(true);
   });
 });

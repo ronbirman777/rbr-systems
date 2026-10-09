@@ -8,8 +8,8 @@ import { extractFunctionBody, latestFunctionDefinition, stripSqlComments, type M
  * TASK 032 rollback guard (docs/billing/MIGRATION-RECOVERY.md).
  *
  * Static checks only - nothing here touches a database:
- *  - every TASK 032 migration (0036-0041) has a rollback file in supabase/verification/;
- *  - a rollback that restores a function restated by 0038/0039 restores EXACTLY the body of the
+ *  - every TASK 032 migration (0036-0042) has a rollback file in supabase/verification/;
+ *  - a rollback that restores a function restated by 0038/0039/0042 restores EXACTLY the body of the
  *    migration that defined that function before (found mechanically, not hard-coded);
  *  - every object a migration creates is dropped by its rollback;
  *  - rollbacks are transactional, confirmation-gated and never use CASCADE.
@@ -25,7 +25,7 @@ const migrations = read("migrations");
 const num = (name: string) => Number(/^(\d+)_/.exec(name)?.[1] ?? -1);
 const migration = (n: string) => migrations.find((m) => m.name.startsWith(`${n}_`))!;
 
-const TASK032 = ["0036", "0037", "0038", "0039", "0040", "0041"] as const;
+const TASK032 = ["0036", "0037", "0038", "0039", "0040", "0041", "0042"] as const;
 const rollbackPath = (n: string) =>
   path.join(ROOT, "verification", migration(n).name.replace(/\.sql$/, "_rollback.sql"));
 const rollback = (n: string) => fs.readFileSync(rollbackPath(n), "utf8");
@@ -100,6 +100,7 @@ describe("TASK 032 rollback files", () => {
 
   it("each rollback (except the first) refuses until the next-later rollback has run", () => {
     const later: Record<string, string> = {
+      "0041": "billing_locked", // 0042 (its restated restore_space/replace_space carry hint BILLING_LOCKED)
       "0040": "public.billing_claim_event(", // 0041
       "0039": "public.billing_invoices", // 0040
       "0038": "billing allows studio writes", // 0039
@@ -118,6 +119,8 @@ describe("restated functions are restored to their previous definition, byte for
     { rb: "0039", fn: "publish_space", expectedPrevious: /^0034_/ },
     { rb: "0038", fn: "handle_new_tenant", expectedPrevious: /^0001_/ },
     { rb: "0038", fn: "enforce_space_slot_capacity", expectedPrevious: /^0017_/ },
+    { rb: "0042", fn: "restore_space", expectedPrevious: /^0017_/ },
+    { rb: "0042", fn: "replace_space", expectedPrevious: /^0027_/ },
   ] as const;
 
   for (const { rb, fn, expectedPrevious } of RESTORED) {
@@ -180,6 +183,90 @@ describe("restated functions are restored to their previous definition, byte for
     expect(functiondefMd5("enforce_space_slot_capacity()", "trigger", definer, rawBody(rb38, "enforce_space_slot_capacity"))).toBe(
       "708dde46d74624be4cb93b48d4972991"
     );
+  });
+});
+
+/**
+ * TASK 032 (0042): restore_space()/replace_space() are restated with ADDITIVE, marked blocks only.
+ * Removing exactly the marked blocks must give back the previous definition's raw text (comments
+ * included), so nothing else in either function can have changed.
+ */
+const MARKED_0042 = /[ \t]*-- >>> TASK 032 \(0042\)[\s\S]*?-- <<< TASK 032 \(0042\)\n\n/g;
+
+describe("0042 restates restore_space() / replace_space() with marked billing guards only", () => {
+  const m42 = migration("0042").sql;
+
+  for (const [fn, prevFile, blocks] of [["restore_space", /^0017_/, 2], ["replace_space", /^0027_/, 1]] as const) {
+    it(`${fn}(): 0042's body minus the ${blocks} marked block(s) is the previous body, byte for byte`, () => {
+      const prev = previousDefinition(fn, "0042")!;
+      expect(prev.file).toMatch(prevFile);
+      const raw = rawBody(m42, fn);
+      expect([...raw.matchAll(MARKED_0042)]).toHaveLength(blocks);
+      const prevSql = migrations.find((m) => m.name === prev.file)!.sql;
+      expect(raw.replace(MARKED_0042, "")).toBe(rawBody(prevSql, fn));
+      // ...and it really is a change (the guard is there).
+      expect(raw).not.toBe(rawBody(prevSql, fn));
+      expect(raw).toContain("hint = 'BILLING_LOCKED'");
+    });
+
+    it(`${fn}(): 0042 keeps the signature, security definer, the pinned search_path and the grants`, () => {
+      const c = code(m42);
+      const start = c.indexOf(`create or replace function public.${fn}(`);
+      const header = c.slice(start, c.indexOf("$$", start));
+      expect(header).toMatch(/returns void\s+language plpgsql\s+security definer\s+set search_path to 'public'\s+as $/);
+      const sig = fn === "restore_space" ? "uuid" : "uuid, text";
+      expect(header.startsWith(`create or replace function public.${fn}(p_tenant_id uuid${fn === "replace_space" ? ", p_new_name text" : ""})`)).toBe(true);
+      expect(c).toContain(`revoke all on function public.${fn}(${sig}) from public, anon;`);
+      expect(c).toContain(`grant execute on function public.${fn}(${sig}) to authenticated;`);
+      expect(c).not.toMatch(new RegExp(`grant execute on function public\\.${fn}\\([^)]*\\) to (anon|public)`));
+    });
+  }
+
+  it("0042 does not touch archive_space() and creates no new object", () => {
+    const c = code(m42);
+    expect(c).not.toContain("archive_space");
+    expect(c).not.toMatch(/\bcreate (function|table|policy|trigger|index)\b/);
+    expect(c).not.toMatch(/\b(drop|alter table)\b/);
+  });
+
+  it("restore_space(): billing-governed Spaces skip the slot check and need a writable Studio; the legacy re-count is flag-gated", () => {
+    const body = extractFunctionBody(m42, "restore_space")!.replace(/\s+/g, " ");
+    // The billing branch comes before the legacy slot bootstrap/lock and returns on its own.
+    const billing = body.indexOf("if coalesce((select a.decided from public.space_access_state(p_tenant_id) a), false) then");
+    expect(billing).toBeGreaterThan(body.indexOf("is_tenant_owner(p_tenant_id)"));
+    expect(billing).toBeLessThan(body.indexOf("insert into public.user_space_slots"));
+    expect(body.slice(billing, body.indexOf("insert into public.user_space_slots"))).toMatch(
+      /if not public\.space_studio_writable\(p_tenant_id\) then raise exception .* hint = 'BILLING_LOCKED'; end if; update public\.tenants .* return; end if;/
+    );
+    // Flag OFF keeps the original count (it is still there, unchanged); the legacy-only count runs only when paid checkout is ON.
+    expect(body).toContain("select count(*) into v_used from public.tenant_members where user_id = v_user and role = 'owner';");
+    expect(body).toMatch(
+      /if public\.billing_is_paid_checkout_required\(\) then select count\(\*\) into v_used from public\.tenant_members tm where tm\.user_id = v_user and tm\.role = 'owner' and not coalesce\(\(select a\.decided from public\.space_access_state\(tm\.tenant_id\) a\), false\); end if;/
+    );
+  });
+
+  it("replace_space(): the billing guard runs before anything is deleted", () => {
+    const body = extractFunctionBody(m42, "replace_space")!;
+    const guard = body.indexOf("if not public.space_studio_writable(p_tenant_id) then");
+    expect(guard).toBeGreaterThan(body.indexOf("is_tenant_owner(p_tenant_id)"));
+    expect(guard).toBeLessThan(body.indexOf("delete from public.published_spaces"));
+  });
+
+  it("the 0042 rollback restores the recorded pre-TASK-032 fingerprints (pg_get_functiondef md5, Staging before 0028)", () => {
+    const rb42 = rollback("0042");
+    const definer = ["LANGUAGE plpgsql", "SECURITY DEFINER", "SET search_path TO 'public'"];
+    expect(functiondefMd5("restore_space(p_tenant_id uuid)", "void", definer, rawBody(rb42, "restore_space"))).toBe("9a31bcf90162a2ce7001078d1fdbcfa0");
+    expect(functiondefMd5("replace_space(p_tenant_id uuid, p_new_name text)", "void", definer, rawBody(rb42, "replace_space"))).toBe(
+      "3a2af65a96d60ac2dfc90ee6f73d5236"
+    );
+  });
+
+  it("the 0042 rollback is a restore only: it drops nothing and leaves archive_space() alone", () => {
+    const c = code(rollback("0042"));
+    expect(c).not.toMatch(/\bdrop\b/);
+    expect(c).not.toContain("archive_space");
+    expect(extractFunctionBody(rollback("0042"), "restore_space")).not.toContain("space_access_state");
+    expect(extractFunctionBody(rollback("0042"), "replace_space")).not.toContain("space_studio_writable");
   });
 });
 

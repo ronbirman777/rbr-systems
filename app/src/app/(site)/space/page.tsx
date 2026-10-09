@@ -436,6 +436,7 @@ export default async function MySpacePage() {
                         isArchived && lifecycle.billingLocked ? translateAccount(accountLocale, "billing", "lifecycleBillingLocked") : null
                       }
                       untitledName={spaceType?.copy.untitledName ?? "Untitled Space"}
+                      paidMode={paidLifecycle}
                     />
                   )}
                 </div>

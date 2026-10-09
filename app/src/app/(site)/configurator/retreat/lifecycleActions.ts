@@ -19,6 +19,14 @@ function isSlotLimitError(error: { hint?: string | null } | null | undefined): b
   return error?.hint === "SLOT_LIMIT_REACHED";
 }
 
+/** TASK 032 (0042): restore_space()/replace_space() RAISE ... USING HINT =
+ * 'BILLING_LOCKED' when billing has suspended/ended this Space's Studio. The
+ * database is the authority in every mode (the paid-mode pre-check below is
+ * only an early, legible refusal), so this is mapped in legacy mode too. */
+function isBillingLockedError(error: { hint?: string | null } | null | undefined): boolean {
+  return error?.hint === "BILLING_LOCKED";
+}
+
 export type LifecycleActionState = {
   error: string | null;
   slotLimitReached?: boolean;
@@ -136,10 +144,13 @@ export async function restoreSpace(
 
   const { error } = await supabase.rpc("restore_space", { p_tenant_id: tenantId });
   if (error) {
+    if (isBillingLockedError(error)) {
+      return { error: translateAccount(locale, "billing", "lifecycleBillingLocked"), billingLocked: true };
+    }
     // Paid mode, billing-governed Space: the app already decided it may be
-    // restored, so a slot refusal here is restore_space() (0017) counting paid
-    // Spaces against the legacy allowance - not something the customer can fix
-    // by freeing a slot. Reported as a DB follow-up; never shown as "no slot".
+    // restored, and since 0042 restore_space() no longer applies the legacy
+    // slot rule to such a Space, so a slot refusal here would be an anomaly -
+    // never shown as "no slot" (the customer cannot fix it by freeing one).
     if (isSlotLimitError(error) && !(gate.paidMode && gate.decision.governedBy === "billing")) {
       return {
         error: t("noSlotToRestoreInto"),
@@ -193,7 +204,7 @@ export async function replaceSpace(
 
   // TASK 032 (B2): in paid mode a billing-governed Space may only be reset
   // while its Studio is writable - checked BEFORE any Storage or database
-  // change. replace_space() is SECURITY DEFINER and does not consult billing.
+  // change. replace_space() (0042) also refuses with BILLING_LOCKED, mapped below.
   const gate = await lifecycleGate(supabase, user.id, tenantId, "replace");
   if (!gate.decision.allowed) {
     return gate.decision.blockedBy === "billing_locked"
@@ -217,7 +228,12 @@ export async function replaceSpace(
     p_tenant_id: tenantId,
     p_new_name: newName || spaceType.copy.untitledName,
   });
-  if (error) return { error: t("replaceFailed") };
+  if (error) {
+    if (isBillingLockedError(error)) {
+      return { error: translateAccount(localeFromFormData(formData), "billing", "lifecycleBillingLocked"), billingLocked: true };
+    }
+    return { error: t("replaceFailed") };
+  }
 
   revalidatePath("/space");
   return { error: null, success: true };
