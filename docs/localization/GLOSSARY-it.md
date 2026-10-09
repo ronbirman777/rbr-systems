@@ -46,3 +46,33 @@ Status: UNREVIEWED by a native speaker. Register: formal "Lei" in sentences, imp
 - https://www.smoobu.com/it/guides/booking-com/politica-di-cancellazione/
 - https://www.graubuenden.ch/it/eventi/alpine-reset-yoga-retreat
 - https://www.yumping.com/it/offerte/surf-camp/cadiz/ritiro-di-surf-e-yoga-a-chiclana-puente-del-pilar--o53214
+
+## Admin (admin.it.ts)
+
+Status: UNREVIEWED by a native speaker. Internal tool: formal "Lei" in sentences, impersonal infinitive/noun on labels and buttons. Research: GitHub Docs IT-style wording "app di autenticazione/TOTP", "codice QR", "chiave di configurazione" (setup key); Google Account Help IT uses "Verifica in due passaggi" (https://support.google.com/accounts/answer/185839?hl=it). Search access gave summaries only, not full-page audits.
+
+| Concept | Approved IT | Rejected | Rationale |
+|---|---|---|---|
+| Audit log | registro di controllo (nav: Registro) | audit log, log di audit | Italian IT/accounting register; "controllo" matches Microsoft IT "Log di controllo". Short nav label "Registro". |
+| Step-up (re-verify before sensitive change) | "Conferma della sua identità" + nuovo codice | step-up, passaggio superiore | No Italian term; user-facing meaning is re-confirming identity. |
+| Authenticator app | app di autenticazione | autenticatore, authenticator | Google/Microsoft IT usage. |
+| Setup key | chiave di configurazione | chiave di setup, chiave segreta | GitHub IT "chiave di configurazione". |
+| QR | codice QR | QR code | Italian word order, as GitHub/Google IT. |
+| TOTP | password monouso basate sul tempo | TOTP | Spelled out once; abbreviation not shown. |
+| MFA / two-step verification | verifica in due passaggi | autenticazione a più fattori, 2FA | Google IT "Verifica in due passaggi". AAL2 never shown. |
+| Webhook | webhook (invariable) | gancio web | Stripe IT keeps "webhook"; "eventi webhook". |
+| Reconciliation / resync | risincronizza (da Stripe) | riconcilia, rielabora | "Riconciliazione" implies bank reconciliation; here state is re-read from Stripe. |
+| Sync to Stripe | sincronizza con Stripe | sincronizza su Stripe | "con" is natural for sync. |
+| Exempt (non-paying Space) | esente / esenzione | gratuito, escluso | Fiscal/administrative term; "gratuito" would imply a free plan. |
+| Internal / legacy | interno / legacy | ereditato | "Legacy" is used as-is in Italian IT. |
+| Outbox (if surfaced) | coda di invio (outbox) | posta in uscita | Not currently shown in admin copy; reserved wording. |
+| Admin | amministratore (brand: InnerDweS Admin) | admin | Lowercase generic noun; "Proprietario" for Owner. |
+| Paid checkout switch | acquisto a pagamento | checkout | Per main glossary "checkout" avoided. |
+| Cancel dialog button | Annulla | Disdici | "Annulla" is the dialog convention; "disdetta" stays for subscriptions. |
+| Revoke | revoca / revocare | eliminare | Access rights are revoked, not deleted. |
+| Canceled subscription | disdetto | annullato | Per main glossary. |
+| Uncollectible invoice | insoluta | non riscuotibile | Per main glossary. |
+
+Punctuation: guillemets «» for quoted terms; accents and elisions checked (un'app, l'accesso, dell'esenzione, all'eliminazione, uno Space, lo Studio, gli Space).
+
+Items for native review: "registro di controllo" vs "registro di audit"; "(Lei)" label for the current admin in lists; "Scaduto" for past_due.

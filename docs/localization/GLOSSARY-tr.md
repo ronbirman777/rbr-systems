@@ -40,3 +40,32 @@ Search note: sources below were located with web search; page contents were take
 4. "Space" kept untranslated with apostrophe suffixes (Space'inize); confirm acceptable.
 5. "kupon" vs "indirim kodu".
 6. Casing: no text relies on CSS uppercase. If UI uppercases chips with `text-transform`, set `lang="tr"` so i/İ are handled correctly.
+
+## Admin (admin.tr.ts)
+
+Status: UNREVIEWED by a native speaker. Internal tool: formal "siz", terse labels. Research: Google Account Help TR (https://support.google.com/accounts/answer/1066447?hl=tr) uses "2 Adımlı Doğrulama", "Kimlik doğrulayıcıyı ayarla" and QR code scanning for authenticator apps; Microsoft/GitHub TR docs use "kimlik doğrulayıcı uygulaması" and "kurulum anahtarı". Search access gave summaries only, not full-page audits.
+
+| Concept | Approved | Rejected | Rationale |
+|---|---|---|---|
+| Audit log | denetim kaydı (nav: Denetim) | audit logu, günlük | "Denetim kaydı" is the standard Turkish IT term for an audit trail; "günlük" reads as a diary/plain log. |
+| Step-up (re-verify before sensitive change) | "Kimliğinizi doğrulayın" + "yeni kod" | adım yükseltme | No natural Turkish term; user-facing meaning is re-confirming identity with a fresh code. |
+| Authenticator app | kimlik doğrulayıcı uygulaması | doğrulayıcı, otantikatör | Google TR "Kimlik doğrulayıcı" / "Authenticator uygulaması". |
+| Setup key | kurulum anahtarı | gizli anahtar, kurulum kodu | Matches GitHub/Google TR "kurulum anahtarı"; "kod" is reserved for the 6-digit code. |
+| QR code | QR kodu | karekod | "QR kodu" is used on the existing Flow copy and by Google TR; "karekod" is a legitimate Turkish alternative (BKM/payment) but less common in IT docs. |
+| TOTP | zamana dayalı tek kullanımlık şifre | OTP, TOTP | Spelled out once (mfaStep1Body); abbreviation not shown to users. |
+| MFA / two-step verification | iki adımlı doğrulama | çok faktörlü kimlik doğrulama, 2FA | Google TR "2 Adımlı Doğrulama". AAL2 is never shown. |
+| Webhook | webhook (untranslated) | web kancası | Stripe's TR dashboard keeps "webhook"; "olay" used for events. |
+| Reconciliation / resync | yeniden eşitle (Stripe'tan yeniden eşitle) | uzlaştır, senkronize et | "Eşitle" is the plain Turkish for sync; "uzlaştırma" suggests accounting reconciliation which this is not (it re-reads Stripe state). |
+| Sync to Stripe | Stripe'a eşitle | Stripe'a senkronize et | Same verb; apostrophe suffix on proper noun. |
+| Exempt (non-paying Space) | muaf / muafiyet | istisna, ücretsiz | "Muaf" is a formal exemption; "ücretsiz" would imply a free plan and is not the same as the Billing "Dahil" status. |
+| Internal / legacy | dahili / eski | iç, miras | Standard IT usage. |
+| Outbox (email/event outbox, if surfaced) | giden kutusu / giden olay kuyruğu | outbox | Not currently shown in admin copy; reserved wording. |
+| Admin role | yönetici (brand: InnerDweS Admin untranslated) | admin | Lowercase generic noun; "Sahip" for Owner. |
+| Cancel dialog button | Vazgeç | İptal | Avoids clash with "iptal" = subscription cancellation. |
+| Revoke access | erişimi iptal et | geri al | Consistent with "iptal". |
+| Dunning/suspension labels | askıya alındı / askıda | donduruldu | Per main glossary. |
+| MRR | MRR (untranslated) | aylık yinelenen gelir | Kept as the finance acronym; captions explain. |
+
+Suffix rule applied: no suffix is attached to `{placeholders}`; dates use "{time} tarihinden beri", "{time} tarihine kadar"; counts use "{n} dönem sonra". Uppercase badges are written out in Turkish (ETKİN, DEVRE DIŞI) so İ is correct.
+
+Items for native review: kimlik doğrulayıcı vs doğrulayıcı uygulaması; "Denetim kaydı" vs "Denetim günlüğü"; "muaf" wording; "Vadesi geçmiş" for past_due.

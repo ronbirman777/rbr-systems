@@ -61,10 +61,12 @@ export function Dl({ items }: { items: [string, ReactNode][] }) {
 /* Responsive table: a real <table> from 768px up, stacked cards below. */
 export function RTable({ children, caption }: { children: ReactNode; caption: string }) {
   return (
-    <table className="block w-full text-sm md:table">
-      <caption className="sr-only">{caption}</caption>
-      {children}
-    </table>
+    <div className="w-full max-w-full overflow-x-auto">
+      <table className="block w-full text-sm md:table">
+        <caption className="sr-only">{caption}</caption>
+        {children}
+      </table>
+    </div>
   );
 }
 export function RHead({ cols }: { cols: string[] }) {
