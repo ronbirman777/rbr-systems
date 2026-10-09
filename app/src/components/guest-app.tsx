@@ -1,5 +1,6 @@
 "use client";
 
+import { CreatedWithFooter } from "@/components/guest/created-with-footer";
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { TodayScreen } from "./today-screen";
 import { ScheduleScreen } from "./schedule-screen";
@@ -298,6 +299,7 @@ export function GuestApp(props: GuestAppProps) {
       className="relative w-full h-full flex flex-col overflow-hidden"
     >
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{current.render(props, setActive)}</div>
+      <CreatedWithFooter locale={props.locale ?? DEFAULT_LOCALE} source="flow" />
 
       {/* Step 4 of the loading ladder - renders nothing, and starts only
           once this screen has finished loading and the main thread is

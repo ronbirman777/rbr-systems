@@ -1,5 +1,6 @@
 "use client";
 
+import { CreatedWithFooter } from "@/components/guest/created-with-footer";
 import { cardImage } from "@/lib/teach/cardImage";
 import { createTranslator, translate, type Locale } from "@/lib/i18n";
 import { formatShortDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime";
@@ -256,6 +257,7 @@ export function TeachGuestApp({
       <div ref={scrollRef} className={`relative flex-1 overflow-x-clip ${embedded ? "overflow-y-auto" : ""}`}>
         {style.organicShapes && !page ? <OrganicShapes /> : null}
         <main className="relative w-full mx-auto @4xl:max-w-[1180px] pt-2 @min-[40rem]:pt-6 @4xl:pt-10 pb-6 @min-[40rem]:pb-16">{body}</main>
+        <CreatedWithFooter locale={data.locale} source="teach" />
       </div>
       <nav
         aria-label={t("common", "mainContent")}
