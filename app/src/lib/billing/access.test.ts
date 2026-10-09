@@ -42,7 +42,7 @@ describe("combineCommercialAvailability - billing governs billed Spaces, legacy 
     id: "s", tenantId: "t", billingOwnerUserId: "u", planId: "p", stripeMode: "test", stripeSubscriptionId: "sub_1", status: "active", currency: "USD", baseAmountMinor: 2500,
     currentEffectiveAmountMinor: 2500, currentPeriodStart: at(-100), currentPeriodEnd: at(500), cancelAtPeriodEnd: false, cancelAt: null, canceledAt: null, endedAt: null,
     paymentFailedAt: null, guestSuspendedAt: null, studioSuspendedAt: null, deletionWarningAt: null, eligibleForDeletionAt: null, recoveredAt: null, nextAction: "none",
-    nextActionAt: null, nextExpectedChargeMinor: null, nextPaymentAttemptAt: null, exemptReason: null, exemptExpiresAt: null, ...o,
+    nextActionAt: null, nextExpectedChargeMinor: null, nextPaymentAttemptAt: null, lastPaidInvoiceId: null, exemptReason: null, exemptExpiresAt: null, ...o,
   });
 
   it("a Space with NO billing row behaves exactly as before (legacy entitlement)", () => {

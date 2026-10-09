@@ -16,17 +16,20 @@ import { readFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
-const STAGING_REF = "kkqjsspxupyxytddiumf";
+import { STAGING_REF, assertStagingTarget, runScopedDelete } from "./stagingGuard.mjs";
+
 const URL_ = process.env.SUPABASE_URL;
 const SECRET = process.env.SUPABASE_SECRET_KEY;
 const PUB = process.env.SUPABASE_PUBLISHABLE_KEY;
 if (!URL_ || !SECRET || !PUB) throw new Error("missing SUPABASE_URL / SUPABASE_SECRET_KEY / SUPABASE_PUBLISHABLE_KEY");
-if (!URL_.includes(STAGING_REF)) throw new Error("REFUSING TO RUN: not the Staging project");
+// Fails CLOSED before any client is created or any write can happen: exact Staging URL, a service-role JWT whose
+// `ref` claim is the Staging project (so the Production key can never be used here by mistake).
+assertStagingTarget({ url: URL_, serviceKey: SECRET });
 
 const vectors = JSON.parse(readFileSync(new URL("../src/lib/billing/vectors/accessVectors.json", import.meta.url), "utf8"));
 
 const admin = createClient(URL_, SECRET, { auth: { autoRefreshToken: false, persistSession: false } });
-const runId = randomBytes(4).toString("hex");
+const runId = randomBytes(4).toString("hex"); // the exact identifier every row of THIS run carries
 const results = [];
 const check = (name, ok, detail = "") => {
   results.push({ name, ok: !!ok, detail });
@@ -90,43 +93,79 @@ const reserve = (userId, code, checkoutId, type = "teach") =>
     p_space_type: type, p_plan_key: "space_monthly_usd", p_stripe_mode: "test",
   }).then((r) => { if (r.error) throw new Error("reserve rpc: " + r.error.message); return r.data; });
 const subJson = (userId, o = {}) => ({
-  stripe_subscription_id: `sub_QA32${rid()}`, stripe_customer_id: `cus_QA32${userId.replace(/-/g, "").slice(0, 12)}`,
+  stripe_subscription_id: `sub_QA32${runId}${rid()}`, stripe_customer_id: `cus_QA32${runId}${userId.replace(/-/g, "").slice(0, 8)}`,
   stripe_price_id: "price_QA32test", status: "active", currency: "USD", base_amount_minor: 2500,
   effective_amount_minor: 2500, period_start: new Date().toISOString(), period_end: H(24 * 30),
-  cancel_at_period_end: false, latest_invoice_id: `in_QA32${rid()}`, ...o,
+  cancel_at_period_end: false, latest_invoice_id: `in_QA32${runId}${rid()}`, ...o,
 });
 const provision = (checkoutId, sub, name = "QA032 Space") =>
   admin.rpc("billing_provision_paid_space", { p_pending_checkout_id: checkoutId, p_sub: sub, p_space_name: name, p_timezone: "UTC" });
 
+/**
+ * Run-scoped, fail-closed cleanup. Everything deleted is identified by ids this run created or by keys that
+ * embed THIS run's full id (never a bare prefix). Counts are asserted before deleting: if more rows match than
+ * this run could have created, cleanup ABORTS and deletes nothing (and the run is reported as failed).
+ * admin_audit_log is append-only by design and is never touched.
+ */
+const residue = [];
+async function idsWhere(table, build, column = "id") {
+  const { data, error } = await build(admin.from(table).select(column));
+  if (error) throw new Error(`cleanup lookup failed for ${table}: ${error.message}`);
+  return (data ?? []).map((r) => r[column]);
+}
 async function cleanup() {
   try {
-    // Restore the launch flag first.
+    // Restore the launch flag first (only ever a value this run read).
     await admin.from("billing_settings").update({ paid_checkout_enabled: flagWasEnabled }).eq("singleton", true);
     for (const path of created.storage) await admin.storage.from("tenant-media").remove([path]);
-    // Tenants created through provisioning: make them deletable, then delete.
-    const { data: tenants } = await admin.from("tenants").select("id").in("created_by", created.users.length ? created.users : ["00000000-0000-0000-0000-000000000000"]);
-    const tIds = [...new Set([...(tenants ?? []).map((t) => t.id), ...created.tenants])];
-    if (tIds.length) {
-      await admin.from("space_subscriptions").delete().in("tenant_id", tIds);
-      await admin.from("published_spaces").delete().in("tenant_id", tIds);
-      await admin.from("module_items").delete().in("tenant_id", tIds);
-      await admin.from("coupon_redemptions").delete().in("tenant_id", tIds);
+
+    const U = created.users.length ? created.users : ["00000000-0000-0000-0000-000000000000"];
+    const tIds = [...new Set([...created.tenants, ...(await idsWhere("tenants", (q) => q.in("created_by", U)))])];
+    const T = tIds.length ? tIds : ["00000000-0000-0000-0000-000000000000"];
+    const C = created.checkouts.length ? created.checkouts : ["00000000-0000-0000-0000-000000000000"];
+
+    const plan = [
+      ["billing_email_outbox", "id", [...(await idsWhere("billing_email_outbox", (q) => q.like("dedupe_key", `qa032:${runId}:%`))), ...(await idsWhere("billing_email_outbox", (q) => q.like("dedupe_key", `payment_confirmation:in_QA32${runId}%`))), ...(await idsWhere("billing_email_outbox", (q) => q.in("user_id", U)))]],
+      ["billing_invoices", "id", await idsWhere("billing_invoices", (q) => q.like("stripe_invoice_id", `in_QA32${runId}%`))],
+      ["billing_events", "id", await idsWhere("billing_events", (q) => q.like("stripe_event_id", `evt_QA32${runId}%`))],
+      ["coupon_redemptions", "id", [...(await idsWhere("coupon_redemptions", (q) => q.in("pending_checkout_id", C))), ...(await idsWhere("coupon_redemptions", (q) => q.in("tenant_id", T)))]],
+      ["billing_acceptances", "id", await idsWhere("billing_acceptances", (q) => q.in("pending_checkout_id", C))],
+      ["space_subscriptions", "id", await idsWhere("space_subscriptions", (q) => q.in("tenant_id", T))],
+      ["published_spaces", "tenant_id", await idsWhere("published_spaces", (q) => q.in("tenant_id", T), "tenant_id")],
+      ["module_items", "id", await idsWhere("module_items", (q) => q.in("tenant_id", T))],
+      ["tenants", "id", tIds],
+      ["pending_space_checkouts", "id", created.checkouts],
+      ["billing_customers", "id", await idsWhere("billing_customers", (q) => q.in("user_id", U))],
+      ["coupons", "id", created.coupons],
+    ];
+    const total = plan.reduce((n, [, , ids]) => n + new Set(ids).size, 0);
+    if (total > 2000) throw new Error(`cleanup ABORTED: ${total} rows selected, far more than a run creates`);
+    for (const [table, column, ids] of plan) {
+      const n = await runScopedDelete(admin, { table, column, ids });
+      if (n) console.log(`cleanup: removed ${n} from ${table}`);
     }
-    if (created.checkouts.length) {
-      await admin.from("coupon_redemptions").delete().in("pending_checkout_id", created.checkouts);
-      await admin.from("billing_acceptances").delete().in("pending_checkout_id", created.checkouts);
+    // Users last (their FKs are SET NULL on the rows removed above). Exact ids only.
+    for (const id of created.users) {
+      const { error } = await admin.auth.admin.deleteUser(id);
+      if (error) throw new Error(`cleanup: could not delete synthetic user ${id}: ${error.message}`);
     }
-    if (tIds.length) await admin.from("tenants").delete().in("id", tIds);
-    if (created.checkouts.length) await admin.from("pending_space_checkouts").delete().in("id", created.checkouts);
-    if (created.coupons.length) await admin.from("coupons").delete().in("id", created.coupons);
-    await admin.from("billing_invoices").delete().like("stripe_invoice_id", "in_QA32%");
-    await admin.from("billing_email_outbox").delete().like("dedupe_key", "%QA32%");
-    await admin.from("billing_customers").delete().like("stripe_customer_id", "cus_QA32%");
-    await admin.from("billing_events").delete().like("stripe_event_id", `evt_QA32${runId}%`);
-    for (const id of created.users) await admin.auth.admin.deleteUser(id);
-    console.log("cleanup done");
+
+    // Regression guard: NOTHING carrying this run's id may remain anywhere (audit excepted: append-only).
+    const checks = [
+      ["billing_email_outbox", "dedupe_key", `%${runId}%`], ["billing_invoices", "stripe_invoice_id", `%${runId}%`],
+      ["billing_events", "stripe_event_id", `%${runId}%`], ["billing_customers", "stripe_customer_id", `%${runId}%`],
+      ["coupons", "normalized_code", `%${runId.toUpperCase()}%`], ["space_subscriptions", "stripe_subscription_id", `%${runId}%`],
+    ];
+    for (const [table, col, pat] of checks) {
+      const { count } = await admin.from(table).select("*", { count: "exact", head: true }).ilike(col, pat);
+      if (count) residue.push(`${table}: ${count} row(s) still carry this run's id`);
+    }
+    const { count: leftUsers } = await admin.from("billing_customers").select("*", { count: "exact", head: true }).in("user_id", U);
+    if (leftUsers) residue.push(`billing_customers: ${leftUsers} rows still point at this run's users`);
+    console.log(residue.length ? `RESIDUE: ${residue.join("; ")}` : "cleanup done (no residue carrying this run's id)");
   } catch (e) {
-    console.log("CLEANUP ERROR (manual check needed): " + e.message);
+    residue.push(`cleanup aborted: ${e.message}`);
+    console.log("CLEANUP ABORTED (nothing further deleted; manual review needed): " + e.message);
   }
 }
 
@@ -453,7 +492,7 @@ async function main() {
   const e1 = await admin.from("billing_events").insert({ stripe_event_id: ev, stripe_mode: "test", event_type: "invoice.paid" });
   const e2 = await admin.from("billing_events").insert({ stripe_event_id: ev, stripe_mode: "test", event_type: "invoice.paid" });
   check("I12 a Stripe event id can only be recorded once (webhook idempotency)", !e1.error && e2.error?.code === "23505", JSON.stringify(e2.error));
-  const audit = await admin.from("admin_audit_log").insert({ admin_user_id: uG2, action: "qa032.test", target_type: "test", target_id: "x" }).select("id").single();
+  const audit = await admin.from("admin_audit_log").insert({ admin_user_id: uG2, action: "qa032.test", target_type: "test", target_id: "x", request_id: `qa032-verify-${runId}`, reason: `TASK 032 QA harness run ${runId} (append-only test entry)` }).select("id").single();
   const au = await admin.from("admin_audit_log").update({ action: "tampered" }).eq("id", audit.data.id);
   const ad = await admin.from("admin_audit_log").delete().eq("id", audit.data.id);
   check("I13 the audit log is append-only (update and delete both refused, even for service role)", !!au.error && !!ad.error, JSON.stringify([au.error?.message, ad.error?.message]));
@@ -609,6 +648,7 @@ try {
 } finally {
   await cleanup();
 }
+if (residue.length) check("cleanup left no residue carrying this run's id", false, residue.join("; "));
 const bad = results.filter((r) => !r.ok);
 console.log(`\n${results.length - bad.length}/${results.length} passed`);
 if (bad.length) { console.log("FAILED:\n" + bad.map((b) => " - " + b.name + (b.detail ? "  -> " + b.detail : "")).join("\n")); process.exit(1); }

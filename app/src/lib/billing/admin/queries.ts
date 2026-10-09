@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeNextAction, type RedemptionState } from "../nextAction";
 import { SUBSCRIPTION_SELECT, toSubscriptionRecord, type SubscriptionRecord, type SubscriptionRow } from "../types";
 import { computeOverviewMetrics, type OverviewMetrics } from "./metrics";
+import { qaAuditReason } from "./qaAudit";
 
 /** Read-side for the Admin console. Service-role client; the caller has ALREADY passed requireAdmin*(). */
 
@@ -86,6 +87,7 @@ export function toRedemptionState(red: Record<string, unknown>): RedemptionState
     status: red.status as RedemptionState["status"], cyclesCompleted: Number(red.cycles_completed), cyclesTotal: red.cycles_total == null ? null : Number(red.cycles_total),
     discountEndsAt: red.discount_ends_at ? new Date(String(red.discount_ends_at)) : null,
     couponCode: ((red.coupons as { code?: string } | null)?.code) ?? null,
+    lastCycleInvoiceId: (red.last_cycle_invoice_id as string | null) ?? null,
     terms: {
       discountType: red.discount_type as "percent" | "fixed_amount", percentOff: red.percent_off == null ? null : Number(red.percent_off),
       amountOffMinor: red.amount_off_minor == null ? null : Number(red.amount_off_minor), currency: red.currency ? String(red.currency).trim() : null,
@@ -183,10 +185,19 @@ export async function listInvoices(db: SupabaseClient, f: { status?: string; ten
 }
 
 export async function listAudit(db: SupabaseClient, limit = 100) {
-  const { data } = await db.from("admin_audit_log").select("*").order("created_at", { ascending: false }).limit(Math.min(limit, 500));
+  const [{ data }, { data: admins }] = await Promise.all([
+    db.from("admin_audit_log").select("*").order("created_at", { ascending: false }).limit(Math.min(limit, 500)),
+    db.from("admin_users").select("user_id"),
+  ]);
+  const realAdmins = new Set((admins ?? []).map((a) => a.user_id as string));
   const rows = data ?? [];
   const emails = await lookupEmails(db, rows.map((r) => r.admin_user_id as string | null));
-  return rows.map((r) => ({ ...r, adminEmail: r.admin_user_id ? emails.get(r.admin_user_id) ?? null : null }));
+  return rows.map((r) => ({
+    ...r,
+    adminEmail: r.admin_user_id ? emails.get(r.admin_user_id) ?? null : null,
+    /** Non-null = TASK 032 QA/test entry (see qaAudit.ts). */
+    qaReason: qaAuditReason(r, realAdmins),
+  }));
 }
 
 export async function listAdmins(db: SupabaseClient) {

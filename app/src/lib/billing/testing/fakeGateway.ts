@@ -21,11 +21,13 @@ export class FakeStripe implements StripeGateway {
   cyclesPaid = new Map<string, number>();
   now = new Date("2026-11-01T12:00:00.000Z");
   private n = 0;
+  /** Embedded in every fake Stripe id so a test run's rows are identifiable by an exact run id (never a bare prefix). Alphanumeric only. */
+  constructor(private readonly idTag = "") {}
   calls: string[] = [];
   /** Test switch: make every Stripe API call throw (outage). */
   down = false;
 
-  private id(prefix: string) { return `${prefix}_FAKE${++this.n}`; }
+  private id(prefix: string) { return `${prefix}_FAKE${this.idTag}${++this.n}`; }
   private guard(name: string) { this.calls.push(name); if (this.down) throw new Error("stripe unavailable"); }
   private clone<T>(v: T): T { return structuredClone(v); }
 

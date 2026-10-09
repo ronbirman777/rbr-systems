@@ -80,7 +80,7 @@ export async function adminCreateCoupon(admin: AdminContext, db: SupabaseClient,
       stripeId = await createStripeCoupon(deps, row.id, input);
       await db.from("coupons").update({ [modeColumn(deps.stripe.mode)]: stripeId, updated_at: new Date().toISOString() }).eq("id", row.id);
     }
-    await writeAudit({ adminUserId: admin.userId, action: "coupon.create", targetType: "coupon", targetId: row.id, after: { ...rowFromInput(input), stripeCouponSynced: !!stripeId } });
+    await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: "coupon.create", targetType: "coupon", targetId: row.id, after: { ...rowFromInput(input), stripeCouponSynced: !!stripeId } });
   } catch {
     // Nothing has used this coupon yet: undo completely rather than leave an unsynced/unaudited definition.
     await db.from("coupons").delete().eq("id", row.id);
@@ -115,7 +115,7 @@ export async function adminUpdateCoupon(admin: AdminContext, db: SupabaseClient,
   if (upd.error) return upd.error.code === "23505" ? fail("code_taken", { code: "already exists" }) : fail("save_failed");
 
   try {
-    await writeAudit({ adminUserId: admin.userId, action: "coupon.update", targetType: "coupon", targetId: couponId, before, after: patch });
+    await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: "coupon.update", targetType: "coupon", targetId: couponId, before, after: patch });
   } catch {
     await db.from("coupons").update(before as Record<string, unknown>).eq("id", couponId); // unaudited => revert
     return fail("audit_failed");
@@ -131,7 +131,7 @@ export async function adminSetCouponActive(admin: AdminContext, db: SupabaseClie
   const upd = await db.from("coupons").update({ active, updated_at: new Date().toISOString() }).eq("id", couponId);
   if (upd.error) return fail("save_failed");
   try {
-    await writeAudit({ adminUserId: admin.userId, action: active ? "coupon.enable" : "coupon.disable", targetType: "coupon", targetId: couponId, before: { active: before.active }, after: { active } });
+    await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: active ? "coupon.enable" : "coupon.disable", targetType: "coupon", targetId: couponId, before: { active: before.active }, after: { active } });
   } catch {
     await db.from("coupons").update({ active: before.active }).eq("id", couponId);
     return fail("audit_failed");
@@ -153,7 +153,7 @@ export async function adminSyncCouponToStripe(admin: AdminContext, db: SupabaseC
   try {
     const stripeId = await createStripeCoupon(deps, couponId, input);
     await db.from("coupons").update({ [col]: stripeId, updated_at: new Date().toISOString() }).eq("id", couponId);
-    await writeAudit({ adminUserId: admin.userId, action: "coupon.sync_stripe", targetType: "coupon", targetId: couponId, after: { mode: deps.stripe.mode } });
+    await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: "coupon.sync_stripe", targetType: "coupon", targetId: couponId, after: { mode: deps.stripe.mode } });
   } catch {
     return fail("sync_failed");
   }
@@ -173,7 +173,7 @@ export async function adminSyncPlanToStripe(admin: AdminContext, db: SupabaseCli
     if (!check.ok) return fail(`price_drift:${check.reason}`);
     const cols = deps.stripe.mode === "test" ? { stripe_test_product_id: productId, stripe_test_price_id: priceId } : { stripe_live_product_id: productId, stripe_live_price_id: priceId };
     await db.from("billing_plans").update({ ...cols, updated_at: new Date().toISOString() }).eq("plan_key", plan.planKey);
-    await writeAudit({ adminUserId: admin.userId, action: "plan.sync_stripe", targetType: "plan", targetId: plan.planKey, before: { productId: plan.stripeProductId, priceId: plan.stripePriceId }, after: { mode: deps.stripe.mode, productId, priceId } });
+    await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: "plan.sync_stripe", targetType: "plan", targetId: plan.planKey, before: { productId: plan.stripeProductId, priceId: plan.stripePriceId }, after: { mode: deps.stripe.mode, productId, priceId } });
     return { ok: true, data: { priceId } };
   } catch {
     return fail("sync_failed");
@@ -186,7 +186,7 @@ export async function adminSetInternalExempt(admin: AdminContext, db: SupabaseCl
   const rpc = await db.rpc("billing_set_internal_exempt", { p_tenant_id: tenantId, p_reason: reason.trim(), p_actor: admin.userId, p_expires_at: expiresAt ? expiresAt.toISOString() : null });
   if (rpc.error) return fail(/paid subscription/.test(rpc.error.message) ? "has_paid_subscription" : "save_failed");
   try {
-    await writeAudit({ adminUserId: admin.userId, action: "subscription.exempt_set", targetType: "tenant", targetId: tenantId, after: { expiresAt: expiresAt?.toISOString() ?? null }, reason });
+    await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: "subscription.exempt_set", targetType: "tenant", targetId: tenantId, after: { expiresAt: expiresAt?.toISOString() ?? null }, reason });
   } catch {
     await db.rpc("billing_clear_internal_exempt", { p_tenant_id: tenantId });
     return fail("audit_failed");
@@ -198,7 +198,7 @@ export async function adminClearInternalExempt(admin: AdminContext, db: Supabase
   if (reason.trim().length < 5) return fail("reason_required", { reason: "state why (min 5 characters)" });
   const rpc = await db.rpc("billing_clear_internal_exempt", { p_tenant_id: tenantId });
   if (rpc.error) return fail("save_failed");
-  await writeAudit({ adminUserId: admin.userId, action: "subscription.exempt_clear", targetType: "tenant", targetId: tenantId, reason });
+  await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: "subscription.exempt_clear", targetType: "tenant", targetId: tenantId, reason });
   return { ok: true, data: undefined };
 }
 
@@ -219,7 +219,7 @@ export async function adminSetPaidCheckout(admin: AdminContext, db: SupabaseClie
   const upd = await db.from("billing_settings").update({ paid_checkout_enabled: enabled, updated_by: admin.userId, updated_at: new Date().toISOString() }).eq("singleton", true);
   if (upd.error) return fail("save_failed");
   try {
-    await writeAudit({ adminUserId: admin.userId, action: "settings.paid_checkout", targetType: "settings", targetId: "paid_checkout", before: before ?? undefined, after: { paid_checkout_enabled: enabled } });
+    await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: "settings.paid_checkout", targetType: "settings", targetId: "paid_checkout", before: before ?? undefined, after: { paid_checkout_enabled: enabled } });
   } catch {
     await db.from("billing_settings").update({ paid_checkout_enabled: before?.paid_checkout_enabled ?? false }).eq("singleton", true);
     return fail("audit_failed");
@@ -233,7 +233,7 @@ export async function adminGrantAdmin(admin: AdminContext, db: SupabaseClient, e
   if (!target) return fail("user_not_found");
   const up = await db.from("admin_users").upsert({ user_id: target, role, created_by: admin.userId, disabled_at: null }, { onConflict: "user_id" });
   if (up.error) return fail("save_failed");
-  await writeAudit({ adminUserId: admin.userId, action: "admin.grant", targetType: "admin_user", targetId: target, after: { role } });
+  await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: "admin.grant", targetType: "admin_user", targetId: target, after: { role } });
   return { ok: true, data: undefined };
 }
 
@@ -244,7 +244,7 @@ export async function adminRevokeAdmin(admin: AdminContext, db: SupabaseClient, 
   if ((owners ?? []).every((o) => o.user_id === targetUserId)) return fail("last_owner");
   const upd = await db.from("admin_users").update({ disabled_at: new Date().toISOString() }).eq("user_id", targetUserId);
   if (upd.error) return fail("save_failed");
-  await writeAudit({ adminUserId: admin.userId, action: "admin.revoke", targetType: "admin_user", targetId: targetUserId });
+  await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: "admin.revoke", targetType: "admin_user", targetId: targetUserId });
   return { ok: true, data: undefined };
 }
 
@@ -262,12 +262,12 @@ async function findUserByEmail(db: SupabaseClient, email: string): Promise<strin
 /** Support tools (audited, no money impact): re-read Stripe's truth for one subscription / one checkout. */
 export async function adminResyncSubscription(admin: AdminContext, deps: BillingDeps, stripeSubscriptionId: string): Promise<OpResult> {
   try { await syncSubscription(deps, stripeSubscriptionId); } catch { return fail("sync_failed"); }
-  await writeAudit({ adminUserId: admin.userId, action: "subscription.resync", targetType: "subscription", targetId: stripeSubscriptionId });
+  await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: "subscription.resync", targetType: "subscription", targetId: stripeSubscriptionId });
   return { ok: true, data: undefined };
 }
 
 export async function adminReconcileCheckout(admin: AdminContext, deps: BillingDeps, pendingCheckoutId: string): Promise<OpResult> {
   try { await reconcileCheckout(deps, pendingCheckoutId); } catch { return fail("reconcile_failed"); }
-  await writeAudit({ adminUserId: admin.userId, action: "checkout.reconcile", targetType: "checkout", targetId: pendingCheckoutId });
+  await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: "checkout.reconcile", targetType: "checkout", targetId: pendingCheckoutId });
   return { ok: true, data: undefined };
 }

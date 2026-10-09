@@ -11,6 +11,8 @@ export type RedemptionState = {
   discountEndsAt: Date | null;
   /** Display code of the coupon (for emails / the Billing page). */
   couponCode?: string | null;
+  /** The last invoice counted toward this discount (clock-independent "did the discount just finish" signal). */
+  lastCycleInvoiceId?: string | null;
 };
 
 export type NextActionResult = {
@@ -88,8 +90,9 @@ export function computeNextAction(
         };
       }
     }
-    if (redemption.status === "completed" && redemption.discountEndsAt && sub.currentPeriodStart && redemption.discountEndsAt.getTime() >= sub.currentPeriodStart.getTime()) {
-      // The discount finished during the period that is just ending: the next charge is the first full-price one.
+    // The discount finished with the LATEST paid invoice (the one whose period is running now): the next charge is the
+    // first full-price one. Once a later invoice is paid this no longer holds - and no clock comparison is involved.
+    if (redemption.status === "completed" && sub.lastPaidInvoiceId && redemption.lastCycleInvoiceId === sub.lastPaidInvoiceId) {
       return { action: "discount_ends", at: periodEnd, expectedChargeMinor: base, currency, discountProgress: null };
     }
   }

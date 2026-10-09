@@ -142,7 +142,7 @@ describe("next action (one calculator for Admin, My Spaces and Billing)", () => 
     id: "s", tenantId: "t", billingOwnerUserId: "u", planId: "p", stripeMode: "test", stripeSubscriptionId: "sub_1", status: "active", currency: "USD", baseAmountMinor: 2500,
     currentEffectiveAmountMinor: 2500, currentPeriodStart: new Date("2026-11-01T00:00:00Z"), currentPeriodEnd: new Date("2026-12-01T00:00:00Z"), cancelAtPeriodEnd: false, cancelAt: null,
     canceledAt: null, endedAt: null, paymentFailedAt: null, guestSuspendedAt: null, studioSuspendedAt: null, deletionWarningAt: null, eligibleForDeletionAt: null, recoveredAt: null,
-    nextAction: "none", nextActionAt: null, nextExpectedChargeMinor: null, nextPaymentAttemptAt: null, exemptReason: null, exemptExpiresAt: null, ...o,
+    nextAction: "none", nextActionAt: null, nextExpectedChargeMinor: null, nextPaymentAttemptAt: null, lastPaidInvoiceId: null, exemptReason: null, exemptExpiresAt: null, ...o,
   });
   const terms = (cycles: number | null, kind: "once" | "repeating" | "forever"): DiscountTerms => ({ discountType: "percent", percentOff: 10, amountOffMinor: null, currency: null, durationType: kind, durationCycles: cycles });
   const red = (o: Partial<RedemptionState> & { done: number; total: number | null; kind?: "once" | "repeating" | "forever" }): RedemptionState => ({
@@ -157,12 +157,13 @@ describe("next action (one calculator for Admin, My Spaces and Billing)", () => 
     expect(r).toMatchObject({ action: "discount_cycle", expectedChargeMinor: 2250, discountProgress: { currentCycle: 3, totalCycles: 3 } });
   });
   it("after the last discounted payment the discount is finished and the next charge is full price", () => {
-    const r = computeNextAction(sub({ currentEffectiveAmountMinor: 2250 }), { ...red({ done: 3, total: 3 }), status: "completed", discountEndsAt: new Date("2026-11-02T00:00:00Z") }, { now: NOW });
+    // The last discounted invoice (in_3) is also the subscription's latest paid invoice: its period is running now.
+    const r = computeNextAction(sub({ currentEffectiveAmountMinor: 2250, lastPaidInvoiceId: "in_3" }), { ...red({ done: 3, total: 3 }), status: "completed", lastCycleInvoiceId: "in_3" }, { now: NOW });
     expect(r).toMatchObject({ action: "discount_ends", expectedChargeMinor: 2500 });
   });
-  it("a long-completed discount is just a normal renewal", () => {
-    const r = computeNextAction(sub(), { ...red({ done: 3, total: 3 }), status: "completed", discountEndsAt: new Date("2026-08-01T00:00:00Z") }, { now: NOW });
-    expect(r.action).toBe("renewal");
+  it("once a later (full-price) invoice has been paid it is just a normal renewal - no clock involved", () => {
+    const r = computeNextAction(sub({ lastPaidInvoiceId: "in_4" }), { ...red({ done: 3, total: 3 }), status: "completed", lastCycleInvoiceId: "in_3" }, { now: NOW });
+    expect(r).toMatchObject({ action: "renewal", expectedChargeMinor: 2500 });
   });
   it("forever discounts never end", () => {
     const r = computeNextAction(sub({ currentEffectiveAmountMinor: 2250 }), red({ done: 40, total: null, kind: "forever" }), { now: NOW });

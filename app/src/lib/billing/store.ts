@@ -339,12 +339,15 @@ export function createSupabaseBillingStore(db: SupabaseClient): BillingStore {
     },
 
     async saveAcceptance(a) {
-      const { error } = await db.from("billing_acceptances").upsert({
+      // One acceptance record per checkout (a partial unique index on pending_checkout_id). PostgREST cannot target a
+      // partial index with ON CONFLICT, so insert and treat "already stored" as success: the first acceptance is the
+      // evidence and must never be overwritten by a retry.
+      const { error } = await db.from("billing_acceptances").insert({
         user_id: a.userId, pending_checkout_id: a.pendingCheckoutId, terms_version: a.termsVersion, privacy_version: a.privacyVersion,
         billing_terms_version: a.billingTermsVersion, immediate_service_consent: true, withdrawal_acknowledged: true,
         consent_text_id: a.consentTextId, locale: a.locale,
-      }, { onConflict: "pending_checkout_id" });
-      if (error) throw new Error(`saveAcceptance: ${error.message}`);
+      });
+      if (error && error.code !== "23505") throw new Error(`saveAcceptance: ${error.message}`);
     },
 
     async confirmPayment(a) {
@@ -421,7 +424,7 @@ export function createSupabaseBillingStore(db: SupabaseClient): BillingStore {
         .in("status", ["redeemed", "completed", "canceled"]).order("redeemed_at", { ascending: false }).limit(1).maybeSingle();
       if (!data) return null;
       return {
-        status: data.status, couponCode: (data.coupons as { code?: string } | null)?.code ?? null, cyclesCompleted: data.cycles_completed, cyclesTotal: data.cycles_total, discountEndsAt: toDate(data.discount_ends_at),
+        status: data.status, couponCode: (data.coupons as { code?: string } | null)?.code ?? null, lastCycleInvoiceId: data.last_cycle_invoice_id ?? null, cyclesCompleted: data.cycles_completed, cyclesTotal: data.cycles_total, discountEndsAt: toDate(data.discount_ends_at),
         terms: {
           discountType: data.discount_type, percentOff: data.percent_off == null ? null : Number(data.percent_off),
           amountOffMinor: data.amount_off_minor, currency: data.currency ? String(data.currency).trim() : null,

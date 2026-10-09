@@ -147,7 +147,7 @@ export class FakeStore implements BillingStore {
       currency: a.sub.currency, baseAmountMinor: a.sub.base_amount_minor, currentEffectiveAmountMinor: a.sub.effective_amount_minor,
       currentPeriodStart: a.sub.period_start ? new Date(a.sub.period_start) : null, currentPeriodEnd: a.sub.period_end ? new Date(a.sub.period_end) : null,
       cancelAtPeriodEnd: a.sub.cancel_at_period_end, cancelAt: null, canceledAt: null, endedAt: null, paymentFailedAt: null, guestSuspendedAt: null, studioSuspendedAt: null,
-      deletionWarningAt: null, eligibleForDeletionAt: null, recoveredAt: null, nextAction: "none", nextActionAt: null, nextExpectedChargeMinor: null, nextPaymentAttemptAt: null,
+      deletionWarningAt: null, eligibleForDeletionAt: null, recoveredAt: null, nextAction: "none", nextActionAt: null, nextExpectedChargeMinor: null, nextPaymentAttemptAt: null, lastPaidInvoiceId: a.sub.latest_invoice_id,
       exemptReason: null, exemptExpiresAt: null,
     });
     let couponStatus: string | null = null;
@@ -188,6 +188,7 @@ export class FakeStore implements BillingStore {
     if (s.period_start) sub.currentPeriodStart = new Date(s.period_start);
     if (s.period_end) sub.currentPeriodEnd = new Date(s.period_end);
     if (s.cancel_at_period_end != null) sub.cancelAtPeriodEnd = s.cancel_at_period_end;
+    if (s.latest_invoice_paid && s.latest_invoice_id) sub.lastPaidInvoiceId = s.latest_invoice_id;
     if (s.cancel_at !== undefined) sub.cancelAt = s.cancel_at ? new Date(s.cancel_at) : null;
     if (ended) sub.endedAt = s.ended_at ? new Date(s.ended_at) : new Date(this.now);
     if (recovered) { sub.paymentFailedAt = null; sub.guestSuspendedAt = null; sub.studioSuspendedAt = null; sub.deletionWarningAt = null; sub.eligibleForDeletionAt = null; sub.recoveredAt = new Date(this.now); }
@@ -233,7 +234,7 @@ export class FakeStore implements BillingStore {
     const r = this.redemptions.filter((x) => x.subscriptionId === subscriptionId && ["redeemed", "completed", "canceled"].includes(x.status)).pop();
     if (!r) return null;
     const coupon = this.coupons.find((c) => c.id === r.couponId);
-    return { status: r.status as RedemptionState["status"], terms: r.terms, cyclesCompleted: r.cyclesCompleted, cyclesTotal: r.cyclesTotal, discountEndsAt: r.discountEndsAt, couponCode: coupon?.code ?? null };
+    return { status: r.status as RedemptionState["status"], terms: r.terms, cyclesCompleted: r.cyclesCompleted, cyclesTotal: r.cyclesTotal, discountEndsAt: r.discountEndsAt, couponCode: coupon?.code ?? null, lastCycleInvoiceId: r.lastInvoice };
   }
   async setNextAction(id: string, a: { action: string; at: Date | null; expectedChargeMinor: number | null }) {
     const s = this.subs.get(id); if (!s) return;

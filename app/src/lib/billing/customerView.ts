@@ -76,6 +76,7 @@ export async function loadBillingView(
     ? {
         status: red.status, cyclesCompleted: red.cycles_completed, cyclesTotal: red.cycles_total, discountEndsAt: red.discount_ends_at ? new Date(red.discount_ends_at) : null,
         couponCode: (red.coupons as { code?: string } | null)?.code ?? null,
+        lastCycleInvoiceId: red.last_cycle_invoice_id ?? null,
         terms: {
           discountType: red.discount_type, percentOff: red.percent_off == null ? null : Number(red.percent_off), amountOffMinor: red.amount_off_minor,
           currency: red.currency ? String(red.currency).trim() : null, durationType: red.duration_type, durationCycles: red.duration_cycles,

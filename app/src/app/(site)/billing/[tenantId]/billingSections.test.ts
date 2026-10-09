@@ -11,7 +11,7 @@ const sub = (over: Partial<SubscriptionRecord> = {}): SubscriptionRecord => ({
   baseAmountMinor: 2500, currentEffectiveAmountMinor: 2500, currentPeriodStart: new Date("2026-10-01T00:00:00Z"), currentPeriodEnd: new Date("2026-11-01T00:00:00Z"),
   cancelAtPeriodEnd: false, cancelAt: null, canceledAt: null, endedAt: null, paymentFailedAt: null, guestSuspendedAt: null, studioSuspendedAt: null,
   deletionWarningAt: null, eligibleForDeletionAt: null, recoveredAt: null, nextAction: "renewal", nextActionAt: null, nextExpectedChargeMinor: 2500,
-  nextPaymentAttemptAt: null, exemptReason: null, exemptExpiresAt: null, ...over,
+  nextPaymentAttemptAt: null, lastPaidInvoiceId: null, exemptReason: null, exemptExpiresAt: null, ...over,
 });
 const inv = (over: Partial<InvoiceRow> = {}): InvoiceRow => ({
   id: "i1", stripeInvoiceId: "in_1", status: "paid", issuedAt: "2026-10-01T10:00:00Z", paidAt: "2026-10-01T10:01:00Z", failedAt: null, currency: "USD", totalMinor: 2500,

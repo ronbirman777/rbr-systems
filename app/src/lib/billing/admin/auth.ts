@@ -24,7 +24,13 @@ import { hasRecentMfa, isAal2 } from "./amr";
  */
 
 export type AdminRole = "owner" | "billing_admin";
-export type AdminContext = { userId: string; email: string | null; role: AdminRole };
+export type AdminContext = {
+  userId: string;
+  email: string | null;
+  role: AdminRole;
+  /** Correlation id stamped on every audit row this context writes. Test harnesses set a `qa032…` value so their entries are identifiable. */
+  requestId?: string;
+};
 
 export type AdminDenial =
   | "unauthenticated"
