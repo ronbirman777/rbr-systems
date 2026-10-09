@@ -131,7 +131,7 @@ export async function adminSetCouponActive(admin: AdminContext, db: SupabaseClie
   const upd = await db.from("coupons").update({ active, updated_at: new Date().toISOString() }).eq("id", couponId);
   if (upd.error) return fail("save_failed");
   try {
-    await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: active ? "coupon.enable" : "coupon.disable", targetType: "coupon", targetId: couponId, before: { active: before.active }, after: { active } });
+    await writeAudit({ adminUserId: admin.userId, requestId: admin.requestId ?? null, action: active ? "coupon.enable" : "coupon.disable", targetType: "coupon", targetId: couponId, before: { code: before.code, active: before.active }, after: { code: before.code, active } });
   } catch {
     await db.from("coupons").update({ active: before.active }).eq("id", couponId);
     return fail("audit_failed");
