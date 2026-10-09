@@ -18,6 +18,7 @@ vi.mock("next/navigation", () => ({
     throw new Redirect(to);
   },
 }));
+vi.mock("@/lib/i18n/accountLocale", () => ({ getAccountLocale: async () => "en" }));
 vi.mock("next/link", () => ({ default: function Link() { return null; } }));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => {

@@ -1,4 +1,5 @@
 import type { Dictionary } from "./en";
+import { billingHe } from "./billing.he";
 
 /**
  * Hebrew (עברית).
@@ -1511,4 +1512,5 @@ export const he: Dictionary = {
     imageFormats8mb: "JPG, PNG או WebP עד 8MB.",
   },
 
+  billing: billingHe,
 };

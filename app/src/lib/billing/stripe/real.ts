@@ -57,7 +57,7 @@ export function createStripeGateway(opts: { secretKey: string; webhookSecret: st
           allow_promotion_codes: false,
           ...(a.locale ? { locale: a.locale as Stripe.Checkout.SessionCreateParams.Locale } : {}),
         },
-        { idempotencyKey: `idw-checkout-${a.pendingCheckoutId}` }
+        { idempotencyKey: `idw-checkout-${a.pendingCheckoutId}-${a.attemptKey}` }
       );
       return mapCheckoutSession(s);
     },
@@ -73,6 +73,7 @@ export function createStripeGateway(opts: { secretKey: string; webhookSecret: st
       const dto = mapSubscription(s);
       if (dto.latestInvoiceId) {
         const inv = mapInvoice(await stripe.invoices.retrieve(dto.latestInvoiceId));
+        dto.latestInvoice = inv;
         dto.effectiveAmountMinor = Math.max(0, inv.subtotalMinor - inv.discountMinor);
       }
       return dto;
@@ -121,7 +122,7 @@ export function createStripeGateway(opts: { secretKey: string; webhookSecret: st
           ...(a.percentOff != null ? { percent_off: a.percentOff } : { amount_off: a.amountOffMinor!, currency: a.currency!.toLowerCase() }),
           metadata: { innerdwes_coupon_id: a.internalCouponId },
         },
-        { idempotencyKey: `idw-coupon-${mode}-${a.internalCouponId}` }
+        { idempotencyKey: `idw-coupon-${mode}-${a.internalCouponId}-${[a.percentOff ?? "", a.amountOffMinor ?? "", a.currency ?? "", a.duration, a.durationInMonths ?? ""].join("_")}` }
       );
       return { id: c.id };
     },

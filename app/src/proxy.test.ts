@@ -229,6 +229,20 @@ describe("proxy() - Task 011A strict site-wide password gate", () => {
       expectGatedTo(res, path);
     });
 
+    it("TASK 032: exempts exactly the two machine billing endpoints (they authenticate themselves)", async () => {
+      for (const path of ["/api/billing/webhook", "/api/cron/billing"]) {
+        const res = await proxy(req(`https://${PRODUCTION_APEX}${path}`, { host: PRODUCTION_APEX }));
+        expectNotGated(res!);
+      }
+    });
+
+    it("TASK 032: no sibling, child or lookalike of the machine endpoints is exempt", async () => {
+      for (const path of ["/api/billing", "/api/billing/webhook/x", "/api/billing/webhooks", "/api/billing/checkout", "/api/cron", "/api/cron/billing/run", "/api/cron/other", "/admin/billing"]) {
+        const res = await proxy(req(`https://${PRODUCTION_APEX}${path}`, { host: PRODUCTION_APEX }));
+        expectGatedTo(res, path);
+      }
+    });
+
     it("does not let a prefix lookalike through", async () => {
       // /space must never be mistaken for the /s/ prefix, and a bare
       // prefix addresses no Space at all.

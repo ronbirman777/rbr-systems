@@ -16,6 +16,8 @@
  * Only system-authored UI text lives here. Nothing an organizer typed is
  * ever a translation key - see the i18n README rule on user content.
  */
+import { billingEn } from "./billing.en";
+
 export const en = {
   common: {
     // Actions
@@ -1512,6 +1514,7 @@ export const en = {
     imageFormats8mb: "JPG, PNG or WebP up to 8 MB.",
   },
 
+  billing: billingEn,
 } as const;
 
 /**

@@ -224,6 +224,12 @@ describe("translation and fallback", () => {
       "flow.date",
       "flow.pageLabel",
       "studio.navModules",
+      // Product brand names are never translated.
+      "billing.productTeach",
+      "billing.productFlow",
+      // Words that are genuinely identical in the target language (cognates / established product terms).
+      "billing.colStatus", "billing.emailRowSpace", "billing.planLabel", "billing.emailRowPlan",
+      "billing.colDate", "billing.colDocument", "billing.emailRowType",
     ]);
     for (const locale of ["he", "de", "es", "fr"] as const) {
       const unexpected = untranslatedKeys(locale).filter((k) => !allowed.has(k));

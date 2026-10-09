@@ -60,3 +60,21 @@ export function isPublicGuestPath(pathname: string): boolean {
 function hasSegmentAfter(pathname: string, prefix: string): boolean {
   return pathname.startsWith(prefix) && pathname.length > prefix.length;
 }
+
+
+/**
+ * TASK 032: the two machine-to-machine billing endpoints. Stripe's servers and
+ * Vercel Cron cannot enter a staff password, so while the preview gate is on they
+ * would be redirected to /preview-access and billing would silently never work.
+ *
+ * EXACT paths only (never a prefix, never a sibling): each endpoint is its own
+ * authority and refuses everything unauthenticated -
+ *   /api/billing/webhook  requires a valid Stripe signature over the raw body
+ *   /api/cron/billing     requires the CRON_SECRET bearer token
+ * Exempting the path grants no data; it only lets the request reach the check.
+ */
+export const MACHINE_ENDPOINT_PATHS: ReadonlySet<string> = new Set(["/api/billing/webhook", "/api/cron/billing"]);
+
+export function isMachineEndpointPath(pathname: string): boolean {
+  return MACHINE_ENDPOINT_PATHS.has(pathname);
+}

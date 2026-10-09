@@ -9,6 +9,8 @@ export type RedemptionState = {
   cyclesCompleted: number;
   cyclesTotal: number | null; // null = forever
   discountEndsAt: Date | null;
+  /** Display code of the coupon (for emails / the Billing page). */
+  couponCode?: string | null;
 };
 
 export type NextActionResult = {

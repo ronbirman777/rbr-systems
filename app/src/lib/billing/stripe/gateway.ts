@@ -31,6 +31,8 @@ export type SubscriptionDTO = {
   canceledAt: Date | null;
   endedAt: Date | null;
   latestInvoiceId: string | null;
+  /** The latest invoice (without the receipt lookup), so state sync needs one Stripe read. */
+  latestInvoice: InvoiceDTO | null;
   /** The Stripe coupon currently attached, if any. */
   discountCouponId: string | null;
   metadata: Record<string, string>;
@@ -106,6 +108,8 @@ export interface StripeGateway {
 
   createCheckoutSession(args: {
     pendingCheckoutId: string;
+    /** Distinguishes attempts for the same pending checkout (previous session id / coupon) so Stripe's 24h idempotency cache never hands back a stale or expired session. */
+    attemptKey: string;
     customerId: string;
     priceId: string;
     couponId: string | null;

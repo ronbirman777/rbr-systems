@@ -5,6 +5,10 @@ import { loadStudioTenant } from "@/lib/configurator/studioTenant";
 import { MEDIA_BUCKET } from "@/lib/media/path";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { combineCommercialAvailability, getSpaceSubscription } from "@/lib/billing/commercialAccess";
+import { buildStudioSuspendedLabels, isStudioGated } from "@/lib/billing/studioGate";
+import { StudioSuspended } from "@/components/billing/studio-suspended";
+import { getAccountLocale } from "@/lib/i18n/accountLocale";
+import { directionOf } from "@/lib/i18n";
 import { getSpaceEntitlement } from "@/lib/entitlements/getSpaceEntitlement";
 import { getCustomPagesLimit } from "@/lib/entitlements/customPagesLimit";
 import {
@@ -94,6 +98,17 @@ export default async function TeachStudioPage({
   }
 
   const availability = combineCommercialAvailability(entitlement, subscription);
+  if (availability.billing && isStudioGated(availability)) {
+    const locale = await getAccountLocale();
+    return (
+      <StudioSuspended
+        spaceName={tenant.name}
+        tenantId={tenant.id}
+        dir={directionOf(locale)}
+        labels={buildStudioSuspendedLabels({ locale, spaceName: tenant.name, reason: availability.billing.reason, subscription })}
+      />
+    );
+  }
 
   const initial: TeachStudioInitial = {
     tenantId: tenant.id,

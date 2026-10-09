@@ -1,4 +1,5 @@
 import type { Dictionary } from "./en";
+import { billingDe } from "./billing.de";
 
 /**
  * German (Deutsch).
@@ -1500,4 +1501,5 @@ export const de: Dictionary = {
     imageFormats8mb: "JPG, PNG oder WebP bis 8 MB.",
   },
 
+  billing: billingDe,
 };

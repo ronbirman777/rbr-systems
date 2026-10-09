@@ -45,6 +45,11 @@ import { isSpacePubliclyAvailable } from "@/lib/entitlements/isSpacePubliclyAvai
 import { getGuestAccessSettingsForOwner } from "../guestAccessActions";
 import { getFeaturedSubmissionForOwner } from "../featuredActions";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getSpaceCommercialAvailability, getSpaceSubscription } from "@/lib/billing/commercialAccess";
+import { buildStudioSuspendedLabels, isStudioGated } from "@/lib/billing/studioGate";
+import { StudioSuspended } from "@/components/billing/studio-suspended";
+import { getAccountLocale } from "@/lib/i18n/accountLocale";
+import { directionOf } from "@/lib/i18n";
 
 import { SPACE_SETTINGS_KEY, parseSpaceSettings } from "@/lib/spaceSettings";
 import { DEFAULT_LOCALE } from "@/lib/i18n";
@@ -71,6 +76,21 @@ export default async function ResumeRetreatConfiguratorPage({
   const { tenantId } = await params;
   const { step } = await searchParams;
   const { supabase, tenant } = await loadStudioTenant(tenantId, "retreat");
+
+  // Billing gate: a Space whose subscription has suspended/ended Studio shows the payment notice INSTEAD of the Studio.
+  // Legacy Spaces (no billing row) yield availability.billing === undefined and fall straight through.
+  const billingAvailability = await getSpaceCommercialAvailability(supabase, tenant.id);
+  if (billingAvailability.billing && isStudioGated(billingAvailability)) {
+    const [locale, subscription] = await Promise.all([getAccountLocale(), getSpaceSubscription(supabase, tenant.id)]);
+    return (
+      <StudioSuspended
+        spaceName={tenant.name}
+        tenantId={tenant.id}
+        dir={directionOf(locale)}
+        labels={buildStudioSuspendedLabels({ locale, spaceName: tenant.name, reason: billingAvailability.billing.reason, subscription })}
+      />
+    );
+  }
 
   // PRE-MIGRATION WARNING: custom_surface (0032), custom_navigation/
   // custom_text (0015) and custom_secondary/hero_image_ref/

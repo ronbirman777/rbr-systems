@@ -15,6 +15,7 @@ const state = vi.hoisted(() => ({
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/navigation", () => ({ redirect: () => undefined }));
+vi.mock("@/lib/i18n/accountLocale", () => ({ getAccountLocale: async () => "en" }));
 vi.mock("next/link", () => ({ default: function Link() { return null; } }));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => {

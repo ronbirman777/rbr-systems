@@ -1,0 +1,222 @@
+/**
+ * `billing` namespace - English source (TASK 032).
+ *
+ * Everything the customer sees around paying for a Space: the Create New Space
+ * funnel, coupon feedback, the post-payment screen, the Billing / Plan page,
+ * suspension notices, My Spaces status chips and every billing email.
+ *
+ * Rules that hold for every key here (and for every translation):
+ *   - Coupon codes, Space names, user names and Stripe identifiers are never
+ *     translated: they arrive as {placeholders}.
+ *   - Money and dates arrive pre-formatted ({price}, {date}); translations never
+ *     format them.
+ *   - No tax percentage or legal claim is stated: tax treatment and the legal
+ *     operator are not final (see docs/billing/LAUNCH-GATES.md).
+ *   - Tone: calm, plain, never alarmist about money.
+ */
+export const billingEn = {
+  // --- shared ---
+  languageLabel: "Language",
+  backToSpaces: "Back to My Spaces",
+  perMonth: "/ month",
+  priceMonthly: "{price} per month",
+  perSpaceNote: "Per Space. Cancel any time - you keep access until the end of the period you've paid for.",
+  taxNote: "Any taxes are calculated and shown at secure checkout.",
+  productTeach: "Time to Teach",
+  productFlow: "Time to Flow",
+
+  // --- Create New Space ---
+  createTitle: "What would you like to create?",
+  createSubtitle: "Look around first - live examples are free. You only pay when you're ready to create your Space.",
+  teachTagline: "A beautiful app for your teaching practice.",
+  teachPoint1: "Your schedule, classes and retreats in one place",
+  teachPoint2: "Readings and audio your students keep",
+  teachPoint3: "A simple way for students to reach you",
+  flowTagline: "A guest app for retreats and wellness programs.",
+  flowPoint1: "Daily schedule, meals and treatments",
+  flowPoint2: "Arrival information and facilities",
+  flowPoint3: "Share with guests by QR code or link",
+  viewExample: "View live example",
+  createTeachCta: "Create a Time to Teach Space",
+  createFlowCta: "Create a Time to Flow Space",
+  checkoutUnavailable: "Checkout is temporarily unavailable. Please try again soon.",
+  checkoutProblem: "We couldn't prepare checkout. Please try again or contact support.",
+
+  // --- pre-checkout ---
+  summaryTitle: "Your {product} Space",
+  summaryIntro: "Review the details, then continue to secure payment.",
+  dueToday: "Due today",
+  then: "Then",
+  firstCycle: "First billing cycle",
+  firstCycles: "First {count} billing cycles",
+  everyCycle: "Every billing cycle",
+  couponLabel: "Coupon code",
+  couponApply: "Apply",
+  couponRemove: "Remove",
+  couponApplied: "{code} applied",
+  consentImmediate: "I want my Space to be created and activated immediately after payment.",
+  consentWithdrawal: "I understand that once the service has been fully provided, my statutory right of withdrawal may be lost, to the extent the law allows.",
+  termsLine: "By continuing you accept the Terms of Service, the Privacy Policy and the Billing & Cancellation terms.",
+  continueToPayment: "Continue to secure payment",
+  preparingCheckout: "Preparing secure checkout…",
+  consentRequired: "Please confirm both statements to continue.",
+  checkoutCanceled: "Checkout was canceled. You haven't been charged.",
+
+  // --- coupon feedback ---
+  couponInvalid: "That coupon code isn't valid.",
+  couponInactive: "This coupon is no longer active.",
+  couponNotStarted: "This coupon is not available yet.",
+  couponExpired: "This coupon has expired.",
+  couponNotApplicable: "This coupon can't be applied to this purchase.",
+  couponUnavailable: "This coupon can't be applied right now.",
+  couponAlreadyUsed: "You've already used this coupon.",
+  couponInUseElsewhere: "This coupon is already reserved for another checkout of yours.",
+  couponLimitReached: "This coupon has reached its usage limit.",
+  couponCheckoutClosed: "This checkout has expired. Please start again.",
+
+  // --- after payment ---
+  settingUpTitle: "Setting up your Space…",
+  paymentConfirmed: "Payment confirmed",
+  settingUpHint: "This usually takes a few seconds.",
+  stillPreparing: "Your payment was received. We're still preparing your Space. This page updates on its own - please don't pay again.",
+  noPaymentYet: "We haven't received a payment for this checkout yet.",
+  checkoutExpired: "This checkout expired. You haven't been charged.",
+  returnToSpaces: "Go to My Spaces",
+  readyTitle: "Your Space is ready",
+  continueToStudio: "Continue",
+  referenceLabel: "Reference",
+
+  // --- onboarding ---
+  onboardTitle: "Name your Space",
+  onboardBody: "You can change this at any time in Studio.",
+  spaceNameLabel: "Space name",
+  saveAndOpenStudio: "Save and open Studio",
+  skipForNow: "Skip for now",
+
+  // --- Billing / Plan page ---
+  billingTitle: "Billing & plan",
+  planLabel: "Plan",
+  statusLabel: "Subscription status",
+  periodLabel: "Current billing period",
+  nextBilling: "Next billing date",
+  nextCharge: "Next charge (before tax)",
+  couponSection: "Coupon",
+  discountProgress: "{done} of {total} discounted payments used",
+  discountForever: "Applies to every payment",
+  discountDone: "Discount completed - your plan is now {price} per month",
+  discountRemaining: "{count} discounted payment remaining",
+  discountRemainingPlural: "{count} discounted payments remaining",
+  includedTitle: "Included with your plan",
+  includedAudio: "{library} minutes of audio library, up to {max} minutes per recording, {listening} listening minutes per month.",
+  statusActive: "Active",
+  statusPaymentIssue: "Payment issue",
+  statusGuestSuspended: "Guest App unavailable",
+  statusStudioSuspended: "Studio suspended",
+  statusCanceling: "Cancels on {date}",
+  statusEnded: "Ended",
+  statusExempt: "Included",
+  statusSettingUp: "Setting up",
+  nextActionTitle: "What happens next",
+  nextActionRenewal: "Renews on {date}",
+  nextActionDiscountCycle: "Discounted renewal on {date}",
+  nextActionDiscountEnds: "Full price from {date}",
+  nextActionCancelAtPeriodEnd: "Access ends on {date}",
+  nextActionPaymentRetry: "Next payment attempt on {date}",
+  nextActionGuestSuspension: "Guest App becomes unavailable on {date}",
+  nextActionStudioSuspension: "Studio is suspended on {date}",
+  nextActionDeletionWarning: "Final warning on {date}",
+  nextActionDeletionEligible: "Eligible for deletion from {date}",
+  nextActionNone: "Nothing scheduled",
+  cancelSection: "Cancel subscription",
+  cancelBody: "Cancelling stops future payments. You keep full access until the end of the period you've paid for. No refund is issued for the current period.",
+  cancelButton: "Cancel at end of period",
+  cancelConfirmTitle: "Cancel {space} at the end of this billing period?",
+  cancelConfirmBody: "You keep full access until {date}. You can resume before then.",
+  cancelConfirmYes: "Yes, cancel at period end",
+  cancelConfirmNo: "Keep my subscription",
+  cancelScheduled: "Cancellation scheduled. Access remains available until {date}.",
+  resumeButton: "Resume subscription",
+  resumed: "Your subscription will continue.",
+  updatePayment: "Update payment method",
+  historyTitle: "Payment history",
+  historyEmpty: "No payments yet.",
+  colDate: "Date",
+  colAmount: "Amount",
+  colStatus: "Status",
+  colReference: "Reference",
+  colDocument: "Document",
+  viewInvoice: "View invoice / receipt",
+  invoicePaid: "Paid",
+  invoiceOpen: "Pending",
+  invoiceFailed: "Failed",
+  invoiceVoid: "Void",
+  invoiceUncollectible: "Uncollectible",
+  refundedAmount: "Refunded {amount}",
+  billingErrorGeneric: "Something went wrong. Please try again.",
+
+  // --- suspension / payment notices ---
+  paymentIssueBanner: "We couldn't process your last payment. If it isn't resolved, your Guest App becomes unavailable on {date}.",
+  guestSuspendedBanner: "Your Guest App is currently unavailable because of a payment issue. Studio stays open until {date}.",
+  studioSuspendedTitle: "Payment required",
+  studioSuspendedBody: "Studio for {space} is temporarily suspended because a payment couldn't be completed. Your content is safe and will be there when you resolve it.",
+  studioSuspendedDeadline: "If this isn't resolved, the Space becomes eligible for deletion on {date}.",
+  resolvePayment: "Resolve payment",
+  endedTitle: "This subscription has ended",
+  endedBody: "{space} is no longer available. Your content has been kept.",
+
+  // --- My Spaces chips ---
+  chipPaymentIssue: "Payment issue",
+  chipGuestSuspended: "Guest unavailable",
+  chipStudioSuspended: "Studio suspended",
+  chipCanceling: "Ends {date}",
+  chipEnded: "Ended",
+  billingLink: "Billing",
+
+  // --- emails ---
+  emailGreeting: "Hello,",
+  emailFooter: "InnerDweS · You are receiving this because of your {space} subscription.",
+  emailManageBilling: "Manage billing",
+  emailViewInvoice: "View invoice / receipt",
+  emailOfficialDocument: "Your official invoice / receipt is on the secure page linked above. You won't receive a separate receipt email from our payment provider.",
+  emailRowSpace: "Space",
+  emailRowType: "Type",
+  emailRowPlan: "Plan",
+  emailRowAmountPaid: "Amount paid",
+  emailRowDiscount: "Discount",
+  emailRowDiscountProgress: "Discount progress",
+  emailRowNextBilling: "Next billing date",
+  emailRowNextCharge: "Next expected charge",
+  emailRowStatus: "Subscription status",
+  emailRowInvoice: "Invoice",
+  emailDiscountValue: "{code} - {amount} off",
+  emailDiscountProgressValue: "Payment {done} of {total}",
+  emailDiscountProgressForever: "Applies to every payment",
+
+  emailPaymentFirstSubject: "Payment confirmed - {space}",
+  emailPaymentFirstIntro: "Thank you. Your payment was confirmed and your Space is ready.",
+  emailPaymentRenewalSubject: "Payment received - {space}",
+  emailPaymentRenewalIntro: "Thank you. We received your subscription payment.",
+  emailPaymentRecoveredSubject: "Payment received - {space} is active again",
+  emailPaymentRecoveredIntro: "Thank you. Your payment went through and your Space is active again - your Guest App and Studio are available.",
+  emailPaymentFinalSubject: "Final payment received - {space}",
+  emailPaymentFinalIntro: "Thank you. This is your final payment: you scheduled cancellation, so your access continues until {date} and the subscription then ends.",
+
+  emailFailedSubject: "Payment failed - {space}",
+  emailFailedIntro: "We couldn't process your payment for {space}. Your Space stays available for now and we'll retry automatically. If it isn't resolved, your Guest App becomes unavailable after about 24 hours and Studio is suspended after 7 days.",
+  emailFailedCta: "Update payment method",
+
+  emailGuestSubject: "{space}: Guest App unavailable",
+  emailGuestIntro: "Your payment is still unresolved, so the Guest App for {space} is currently unavailable. Studio stays open until {date}. Once payment is resolved everything returns immediately - nothing is lost.",
+
+  emailStudioSubject: "{space}: Studio suspended",
+  emailStudioIntro: "Studio for {space} is suspended until your payment is resolved. Your content is safe. If it stays unresolved, the Space becomes eligible for deletion on {date}.",
+
+  emailFinalSubject: "Final notice - {space}",
+  emailFinalIntro: "This is a final notice. If the payment for {space} isn't resolved, the Space becomes eligible for deletion on {date}. Resolving the payment now restores everything.",
+
+  emailCancelSubject: "Cancellation scheduled - {space}",
+  emailCancelIntro: "Your subscription for {space} will end on {date}. You keep full access until then, and you can resume at any time before it ends.",
+
+  emailEndedSubject: "Subscription ended - {space}",
+  emailEndedIntro: "Your subscription for {space} has ended and the Space is no longer available. Your content has been kept.",
+} as const;

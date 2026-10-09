@@ -18,6 +18,10 @@ vi.mock("next/link", () => ({ default: function Link() { return null; } }));
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { getUser: async () => ({ data: { user: state.user } }) } }),
 }));
+// TASK 032: this suite pins the LEGACY flow, which is what the page renders while paid checkout is off.
+vi.mock("@/lib/billing/funnelMode", () => ({ getCreateMode: async () => "legacy", getBasePlanPrice: async () => null }));
+vi.mock("@/lib/i18n/accountLocale", () => ({ getAccountLocale: async () => "en" }));
+vi.mock("./paid-create", () => ({ PaidCreate: function PaidCreate() { return null; }, CheckoutUnavailable: function CheckoutUnavailable() { return null; } }));
 vi.mock("@/components/brand/wordmark", () => ({ InnerDweSMark: function Mark() { return null; } }));
 vi.mock("@/app/(site)/configurator/retreat/lifecycleActions", () => ({
   getSpaceSlotSummary: async () => ({ slotsUsed: 2 - state.slotsAvailable, slotsAllowed: 2, slotsAvailable: state.slotsAvailable }),

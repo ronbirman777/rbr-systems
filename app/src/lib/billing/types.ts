@@ -39,6 +39,7 @@ export type SubscriptionRecord = {
   nextAction: NextAction;
   nextActionAt: Date | null;
   nextExpectedChargeMinor: number | null;
+  nextPaymentAttemptAt: Date | null;
   exemptReason: string | null;
   exemptExpiresAt: Date | null;
 };
@@ -51,7 +52,7 @@ export type SubscriptionRow = {
   cancel_at: string | null; canceled_at: string | null; ended_at: string | null; payment_failed_at: string | null;
   guest_suspended_at: string | null; studio_suspended_at: string | null; deletion_warning_at: string | null;
   eligible_for_deletion_at: string | null; recovered_at: string | null; next_action: NextAction;
-  next_action_at: string | null; next_expected_charge_minor: number | null; exempt_reason: string | null;
+  next_action_at: string | null; next_expected_charge_minor: number | null; next_payment_attempt_at: string | null; exempt_reason: string | null;
   exempt_expires_at: string | null;
 };
 
@@ -67,9 +68,10 @@ export function toSubscriptionRecord(r: SubscriptionRow): SubscriptionRecord {
     paymentFailedAt: d(r.payment_failed_at), guestSuspendedAt: d(r.guest_suspended_at), studioSuspendedAt: d(r.studio_suspended_at),
     deletionWarningAt: d(r.deletion_warning_at), eligibleForDeletionAt: d(r.eligible_for_deletion_at), recoveredAt: d(r.recovered_at),
     nextAction: r.next_action, nextActionAt: d(r.next_action_at), nextExpectedChargeMinor: r.next_expected_charge_minor,
+    nextPaymentAttemptAt: d(r.next_payment_attempt_at),
     exemptReason: r.exempt_reason, exemptExpiresAt: d(r.exempt_expires_at),
   };
 }
 
 export const SUBSCRIPTION_SELECT =
-  "id, tenant_id, billing_owner_user_id, plan_id, stripe_mode, stripe_subscription_id, status, currency, base_amount_minor, current_effective_amount_minor, current_period_start, current_period_end, cancel_at_period_end, cancel_at, canceled_at, ended_at, payment_failed_at, guest_suspended_at, studio_suspended_at, deletion_warning_at, eligible_for_deletion_at, recovered_at, next_action, next_action_at, next_expected_charge_minor, exempt_reason, exempt_expires_at";
+  "id, tenant_id, billing_owner_user_id, plan_id, stripe_mode, stripe_subscription_id, status, currency, base_amount_minor, current_effective_amount_minor, current_period_start, current_period_end, cancel_at_period_end, cancel_at, canceled_at, ended_at, payment_failed_at, guest_suspended_at, studio_suspended_at, deletion_warning_at, eligible_for_deletion_at, recovered_at, next_action, next_action_at, next_expected_charge_minor, next_payment_attempt_at, exempt_reason, exempt_expires_at";

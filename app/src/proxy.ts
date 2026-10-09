@@ -5,6 +5,7 @@ import {
   PREVIEW_GATE_PATH,
   isPreviewGateEnabled,
   isPublicGuestPath,
+  isMachineEndpointPath,
 } from "@/lib/preview-gate/config";
 import { sha256Hex, timingSafeEqual } from "@/lib/preview-gate/hash";
 import { classifyHostname, PRODUCTION_APEX } from "@/lib/hostname";
@@ -146,6 +147,8 @@ async function checkPreviewGate(
   // direct /s/<slug> URL is - while app.innerdwes.com's root, rewritten
   // to /space, is not. See isPublicGuestPath for the full boundary.
   if (isPublicGuestPath(effectivePathname)) return null;
+  // TASK 032: Stripe webhooks and the billing cron authenticate themselves (signature / bearer secret).
+  if (isMachineEndpointPath(effectivePathname)) return null;
   // Task 011A: the previous opengraph-image exemption existed purely so
   // social crawlers could render a link preview for shared marketing
   // links - a marketing convenience, not a technical requirement for the

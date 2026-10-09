@@ -53,6 +53,7 @@ export function mapSubscription(s: Stripe.Subscription): SubscriptionDTO {
     canceledAt: date(s.canceled_at),
     endedAt: date(s.ended_at),
     latestInvoiceId: idOf(s.latest_invoice as string | { id: string } | null),
+    latestInvoice: null, // filled by the gateway when it retrieves the invoice
     discountCouponId: couponId,
     metadata: (s.metadata ?? {}) as Record<string, string>,
     livemode: s.livemode,

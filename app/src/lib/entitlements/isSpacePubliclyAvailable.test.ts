@@ -14,11 +14,14 @@ vi.mock("server-only", () => ({}));
 // entitlement. Defaults to "not archived" (status: "draft") so every
 // pre-existing test below keeps exercising only the entitlement logic it
 // was written for; the dedicated archived-tenant tests below override it.
+const mockSubscriptionSingle = vi.fn().mockResolvedValue({ data: null });
 const mockTenantStatusSingle = vi.fn().mockResolvedValue({ data: { status: "draft" } });
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     marker: "admin-client-stub",
     from: (table: string) => {
+      // TASK 032: the resolver also reads space_subscriptions. Default: none (a legacy Space).
+      if (table === "space_subscriptions") return { select: () => ({ eq: () => ({ maybeSingle: mockSubscriptionSingle }) }) };
       if (table !== "tenants") throw new Error(`unexpected table in test: ${table}`);
       return { select: () => ({ eq: () => ({ maybeSingle: mockTenantStatusSingle }) }) };
     },

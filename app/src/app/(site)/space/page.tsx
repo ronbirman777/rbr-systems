@@ -5,7 +5,12 @@ import { InnerDweSMark } from "@/components/brand/wordmark";
 import { getSpaceType, studioHref } from "@/lib/spaceTypes/registry";
 import { getPublishAvailability } from "@/lib/spaceTypes/publishAvailability";
 import { PublishSpaceButton } from "@/components/publish-space-button";
-import { deriveCommercialAvailability } from "@/lib/entitlements/availability";
+import { combineCommercialAvailability } from "@/lib/billing/commercialAccess";
+import { customerBillingState } from "@/lib/billing/customerView";
+import { chipLabel } from "@/lib/billing/billingPageModel";
+import { SUBSCRIPTION_SELECT, toSubscriptionRecord, type SubscriptionRecord, type SubscriptionRow } from "@/lib/billing/types";
+import { getAccountLocale } from "@/lib/i18n/accountLocale";
+import { translate } from "@/lib/i18n";
 import type { SpaceEntitlementRow } from "@/lib/entitlements/types";
 import { SpaceThumbnail } from "@/components/space-thumbnail";
 import { MEDIA_BUCKET } from "@/lib/media/path";
@@ -77,7 +82,7 @@ export default async function MySpacePage() {
   // brand_configs). One batched query for ALL of them, and none at all for an
   // account with only Flow Spaces.
   const teachIds = (tenants ?? []).filter((t) => t.product_type === "teach").map((t) => t.id);
-  const [{ data: entitlementRows }, { data: brandRows }, { data: settingRows }] = await Promise.all([
+  const [{ data: entitlementRows }, { data: brandRows }, { data: settingRows }, { data: subscriptionRows }, accountLocale] = await Promise.all([
     // Commercial Access Phase 1: one additive query for every listed
     // tenant's entitlement row, fed through the same
     // deriveCommercialAvailability() authority publish_space() enforces
@@ -100,7 +105,21 @@ export default async function MySpacePage() {
     teachIds.length > 0
       ? supabase.from("module_settings").select("tenant_id, module_key, data").in("tenant_id", teachIds).in("module_key", [...CARD_SETTINGS_KEYS])
       : Promise.resolve({ data: [] as { tenant_id: string; module_key: string; data: unknown }[] }),
+    // TASK 032: ONE batched read of every listed Space's billing row (owner session, RLS-scoped). Spaces without a
+    // row are legacy Spaces and keep the entitlement path unchanged.
+    supabase
+      .from("space_subscriptions")
+      .select(SUBSCRIPTION_SELECT)
+      .in("tenant_id", tenantIds.length > 0 ? tenantIds : ["00000000-0000-0000-0000-000000000000"]),
+    getAccountLocale(),
   ]);
+  const subscriptionByTenant = new Map<string, SubscriptionRecord>(
+    (subscriptionRows ?? []).map((row) => {
+      const rec = toSubscriptionRecord(row as unknown as SubscriptionRow);
+      return [rec.tenantId, rec];
+    })
+  );
+  const billingNow = new Date();
   const entitlementByTenant = new Map<string, SpaceEntitlementRow>(
     (entitlementRows ?? []).map((row) => [row.tenant_id, row as SpaceEntitlementRow])
   );
@@ -213,7 +232,11 @@ export default async function MySpacePage() {
             const studioLink = studioHref(t.product_type, t.id);
             const previewLink = studioHref(t.product_type, t.id, { publish: true });
             const publishAvailability = getPublishAvailability(t.product_type);
-            const availability = deriveCommercialAvailability(entitlementByTenant.get(t.id) ?? null);
+            const subscription = subscriptionByTenant.get(t.id) ?? null;
+            const availability = combineCommercialAvailability(entitlementByTenant.get(t.id) ?? null, subscription, billingNow);
+            const billingChip = subscription
+              ? chipLabel(customerBillingState(subscription, billingNow), accountLocale, subscription.cancelAt ?? subscription.currentPeriodEnd)
+              : null;
             const cardImage = cardImageByTenant.get(t.id) ?? null;
             const spaceImageUrl = cardImage ? (signedByRef.get(cardImage.ref) ?? null) : null;
             const isArchived = t.status === "archived";
@@ -279,6 +302,15 @@ export default async function MySpacePage() {
                             <>No public address reserved yet - set one in Manage Space</>
                           )}
                         </div>
+                        {billingChip && (
+                          <div className="mt-2">
+                            <span className="inline-flex items-center rounded-full bg-idw-clay/15 px-2.5 py-1 text-xs font-semibold text-idw-clay-text">
+                              {billingChip}
+                            </span>
+                          </div>
+                        )}
+                        {/* Paid Spaces have no legacy "complimentary access" line. */}
+                        {!subscription && (
                         <div className="text-xs text-idw-forest/40 mt-1">
                           {availability.effectiveStatus === "complimentary" &&
                             `Complimentary access${availability.daysRemaining !== null ? ` · ${availability.daysRemaining}d remaining` : ""}`}
@@ -288,6 +320,7 @@ export default async function MySpacePage() {
                             `Access expired · ${availability.daysRemaining ?? 0}d left before offline`}
                           {availability.effectiveStatus === "inactive" && "No active access"}
                         </div>
+                        )}
                       </>
                     )}
                     {isArchived && (
@@ -350,6 +383,14 @@ export default async function MySpacePage() {
                         </a>
                       )}
                     </>
+                  )}
+                  {isOwner && subscription && (
+                    <Link
+                      href={`/billing/${t.id}`}
+                      className="inline-flex items-center justify-center min-h-11 px-4 rounded-full border border-idw-forest/20 text-idw-forest active:scale-[0.97] active:bg-idw-forest/10 transition-transform"
+                    >
+                      {translate(accountLocale, "billing", "billingLink")}
+                    </Link>
                   )}
                   {isOwner && (
                     <SpaceLifecycleControls

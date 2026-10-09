@@ -1,4 +1,5 @@
 import type { Dictionary } from "./en";
+import { billingEs } from "./billing.es";
 
 /**
  * Spanish (Español).
@@ -1501,4 +1502,5 @@ export const es: Dictionary = {
     imageFormats8mb: "JPG, PNG o WebP de hasta 8 MB.",
   },
 
+  billing: billingEs,
 };

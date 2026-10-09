@@ -55,6 +55,10 @@ vi.mock("@/lib/supabase/server", () => ({
       if (table === "tenants") {
         return { select: () => ({ eq: () => ({ maybeSingle: mockTenantSelect }) }) };
       }
+      // TASK 032: the commercial resolver also reads space_subscriptions (none = a legacy Space).
+      if (table === "space_subscriptions") {
+        return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) };
+      }
       if (table === "published_spaces") {
         return { select: () => ({ eq: () => ({ maybeSingle: mockSnapshotSelect }) }) };
       }

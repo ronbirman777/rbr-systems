@@ -168,7 +168,10 @@ const DAILY_INSPIRATION_BLOCK_0034 = /if 'dailyInspiration' = any\(v_enabled_mod
 const strip0034 = (body: string) => body.replace(DAILY_INSPIRATION_BLOCK_0034, "");
 
 describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Phase 4A)", () => {
-  const latest = latestFunctionDefinition(migrations, "publish_space")!;
+  // TASK 032's 0039 restates publish_space() with ONE marked billing guard (asserted below). The earlier links in
+  // the chain (0034 -> 0033 -> ...) are still proven against 0034's own body, read directly from its file.
+  const head = latestFunctionDefinition(migrations, "publish_space")!;
+  const latest = { file: "0034_flow_daily_inspiration.sql", body: extractFunctionBody(migrations.find((m) => m.name.startsWith("0034_"))!.sql, "publish_space")! };
   const base = extractFunctionBody(migrations.find((m) => m.name.startsWith("0025_"))!.sql, "publish_space")!;
   // build_teach_payload() was owned by 0028 until TASK 031's 0035 added
   // 'teachRetreats'; 0031-0034 redefine only publish_space(), so the
@@ -193,11 +196,30 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     for (const forbidden of ["create table", "alter table", "drop ", "create policy", "alter policy", "insert into", "update public", "delete from"]) {
       expect(zero35).not.toContain(forbidden);
     }
-    expect(latest.file).toMatch(/^0034_/);
+    expect(head.file).toMatch(/^0039_/);
   });
 
-  it("publish_space() is last redefined by 0034", () => {
-    expect(latest.file).toMatch(/^0034_/);
+  it("publish_space() is last redefined by 0039 (TASK 032), and 0039's body is 0034's plus ONLY the billing guard", () => {
+    expect(head.file).toMatch(/^0039_/);
+    // Mechanically remove exactly the marked additions; what is left must be 0034's function, byte for byte (normalised).
+    const reverted = norm(head.body)
+      .replace("v_access record;", "")
+      .replace("select decided, can_publish into v_access from public.space_access_state(p_tenant_id);", "")
+      .replace("if v_access.decided then if not v_access.can_publish then raise exception 'This Space does not currently have active commercial access'; end if; else", "")
+      .replace("active commercial access'; end if; end if;", "active commercial access'; end if;")
+      .replace(/\s+/g, " ")
+      .trim();
+    expect(reverted).toBe(norm(latest.body).replace(/\s+/g, " ").trim());
+    // The guard is the unified billing decision first, the legacy entitlement guard as the fallback.
+    expect(norm(head.body)).toContain("from public.space_access_state(p_tenant_id)");
+    expect(norm(head.body)).toContain("from public.space_entitlements where tenant_id = p_tenant_id");
+  });
+
+  it("0039 keeps publish_space's signature, security mode and grants exactly as before", () => {
+    const m39 = stripSqlComments(migrations.find((m) => m.name.startsWith("0039_"))!.sql).toLowerCase();
+    expect(m39).toContain("security invoker");
+    expect(m39).toContain("revoke execute on function public.publish_space(uuid) from anon");
+    expect(m39).toContain("grant execute on function public.publish_space(uuid) to authenticated");
   });
 
   it("0034's body is 0033's plus only the conditional dailyInspiration block", () => {
@@ -403,7 +425,7 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     }
   });
 
-  it("migration chain: one migration per number, 0035 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
+  it("migration chain: one migration per number, 0041 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
     const names = migrations.map((m) => m.name);
     expect(names.filter((n) => n.startsWith("0028_"))).toEqual(["0028_teach_foundation.sql"]);
     expect(names.filter((n) => n.startsWith("0029_"))).toEqual(["0029_versioned_media_update_deny.sql"]);
@@ -415,7 +437,11 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     // renumbered or back-filled.
     expect(names.filter((n) => n.startsWith("0034_"))).toEqual(["0034_flow_daily_inspiration.sql"]);
     expect(names.filter((n) => n.startsWith("0035_"))).toEqual(["0035_teach_my_retreats.sql"]);
-    expect(names.some((n) => /^00(3[6-9]|[4-9]\d)_/.test(n))).toBe(false);
+    // TASK 032's billing foundation: 0036-0041, one each, nothing beyond.
+    for (const [n, file] of [["0036", "0036_billing_core_tables.sql"], ["0037", "0037_billing_coupon_engine.sql"], ["0038", "0038_billing_provisioning_lifecycle.sql"], ["0039", "0039_billing_access_enforcement.sql"], ["0040", "0040_billing_payments_invoices.sql"], ["0041", "0041_billing_event_email_primitives.sql"]] as const) {
+      expect(names.filter((x) => x.startsWith(`${n}_`))).toEqual([file]);
+    }
+    expect(names.some((n) => /^00(4[2-9]|[5-9]\d)_/.test(n))).toBe(false);
     expect(names.filter((n) => n.startsWith("0019_"))).toEqual(["0019_signup_profile.sql"]);
     expect(names.some((n) => n.startsWith("0023_"))).toBe(false);
   });

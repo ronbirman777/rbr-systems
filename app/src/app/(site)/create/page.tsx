@@ -7,6 +7,9 @@ import { getSpaceSlotSummary } from "@/app/(site)/configurator/retreat/lifecycle
 import { createTeachSpace } from "@/app/(site)/configurator/teach/actions";
 import { CreateTeachSubmit } from "./create-teach-submit";
 import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
+import { getBasePlanPrice, getCreateMode } from "@/lib/billing/funnelMode";
+import { getAccountLocale } from "@/lib/i18n/accountLocale";
+import { CheckoutUnavailable, PaidCreate } from "./paid-create";
 
 export default async function CreatePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
@@ -15,6 +18,12 @@ export default async function CreatePage({ searchParams }: { searchParams: Promi
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/log-in");
+
+  // TASK 032: with paid checkout enabled the Create screen is the paid funnel; otherwise (the default) the legacy
+  // flow below runs exactly as before.
+  const createMode = await getCreateMode();
+  if (createMode === "paid") return <PaidCreate locale={await getAccountLocale()} price={await getBasePlanPrice()} />;
+  if (createMode === "unavailable") return <CheckoutUnavailable locale={await getAccountLocale()} />;
 
   // Task 011: an honest Add Space/upgrade-required state before the user
   // spends time filling out a form the database will reject anyway - the
