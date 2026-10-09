@@ -1,4 +1,5 @@
 import { translate, type Locale, type TranslationKey } from "@/lib/i18n";
+import { LOCALE_TAG } from "@/lib/i18n/locales";
 import { translateAccount, type AccountKey } from "@/lib/i18n/account";
 import type { BillingViewModel, CustomerBillingState, InvoiceRow } from "./customerView";
 import { formatBillingDate, safeHttpsUrl } from "./displayDate";
@@ -93,6 +94,7 @@ export function buildBillingPageModel(view: BillingViewModel, locale: Locale): B
   const sub = view.subscription;
   const exempt = sub.status === "exempt";
   const ended = view.state === "ended";
+  const num = (n: number) => new Intl.NumberFormat(LOCALE_TAG[locale] ?? "en-GB").format(n);
   const date = (d: Date | null) => (d ? formatBillingDate(d, locale) : "");
   const money = (minor: number | null, currency: string | null) => (minor == null || !currency ? null : formatMoney(minor, currency, locale));
   const currency = sub.currency;
@@ -143,7 +145,8 @@ export function buildBillingPageModel(view: BillingViewModel, locale: Locale): B
     whatsNext,
     audio: view.audio && !exempt
       ? t("includedAudio", {
-          library: view.audio.libraryMinutes, max: view.audio.maxRecordingMinutes, listening: view.audio.listeningMinutesPerMonth,
+          // Locale grouping (100,000 / 100.000 / 100 000), never a bare integer.
+          library: num(view.audio.libraryMinutes), max: num(view.audio.maxRecordingMinutes), listening: num(view.audio.listeningMinutesPerMonth),
         })
       : null,
     banner,

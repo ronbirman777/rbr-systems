@@ -87,6 +87,7 @@ export default async function ResumeRetreatConfiguratorPage({
         spaceName={tenant.name}
         tenantId={tenant.id}
         dir={directionOf(locale)}
+        lang={locale}
         labels={buildStudioSuspendedLabels({ locale, spaceName: tenant.name, reason: billingAvailability.billing.reason, subscription })}
       />
     );

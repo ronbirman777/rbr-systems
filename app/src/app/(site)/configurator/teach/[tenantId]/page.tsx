@@ -105,6 +105,7 @@ export default async function TeachStudioPage({
         spaceName={tenant.name}
         tenantId={tenant.id}
         dir={directionOf(locale)}
+        lang={locale}
         labels={buildStudioSuspendedLabels({ locale, spaceName: tenant.name, reason: availability.billing.reason, subscription })}
       />
     );

@@ -10,14 +10,17 @@ export function StudioSuspended({
   tenantId,
   labels,
   dir = "ltr",
+  lang,
 }: {
   spaceName: string;
   tenantId: string;
   labels: StudioSuspendedLabels;
   dir?: "ltr" | "rtl";
+  /** The account language the labels are in; the surrounding document may still be English. */
+  lang?: string;
 }) {
   return (
-    <main dir={dir} className="flex-1 bg-idw-parchment px-4 sm:px-6 py-16 flex flex-col items-center">
+    <main dir={dir} lang={lang} className="flex-1 bg-idw-parchment px-4 sm:px-6 py-16 flex flex-col items-center">
       <section aria-labelledby="studio-suspended-title" className="w-full max-w-md rounded-2xl border border-idw-forest/10 bg-white p-6 sm:p-8 text-start">
         <h1 id="studio-suspended-title" className="font-ui text-2xl text-idw-forest">{labels.title}</h1>
         <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-idw-forest/50 break-words" dir="auto">{spaceName}</p>

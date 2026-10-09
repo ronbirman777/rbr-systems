@@ -13,7 +13,7 @@ import type { billingEn } from "./billing.en";
 export const billingIt: { [K in keyof typeof billingEn]: string } = {
   // --- shared ---
   languageLabel: "Lingua",
-  backToSpaces: "Torna a I miei Space",
+  backToSpaces: "Torna ai miei Space",
   perMonth: "/ mese",
   priceMonthly: "{price} al mese",
   perSpaceNote: "Per ogni Space. Può disdire in qualsiasi momento: l'accesso resta attivo fino alla fine del periodo già pagato.",
