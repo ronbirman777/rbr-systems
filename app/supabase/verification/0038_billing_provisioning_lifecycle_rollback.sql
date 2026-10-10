@@ -5,7 +5,7 @@
 --
 -- Read docs/billing/MIGRATION-RECOVERY.md first. A forward fix is preferred.
 --
--- ORDER: 0041 -> 0040 -> 0039 -> 0038 (this file) -> 0037 -> 0036.
+-- ORDER: 0044 -> 0043 -> 0042 -> 0041 -> 0040 -> 0039 -> 0038 (this file) -> 0037 -> 0036.
 -- 0039's rollback must already have run (its policies call
 -- space_studio_writable(), and its publish_space() calls space_access_state();
 -- the guard checks both).

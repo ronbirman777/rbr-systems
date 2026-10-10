@@ -8,8 +8,8 @@ import { extractFunctionBody, latestFunctionDefinition, stripSqlComments, type M
  * TASK 032 rollback guard (docs/billing/MIGRATION-RECOVERY.md).
  *
  * Static checks only - nothing here touches a database:
- *  - every TASK 032 migration (0036-0043) has a rollback file in supabase/verification/;
- *  - a rollback that restores a function restated by 0038/0039/0042 restores EXACTLY the body of the
+ *  - every TASK 032 migration (0036-0044) has a rollback file in supabase/verification/;
+ *  - a rollback that restores a function restated by 0038/0039/0042/0043/0044 restores EXACTLY the body of the
  *    migration that defined that function before (found mechanically, not hard-coded);
  *  - every object a migration creates is dropped by its rollback;
  *  - rollbacks are transactional, confirmation-gated and never use CASCADE.
@@ -25,7 +25,7 @@ const migrations = read("migrations");
 const num = (name: string) => Number(/^(\d+)_/.exec(name)?.[1] ?? -1);
 const migration = (n: string) => migrations.find((m) => m.name.startsWith(`${n}_`))!;
 
-const TASK032 = ["0036", "0037", "0038", "0039", "0040", "0041", "0042", "0043"] as const;
+const TASK032 = ["0036", "0037", "0038", "0039", "0040", "0041", "0042", "0043", "0044"] as const;
 const rollbackPath = (n: string) =>
   path.join(ROOT, "verification", migration(n).name.replace(/\.sql$/, "_rollback.sql"));
 const rollback = (n: string) => fs.readFileSync(rollbackPath(n), "utf8");
@@ -114,6 +114,7 @@ describe("TASK 032 rollback files", () => {
 
   it("each rollback (except the first) refuses until the next-later rollback has run", () => {
     const later: Record<string, string> = {
+      "0043": "billing_locked", // 0044 (its restated Guest Access / Featured RPCs carry hint BILLING_LOCKED)
       "0042": "to_regprocedure('public.billing_audio_policy(uuid)')", // 0043 (audio enforcement helper)
       "0041": "billing_locked", // 0042 (its restated restore_space/replace_space carry hint BILLING_LOCKED)
       "0040": "public.billing_claim_event(", // 0041
@@ -137,6 +138,9 @@ describe("restated functions are restored to their previous definition, byte for
     { rb: "0042", fn: "restore_space", expectedPrevious: /^0017_/ },
     { rb: "0042", fn: "replace_space", expectedPrevious: /^0027_/ },
     { rb: "0043", fn: "publish_space", expectedPrevious: /^0039_/ },
+    { rb: "0044", fn: "set_guest_access_code", expectedPrevious: /^0017_/ },
+    { rb: "0044", fn: "disable_guest_access_code", expectedPrevious: /^0017_/ },
+    { rb: "0044", fn: "submit_featured_listing", expectedPrevious: /^0017_/ },
   ] as const;
 
   for (const { rb, fn, expectedPrevious } of RESTORED) {
@@ -330,5 +334,92 @@ describe("0043 audio enforcement rollback", () => {
   it("the 0042 rollback refuses while 0043 is applied (named check, not just the marker)", () => {
     const guard = code(rollback("0042")).split("$$")[1] ?? "";
     expect(guard).toMatch(/if to_regprocedure\('public\.billing_audio_policy\(uuid\)'\) is not null then\s+raise exception 'rollback 0042 refused: 0043 is still applied/);
+  });
+});
+
+/**
+ * TASK 032 (0044): the SECURITY DEFINER Guest Access / Featured RPCs are restated with ONE additive, marked
+ * billing guard each. Removing exactly the marked block must give back 0017's raw text (comments included).
+ */
+const MARKED_0044 = /\n[ \t]*-- >>> TASK 032 \(0044\)[\s\S]*?-- <<< TASK 032 \(0044\)\n\n/g;
+const DEFINER_0044 = [
+  { fn: "set_guest_access_code", sig: "uuid, text", params: "p_tenant_id uuid, p_code text", md5: "d5d835ac1a663482387a3d07a7006f59" },
+  { fn: "disable_guest_access_code", sig: "uuid", params: "p_tenant_id uuid", md5: "c5e6be2b4739200c2d6b4b29afe353b0" },
+  {
+    fn: "submit_featured_listing",
+    sig: "uuid,text,text,text,text,jsonb",
+    params: "p_tenant_id uuid, p_description text, p_location text, p_website text, p_instagram text, p_additional_links jsonb",
+    md5: "4c81a4b7e8fd63e63305c50b50554599",
+  },
+] as const;
+
+describe("0044 restates the definer Guest Access / Featured RPCs with a marked billing guard only", () => {
+  const m44 = migration("0044").sql;
+
+  for (const { fn, sig, params, md5 } of DEFINER_0044) {
+    it(`${fn}(): 0044's body minus the marked block is 0017's body, byte for byte`, () => {
+      const prev = previousDefinition(fn, "0044")!;
+      expect(prev.file).toMatch(/^0017_/);
+      const raw = rawBody(m44, fn);
+      const blocks = [...raw.matchAll(MARKED_0044)];
+      expect(blocks).toHaveLength(1);
+      const prevSql = migrations.find((m) => m.name === prev.file)!.sql;
+      expect(raw.replace(MARKED_0044, "")).toBe(rawBody(prevSql, fn));
+      expect(raw).not.toBe(rawBody(prevSql, fn));
+      // The block is exactly the billing predicate check, nothing else.
+      const blockCode = stripSqlComments(blocks[0][0]).replace(/\s+/g, " ").trim();
+      expect(blockCode).toMatch(
+        /^if not public\.space_studio_writable\(p_tenant_id\) then raise exception '[^']+' using errcode = 'P0001', hint = 'BILLING_LOCKED'; end if;$/
+      );
+    });
+
+    it(`${fn}(): the guard runs after the ownership check and before any write`, () => {
+      const body = extractFunctionBody(m44, fn)!;
+      const guard = body.indexOf("if not public.space_studio_writable(p_tenant_id) then");
+      expect(guard).toBeGreaterThan(body.indexOf("is_tenant_owner(p_tenant_id)"));
+      for (const write of ["insert into", "update public."]) {
+        const at = body.indexOf(write);
+        if (at >= 0) expect(guard, write).toBeLessThan(at);
+      }
+    });
+
+    it(`${fn}(): 0044 keeps the signature, security definer, the pinned search_path and the grants`, () => {
+      const c = code(m44);
+      const start = c.indexOf(`create or replace function public.${fn}(`);
+      const header = c.slice(start, c.indexOf("$$", start)).replace(/\s+/g, " ").replace(/\( /g, "(").replace(/ \)/g, ")");
+      expect(header).toBe(`create or replace function public.${fn}(${params}) returns void language plpgsql security definer set search_path to 'public' as `);
+      expect(c).toContain(`revoke execute on function public.${fn}(${sig}) from public, anon;`);
+      expect(c).toContain(`grant execute on function public.${fn}(${sig}) to authenticated;`);
+      expect(c).not.toMatch(new RegExp(`grant execute on function public\\.${fn}\\([^)]*\\) to (anon|public)`));
+    });
+
+    it(`the 0044 rollback restores ${fn}()'s recorded pre-TASK-032 fingerprint (pg_get_functiondef md5, Staging before 0028)`, () => {
+      const definer = ["LANGUAGE plpgsql", "SECURITY DEFINER", "SET search_path TO 'public'"];
+      expect(functiondefMd5(`${fn}(${params})`, "void", definer, rawBody(rollback("0044"), fn))).toBe(md5);
+      expect(extractFunctionBody(rollback("0044"), fn)).not.toContain("space_studio_writable");
+    });
+  }
+
+  it("0044 creates no new object, drops nothing and touches no other function", () => {
+    const c = code(m44);
+    expect(c).not.toMatch(/\bcreate (function|table|policy|trigger|index)\b/);
+    expect(c).not.toMatch(/\b(drop|alter table)\b/);
+    const restated = [...c.matchAll(/create or replace function public\.(\w+)\(/g)].map((m) => m[1]).sort();
+    expect(restated).toEqual(["disable_guest_access_code", "set_guest_access_code", "submit_featured_listing"]);
+  });
+
+  it("the 0044 rollback is a restore only (drops nothing) and ends with the md5 verification query", () => {
+    const c = code(rollback("0044"));
+    expect(c).not.toMatch(/\bdrop\b/);
+    expect(c.trim().endsWith("'submit_featured_listing');")).toBe(true);
+    expect(c.slice(c.indexOf("commit;"))).toContain("md5(pg_get_functiondef(p.oid))");
+  });
+
+  it("the 0043 rollback refuses while 0044 is applied (named check on all three RPCs)", () => {
+    const guard = code(rollback("0043")).split("$$")[1] ?? "";
+    for (const sig of ["set_guest_access_code(uuid, text)", "disable_guest_access_code(uuid)", "submit_featured_listing(uuid, text, text, text, text, jsonb)"]) {
+      expect(guard).toContain(`position('billing_locked' in pg_get_functiondef('public.${sig}'::regprocedure)) > 0`);
+    }
+    expect(guard).toContain("raise exception 'rollback 0043 refused: 0044 is still applied");
   });
 });

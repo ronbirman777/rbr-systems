@@ -1,4 +1,4 @@
-# TASK 032 rollback rehearsal (0036-0042)
+# TASK 032 rollback rehearsal (0036-0044)
 
 This document follows on from `MIGRATION-RECOVERY.md`. §6 of that document said the rollback files had never been run against a database. This one records where they have now been run, what happened, and the plan for a hosted rehearsal, which still needs approval.
 
@@ -28,8 +28,9 @@ The script refuses anything that is not local:
 | db | contents |
 |---|---|
 | `rbr_rh_pre` | 0001..0035, giving the expected pre-TASK-032 catalog |
-| `rbr_rh_full` | 0001..0042, then synthetic billing data, giving the expected post-0042 catalog |
-| `rbr_rh_rb` | a clone of `full`, which is guard-tested, rolled back 0042 to 0036, then re-applied forward |
+| `rbr_rh_m42`, `rbr_rh_m43` | 0001..0042 and 0001..0043 (intermediate references, added with the 0043/0044 extension, §2b) |
+| `rbr_rh_full` | 0001..0044 (0001..0042 in the first runs, §2), then synthetic billing data, giving the expected post-0044 catalog |
+| `rbr_rh_rb` | a clone of `full`, which is guard-tested, rolled back 0044 (first runs: 0042) to 0036, then re-applied forward |
 | `rbr_rh_keepaudit` | a clone taken just before the 0036 rollback, used to run 0036 with its default (audit log kept) |
 
 Default privileges were set the way Supabase sets them: `postgres` grants all on new `public` tables, sequences and functions to `anon`, `authenticated` and `service_role`. The migrations' own `revoke`s then act as they do on a hosted project. This was checked against Staging. A local 0001..0042 catalog is line-for-line identical to Staging's comparable catalog (`tasks/032/staging-fingerprints-2026-10-10.md`).
@@ -116,6 +117,41 @@ The "comparable" form drops `storage` indexes and triggers, which storage-api ma
 - Lock and timing behaviour under concurrent traffic was not tested.
 - Each rollback file fails, without changing anything, if it is run a second time: for example, 0038 errors on the trigger that is already gone. That is fail-closed, but the files are not idempotent.
 
+## 2b. Extension to 0043 and 0044 (observed, run 2026-10-10)
+
+The script now covers 0036..0044 (it previously stopped at 0042). Same machine, same container `supabase_db_app`, throwaway `rbr_rh_*` databases only, dropped afterwards. Staging and Production were not touched; 0043 and 0044 are not applied to any hosted project. `RESULT: ALL CHECKS PASSED`.
+
+**0044 behaviour** (on `full`, inside one transaction that is rolled back; the catalog and data were unchanged afterwards). Each RPC was called directly as the owner (role `authenticated`, owner JWT claims), bypassing the Studio actions:
+
+| Space | `set_guest_access_code` | `disable_guest_access_code` | `submit_featured_listing` |
+|---|---|---|---|
+| paid, Studio-suspended (`past_due`, payment failed 200 h ago) | `BILLING_LOCKED` | `BILLING_LOCKED` | `BILLING_LOCKED` |
+| the same paid Space, `active` | allowed | allowed | allowed |
+| exempt | allowed | allowed | allowed |
+| legacy (no billing row) | allowed | allowed | allowed |
+
+**New guard refusals** (catalog unchanged after each): 0044 with no token / wrong token; 0044 with the paid flag ON; 0044 with an `active` subscription; 0043 before 0044 ("0044 is still applied"); 0042 before 0043 ("0043 is still applied"). Every refusal from §2 was repeated and passed again.
+
+**Step-by-step equality:**
+
+| Check | Result |
+|---|---|
+| after the 0044 rollback vs a fresh 0001..0043 | identical, 829 lines |
+| after the 0043 rollback vs a fresh 0001..0042 | identical, 825 lines |
+| full chain 0044 -> 0036 vs a fresh 0001..0035 | identical, 348 lines |
+| restored function md5s | the five from §2 plus `set_guest_access_code` `d5d835ac…7006f59`, `disable_guest_access_code` `c5e6be2b…53b0`, `submit_featured_listing` `4c81a4b7…0554599` (the Staging pre-0028 values): all equal |
+| 0036..0044 re-applied to the rolled-back db vs `full` | identical, 829 lines |
+
+**Expected comparable fingerprints for the new states** (the 0042 -> 0036 values in §2 are unchanged):
+
+| State | md5 | lines |
+|---|---|---|
+| post-0044 | `c13f3ddd46a13ff5f109a3960af3730f` | 800 |
+| after 0044 rollback (= post-0043) | `be50d56c49a7d26864ab04a13dd5f387` | 800 |
+| after 0043 rollback (= post-0042) | `868f35d7f344ae4c02792f031addc0d9` | 796 |
+
+The script's local-only refusals were re-checked: a non-loopback `LOCAL_DB_URL`, a `supabase.co` `DATABASE_URL`, and a port the container does not publish each abort before anything runs (exit 2).
+
 ## 3. Defect found and fixed
 
 **Defect: the 0038 rollback ran with an open checkout.**
@@ -172,6 +208,13 @@ After **every** step:
 - re-run the fingerprint and compare it with the expected md5 in §2;
 - run that file's own trailing verification query;
 - run the legacy count query from `MIGRATION-RECOVERY.md` §5, and confirm tenants, published_spaces and module_items are unchanged from 4.1(6) (5 / 4 / 79 on 2026-10-10).
+
+If the target already has 0043 and/or 0044 applied (Staging did not on 2026-10-10), run these first, in this order, and expect the baseline in 4.1(6) to be the post-0044 md5 `c13f3ddd46a13ff5f109a3960af3730f` (or post-0043 `be50d56c49a7d26864ab04a13dd5f387`):
+
+| # | File | Token | Expected md5 after | Data-destructive |
+|---|---|---|---|---|
+| 0a | 0044 | `0044` | `be50d56c49a7d26864ab04a13dd5f387` | no |
+| 0b | 0043 | `0043` | `868f35d7f344ae4c02792f031addc0d9` | no |
 
 | # | File | Token | Expected md5 after | Data-destructive |
 |---|---|---|---|---|

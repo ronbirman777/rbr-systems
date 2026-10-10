@@ -1,4 +1,4 @@
-# RLS, grants and policies (from migrations 0036-0041)
+# RLS, grants and policies (from migrations 0036-0044)
 
 Stance: every new table has RLS enabled and `REVOKE ALL ... FROM public, anon, authenticated`. Only the narrow SELECT grants and policies below exist. Every write goes through service-role server code or SECURITY DEFINER functions. No browser client can write a billing row, substitute a Stripe id or change a price. `service_role` bypasses RLS as usual. Written from the migration text; the live grants on Staging/Production were not re-queried for this document.
 
@@ -34,6 +34,11 @@ All `SECURITY DEFINER` with `search_path = pg_catalog, pg_temp`, `REVOKE ALL FRO
 | `handle_new_tenant`, `enforce_space_slot_capacity` (0038, restated, `security definer`, `search_path public`) | trigger functions (existing grants unchanged) | See ARCHITECTURE.md |
 | `guard_tenant_delete_with_subscription`, `admin_audit_log_immutable` | revoked from all client roles | Trigger functions |
 | `publish_space(uuid)` (0039 restated) | unchanged: `security invoker`, same signature and grants | Billing decision first, legacy guard as fallback |
+| `restore_space(uuid)`, `replace_space(uuid, text)` (0042 restated) | unchanged: `security definer`, `search_path public`, executable by `authenticated` only | Refuse with hint `BILLING_LOCKED` when `space_studio_writable()` is false (see below) |
+| `billing_audio_policy(uuid)`, `billing_audio_assert_publishable(uuid, jsonb)` (0043) | revoked from `public`, `anon`; executable by `authenticated`, `service_role` | Called from the audio trigger and `publish_space`; a signed-in non-member gets `unavailable` |
+| `billing_guard_module_item_audio()` (0043) | revoked from all client roles | Trigger function on `module_items` |
+| `publish_space(uuid)` (0043 restated) | unchanged: `security invoker`, same signature and grants | Adds one marked audio check before the snapshot is written |
+| `set_guest_access_code(uuid, text)`, `disable_guest_access_code(uuid)`, `submit_featured_listing(uuid, text, text, text, text, jsonb)` (0044 restated) | unchanged from 0016: `security definer`, `search_path public`, revoked from `public`, `anon`; executable by `authenticated` | Refuse with hint `BILLING_LOCKED` when `space_studio_writable()` is false (see below) |
 
 Service-role-only functions: `billing_normalize_coupon_code`, `billing_reserve_coupon`, `billing_release_coupon_reservation`, `billing_expire_stale_reservations`, `billing_finalize_coupon_redemption`, `billing_record_discount_cycle`, `billing_is_paid_checkout_required`, `billing_confirm_checkout_payment`, `billing_fail_checkout`, `billing_expire_open_checkouts`, `billing_provision_paid_space`, `billing_apply_subscription_state`, `billing_apply_lifecycle`, `billing_set_next_action`, `billing_set_internal_exempt`, `billing_clear_internal_exempt`, `space_audio_entitlements`, `billing_set_next_payment_attempt`, `billing_claim_event`, `billing_finish_event`, `billing_enqueue_email`, `billing_claim_emails`, `billing_finish_email`, `billing_transition_checkout`, `billing_upsert_invoice`, `billing_set_invoice_refund`.
 
@@ -52,4 +57,15 @@ Service-role-only functions: `billing_normalize_coupon_code`, `billing_reserve_c
 | `tenants` | update (uses `id`) |
 | `storage.objects` (bucket `tenant-media` only; first path folder must be the tenant uuid, other buckets and non-uuid folders pass) | insert, update, delete |
 
-Rollback: `app/supabase/verification/0039_billing_access_enforcement_rollback.sql` (the file named in the 0039 header) drops the 20 restrictive policies and restores the 0034 `publish_space` body verbatim. Run it only in the order and under the conditions given in `MIGRATION-RECOVERY.md`. Rollback files for 0036-0041 sit beside it.
+## SECURITY DEFINER Studio writes (0042, 0044)
+
+A SECURITY DEFINER function runs as its owner, so the 0039 restrictive policies never see the rows it writes. Every pre-existing definer RPC that performs a Studio write for a tenant therefore checks the same predicate itself, right after its ownership check and before any write:
+
+| Function | Guarded by | Refusal |
+|---|---|---|
+| `restore_space`, `replace_space` | 0042 | `errcode P0001`, hint `BILLING_LOCKED` |
+| `set_guest_access_code`, `disable_guest_access_code`, `submit_featured_listing` | 0044 | `errcode P0001`, hint `BILLING_LOCKED` |
+
+`space_studio_writable()` is true for every Space billing does not decide (no billing row, or an expired exemption), so legacy Spaces behave exactly as before; it is also true for exempt, active, payment-issue and guest-suspended paid Spaces. It is false only for Studio-suspended, ended and incomplete/paused subscriptions. A non-owner is refused by the ownership check first and never learns the billing state. The Studio actions (`lifecycleActions.ts`, `guestAccessActions.ts`, `featuredActions.ts`) pre-check the same predicate and map a database `BILLING_LOCKED` refusal to the localized "billing must be resolved" message. `archive_space` is deliberately not gated (see 0042).
+
+Rollback: `app/supabase/verification/0039_billing_access_enforcement_rollback.sql` (the file named in the 0039 header) drops the 20 restrictive policies and restores the 0034 `publish_space` body verbatim. Run it only in the order and under the conditions given in `MIGRATION-RECOVERY.md`. Rollback files for 0036-0044 sit beside it.

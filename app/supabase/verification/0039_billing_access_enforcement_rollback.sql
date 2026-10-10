@@ -5,7 +5,7 @@
 --
 -- Read docs/billing/MIGRATION-RECOVERY.md first. A forward fix is preferred.
 --
--- ORDER: 0041 -> 0040 -> 0039 (this file) -> 0038 -> 0037 -> 0036.
+-- ORDER: 0044 -> 0043 -> 0042 -> 0041 -> 0040 -> 0039 (this file) -> 0038 -> 0037 -> 0036.
 -- 0040's rollback must already have run (the guard checks it). This file must
 -- run BEFORE the 0038 rollback: the 20 policies below call
 -- space_studio_writable(), which 0038 created.

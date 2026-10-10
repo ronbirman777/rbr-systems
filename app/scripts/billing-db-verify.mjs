@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * TASK 032 - database-level behavioural verification for the billing
- * migrations (0036-0043; section L covers the 0042 Restore/Replace guards, section M the 0043 audio enforcement). STAGING ONLY: the script refuses to run against any
+ * migrations (0036-0044; section L covers the 0042 Restore/Replace guards, section M the 0043 audio enforcement,
+ * section N the 0044 Guest Access / Featured definer-RPC guards). STAGING ONLY: the script refuses to run against any
  * project other than the Staging ref, creates its own synthetic users/rows
  * (prefix qa032-), and removes everything it created (and restores the launch
  * flag) in a finally block.
@@ -827,6 +828,71 @@ async function main() {
     const anonPol = await createClient(URL_, PUB, { auth: { persistSession: false } }).rpc("billing_audio_policy", { p_tenant_id: tAu });
     check("M22 anon cannot call the audio policy helper", !!anonPol.error);
     await admin.rpc("billing_clear_internal_exempt", { p_tenant_id: tAe });
+  }
+
+  // ------------------------------------------------------------------ N. 0044 definer-RPC guards (Guest Access / Featured)
+  {
+    // set/disable_guest_access_code and submit_featured_listing are SECURITY DEFINER: the 0039 policies never see
+    // their writes. 0044 makes each refuse with BILLING_LOCKED when space_studio_writable() is false. Called
+    // DIRECTLY as the owner (bypassing the Studio actions' pre-check), flag OFF and ON.
+    const uN = await mkUser("un"); const nc = await userClient(uN);
+    await setFlag(false);
+    await setSlots(uN, 3);
+    const legacyN = await nc.from("tenants").insert({ name: "qa032 legacy definer", product_type: "retreat", timezone: "UTC" }).select("id").single();
+    const tLegacy = legacyN.data?.id; if (tLegacy) created.tenants.push(tLegacy);
+    const ckNa = await mkCheckout(uN, "retreat"); const pNa = await provision(ckNa.id, subJson(uN), "QA032 definer active");
+    const tActive = pNa.data?.tenant_id; if (tActive) created.tenants.push(tActive);
+    const ckNs = await mkCheckout(uN, "retreat"); const pNs = await provision(ckNs.id, subJson(uN), "QA032 definer suspended");
+    const tSusp = pNs.data?.tenant_id; if (tSusp) created.tenants.push(tSusp);
+    check("N0 setup: one legacy, one active paid and one paid Space for one owner", !!tLegacy && !!tActive && !!tSusp, JSON.stringify([legacyN.error, pNa.error, pNs.error]));
+
+    const setCode = (c, t) => c.rpc("set_guest_access_code", { p_tenant_id: t, p_code: "246810" });
+    const disable = (c, t) => c.rpc("disable_guest_access_code", { p_tenant_id: t });
+    const feature = (c, t) => c.rpc("submit_featured_listing", { p_tenant_id: t, p_description: "qa032 definer", p_location: null, p_website: null, p_instagram: null, p_additional_links: [] });
+    const accessOf = async (t) => (await admin.from("space_guest_access").select("mode,version").eq("tenant_id", t).maybeSingle()).data;
+    const featuredOf = async (t) => (await admin.from("space_featured_submissions").select("status,submitted_at").eq("tenant_id", t).maybeSingle()).data;
+
+    // While the soon-to-be-suspended Space is still active, give it a code (so a refused disable is observable).
+    const preCode = await setCode(nc, tSusp);
+    check("N1 active paid: set code before suspension (setup)", !preCode.error, JSON.stringify(preCode.error));
+    await admin.from("space_subscriptions").update({ status: "past_due", payment_failed_at: H(-200) }).eq("tenant_id", tSusp);
+    const accessBefore = await accessOf(tSusp);
+    const featuredBefore = await featuredOf(tSusp);
+
+    for (const on of [false, true]) {
+      await setFlag(on);
+      const f = on ? "ON" : "OFF";
+      const rSet = await setCode(nc, tSusp);
+      check(`N2 flag ${f}, Studio-suspended paid: direct set_guest_access_code refused with BILLING_LOCKED`, locked(rSet), JSON.stringify(rSet.error));
+      const rDis = await disable(nc, tSusp);
+      check(`N3 flag ${f}, Studio-suspended paid: direct disable_guest_access_code refused with BILLING_LOCKED`, locked(rDis), JSON.stringify(rDis.error));
+      const rFeat = await feature(nc, tSusp);
+      check(`N4 flag ${f}, Studio-suspended paid: direct submit_featured_listing refused with BILLING_LOCKED`, locked(rFeat), JSON.stringify(rFeat.error));
+      const accessAfter = await accessOf(tSusp);
+      const featuredAfter = await featuredOf(tSusp);
+      check(`N5 flag ${f}, Studio-suspended paid: nothing was written (code row and Featured row unchanged)`,
+        JSON.stringify(accessAfter) === JSON.stringify(accessBefore) && accessAfter?.mode === "code" && JSON.stringify(featuredAfter) === JSON.stringify(featuredBefore),
+        JSON.stringify({ accessBefore, accessAfter, featuredBefore, featuredAfter }));
+
+      for (const [label, t] of [["legacy", tLegacy], ["active paid", tActive]]) {
+        const a = await setCode(nc, t);
+        const d = await disable(nc, t);
+        const fe = await feature(nc, t);
+        check(`N6 flag ${f}, ${label}: set code, disable code and Featured submit all allowed (unchanged)`, !a.error && !d.error && !fe.error && (await accessOf(t))?.mode === "public" && (await featuredOf(t))?.status === "submitted",
+          JSON.stringify([a.error, d.error, fe.error]));
+      }
+    }
+
+    // Guest-suspended (24 h - 7 d): Studio still writable, so the owner is not blocked.
+    await admin.from("space_subscriptions").update({ status: "past_due", payment_failed_at: H(-30) }).eq("tenant_id", tSusp);
+    const gsSet = await setCode(nc, tSusp);
+    check("N7 Guest-suspended paid (Studio writable): set code allowed", !gsSet.error, JSON.stringify(gsSet.error));
+    // A non-owner is refused by the ownership check first and is never told the billing state.
+    await admin.from("space_subscriptions").update({ status: "past_due", payment_failed_at: H(-200) }).eq("tenant_id", tSusp);
+    const strangerSet = await setCode(gc, tSusp);
+    const strangerFeat = await feature(gc, tSusp);
+    check("N8 a non-owner is refused ('not authorized'), never BILLING_LOCKED", !!strangerSet.error && !locked(strangerSet) && !!strangerFeat.error && !locked(strangerFeat), JSON.stringify([strangerSet.error, strangerFeat.error]));
+    await admin.from("space_subscriptions").update({ status: "active", payment_failed_at: null }).eq("tenant_id", tSusp);
   }
   await setFlag(flagWasEnabled);
 }

@@ -7,8 +7,11 @@
 -- migration that corrects the defect) is preferred over this rollback.
 --
 -- ORDER: TASK 032 rollbacks run in strict reverse order, one at a time:
---   0043 (this file) -> 0042 -> 0041 -> 0040 -> 0039 -> 0038 -> 0037 -> 0036.
--- This is the first one; nothing must be rolled back before it. It must run
+--   0044 -> 0043 (this file) -> 0042 -> 0041 -> 0040 -> 0039 -> 0038 -> 0037 -> 0036.
+-- The 0044 rollback (definer-RPC billing guards) must run first; this file
+-- refuses while the 0044 bodies of set_guest_access_code(),
+-- disable_guest_access_code() or submit_featured_listing() (hint
+-- BILLING_LOCKED) are still in place. It must run
 -- BEFORE the 0038 rollback (billing_audio_policy() reads 0036-0038 objects)
 -- and before the 0039 rollback (both restate publish_space()). The 0042
 -- rollback refuses to run while billing_audio_policy() still exists.
@@ -62,6 +65,11 @@ do $$
 begin
   if coalesce(current_setting('idw.rollback_confirm', true), '') <> '0043' then
     raise exception 'ROLLBACK 0043 REFUSED: set idw.rollback_confirm = ''0043'' to confirm';
+  end if;
+  if position('BILLING_LOCKED' in pg_get_functiondef('public.set_guest_access_code(uuid, text)'::regprocedure)) > 0
+     or position('BILLING_LOCKED' in pg_get_functiondef('public.disable_guest_access_code(uuid)'::regprocedure)) > 0
+     or position('BILLING_LOCKED' in pg_get_functiondef('public.submit_featured_listing(uuid, text, text, text, text, jsonb)'::regprocedure)) > 0 then
+    raise exception 'ROLLBACK 0043 REFUSED: 0044 is still applied; run the 0044 rollback first';
   end if;
   if exists (select 1 from public.billing_settings where paid_checkout_enabled) then
     raise exception 'ROLLBACK 0043 REFUSED: paid checkout is ON (billing_settings.paid_checkout_enabled)';

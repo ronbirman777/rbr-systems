@@ -22,6 +22,14 @@ function isFunctionMissingError(error: { code?: string; message?: string }): boo
   return error.code === "PGRST202" || error.code === "42883" || !!error.message?.includes("Could not find the function");
 }
 
+/** TASK 032 (0044): set/disable_guest_access_code() RAISE ... USING HINT =
+ * 'BILLING_LOCKED' when billing has suspended/ended this Space's Studio. The
+ * database is the authority (the pre-check above each RPC call is only an
+ * early, legible refusal), so a DB refusal reads as the same localized message. */
+function isBillingLockedError(error: { hint?: string | null } | null | undefined): boolean {
+  return error?.hint === "BILLING_LOCKED";
+}
+
 export async function getGuestAccessSettingsForOwner(tenantId: string): Promise<GuestAccessSettings> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -74,6 +82,9 @@ export async function setGuestAccessCode(
         settings: DEFAULT_SETTINGS,
       };
     }
+    if (isBillingLockedError(error)) {
+      return { error: translateAccount(localeFromFormData(formData), "billing", "studioSuspendedTitle"), settings: await getGuestAccessSettingsForOwner(tenantId) };
+    }
     return { error: error.message, settings: await getGuestAccessSettingsForOwner(tenantId) };
   }
 
@@ -104,6 +115,9 @@ export async function disableGuestAccessCode(
   if (error) {
     if (isFunctionMissingError(error)) {
       return { error: t("guestAccessUnavailable"), settings: DEFAULT_SETTINGS };
+    }
+    if (isBillingLockedError(error)) {
+      return { error: translateAccount(localeFromFormData(formData), "billing", "studioSuspendedTitle"), settings: await getGuestAccessSettingsForOwner(tenantId) };
     }
     return { error: error.message, settings: await getGuestAccessSettingsForOwner(tenantId) };
   }

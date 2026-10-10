@@ -9,7 +9,7 @@
 -- (plus the 0039/0038 rollbacks if enforcement itself is the problem) already
 -- restores legacy behaviour while keeping every billing record.
 --
--- ORDER: 0041 -> 0040 -> 0039 -> 0038 -> 0037 -> 0036 (this file, LAST).
+-- ORDER: 0044 -> 0043 -> 0042 -> 0041 -> 0040 -> 0039 -> 0038 -> 0037 -> 0036 (this file, LAST).
 -- Every other TASK 032 rollback must already have run; the guard checks.
 --
 -- ===========================================================================

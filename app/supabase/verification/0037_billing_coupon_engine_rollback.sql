@@ -5,7 +5,7 @@
 --
 -- Read docs/billing/MIGRATION-RECOVERY.md first. A forward fix is preferred.
 --
--- ORDER: 0041 -> 0040 -> 0039 -> 0038 -> 0037 (this file) -> 0036.
+-- ORDER: 0044 -> 0043 -> 0042 -> 0041 -> 0040 -> 0039 -> 0038 -> 0037 (this file) -> 0036.
 -- 0038's rollback (billing_expire_open_checkouts and billing_provision_paid_space
 -- call these functions) and 0041's rollback (billing_transition_checkout calls
 -- billing_release_coupon_reservation) must already have run; the guard checks.

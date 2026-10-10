@@ -41,6 +41,14 @@ function isTableMissingError(error: { code?: string; message?: string }): boolea
   );
 }
 
+/** TASK 032 (0044): submit_featured_listing() RAISEs ... USING HINT =
+ * 'BILLING_LOCKED' when billing has suspended/ended this Space's Studio. The
+ * database is the authority (the pre-check in submitFeaturedListing is only an
+ * early, legible refusal), so a DB refusal reads as the same localized message. */
+function isBillingLockedError(error: { hint?: string | null } | null | undefined): boolean {
+  return error?.hint === "BILLING_LOCKED";
+}
+
 export async function getFeaturedSubmissionForOwner(tenantId: string): Promise<FeaturedSubmission> {
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -129,6 +137,9 @@ export async function submitFeaturedListing(
   if (error) {
     if (isTableMissingError(error) || error.message?.includes("Could not find the function")) {
       return { error: t("featuredUnavailable"), submission: EMPTY_SUBMISSION };
+    }
+    if (isBillingLockedError(error)) {
+      return { error: translateAccount(localeFromFormData(formData), "billing", "studioSuspendedTitle"), submission: await getFeaturedSubmissionForOwner(tenantId) };
     }
     return { error: error.message, submission: await getFeaturedSubmissionForOwner(tenantId) };
   }

@@ -7,7 +7,7 @@
 -- migration that corrects the defect) is preferred over this rollback.
 --
 -- ORDER: TASK 032 rollbacks run in strict reverse order, one at a time:
---   0043 -> 0042 (this file) -> 0041 -> 0040 -> 0039 -> 0038 -> 0037 -> 0036.
+--   0044 -> 0043 -> 0042 (this file) -> 0041 -> 0040 -> 0039 -> 0038 -> 0037 -> 0036.
 -- The 0043 rollback (audio enforcement) must run first; this file refuses
 -- while billing_audio_policy() (0043) still exists. It must run
 -- BEFORE the 0038 rollback: the restated bodies call space_access_state(),

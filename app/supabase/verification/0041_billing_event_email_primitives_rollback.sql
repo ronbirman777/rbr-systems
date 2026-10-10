@@ -7,7 +7,7 @@
 -- migration that corrects the defect) is preferred over this rollback.
 --
 -- ORDER: TASK 032 rollbacks run in strict reverse order, one at a time:
---   0042 -> 0041 (this file) -> 0040 -> 0039 -> 0038 -> 0037 -> 0036.
+--   0044 -> 0043 -> 0042 -> 0041 (this file) -> 0040 -> 0039 -> 0038 -> 0037 -> 0036.
 -- 0042's rollback must already have run (the guard checks it: the restated
 -- restore_space()/replace_space() must no longer carry the BILLING_LOCKED guard).
 --

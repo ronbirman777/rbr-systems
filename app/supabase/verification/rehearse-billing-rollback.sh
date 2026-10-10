@@ -1,18 +1,23 @@
 #!/usr/bin/env bash
-# TASK 032: rehearse the 0036-0042 billing rollbacks on THROWAWAY LOCAL
+# TASK 032: rehearse the 0036-0044 billing rollbacks on THROWAWAY LOCAL
 # databases, start to finish, and compare catalog fingerprints.
 #
 #   1. db PRE   = 0001..0035                 -> expected pre-TASK-032 fingerprint
-#   2. db FULL  = 0001..0042 + synthetic data -> expected post-0042 fingerprint
-#   3. guard checks on FULL: wrong token, paid flag ON, live subscription,
+#      db M42   = 0001..0042, db M43 = 0001..0043 (intermediate references)
+#   2. db FULL  = 0001..0044 + synthetic data -> expected post-0044 fingerprint
+#   3. behaviour on FULL (inside a transaction that is rolled back): the 0044
+#      definer-RPC guards refuse a Studio-suspended paid Space with
+#      BILLING_LOCKED and allow active paid, exempt and legacy Spaces.
+#   4. guard checks on FULL: wrong token, paid flag ON, live subscription,
 #      out-of-order (every rollback is tried once BEFORE its turn), and the
 #      data-specific refusals (sending email, payment_confirmation outbox row,
 #      open checkout). Each refusal must leave the fingerprint unchanged.
-#   4. rollbacks 0042 -> 0036 in order with their tokens (0036 also with the
-#      audit-drop token) -> fingerprint must equal PRE exactly.
-#   5. variant on a clone of FULL: 0036 with the default (audit log KEPT) ->
+#   5. rollbacks 0044 -> 0036 in order with their tokens (0036 also with the
+#      audit-drop token); after 0044 the catalog must equal M43, after 0043 it
+#      must equal M42, at the end it must equal PRE exactly.
+#   6. variant on a clone of FULL: 0036 with the default (audit log KEPT) ->
 #      the only difference from PRE must be the admin_audit_log objects.
-#   6. re-apply 0036..0042 forward on the rolled-back db -> fingerprint must
+#   7. re-apply 0036..0044 forward on the rolled-back db -> fingerprint must
 #      equal FULL exactly.
 #
 # SAFETY. It only ever talks to a LOCAL Postgres:
@@ -36,7 +41,7 @@ C="${DB_CONTAINER:-supabase_db_app}"
 LOCAL_DB_URL="${LOCAL_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
 OUT="${OUT:-$(mktemp -d -t rbr_rh)}"
 P="rbr_rh"
-PRE="${P}_pre"; FULL="${P}_full"; RB="${P}_rb"; KEEPAUDIT="${P}_keepaudit"
+PRE="${P}_pre"; FULL="${P}_full"; RB="${P}_rb"; KEEPAUDIT="${P}_keepaudit"; M42="${P}_m42"; M43="${P}_m43"
 MIG=supabase/migrations
 VER=supabase/verification
 FAILS=0
@@ -139,15 +144,18 @@ expect_ok() { # label db file token [extra]
   local msg; if msg=$(rollback "$2" "$3" "$4" "${5:-}"); then ok "$1"; else bad "$1: $msg"; die "rollback failed; stopping"; fi
   if [ "$2" = "$RB" ]; then local n; n=$(basename "$3" | cut -c1-4); fp "$RB" "after_rb_$n" > /dev/null; fi; }
 
-ls "$MIG" | grep -q '^0043' && echo "NOTE: 0043 is present in migrations/; this rehearsal deliberately covers 0001..0042 only."
+ls "$MIG" | grep -q '^004[5-9]' && echo "NOTE: a migration beyond 0044 is present in migrations/; this rehearsal deliberately covers 0001..0044 only."
 M_PRE=$(ls "$MIG"/00*.sql | awk -F/ '{print $NF}' | awk '$0 < "0036"' | sed "s|^|$MIG/|")
-M_032=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-2]_*.sql)
+M_032=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-4]_*.sql)
+M_032_TO42=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-2]_*.sql)
+M_032_TO43=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-3]_*.sql)
+RESTATED="'publish_space','handle_new_tenant','enforce_space_slot_capacity','restore_space','replace_space','set_guest_access_code','disable_guest_access_code','submit_featured_listing'"
 RBF() { ls "$VER"/"$1"_*_rollback.sql; }
 
 # --------------------------------------------------------------------------
 # 1. Throwaway databases with Supabase-equivalent scaffolding
 # --------------------------------------------------------------------------
-say "1/7  scaffolding (auth/storage/extensions schema read from local 'postgres')"
+say "1/8  scaffolding (auth/storage/extensions schema read from local 'postgres')"
 run_dump --schema-only -n auth -n storage -n extensions > "$OUT/scaffold.sql"
 prep() {
   newdb "$1"
@@ -159,18 +167,22 @@ prep() {
           grant usage on schema public to anon, authenticated, service_role;" > /dev/null 2>&1
 }
 
-say "2/7  PRE = 0001..0035 ; FULL = 0001..0042"
+say "2/8  PRE = 0001..0035 ; M42 = 0001..0042 ; M43 = 0001..0043 ; FULL = 0001..0044"
 prep "$PRE";  apply "$PRE"  $M_PRE
+prep "$M42";  apply "$M42"  $M_PRE $M_032_TO42
+prep "$M43";  apply "$M43"  $M_PRE $M_032_TO43
 prep "$FULL"; apply "$FULL" $M_PRE $M_032
 fp "$PRE" pre > /dev/null
+fp "$M42" m42 > /dev/null
+fp "$M43" m43 > /dev/null
 q "$PRE" "select proname || ' ' || md5(pg_get_functiondef(oid)) from pg_proc where pronamespace = 'public'::regnamespace
-          and proname in ('publish_space','handle_new_tenant','enforce_space_slot_capacity','restore_space','replace_space') order by 1" \
+          and proname in ($RESTATED) order by 1" \
   | tee "$OUT/pre_restated.txt"
 
 # --------------------------------------------------------------------------
 # 3. Synthetic billing data (no real people; RFC 2606 .invalid addresses)
 # --------------------------------------------------------------------------
-say "3/7  seed synthetic billing data in FULL"
+say "3/8  seed synthetic billing data in FULL"
 q "$FULL" "
 insert into auth.users (id, instance_id, aud, role, email, created_at, updated_at)
 values ('00000000-0000-4000-8000-0000000000a1', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'rehearsal-owner@example.invalid', now(), now());
@@ -211,27 +223,96 @@ LEGACY_SQL="select (select count(*) from public.tenants) || '/' || (select count
 LEGACY_BEFORE=$(q "$FULL" "$LEGACY_SQL")
 echo "   legacy rows tenants/tenant_members/user_space_slots = $LEGACY_BEFORE"
 fp "$FULL" full > /dev/null
-newdb "$RB" "$FULL"            # the db we roll back (FULL stays as the post-0042 reference)
+
+# --------------------------------------------------------------------------
+# 3b. 0044 behaviour (one transaction, ROLLED BACK: FULL's data is unchanged)
+# --------------------------------------------------------------------------
+say "4/8  0044 definer-RPC guards: direct calls as the owner (transaction rolled back)"
+BEHAVIOUR_DO=$(cat <<'SQL'
+do $$
+declare
+  t record; v_hint text; outcome text;
+begin
+  for t in select * from tmp_cases loop
+    begin
+      execute t.stmt;
+      outcome := 'allowed';
+    exception when others then
+      get stacked diagnostics v_hint = pg_exception_hint;
+      outcome := coalesce(nullif(v_hint, ''), 'error: ' || sqlerrm);
+    end;
+    raise notice 'BEHAVIOUR|%|%|%', case when outcome = t.want then 'PASS' else 'FAIL' end, t.label, outcome;
+  end loop;
+end;
+$$;
+SQL
+)
+B1=00000000-0000-4000-8000-0000000000b1; B2=00000000-0000-4000-8000-0000000000b2; B3=00000000-0000-4000-8000-0000000000b3
+calls() { # label-prefix tenant want
+  printf "('%s: set_guest_access_code', 'select public.set_guest_access_code(''%s'', ''123456'')', '%s'),\n" "$1" "$2" "$3"
+  printf "('%s: disable_guest_access_code', 'select public.disable_guest_access_code(''%s'')', '%s'),\n" "$1" "$2" "$3"
+  printf "('%s: submit_featured_listing', 'select public.submit_featured_listing(''%s'', ''rehearsal'', null, null, null, ''[]''::jsonb)', '%s')" "$1" "$2" "$3"
+}
+BEHAVIOUR_OUT=$(run_psql "$FULL" -f - 2>&1 <<SQL || true
+begin;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a1","role":"authenticated"}', true);
+insert into public.tenants (id, name, product_type) values ('$B3', 'Rehearsal legacy space', 'retreat');
+create temp table tmp_cases (label text, stmt text, want text) on commit drop;
+grant select on tmp_cases to authenticated;
+-- Phase 1: paid Space Studio-suspended (payment failed 200 h ago).
+update public.space_subscriptions set status = 'past_due', payment_failed_at = now() - interval '200 hours' where id = '00000000-0000-4000-8000-0000000000d2';
+insert into tmp_cases values $(calls "studio-suspended paid" "$B2" "BILLING_LOCKED");
+set local role authenticated;
+$BEHAVIOUR_DO
+reset role;
+truncate tmp_cases;
+-- Phase 2: the same paid Space active; the exempt and the legacy Space.
+update public.space_subscriptions set status = 'active', payment_failed_at = null where id = '00000000-0000-4000-8000-0000000000d2';
+insert into tmp_cases values $(calls "active paid" "$B2" "allowed"),
+  $(calls "exempt" "$B1" "allowed"),
+  $(calls "legacy (no billing row)" "$B3" "allowed");
+set local role authenticated;
+$BEHAVIOUR_DO
+rollback;
+SQL
+)
+printf '%s\n' "$BEHAVIOUR_OUT" | grep -o 'BEHAVIOUR|.*' > "$OUT/behaviour_0044.txt" || true
+NB=$(wc -l < "$OUT/behaviour_0044.txt" | tr -d ' ')
+[ "$NB" = "12" ] || { bad "0044 behaviour: expected 12 results, got $NB"; printf '%s\n' "$BEHAVIOUR_OUT" | tail -20; }
+while IFS='|' read -r _ verdict label outcome; do
+  [ "$verdict" = "PASS" ] && ok "0044 $label -> $outcome" || bad "0044 $label -> $outcome"
+done < "$OUT/behaviour_0044.txt"
+fp "$FULL" full_after_behaviour > /dev/null
+same "behaviour transaction left FULL's catalog unchanged" full full_after_behaviour
+[ "$(q "$FULL" "select count(*) from public.tenants where id = '$B3'")" = "0" ] && ok "behaviour transaction rolled back (no legacy tenant left behind)" || bad "behaviour transaction left data behind"
+
+newdb "$RB" "$FULL"            # the db we roll back (FULL stays as the post-0044 reference)
 
 # --------------------------------------------------------------------------
 # 4. Guards refuse when prerequisites fail
 # --------------------------------------------------------------------------
-say "4/7  guard refusals (each must abort and leave the catalog unchanged)"
-expect_refusal "0042 without token"      "$RB" "$(RBF 0042)" ""       "REFUSED: set idw.rollback_confirm"
-expect_refusal "0042 with wrong token"   "$RB" "$(RBF 0042)" "0041"   "REFUSED: set idw.rollback_confirm"
+say "5/8  guard refusals (each must abort and leave the catalog unchanged)"
+expect_refusal "0044 without token"      "$RB" "$(RBF 0044)" ""       "REFUSED: set idw.rollback_confirm"
+expect_refusal "0044 with wrong token"   "$RB" "$(RBF 0044)" "0043"   "REFUSED: set idw.rollback_confirm"
 q "$RB" "update public.billing_settings set paid_checkout_enabled = true" > /dev/null
-expect_refusal "0042 with paid flag ON"  "$RB" "$(RBF 0042)" "0042"   "paid checkout is ON"
+expect_refusal "0044 with paid flag ON"  "$RB" "$(RBF 0044)" "0044"   "paid checkout is ON"
 q "$RB" "update public.billing_settings set paid_checkout_enabled = false" > /dev/null
 q "$RB" "update public.space_subscriptions set status = 'active' where id = '00000000-0000-4000-8000-0000000000d2'" > /dev/null
-expect_refusal "0042 with live subscription" "$RB" "$(RBF 0042)" "0042" "live paid subscription"
+expect_refusal "0044 with live subscription" "$RB" "$(RBF 0044)" "0044" "live paid subscription"
 q "$RB" "update public.space_subscriptions set status = 'canceled' where id = '00000000-0000-4000-8000-0000000000d2'" > /dev/null
-expect_refusal "0041 before 0042 (out of order)" "$RB" "$(RBF 0041)" "0041-exported" "0042 is still applied"
+expect_refusal "0043 before 0044 (out of order)" "$RB" "$(RBF 0043)" "0043" "0044 is still applied"
 expect_refusal "0036 before everything"          "$RB" "$(RBF 0036)" "0036-exported" "still applied"
 
 # --------------------------------------------------------------------------
 # 5. Rollbacks in order; before each step, try the NEXT-EARLIER file (must refuse)
 # --------------------------------------------------------------------------
-say "5/7  rollbacks 0042 -> 0036"
+say "6/8  rollbacks 0044 -> 0036"
+expect_ok "0044 rollback" "$RB" "$(RBF 0044)" "0044"
+same "after the 0044 rollback the catalog == M43 (0001..0043)" m43 after_rb_0044
+expect_refusal "0042 before 0043 (out of order)" "$RB" "$(RBF 0042)" "0042" "0043 is still applied"
+expect_ok "0043 rollback" "$RB" "$(RBF 0043)" "0043"
+same "after the 0043 rollback the catalog == M42 (0001..0042)" m42 after_rb_0043
+expect_refusal "0041 before 0042 (out of order)" "$RB" "$(RBF 0041)" "0041-exported" "0042 is still applied"
 expect_ok "0042 rollback" "$RB" "$(RBF 0042)" "0042"
 expect_refusal "0040 before 0041 (out of order)" "$RB" "$(RBF 0040)" "0040-exported" "0041 is still applied"
 q "$RB" "update public.billing_email_outbox set status = 'sending' where dedupe_key = 'rehearsal-sent-1'" > /dev/null
@@ -264,14 +345,15 @@ LEGACY_AFTER=$(q "$RB" "$LEGACY_SQL")
 [ "$LEGACY_BEFORE" = "$LEGACY_AFTER" ] && ok "legacy rows unchanged ($LEGACY_AFTER)" || bad "legacy rows changed: $LEGACY_BEFORE -> $LEGACY_AFTER"
 fp "$RB" rolledback > /dev/null
 q "$RB" "select proname || ' ' || md5(pg_get_functiondef(oid)) from pg_proc where pronamespace = 'public'::regnamespace
-         and proname in ('publish_space','handle_new_tenant','enforce_space_slot_capacity','restore_space','replace_space') order by 1" \
+         and proname in ($RESTATED) order by 1" \
   > "$OUT/rolledback_restated.txt"
 
-say "6/7  compare"
+say "7/8  compare"
 same "rolled-back catalog == PRE (0001..0035)" pre rolledback
 for kv in "publish_space 5088d120877f74c02f845df398206c14" "handle_new_tenant e3526abc627aa30a11616295c39cebef" \
           "enforce_space_slot_capacity 708dde46d74624be4cb93b48d4972991" "restore_space 9a31bcf90162a2ce7001078d1fdbcfa0" \
-          "replace_space 3a2af65a96d60ac2dfc90ee6f73d5236"; do
+          "replace_space 3a2af65a96d60ac2dfc90ee6f73d5236" "set_guest_access_code d5d835ac1a663482387a3d07a7006f59" \
+          "disable_guest_access_code c5e6be2b4739200c2d6b4b29afe353b0" "submit_featured_listing 4c81a4b7e8fd63e63305c50b50554599"; do
   grep -qx "$kv" "$OUT/rolledback_restated.txt" && ok "recorded baseline md5 $kv" || bad "recorded baseline md5 mismatch: want $kv, got $(grep "^${kv%% *} " "$OUT/rolledback_restated.txt")"
 done
 expect_ok "0036 rollback, default (audit log KEPT) on a clone" "$KEEPAUDIT" "$(RBF 0036)" "0036-exported"
@@ -284,17 +366,17 @@ else bad "audit-kept variant: unexpected difference"; printf '%s\n' "$EXTRA" | h
 # --------------------------------------------------------------------------
 # 7. Restore forward
 # --------------------------------------------------------------------------
-say "7/7  re-apply 0036..0042 on the rolled-back db"
+say "8/8  re-apply 0036..0044 on the rolled-back db"
 apply "$RB" $M_032
 fp "$RB" reapplied > /dev/null
-same "re-applied catalog == FULL (0001..0042)" full reapplied
+same "re-applied catalog == FULL (0001..0044)" full reapplied
 
-if [ "${KEEP:-0}" = "1" ]; then say "kept databases: $PRE $FULL $RB $KEEPAUDIT"
-else for d in "$PRE" "$FULL" "$RB" "$KEEPAUDIT"; do dropdb_ "$d"; done; say "throwaway databases dropped"; fi
+if [ "${KEEP:-0}" = "1" ]; then say "kept databases: $PRE $M42 $M43 $FULL $RB $KEEPAUDIT"
+else for d in "$PRE" "$M42" "$M43" "$FULL" "$RB" "$KEEPAUDIT"; do dropdb_ "$d"; done; say "throwaway databases dropped"; fi
 # "Comparable" = without storage-api-managed storage indexes/triggers, which differ between
 # hosted and local; this is the form to compare with a hosted environment.
 say "expected comparable fingerprints (md5 of sorted lines) per state"
-for f in pre full after_rb_0042 after_rb_0041 after_rb_0040 after_rb_0039 after_rb_0038 after_rb_0037 after_rb_0036 reapplied keepaudit; do
+for f in pre m42 m43 full after_rb_0044 after_rb_0043 after_rb_0042 after_rb_0041 after_rb_0040 after_rb_0039 after_rb_0038 after_rb_0037 after_rb_0036 reapplied keepaudit; do
   [ -f "$OUT/$f.fp" ] || continue
   grep -vE '^(idx|trg)\|storage\.' "$OUT/$f.fp" > "$OUT/$f.comparable.fp"
   printf '   %-16s %s  %s lines\n' "$f" "$( (md5sum < "$OUT/$f.comparable.fp" 2>/dev/null || md5 -q "$OUT/$f.comparable.fp") | cut -c1-32)" "$(wc -l < "$OUT/$f.comparable.fp" | tr -d ' ')"

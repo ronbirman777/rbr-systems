@@ -5,7 +5,7 @@
 --
 -- Read docs/billing/MIGRATION-RECOVERY.md first. A forward fix is preferred.
 --
--- ORDER: 0041 -> 0040 (this file) -> 0039 -> 0038 -> 0037 -> 0036.
+-- ORDER: 0044 -> 0043 -> 0042 -> 0041 -> 0040 (this file) -> 0039 -> 0038 -> 0037 -> 0036.
 -- 0041's rollback must already have run (the guard checks it).
 --
 -- ===========================================================================
