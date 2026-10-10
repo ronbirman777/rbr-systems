@@ -3,6 +3,19 @@
 Status: the code is ready for integration testing. External services are **not connected**. No Stripe account exists yet, and none was created or configured on the owner's behalf.
 Everything here is **Test Mode / Staging only**. Never put a Live key on Staging/Preview, or a Test key on Production.
 
+## Owner setup sequence — do these in this order
+
+1. **Stripe account (Test mode only):** S1, then S2 (test key).
+2. **Vercel `staging` environment:** S3 `STRIPE_SECRET_KEY`. Leave `STRIPE_AUTOMATIC_TAX` unset (S8).
+3. **Stable Staging URL and automation bypass:** S4 and S5. A custom domain is a DNS change and needs its own approval.
+4. **Stripe webhook endpoint:** S6, with the event list below (including `charge.refund.updated`). Then S7 `STRIPE_WEBHOOK_SECRET`.
+5. **Stripe Dashboard billing settings:** S9 Customer Portal, then S10 Smart Retries → unpaid, and Stripe's own receipt and failed-payment emails OFF.
+6. **Resend:** R1–R5 (domain verification is a DNS change, tracking OFF, a send-only key, `BILLING_EMAIL_FROM`). Then R6 safe test inboxes.
+7. **Scheduled job:** C1 `CRON_SECRET` for `staging` (separate from Production).
+8. **Tell Claude it is configured.** Claude redeploys Staging, checks the key is test mode (never `sk_live`/`rk_live`), enrols the Admin via MFA, runs Sync plan (S11), and then runs the section 4 verification and the section 5 journeys.
+
+Nothing in this sequence touches Production or Live mode. Claude does not create accounts, enter credentials or change DNS on your behalf.
+
 ## 0. Readiness: code vs external integration
 
 | Area | Code readiness (verified in repo / Staging DB) | External integration readiness |
@@ -37,7 +50,7 @@ Webhook events to subscribe to (see STRIPE-MAPPING.md):
 `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.expired`,
 `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `customer.subscription.paused`, `customer.subscription.resumed`, `customer.subscription.pending_update_applied`,
 `invoice.paid`, `invoice.payment_succeeded`, `invoice.payment_failed`, `invoice.finalized`, `invoice.updated`, `invoice.voided`, `invoice.marked_uncollectible`, `invoice.created`,
-`charge.refunded`.
+`charge.refunded`, `charge.refund.updated`.
 
 ## 2. Resend — owner must do
 
@@ -98,6 +111,10 @@ Also blocked:
 - Customer Portal success paths (update payment method, cancel/resume through Stripe).
 - Stripe coupon/promotion-code sync without drift.
 - Scheduled-job execution on a schedule.
+
+## 5b. Audio checks that also need real Stripe
+
+The audio limits on paid Spaces are enforced: the server measures each file, and the database (0043) refuses over-limit writes and publishes. Their Staging DB checks pass (sections M and N of `billing-db-verify.mjs`). A real Stripe-provisioned Space has not uploaded audio end to end, so that is part of journey 1 and 2 QA.
 
 ## 6. Still blocking a paid launch even after Test Mode passes
 
