@@ -41,12 +41,19 @@ describe("versioned media writers never need Storage UPDATE", () => {
   });
 
   it("every image/audio upload in a Studio action is create-only (upsert: false)", () => {
-    for (const rel of ["app/(site)/configurator/retreat/actions.ts", "app/(site)/configurator/teach/actions.ts", "lib/media/audioUpload.ts"]) {
-      const src = read(rel);
-      const uploads = src.match(/\.upload\([^)]*\)/g) ?? [];
-      expect(uploads.length).toBeGreaterThan(0);
+    // TASK 032 (0045): the Studio image uploads go through storeDraftImage
+    // (lib/media/trustedMedia.server.ts), which picks the member or the
+    // service-role client; the actions themselves no longer call .upload().
+    for (const rel of ["lib/media/trustedMedia.server.ts", "lib/media/audioUpload.ts"]) {
+      const uploads = read(rel).match(/\.upload\([^)]*\)/g) ?? [];
+      expect(uploads.length, rel).toBeGreaterThan(0);
       for (const call of uploads) expect(call).toMatch(/upsert:\s*false/);
     }
+    for (const rel of ["app/(site)/configurator/retreat/actions.ts", "app/(site)/configurator/teach/actions.ts"]) {
+      for (const call of read(rel).match(/\.upload\([^)]*\)/g) ?? []) expect(call).toMatch(/upsert:\s*false/);
+    }
+    expect((read("app/(site)/configurator/retreat/actions.ts").match(/storeDraftImage\(/g) ?? []).length).toBe(3);
+    expect((read("app/(site)/configurator/teach/actions.ts").match(/storeDraftImage\(/g) ?? []).length).toBe(1);
   });
 
   it("the retreat image uploads all use a fresh uploadId path", () => {

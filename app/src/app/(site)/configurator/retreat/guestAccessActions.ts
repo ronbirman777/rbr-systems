@@ -71,7 +71,7 @@ export async function setGuestAccessCode(
   // TASK 032: set/disable_guest_access_code() are SECURITY DEFINER, so the
   // 0039 restrictive policies never apply to them - same predicate, here.
   if (!(await isStudioWritableForWrite(supabase, tenantId))) {
-    return { error: translateAccount(localeFromFormData(formData), "billing", "studioSuspendedTitle"), settings: await getGuestAccessSettingsForOwner(tenantId) };
+    return { error: translateAccount(localeFromFormData(formData), "billing", "studioLockedChangeRefused"), settings: await getGuestAccessSettingsForOwner(tenantId) };
   }
 
   const { error } = await supabase.rpc("set_guest_access_code", { p_tenant_id: tenantId, p_code: code });
@@ -83,7 +83,7 @@ export async function setGuestAccessCode(
       };
     }
     if (isBillingLockedError(error)) {
-      return { error: translateAccount(localeFromFormData(formData), "billing", "studioSuspendedTitle"), settings: await getGuestAccessSettingsForOwner(tenantId) };
+      return { error: translateAccount(localeFromFormData(formData), "billing", "studioLockedChangeRefused"), settings: await getGuestAccessSettingsForOwner(tenantId) };
     }
     return { error: error.message, settings: await getGuestAccessSettingsForOwner(tenantId) };
   }
@@ -108,7 +108,7 @@ export async function disableGuestAccessCode(
   if (!tenantId) return { error: t("missingSpace"), settings: DEFAULT_SETTINGS };
 
   if (!(await isStudioWritableForWrite(supabase, tenantId))) {
-    return { error: translateAccount(localeFromFormData(formData), "billing", "studioSuspendedTitle"), settings: await getGuestAccessSettingsForOwner(tenantId) };
+    return { error: translateAccount(localeFromFormData(formData), "billing", "studioLockedChangeRefused"), settings: await getGuestAccessSettingsForOwner(tenantId) };
   }
 
   const { error } = await supabase.rpc("disable_guest_access_code", { p_tenant_id: tenantId });
@@ -117,7 +117,7 @@ export async function disableGuestAccessCode(
       return { error: t("guestAccessUnavailable"), settings: DEFAULT_SETTINGS };
     }
     if (isBillingLockedError(error)) {
-      return { error: translateAccount(localeFromFormData(formData), "billing", "studioSuspendedTitle"), settings: await getGuestAccessSettingsForOwner(tenantId) };
+      return { error: translateAccount(localeFromFormData(formData), "billing", "studioLockedChangeRefused"), settings: await getGuestAccessSettingsForOwner(tenantId) };
     }
     return { error: error.message, settings: await getGuestAccessSettingsForOwner(tenantId) };
   }

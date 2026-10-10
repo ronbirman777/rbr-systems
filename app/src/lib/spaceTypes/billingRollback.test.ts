@@ -8,7 +8,7 @@ import { extractFunctionBody, latestFunctionDefinition, stripSqlComments, type M
  * TASK 032 rollback guard (docs/billing/MIGRATION-RECOVERY.md).
  *
  * Static checks only - nothing here touches a database:
- *  - every TASK 032 migration (0036-0044) has a rollback file in supabase/verification/;
+ *  - every TASK 032 migration (0036-0045) has a rollback file in supabase/verification/;
  *  - a rollback that restores a function restated by 0038/0039/0042/0043/0044 restores EXACTLY the body of the
  *    migration that defined that function before (found mechanically, not hard-coded);
  *  - every object a migration creates is dropped by its rollback;
@@ -25,7 +25,7 @@ const migrations = read("migrations");
 const num = (name: string) => Number(/^(\d+)_/.exec(name)?.[1] ?? -1);
 const migration = (n: string) => migrations.find((m) => m.name.startsWith(`${n}_`))!;
 
-const TASK032 = ["0036", "0037", "0038", "0039", "0040", "0041", "0042", "0043", "0044"] as const;
+const TASK032 = ["0036", "0037", "0038", "0039", "0040", "0041", "0042", "0043", "0044", "0045"] as const;
 const rollbackPath = (n: string) =>
   path.join(ROOT, "verification", migration(n).name.replace(/\.sql$/, "_rollback.sql"));
 const rollback = (n: string) => fs.readFileSync(rollbackPath(n), "utf8");
@@ -114,6 +114,7 @@ describe("TASK 032 rollback files", () => {
 
   it("each rollback (except the first) refuses until the next-later rollback has run", () => {
     const later: Record<string, string> = {
+      "0044": "to_regprocedure('public.billing_media_member_write_allowed(text, text)')", // 0045 (media content guard)
       "0043": "billing_locked", // 0044 (its restated Guest Access / Featured RPCs carry hint BILLING_LOCKED)
       "0042": "to_regprocedure('public.billing_audio_policy(uuid)')", // 0043 (audio enforcement helper)
       "0041": "billing_locked", // 0042 (its restated restore_space/replace_space carry hint BILLING_LOCKED)
@@ -421,5 +422,77 @@ describe("0044 restates the definer Guest Access / Featured RPCs with a marked b
       expect(guard).toContain(`position('billing_locked' in pg_get_functiondef('public.${sig}'::regprocedure)) > 0`);
     }
     expect(guard).toContain("raise exception 'rollback 0043 refused: 0044 is still applied");
+  });
+});
+
+/**
+ * TASK 032 (0045): media content guard. Creates two Storage policies, one trigger and two functions; restates
+ * nothing (publish_space()'s head stays 0043 - publishSpaceRegression.test.ts). The rollback drops exactly those.
+ */
+describe("0045 media content guard", () => {
+  const m45 = () => code(migration("0045").sql);
+
+  it("restates no function and alters no table or existing policy", () => {
+    expect(m45()).not.toMatch(/create or replace function/);
+    expect(m45()).not.toMatch(/\b(drop|alter table|alter policy)\b/);
+    expect(latestFunctionDefinition(migrations, "publish_space")!.file).toMatch(/^0043_/);
+  });
+
+  it("creates exactly the two restrictive tenant-media policies (insert, update), the trigger and two functions", () => {
+    const policies = [...m45().matchAll(/create policy "([^"]+)"\s+on storage\.objects as restrictive for (\w+) to authenticated/g)].map((m) => `${m[2]}:${m[1]}`);
+    expect(policies.sort()).toEqual([
+      "insert:tenant media: paid spaces accept member uploads of draft audio only",
+      "update:tenant media: paid spaces refuse member overwrites",
+    ]);
+    expect([...m45().matchAll(/\bcreate function public\.(\w+)\(/g)].map((m) => m[1]).sort()).toEqual([
+      "billing_guard_published_media",
+      "billing_media_member_write_allowed",
+    ]);
+    expect(m45()).toMatch(/create trigger billing_guard_published_media\s+before insert or update on public\.published_spaces/);
+    // Every policy is scoped to tenant-media; other buckets pass.
+    for (const m of m45().matchAll(/(with check|using) \(([^;]*?)\)(?=\s*(;|with check))/g)) {
+      expect(m[2]).toContain("bucket_id <> 'tenant-media' or public.billing_media_member_write_allowed(name, ");
+    }
+  });
+
+  it("legacy and exempt Spaces are passed through first by both functions", () => {
+    const body = (fn: string) => {
+      const sql = migration("0045").sql.toLowerCase();
+      const open = sql.indexOf("$$", sql.indexOf(`create function public.${fn}(`));
+      return sql.slice(open + 2, sql.indexOf("$$", open + 2));
+    };
+    const pred = body("billing_media_member_write_allowed");
+    expect(pred).toMatch(/if v_mode in \('legacy', 'exempt'\) then\s+return true;/);
+    // Members on an enforced Space may create only versioned draft AUDIO objects and never update.
+    expect(pred).toContain("draft\\.(mp3|m4a|aac|wav|ogg)$");
+    expect(pred).toMatch(/return false; -- no member overwrite/);
+    const trg = body("billing_guard_published_media");
+    expect(trg).toMatch(/if v_mode in \('legacy', 'exempt'\) then\s+return new;/);
+    expect(trg).toContain("jsonb_path_query(coalesce(new.modules, '{}'::jsonb), '$.**.imageref')");
+    expect(trg).toContain("perform public.billing_audio_assert_publishable(new.tenant_id, new.modules);");
+  });
+
+  it("the helper is SECURITY DEFINER with a pinned search_path; grants exclude anon; the trigger function is not client-callable", () => {
+    expect(m45()).toMatch(/billing_media_member_write_allowed\(p_name text, p_command text\)\s+returns boolean\s+language plpgsql\s+stable\s+security definer\s+set search_path = pg_catalog, pg_temp/);
+    expect(m45()).toContain("revoke all on function public.billing_media_member_write_allowed(text, text) from public, anon;");
+    expect(m45()).toContain("grant execute on function public.billing_media_member_write_allowed(text, text) to authenticated, service_role;");
+    expect(m45()).toContain("revoke all on function public.billing_guard_published_media() from public, anon, authenticated;");
+  });
+
+  it("the rollback drops the trigger before its function and the policies before their helper", () => {
+    const c = code(rollback("0045"));
+    const at = (s: string) => c.indexOf(s);
+    expect(at("drop trigger billing_guard_published_media on public.published_spaces;")).toBeGreaterThan(-1);
+    expect(at("drop trigger billing_guard_published_media")).toBeLessThan(at("drop function public.billing_guard_published_media()"));
+    expect(at('drop policy "tenant media: paid spaces refuse member overwrites" on storage.objects;')).toBeLessThan(
+      at("drop function public.billing_media_member_write_allowed(text, text);")
+    );
+    expect(c).not.toMatch(/create or replace function/);
+  });
+
+  it("the 0044 rollback refuses while 0045 is applied (named check)", () => {
+    const guard = code(rollback("0044")).split("$$")[1] ?? "";
+    expect(guard).toContain("if to_regprocedure('public.billing_media_member_write_allowed(text, text)') is not null then");
+    expect(guard).toContain("raise exception 'rollback 0044 refused: 0045 is still applied");
   });
 });

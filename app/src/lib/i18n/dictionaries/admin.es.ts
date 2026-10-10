@@ -312,6 +312,16 @@ export const adminEs: { [K in keyof typeof adminEn]: string } = {
   payDiscount: "descuento {amount}",
   payPaid: "pagada {time}",
   payFailed: "fallida {time}",
+  colAmounts: "Importes",
+  invAmtTotal: "Total de la factura",
+  invAmtDue: "Importe pendiente",
+  invAmtPaid: "Pagado",
+  invAmtRefunded: "Reembolsado",
+  invAmtNet: "Neto (pagado - reembolsado)",
+  invAmtUncollected: "No cobrado",
+  invAmtNoteVoid: "Anulada: no se debe nada.",
+  invAmtNoteNoCharge: "Sin cargo (factura de 0, p. ej. con un 100 % de descuento).",
+  payAmountsHelp: "El total de la factura es lo que Stripe facturó tras descuentos e impuestos. El importe pendiente es lo que aún se debe en una factura abierta. Pagado es lo que realmente se cobró (puede ser menor que el total si se aplicó saldo a favor). Reembolsado es el dinero devuelto; Neto = Pagado - Reembolsado.",
 
   // --- Coupons list ---
   cpNew: "Nuevo cupón",

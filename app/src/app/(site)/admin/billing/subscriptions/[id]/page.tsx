@@ -3,14 +3,14 @@ import { notFound } from "next/navigation";
 import { requireAdminPage } from "@/lib/billing/admin/auth";
 import { getSubscriptionDetail } from "@/lib/billing/admin/queries";
 import {
-  discountProgressText, eventStatusLabel, formatUtc, invoiceStatusLabel, isUuid, money, nextActionLabel, redemptionStatusLabel, safeHttpsUrl, spaceTypeLabel, statusLabel, statusTone,
+  discountProgressText, eventStatusLabel, formatUtc, invoiceAmountLines, invoiceAmountNote, invoiceStatusLabel, isUuid, type InvoiceAmountInput, money, nextActionLabel, redemptionStatusLabel, safeHttpsUrl, spaceTypeLabel, statusLabel, statusTone,
 } from "@/lib/billing/admin/ui/labels";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { adminMetaTitle, getAdminI18n } from "../../../_lib/i18n";
 import { resyncSubscriptionAction } from "../../actions";
 import { ConfirmActionButton } from "../../../_components/ConfirmActionButton";
 import { ClearExemptForm } from "../../../_components/forms";
-import { Badge, Card, Dl, EmptyRow, PageHeader } from "../../../_components/ui";
+import { Badge, Card, Dl, EmptyRow, InvoiceAmounts, PageHeader } from "../../../_components/ui";
 import { linkCls } from "../../../_components/styles";
 
 export const dynamic = "force-dynamic";
@@ -117,8 +117,8 @@ export default async function SubscriptionDetailPage({ params }: { params: Promi
                     <code className="font-mono text-xs">{i.stripe_invoice_id as string}</code>
                     <span className="block text-xs text-idw-forest/70">{i.invoice_number ? t("sdInvoiceNumber", { number: i.invoice_number as string }) : ""}{formatUtc(i.issued_at as string | null, c)} - {invoiceStatusLabel(i as { status: string; amount_refunded_minor?: number; currency?: string }, c)}</span>
                   </span>
-                  <span className="flex items-center gap-3">
-                    <span>{money(i.total_minor as number | null, i.currency as string, locale)}</span>
+                  <span className="flex min-w-0 flex-wrap items-start gap-3">
+                    <InvoiceAmounts lines={invoiceAmountLines(i as InvoiceAmountInput & { currency?: string | null }, c)} note={invoiceAmountNote(i as InvoiceAmountInput, c)} />
                     {hosted ? <a className={linkCls} href={hosted} target="_blank" rel="noopener noreferrer">{t("docHosted")}</a> : null}
                   </span>
                 </li>

@@ -1,6 +1,16 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AUDIO_MIME_BY_EXTENSION } from "./audio";
-import { MEDIA_BUCKET, OPTIMIZED_IMAGE_MIME, isVersionedMediaPath, parseVersionedMediaPath, publishedMediaPath } from "./path";
+import { isCanonicalStoredImage } from "./imageSignature";
+import {
+  MAX_IMAGE_BYTES,
+  MEDIA_BUCKET,
+  OPTIMIZED_IMAGE_EXTENSION,
+  OPTIMIZED_IMAGE_MIME,
+  isDraftMediaPathForTenant,
+  isVersionedMediaPath,
+  parseVersionedMediaPath,
+  publishedMediaPath,
+} from "./path";
 
 /**
  * Thrown whenever a Storage operation this module performs fails - the
@@ -10,6 +20,19 @@ import { MEDIA_BUCKET, OPTIMIZED_IMAGE_MIME, isVersionedMediaPath, parseVersione
  * internally.
  */
 export class MediaPublishError extends Error {}
+
+/**
+ * TASK 032 (0045). Set when the copy runs on the TRUSTED (service-role)
+ * client for a billing-governed Space - see lib/media/trustedMedia.server.ts.
+ * The service role bypasses Storage RLS, so the tenant check RLS used to make
+ * is made here instead (the draft must be this tenant's own object), and a
+ * newly created published IMAGE is validated from its stored bytes
+ * (isCanonicalStoredImage) before it may stand: if it is not a canonical
+ * WebP the published copy and its draft are deleted and the publish fails.
+ * This is the step that keeps a publish from laundering bytes into a
+ * guest-servable `published.*` path.
+ */
+export type PublishCopyOptions = { trustedTenantId?: string };
 
 /**
  * Copies one draft photo to its published counterpart - the only place a
@@ -43,15 +66,28 @@ export class MediaPublishError extends Error {}
  * Returns the published path that was written (null when there is no
  * draft photo, i.e. nothing to copy).
  */
-export async function copyDraftToPublished(supabase: SupabaseClient, draftPath: string | null): Promise<string | null> {
+export async function copyDraftToPublished(
+  supabase: SupabaseClient,
+  draftPath: string | null,
+  options: PublishCopyOptions = {}
+): Promise<string | null> {
   if (!draftPath) return null;
   const publishedPath = publishedMediaPath(draftPath);
   // Not a draft-shaped path: publish_space() leaves such a ref untransformed
   // as well, so there is nothing to copy.
   if (!publishedPath) return null;
+  const trustedTenantId = options.trustedTenantId;
+  if (trustedTenantId !== undefined) {
+    // Every image the trusted pipeline stores is `draft.webp` in this
+    // tenant's own folder; anything else is not copied by the service role.
+    if (!isDraftMediaPathForTenant(trustedTenantId, draftPath) || !draftPath.endsWith(`/draft.${OPTIMIZED_IMAGE_EXTENSION}`)) {
+      throw new MediaPublishError(`"${draftPath}" is not an image this Space's Studio stored; upload it again.`);
+    }
+  }
 
   if (isVersionedMediaPath(draftPath)) {
-    await copyImmutableObject(supabase, draftPath, publishedPath);
+    const created = await copyImmutableObject(supabase, draftPath, publishedPath);
+    if (created && trustedTenantId !== undefined) await assertPublishedImage(supabase, draftPath, publishedPath);
     return publishedPath;
   }
 
@@ -63,6 +99,13 @@ export async function copyDraftToPublished(supabase: SupabaseClient, draftPath: 
     throw new MediaPublishError(
       `Could not read the draft image at "${draftPath}": ${downloadError?.message ?? "no data returned"}`
     );
+  }
+  if (trustedTenantId !== undefined) {
+    const ok = draftBlob.size <= MAX_IMAGE_BYTES && isCanonicalStoredImage(new Uint8Array(await draftBlob.arrayBuffer()));
+    if (!ok) {
+      await supabase.storage.from(MEDIA_BUCKET).remove([draftPath]);
+      throw new MediaPublishError(`"${draftPath}" is not a valid image; upload it again.`);
+    }
   }
 
   const { error: uploadError } = await supabase.storage
@@ -123,9 +166,9 @@ async function objectsIdentical(supabase: SupabaseClient, a: string, b: string):
  * so the file is never buffered in this process in the normal path, and
  * the source's content type and metadata are carried over unchanged.
  */
-async function copyImmutableObject(supabase: SupabaseClient, source: string, dest: string): Promise<void> {
+async function copyImmutableObject(supabase: SupabaseClient, source: string, dest: string): Promise<boolean> {
   const { error } = await supabase.storage.from(MEDIA_BUCKET).copy(source, dest);
-  if (!error) return;
+  if (!error) return true;
   if (!isAlreadyExists(error)) {
     throw new MediaPublishError(`Could not publish "${source}" to "${dest}": ${error.message}`);
   }
@@ -134,6 +177,23 @@ async function copyImmutableObject(supabase: SupabaseClient, source: string, des
       `A different file already exists at "${dest}"; refusing to overwrite published media.`
     );
   }
+  return false;
+}
+
+/**
+ * Trusted path only: reads back the published object just created and
+ * requires a canonical WebP (lib/media/imageSignature.ts). On failure both
+ * the published copy and its draft are removed (neither is referenced by a
+ * committed snapshot yet - the RPC has not run) and the publish fails.
+ */
+async function assertPublishedImage(supabase: SupabaseClient, draftPath: string, publishedPath: string): Promise<void> {
+  const bucket = supabase.storage.from(MEDIA_BUCKET);
+  const { data, error } = await bucket.download(publishedPath, {}, { cache: "no-store" });
+  const ok =
+    !error && !!data && data.size <= MAX_IMAGE_BYTES && isCanonicalStoredImage(new Uint8Array(await data.arrayBuffer()));
+  if (ok) return;
+  await bucket.remove([publishedPath, draftPath]);
+  throw new MediaPublishError(`"${draftPath}" is not a valid image; upload it again.`);
 }
 
 /**
@@ -150,12 +210,17 @@ async function copyImmutableObject(supabase: SupabaseClient, source: string, des
  */
 export async function copyDraftAudioToPublished(
   supabase: SupabaseClient,
-  draftPath: string | null
+  draftPath: string | null,
+  options: PublishCopyOptions = {}
 ): Promise<string | null> {
   if (!draftPath) return null;
   const parts = parseVersionedMediaPath(draftPath);
   if (!parts || parts.kind !== "draft" || !AUDIO_MIME_BY_EXTENSION[parts.ext]) {
     throw new MediaPublishError(`"${draftPath}" is not a versioned draft audio ref.`);
+  }
+  // Trusted (service-role) copy: the tenant check Storage RLS used to make.
+  if (options.trustedTenantId !== undefined && parts.tenantId !== options.trustedTenantId) {
+    throw new MediaPublishError(`"${draftPath}" does not belong to this Space.`);
   }
   const publishedPath = publishedMediaPath(draftPath);
   if (!publishedPath) throw new MediaPublishError(`"${draftPath}" is not a draft ref.`);

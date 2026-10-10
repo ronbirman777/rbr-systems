@@ -1,4 +1,4 @@
-# TASK 032 rollback rehearsal (0036-0044)
+# TASK 032 rollback rehearsal (0036-0045)
 
 This document follows on from `MIGRATION-RECOVERY.md`. §6 of that document said the rollback files had never been run against a database. This one records where they have now been run, what happened, and the plan for a hosted rehearsal, which still needs approval.
 
@@ -151,6 +151,40 @@ The script now covers 0036..0044 (it previously stopped at 0042). Same machine, 
 | after 0043 rollback (= post-0042) | `868f35d7f344ae4c02792f031addc0d9` | 796 |
 
 The script's local-only refusals were re-checked: a non-loopback `LOCAL_DB_URL`, a `supabase.co` `DATABASE_URL`, and a port the container does not publish each abort before anything runs (exit 2).
+
+## 2c. Extension to 0045 (observed, run 2026-10-10)
+
+The script now covers 0036..0045 and builds a fourth reference, `rbr_rh_m44` (0001..0044); `full` is 0001..0045. Same container, throwaway `rbr_rh_*` databases only, dropped afterwards; 0045 is not applied to any hosted project. `RESULT: ALL CHECKS PASSED` (88 checks).
+
+**0045 behaviour** (step 4b, on `full`, one transaction rolled back; catalog unchanged and no `storage.objects` rows left afterwards). Statements run as role `authenticated` with the owner's JWT claims, directly against `storage.objects` (so Storage RLS is evaluated exactly as storage-api's own INSERT/UPDATE would be; `storage.allow_delete_query` set as storage-api does for deletes) and `published_spaces`:
+
+| Space | Check | Result |
+|---|---|---|
+| paid (active) | member INSERT `.../{uploadId}/draft.webp` (image), audio bytes named `draft.webp`, `published.mp3`, `published.webp`, unversioned `draft.mp3`, `draft.svg` | refused (`42501`) |
+| paid | member INSERT versioned `draft.mp3` | allowed |
+| paid | member UPDATE (metadata overwrite, rename/move) of an existing object | no row affected |
+| paid | member DELETE | allowed |
+| legacy / exempt | member INSERT `draft.webp`; legacy UPDATE of an unversioned object | allowed (unchanged) |
+| paid | snapshot `imageRef` = audio object / another tenant's image / `..` traversal / non-string | `MEDIA_REF_INVALID` |
+| paid | snapshot with an own `published.webp` (direct insert) | allowed |
+| paid | direct snapshot update carrying an uncounted `audioRef` | `AUDIO_LIMIT` |
+| paid | `publish_space()` | allowed |
+| legacy / exempt | snapshot `imageRef` naming an audio object | allowed (unchanged) |
+
+Negative control (manual, same run): on a clone of `full` with the 0045 rollback applied, the same member INSERTs of `draft.webp` and `published.mp3` on the paid Space both succeeded - the refusals above come from 0045.
+
+**New guard refusals:** 0045 with no token / wrong token / paid flag ON / `active` subscription; 0044 before 0045 ("0045 is still applied"). The 0044 paid-flag and live-subscription refusals now run after the 0045 rollback (0044's 0045-applied check comes first).
+
+| Comparison | Result |
+|---|---|
+| after the 0045 rollback vs a fresh 0001..0044 | identical, 829 lines |
+| 0036..0045 re-applied to the rolled-back db vs `full` | identical, 834 lines |
+| full chain 0045 -> 0036 vs a fresh 0001..0035 | identical, 348 lines |
+
+| State | md5 (comparable) | lines |
+|---|---|---|
+| post-0045 | `35136de53d3d6ac4580c7b668a7cf95d` | 805 |
+| after 0045 rollback (= post-0044) | `c13f3ddd46a13ff5f109a3960af3730f` | 800 |
 
 ## 3. Defect found and fixed
 

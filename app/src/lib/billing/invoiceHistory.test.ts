@@ -63,6 +63,26 @@ describe("amount shown per invoice", () => {
       ["none", "$25.00", null],
     ]);
   });
+  it("open and partially paid: shows only the remainder still owed", () => {
+    expect(invoiceDisplayMinor({ status: "open", amountPaidMinor: 1000, totalMinor: 2500, amountDueMinor: 2500 })).toBe(1500);
+  });
+  it("Billing page: 100%-off invoice shows 0 as paid with no refund line; fully refunded keeps the paid amount and names the refund", () => {
+    const m = buildBillingPageModel(view([
+      row({ id: "free", issued_at: "2026-10-01T00:00:00Z", total_minor: 0, amount_due_minor: 0, amount_paid_minor: 0, discount_minor: 2500 }),
+      row({ id: "full", issued_at: "2026-09-01T00:00:00Z", amount_refunded_minor: 2500 }),
+    ]), "en");
+    expect(m.invoices.map((i) => [i.id, i.amount, i.status, i.refunded])).toEqual([
+      ["free", "$0.00", "Paid", null],
+      ["full", "$25.00", "Paid", "Refunded $25.00"],
+    ]);
+  });
+  it("Billing page: void and uncollectible rows show the invoice total and their own status", () => {
+    const m = buildBillingPageModel(view([
+      row({ id: "v", status: "void", issued_at: "2026-10-01T00:00:00Z", paid_at: null, amount_paid_minor: 0 }),
+      row({ id: "u", status: "uncollectible", issued_at: "2026-09-01T00:00:00Z", paid_at: null, amount_paid_minor: 0 }),
+    ]), "en");
+    expect(m.invoices.map((i) => [i.id, i.amount, i.kind])).toEqual([["v", "$25.00", "void"], ["u", "$25.00", "uncollectible"]]);
+  });
   it("Billing page: a failed renewal shows the amount due and the failed status", () => {
     const m = buildBillingPageModel(view([row({ status: "open", paid_at: null, failed_at: "2026-10-02T00:00:00Z", amount_paid_minor: 0, amount_due_minor: 2500 })]), "en");
     expect(m.invoices[0]).toMatchObject({ amount: "$25.00", kind: "failed" });

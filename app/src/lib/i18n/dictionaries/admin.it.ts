@@ -313,6 +313,16 @@ export const adminIt: { [K in keyof typeof adminEn]: string } = {
   payDiscount: "sconto {amount}",
   payPaid: "pagata il {time}",
   payFailed: "non riuscita il {time}",
+  colAmounts: "Importi",
+  invAmtTotal: "Totale fattura",
+  invAmtDue: "Importo dovuto",
+  invAmtPaid: "Pagato",
+  invAmtRefunded: "Rimborsato",
+  invAmtNet: "Netto (pagato - rimborsato)",
+  invAmtUncollected: "Non riscosso",
+  invAmtNoteVoid: "Annullata: non è dovuto nulla.",
+  invAmtNoteNoCharge: "Nessun addebito (fattura da 0, ad es. sconto del 100%).",
+  payAmountsHelp: "Il totale fattura è quanto Stripe ha fatturato dopo sconti e imposte. L’importo dovuto è quanto resta da pagare su una fattura aperta. Pagato è quanto effettivamente riscosso (può essere inferiore al totale se è stato applicato un credito). Rimborsato è il denaro restituito; Netto = Pagato - Rimborsato.",
 
   // --- Coupons list ---
   cpNew: "Nuovo coupon",

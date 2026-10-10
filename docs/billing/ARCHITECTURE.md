@@ -103,9 +103,20 @@ Enforcement points: restrictive RLS write policies (0039, 20 policies, see RLS-G
 
 Spaces without a billing row (every Space existing before 0036) take the legacy path byte-for-byte: nothing is locked or unlocked by this task. Internal Spaces (Lena, Return to Balance, QA) are marked with `space_subscriptions.status = 'exempt'` via `billing_set_internal_exempt` (reason of at least 5 characters, actor, optional expiry; refuses to overwrite a paid subscription). Exempt rows create no Stripe subscription, are ignored by `billing_apply_subscription_state` (`ignored_exempt`), and never count in paid metrics. Admin set/clear needs MFA step-up and is audited. Which Spaces are currently marked exempt on Staging or Production was not verified for this document.
 
+## Media on paid Spaces: trusted writer (0043 audio, 0045 images)
+
+For a billing-governed (paid, non-exempt) Space the database lets member sessions create only one kind of tenant-media object: a versioned draft audio file (the browser-direct upload, measured by the service role at attach - 0043). Everything else - every image object and every published copy - is written by the service role after the server has validated the bytes:
+
+- Upload: Server Action -> `sniffImage` (JPEG/PNG/WebP magic bytes and header, every Space) -> sharp WebP re-encode -> `storeDraftImage` (service role on a paid Space, after a membership and `space_studio_writable` check; member session elsewhere).
+- Publish: `resolveMediaWriter` picks the client once per publish; on a paid Space `copyDraftToPublished` / `copyDraftAudioToPublished` run on the service role, only for the tenant's own drafts, and each new published image is re-read and must be a canonical WebP (reject + delete both objects, publish fails before the RPC).
+- Database (0045): restrictive Storage INSERT/UPDATE policies (member: draft audio only, no overwrite) and the `published_spaces` trigger (image refs must name the Space's own image paths; 0043's audio check re-run on the written row).
+- Serve: `/api/media` additionally refuses a path whose extension does not match the snapshot field that names it.
+
+Legacy and exempt Spaces keep member-session writes; only the upload content check and the serve-time extension check apply to them. Details and the residual risks: ENTITLEMENTS.md, "Media content guard (0045)".
+
 ## Not implemented (stated plainly)
 
 - Paid add-ons are not sold; no code writes `space_subscription_addons`.
-- Audio entitlements (240/60/100000) are computed for display (`customerView.ts`); no enforcement against uploads or listening was found.
+- Listening minutes (100000/month) are display-only; nothing meters playback (ENTITLEMENTS.md). Audio library and per-recording limits are enforced since 0043 (B4/B4b).
 - The 14-day "deletion eligible" stamp opens a workflow only; no deletion job exists (see LIFECYCLE.md).
 - `subscription_started` and `payment_recovered` are retired templates (allowed by the DB, never enqueued or rendered; see EMAILS-INVOICES.md).

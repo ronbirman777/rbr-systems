@@ -96,7 +96,7 @@ describe("SECURITY DEFINER Studio writes are billing-gated in the action", () =>
     // The pre-check passed (e.g. the Space was suspended between the check and the RPC) and the
     // SECURITY DEFINER RPC itself refused. The raw database text must never reach the organizer.
     const locked = { code: "P0001", message: "Billing must be resolved before Guest Access can be changed", hint: "BILLING_LOCKED" };
-    const expected = (f: FormData) => translateAccount(localeFromFormData(f), "billing", "studioSuspendedTitle");
+    const expected = (f: FormData) => translateAccount(localeFromFormData(f), "billing", "studioLockedChangeRefused");
 
     it("set code", async () => {
       state.rpcError = locked;

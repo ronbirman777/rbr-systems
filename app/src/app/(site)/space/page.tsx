@@ -25,6 +25,7 @@ import { signOut } from "@/app/(site)/(auth)/actions";
 import { LogoutButton } from "@/components/logout-button";
 import { DeleteSpaceControl } from "@/components/delete-space-control";
 import { DeleteAccountControl } from "@/components/delete-account-control";
+import { lifecycleUiCopy } from "@/lib/billing/lifecycleUiCopy";
 
 type PublishedRow = { published_at: string } | { published_at: string }[] | null;
 
@@ -443,6 +444,7 @@ export default async function MySpacePage() {
                               replaceBody: translateAccount(accountLocale, "billing", "lifecycleReplacePaidBody", { space: t.name }),
                               lang: accountLocale,
                               dir: directionOf(accountLocale),
+                              ui: lifecycleUiCopy(accountLocale, t.name),
                             }
                           : null
                       }

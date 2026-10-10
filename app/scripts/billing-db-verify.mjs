@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * TASK 032 - database-level behavioural verification for the billing
- * migrations (0036-0044; section L covers the 0042 Restore/Replace guards, section M the 0043 audio enforcement,
- * section N the 0044 Guest Access / Featured definer-RPC guards). STAGING ONLY: the script refuses to run against any
+ * migrations (0036-0045; section L covers the 0042 Restore/Replace guards, section M the 0043 audio enforcement,
+ * section N the 0044 Guest Access / Featured definer-RPC guards, section O the 0045 media content guard). STAGING ONLY: the script refuses to run against any
  * project other than the Staging ref, creates its own synthetic users/rows
  * (prefix qa032-), and removes everything it created (and restores the launch
  * flag) in a finally block.
@@ -893,6 +893,84 @@ async function main() {
     const strangerFeat = await feature(gc, tSusp);
     check("N8 a non-owner is refused ('not authorized'), never BILLING_LOCKED", !!strangerSet.error && !locked(strangerSet) && !!strangerFeat.error && !locked(strangerFeat), JSON.stringify([strangerSet.error, strangerFeat.error]));
     await admin.from("space_subscriptions").update({ status: "active", payment_failed_at: null }).eq("tenant_id", tSusp);
+  }
+
+  // ------------------------------------------------------------------ O. 0045 media content guard (paid Spaces)
+  {
+    // Real Storage API calls as a member session and as the service role. Synthetic bytes only (a tiny WebP
+    // header and a few bytes labelled audio); every object this run creates is recorded in created.storage.
+    // On a paid Space a member may create only versioned draft AUDIO objects and never overwrite; image objects
+    // and published copies come from the service-role pipeline; a snapshot imageRef must name one of the Space's
+    // own image paths. A member can still store any string in a DRAFT field (module_items.image_ref etc.) -
+    // that write is not where the guard sits - but publishing it is refused (O7/O8). Legacy/exempt unchanged.
+    const MEDIA_INVALID = (res) => !!res.error && res.error.hint === "MEDIA_REF_INVALID";
+    const webp = new Uint8Array([0x52, 0x49, 0x46, 0x46, 0x16, 0, 0, 0, 0x57, 0x45, 0x42, 0x50, 0x56, 0x50, 0x38, 0x58, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    const audioBytes = new Uint8Array([0x49, 0x44, 0x33, 4, 0, 0, 0, 0, 0, 0, 0xff, 0xfb, 0x90, 0x64]);
+    const up = async (client, path, bytes, contentType, upsert = false) => {
+      const r = await client.storage.from("tenant-media").upload(path, new Blob([bytes], { type: contentType }), { upsert, contentType });
+      if (!r.error) created.storage.push(path);
+      return r;
+    };
+    const uO = await mkUser("uo"); const oc = await userClient(uO);
+    await setFlag(false);
+    const ckOp = await mkCheckout(uO, "teach"); const pOp = await provision(ckOp.id, subJson(uO), "QA032 media paid");
+    const tP = pOp.data?.tenant_id; if (tP) created.tenants.push(tP);
+    const ckOl = await mkCheckout(uO, "retreat"); const pOl = await provision(ckOl.id, subJson(uO), "QA032 media legacy");
+    const tL = pOl.data?.tenant_id; if (tL) created.tenants.push(tL);
+    if (tL) {
+      await admin.from("space_subscriptions").delete().eq("tenant_id", tL);
+      await admin.from("space_entitlements").upsert({ tenant_id: tL, access_type: "complimentary", access_ends_at: H(24 * 30) });
+    }
+    const ckOe = await mkCheckout(uO, "teach"); const pOe = await provision(ckOe.id, subJson(uO), "QA032 media exempt");
+    const tE = pOe.data?.tenant_id; if (tE) created.tenants.push(tE);
+    if (tE) {
+      await admin.from("space_subscriptions").delete().eq("tenant_id", tE);
+      await admin.rpc("billing_set_internal_exempt", { p_tenant_id: tE, p_reason: "qa032 media exemption", p_actor: uO });
+    }
+    check("O0 setup: paid, legacy and exempt Spaces exist", !!tP && !!tL && !!tE, JSON.stringify([pOp.error, pOl.error, pOe.error]));
+
+    const v = (t, mod, file) => `${t}/${mod}/${randomUUID()}/${randomUUID()}/${file}`;
+    let r = await up(oc, v(tP, "brand", "draft.webp"), webp, "image/webp");
+    check("O1 paid: a member upload of an image object (draft.webp) is refused by Storage", !!r.error, JSON.stringify(r.error));
+    r = await up(oc, v(tP, "teachAudioFile", "draft.webp"), audioBytes, "image/webp");
+    check("O2 paid: audio bytes uploaded by a member under an image name are refused", !!r.error, JSON.stringify(r.error));
+    const audioPath = v(tP, "teachAudioFile", "draft.mp3");
+    r = await up(oc, audioPath, audioBytes, "audio/mpeg");
+    check("O3 paid: the member's browser-direct draft AUDIO upload still works", !r.error, JSON.stringify(r.error));
+    r = await up(oc, audioPath.replace("/draft.mp3", "/published.mp3"), audioBytes, "audio/mpeg");
+    check("O4 paid: a member cannot pre-create a published copy", !!r.error, JSON.stringify(r.error));
+    const imgPath = v(tP, "brand", "draft.webp");
+    r = await up(admin, imgPath, webp, "image/webp");
+    check("O5 paid: the service-role (validated) image write is allowed", !r.error, JSON.stringify(r.error));
+    r = await oc.storage.from("tenant-media").upload(imgPath, new Blob([audioBytes], { type: "image/webp" }), { upsert: true, contentType: "image/webp" });
+    check("O6 paid: a member cannot overwrite the validated image (upsert)", !!r.error, JSON.stringify(r.error));
+
+    // Direct member write of an image ref at an audio object (the draft write itself is allowed), then publish:
+    // publish_space() derives `published.mp3` for the hero imageRef and the 0045 trigger refuses the snapshot.
+    const brand = (t, ref) => oc.from("brand_configs").upsert({ tenant_id: t, palette: "forest-sage", atmosphere: "calm-organic", image_style: "rounded", hero_image_ref: ref }, { onConflict: "tenant_id" });
+    let w = await brand(tP, audioPath);
+    let pub = await oc.rpc("publish_space", { p_tenant_id: tP });
+    check("O7 paid: a hero image_ref pointed at an audio object by a direct member write cannot be published (MEDIA_REF_INVALID)", !w.error && MEDIA_INVALID(pub), JSON.stringify([w.error, pub.error]));
+    const snapWrite = await oc.from("published_spaces").upsert({ tenant_id: tP, product_type: "teach", name: "qa032", theme: {}, timezone: "UTC", enabled_modules: [], modules: { brand: { hero: { imageRef: audioPath.replace("/draft.mp3", "/published.mp3") } } } }, { onConflict: "tenant_id" });
+    check("O8 paid: a direct owner write to published_spaces naming an audio object as an image is refused", MEDIA_INVALID(snapWrite), JSON.stringify(snapWrite.error));
+    const foreign = await oc.from("published_spaces").upsert({ tenant_id: tP, product_type: "teach", name: "qa032", theme: {}, timezone: "UTC", enabled_modules: [], modules: { brand: { hero: { imageRef: `${tL}/brand/hero/${randomUUID()}/published.webp` } } } }, { onConflict: "tenant_id" });
+    check("O9 paid: a snapshot imageRef naming another tenant's file is refused", MEDIA_INVALID(foreign), JSON.stringify(foreign.error));
+    w = await brand(tP, imgPath);
+    pub = await oc.rpc("publish_space", { p_tenant_id: tP });
+    check("O10 paid: publishing a service-role image ref succeeds", !w.error && !pub.error, JSON.stringify([w.error, pub.error]));
+    const del = await oc.storage.from("tenant-media").remove([audioPath]);
+    check("O11 paid: a member can still delete its own objects", !del.error && (del.data ?? []).length === 1, JSON.stringify(del.error));
+
+    r = await up(oc, v(tL, "brand", "draft.webp"), webp, "image/webp");
+    check("O12 legacy: a member image upload works exactly as before", !r.error, JSON.stringify(r.error));
+    w = await brand(tL, `${tL}/audioFile/${randomUUID()}/${randomUUID()}/draft.mp3`);
+    pub = await oc.rpc("publish_space", { p_tenant_id: tL });
+    check("O13 legacy: the database does not judge legacy image refs at publish (unchanged)", !w.error && !pub.error, JSON.stringify([w.error, pub.error]));
+    r = await up(oc, v(tE, "brand", "draft.webp"), webp, "image/webp");
+    check("O14 exempt: a member image upload works exactly as before", !r.error, JSON.stringify(r.error));
+    const anonPred = await createClient(URL_, PUB, { auth: { persistSession: false } }).rpc("billing_media_member_write_allowed", { p_name: `${tP}/x/y/z/draft.webp`, p_command: "insert" });
+    check("O15 anon cannot call the Storage predicate", !!anonPred.error);
+    await admin.rpc("billing_clear_internal_exempt", { p_tenant_id: tE });
   }
   await setFlag(flagWasEnabled);
 }

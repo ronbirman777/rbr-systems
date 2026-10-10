@@ -20,7 +20,26 @@ import { InnerDweSMark } from "@/components/brand/wordmark";
  * did, the RPCs would reject them.
  */
 /** TASK 032 paid-mode confirmation copy, translated server-side (billing namespace). */
-export type PaidLifecycleCopy = { archiveBody: string; replaceBody: string; lang: string; dir: "ltr" | "rtl" };
+export type PaidLifecycleCopy = { archiveBody: string; replaceBody: string; lang: string; dir: "ltr" | "rtl"; ui: LifecycleUiCopy };
+
+/**
+ * Buttons, labels and the dialog title, already translated on the server (billing namespace, account
+ * locale). typeNameLabel has the Space name interpolated verbatim; the confirmation still compares the
+ * typed text to the exact Space name (never a translation).
+ */
+export type LifecycleUiCopy = {
+  archive: string; confirmArchive: string; archiving: string; restore: string; restoring: string; replace: string;
+  replaceTitle: string; typeNameLabel: string; newNameLabel: string; discardReplace: string; replacing: string; cancel: string;
+};
+
+/** Legacy (paid checkout off) keeps the Task 011 English text. */
+function legacyUi(name: string): LifecycleUiCopy {
+  return {
+    archive: "Archive", confirmArchive: "Confirm Archive", archiving: "Archiving…", restore: "Restore", restoring: "Restoring…", replace: "Replace",
+    replaceTitle: "Replace this Space", typeNameLabel: `Type \u201c${name}\u201d to confirm`, newNameLabel: "New Space name", discardReplace: "Discard & Replace",
+    replacing: "Replacing…", cancel: "Cancel",
+  };
+}
 
 export function SpaceLifecycleControls({
   tenantId,
@@ -54,6 +73,8 @@ export function SpaceLifecycleControls({
   const [restoreState, restoreAction, restorePending] = useActionState(restoreSpace, INITIAL_LIFECYCLE_STATE);
   const [replaceOpen, setReplaceOpen] = useState(false);
   const [archiveConfirmOpen, setArchiveConfirmOpen] = useState(false);
+  const ui = paidCopy?.ui ?? legacyUi(name);
+  const langProps = paidCopy ? { lang: paidCopy.lang, dir: paidCopy.dir } : {};
 
   // Task 011, revised after real-iPhone QA: >=44px chip targets and
   // visible :active press feedback everywhere here too, same chip
@@ -67,13 +88,13 @@ export function SpaceLifecycleControls({
 
   if (isArchived) {
     return (
-      <div className="flex flex-wrap gap-2.5 items-start">
+      <div className="flex flex-wrap gap-2.5 items-start" {...langProps}>
         {showRestore && (
           <div className="flex flex-col gap-1">
             <form action={restoreAction}>
               <input type="hidden" name="tenantId" value={tenantId} />
               <button type="submit" disabled={restorePending} className={safeChip}>
-                {restorePending ? "Restoring…" : "Restore"}
+                {restorePending ? ui.restoring : ui.restore}
               </button>
             </form>
             {restoreState.error && (
@@ -87,7 +108,7 @@ export function SpaceLifecycleControls({
           <>
             <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} paidCopy={paidCopy} open={replaceOpen} onOpenChange={setReplaceOpen} />
             <button type="button" onClick={() => setReplaceOpen(true)} className={safeChip}>
-              Replace
+              {ui.replace}
             </button>
           </>
         )}
@@ -101,10 +122,10 @@ export function SpaceLifecycleControls({
   }
 
   return (
-    <div className="flex flex-wrap gap-2.5 items-start">
+    <div className="flex flex-wrap gap-2.5 items-start" {...langProps}>
       {!archiveConfirmOpen ? (
         <button type="button" onClick={() => setArchiveConfirmOpen(true)} className={safeChip}>
-          Archive
+          {ui.archive}
         </button>
       ) : (
         <div className="rounded-xl border border-idw-forest/15 bg-idw-parchment/60 p-3 max-w-[260px] w-full">
@@ -123,7 +144,7 @@ export function SpaceLifecycleControls({
             <form action={archiveAction}>
               <input type="hidden" name="tenantId" value={tenantId} />
               <button type="submit" disabled={archivePending} className={destructiveChip}>
-                {archivePending ? "Archiving…" : "Confirm Archive"}
+                {archivePending ? ui.archiving : ui.confirmArchive}
               </button>
             </form>
             <button
@@ -131,7 +152,7 @@ export function SpaceLifecycleControls({
               onClick={() => setArchiveConfirmOpen(false)}
               className="inline-flex items-center justify-center min-h-11 px-4 rounded-full text-idw-forest/60 active:scale-[0.97] active:bg-idw-forest/10 transition-transform"
             >
-              Cancel
+              {ui.cancel}
             </button>
           </div>
           {archiveState.error && <span className="text-xs text-red-700 block mt-1">{archiveState.error}</span>}
@@ -141,7 +162,7 @@ export function SpaceLifecycleControls({
         <>
           <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} paidCopy={paidCopy} open={replaceOpen} onOpenChange={setReplaceOpen} />
           <button type="button" onClick={() => setReplaceOpen(true)} className={safeChip}>
-            Replace
+            {ui.replace}
           </button>
         </>
       )}
@@ -176,6 +197,7 @@ function ReplaceDialog({
   const [typedName, setTypedName] = useState("");
   const [newName, setNewName] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const ui = paidCopy?.ui ?? legacyUi(name);
 
   useEffect(() => {
     if (!open) return;
@@ -201,9 +223,9 @@ function ReplaceDialog({
         if (e.target === e.currentTarget) onOpenChange(false);
       }}
     >
-      <div role="dialog" aria-modal="true" aria-labelledby="replace-space-title" className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+      <div role="dialog" aria-modal="true" aria-labelledby="replace-space-title" className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl" {...(paidCopy ? { lang: paidCopy.lang, dir: paidCopy.dir } : {})}>
         <h2 id="replace-space-title" className="text-[16px] text-idw-forest font-editorial italic">
-          Replace this Space
+          {ui.replaceTitle}
         </h2>
         {paidCopy ? (
           <p lang={paidCopy.lang} dir={paidCopy.dir} className="mt-2 text-[13px] leading-relaxed text-idw-forest/60">
@@ -220,11 +242,12 @@ function ReplaceDialog({
           <input type="hidden" name="tenantId" value={tenantId} />
           <input type="hidden" name="expectedName" value={name} />
           <div>
-            <label className="text-xs font-semibold text-idw-forest/50 uppercase tracking-wide">
-              Type &ldquo;{name}&rdquo; to confirm
+            <label htmlFor={`replace-confirm-${tenantId}`} className="text-xs font-semibold text-idw-forest/50 uppercase tracking-wide">
+              {ui.typeNameLabel}
             </label>
             <input
               ref={inputRef}
+              id={`replace-confirm-${tenantId}`}
               type="text"
               value={typedName}
               onChange={(e) => setTypedName(e.target.value)}
@@ -234,10 +257,11 @@ function ReplaceDialog({
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-idw-forest/50 uppercase tracking-wide">
-              New Space name
+            <label htmlFor={`replace-newname-${tenantId}`} className="text-xs font-semibold text-idw-forest/50 uppercase tracking-wide">
+              {ui.newNameLabel}
             </label>
             <input
+              id={`replace-newname-${tenantId}`}
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
@@ -253,7 +277,7 @@ function ReplaceDialog({
               onClick={() => onOpenChange(false)}
               className="min-h-11 text-[13px] font-medium px-4 rounded-xl text-idw-forest/50 active:bg-idw-forest/10"
             >
-              Cancel
+              {ui.cancel}
             </button>
             <button
               type="submit"
@@ -261,7 +285,7 @@ function ReplaceDialog({
               className="inline-flex items-center gap-1.5 min-h-11 text-[13px] font-medium px-4 rounded-xl bg-red-700 text-white disabled:opacity-40 active:scale-[0.97] transition-transform"
             >
               {pending && <InnerDweSMark size={14} className="idw-loading-breathe shrink-0" tone="on-dark" />}
-              {pending ? "Replacing…" : "Discard & Replace"}
+              {pending ? ui.replacing : ui.discardReplace}
             </button>
           </div>
         </form>

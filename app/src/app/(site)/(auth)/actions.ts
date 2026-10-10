@@ -9,6 +9,18 @@ import { isSupportedCountry } from "@/lib/countries";
 import { toE164 } from "@/lib/phone";
 import { deleteSpaceCompletely } from "@/app/(site)/configurator/retreat/lifecycleActions";
 import { loadSpaceDeletionGate } from "@/lib/billing/spaceDeletion";
+import { getAccountLocale } from "@/lib/i18n/accountLocale";
+import { translateAccount } from "@/lib/i18n/account";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/locales";
+
+/** Account-level locale for billing refusals; falls back to English outside a request scope. */
+async function accountLocaleOrDefault(): Promise<Locale> {
+  try {
+    return await getAccountLocale();
+  } catch {
+    return DEFAULT_LOCALE;
+  }
+}
 
 /**
  * Task 014: `unconfirmedEmail` is set from the RAW Supabase error message
@@ -204,11 +216,14 @@ export async function deleteAccount(
   for (const row of ownedRows ?? []) {
     const gate = await loadSpaceDeletionGate(supabase, row.tenant_id);
     if (!gate.allowed) {
+      // TASK 032: billing refusals use the account locale (billing namespace), like the Billing page.
+      const locale = await accountLocaleOrDefault();
       return {
-        error:
-          gate.reason === "active_subscription"
-            ? "One of your Spaces still has an active subscription. Cancel it on its Billing page and wait until it has ended, then delete your account."
-            : "Couldn't check your Spaces. Please try again.",
+        error: translateAccount(
+          locale,
+          "billing",
+          gate.reason === "active_subscription" ? "accountDeleteActiveSubscription" : "accountDeleteBillingUnreadable"
+        ),
       };
     }
   }

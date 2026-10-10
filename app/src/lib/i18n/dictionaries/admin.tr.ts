@@ -313,6 +313,16 @@ export const adminTr: { [K in keyof typeof adminEn]: string } = {
   payDiscount: "indirim {amount}",
   payPaid: "ödendi: {time}",
   payFailed: "başarısız: {time}",
+  colAmounts: "Tutarlar",
+  invAmtTotal: "Fatura toplamı",
+  invAmtDue: "Ödenecek tutar",
+  invAmtPaid: "Ödenen",
+  invAmtRefunded: "İade edilen",
+  invAmtNet: "Net (ödenen - iade edilen)",
+  invAmtUncollected: "Tahsil edilmedi",
+  invAmtNoteVoid: "Geçersiz kılındı - borç yok.",
+  invAmtNoteNoCharge: "Ücret alınmadı (0 tutarlı fatura, ör. %100 indirim).",
+  payAmountsHelp: "Fatura toplamı, Stripe'ın indirim ve vergiden sonra faturaladığı tutardır. Ödenecek tutar, açık bir faturada hâlâ borçlu olunan tutardır. Ödenen, gerçekten tahsil edilen tutardır (hesap bakiyesi kullanıldıysa toplamdan düşük olabilir). İade edilen, geri ödenen paradır; Net = Ödenen - İade edilen.",
 
   // --- Coupons list ---
   cpNew: "Yeni kupon",

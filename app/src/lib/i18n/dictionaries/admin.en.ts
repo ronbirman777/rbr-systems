@@ -321,6 +321,16 @@ export const adminEn = {
   payDiscount: "discount {amount}",
   payPaid: "paid {time}",
   payFailed: "failed {time}",
+  colAmounts: "Amounts",
+  invAmtTotal: "Invoice total",
+  invAmtDue: "Amount due",
+  invAmtPaid: "Paid",
+  invAmtRefunded: "Refunded",
+  invAmtNet: "Net (paid - refunded)",
+  invAmtUncollected: "Not collected",
+  invAmtNoteVoid: "Voided - nothing is owed.",
+  invAmtNoteNoCharge: "No charge (a zero-amount invoice, e.g. a 100% discount).",
+  payAmountsHelp: "Invoice total is what Stripe billed after discounts and tax. Amount due is what is still owed on an open invoice. Paid is what was actually collected (it can be lower than the total when account credit was applied). Refunded is returned money; Net = Paid - Refunded.",
 
   // --- Coupons list ---
   cpNew: "New coupon",

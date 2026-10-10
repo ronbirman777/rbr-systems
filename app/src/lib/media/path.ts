@@ -265,6 +265,7 @@ function collectRefsByKey(modules: unknown, keys: ReadonlySet<string>): Set<stri
 }
 
 const IMAGE_REF_KEYS: ReadonlySet<string> = new Set(["imageRef"]);
+const AUDIO_REF_KEYS: ReadonlySet<string> = new Set(["audioRef"]);
 const MEDIA_REF_KEYS: ReadonlySet<string> = new Set(["imageRef", "audioRef"]);
 
 /**
@@ -279,6 +280,26 @@ const MEDIA_REF_KEYS: ReadonlySet<string> = new Set(["imageRef", "audioRef"]);
  */
 export function collectImageRefs(modules: unknown): Set<string> {
   return collectRefsByKey(modules, IMAGE_REF_KEYS);
+}
+
+/** Every `audioRef` value in a published payload (see collectImageRefs). */
+export function collectAudioRefs(modules: unknown): Set<string> {
+  return collectRefsByKey(modules, AUDIO_REF_KEYS);
+}
+
+/**
+ * File extensions an IMAGE reference may name (TASK 032, 0045): the
+ * re-encode target (webp) plus the jpg/png names the legacy-media migration
+ * kept. Serve-time defense in depth only - /api/media refuses a path that a
+ * snapshot names solely under `imageRef` with any other extension (e.g. an
+ * audio file pointed at from an image field). The bytes themselves are
+ * controlled at upload/publish (lib/media/imageSignature.ts).
+ */
+export const IMAGE_REF_EXTENSIONS: ReadonlySet<string> = new Set(["webp", "jpg", "jpeg", "png"]);
+
+/** Lower-cased extension of the last path segment ("" when there is none). */
+export function mediaPathExtension(path: string): string {
+  return /\.([A-Za-z0-9]{1,8})$/.exec(path)?.[1]?.toLowerCase() ?? "";
 }
 
 /** Every media ref in a published payload: `imageRef` and `audioRef`. */

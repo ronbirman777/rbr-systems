@@ -318,6 +318,16 @@ export const adminHe: { [K in keyof typeof adminEn]: string } = {
   payDiscount: "הנחה {amount}",
   payPaid: "שולם ב-{time}",
   payFailed: "נכשל ב-{time}",
+  colAmounts: "סכומים",
+  invAmtTotal: "סך החשבונית",
+  invAmtDue: "סכום לתשלום",
+  invAmtPaid: "שולם",
+  invAmtRefunded: "הוחזר",
+  invAmtNet: "נטו (שולם פחות הוחזר)",
+  invAmtUncollected: "לא נגבה",
+  invAmtNoteVoid: "בוטלה - אין חוב.",
+  invAmtNoteNoCharge: "ללא חיוב (חשבונית על סך 0, למשל הנחה של 100%).",
+  payAmountsHelp: "סך החשבונית הוא מה ש-Stripe חייב לאחר הנחות ומסים. סכום לתשלום הוא מה שעדיין חייבים בחשבונית פתוחה. שולם הוא מה שנגבה בפועל (יכול להיות נמוך מהסך אם הופעל זיכוי בחשבון). הוחזר הוא כסף שהושב; נטו = שולם פחות הוחזר.",
 
   // --- Coupons list ---
   cpNew: "קופון חדש",

@@ -14,7 +14,8 @@ type Failure = { message: string } | null;
 export type FakeSupabase = ReturnType<typeof makeFakeSupabase>;
 
 export function makeFakeSupabase(userId: string | null = "user-1") {
-  const files = new Map<string, { bytes: string; updatedAt: string; contentType?: string }>();
+  // `raw` keeps binary bodies byte-exact (TASK 032 content checks read them back); `bytes` is the text view tests compare.
+  const files = new Map<string, { bytes: string; updatedAt: string; contentType?: string; raw?: Uint8Array }>();
   const tables: Record<string, Row[]> = { module_items: [], brand_configs: [], module_configs: [], published_spaces: [], tenants: [], module_settings: [], space_entitlements: [], space_subscriptions: [] };
   const fail: Record<string, Failure> = {};
   // Reported size overrides, so a test can simulate a 100 MB+ object without allocating one.
@@ -129,16 +130,17 @@ export function makeFakeSupabase(userId: string | null = "user-1") {
     download: vi.fn(async (path: string) => {
       if (fail.download) return { data: null, error: fail.download };
       const f = files.get(path);
-      return f ? { data: new Blob([f.bytes]), error: null } : { data: null, error: { message: "Object not found" } };
+      return f ? { data: new Blob([(f.raw as BlobPart | undefined) ?? f.bytes]), error: null } : { data: null, error: { message: "Object not found" } };
     }),
     upload: vi.fn(async (path: string, body: unknown, opts?: { upsert?: boolean; contentType?: string }) => {
       if (fail.upload) return { data: null, error: fail.upload };
       if (opts?.upsert === false && files.has(path)) {
         return { data: null, error: { message: "The resource already exists", statusCode: "409" } };
       }
-      const bytes =
-        typeof body === "string" ? body : body instanceof Blob ? await body.text() : Buffer.from(body as Buffer).toString();
-      files.set(path, { bytes, updatedAt: tick(), contentType: opts?.contentType });
+      const raw =
+        typeof body === "string" ? undefined : body instanceof Blob ? new Uint8Array(await body.arrayBuffer()) : new Uint8Array(body as Uint8Array);
+      const bytes = typeof body === "string" ? body : Buffer.from(raw!).toString();
+      files.set(path, { bytes, updatedAt: tick(), contentType: opts?.contentType, raw });
       return { data: { path }, error: null };
     }),
     copy: vi.fn(async (from: string, to: string) => {
@@ -167,7 +169,10 @@ export function makeFakeSupabase(userId: string | null = "user-1") {
     createSignedUrl: vi.fn(async (path: string) => ({ data: { signedUrl: `http://signed/${path}` }, error: null })),
   };
 
+  // TASK 032 (0045): the two checks resolveMediaWriter makes before using the service role.
+  const rpcAnswers: Record<string, unknown> = { is_tenant_member: true, space_studio_writable: true };
   const rpc = vi.fn(async (name: string, args: { p_tenant_id: string }) => {
+    if (name in rpcAnswers) return { data: rpcAnswers[name], error: null };
     if (name !== "publish_space") throw new Error(`unexpected rpc ${name}`);
     if (fail.rpc) return { data: null, error: fail.rpc };
     const t = args.p_tenant_id;
@@ -206,6 +211,11 @@ export function makeFakeSupabase(userId: string | null = "user-1") {
     rpc,
     put: (path: string, bytes: string, updatedAt?: string, contentType?: string) =>
       files.set(path, { bytes, updatedAt: updatedAt ?? tick(), contentType }),
+    putRaw: (path: string, raw: Uint8Array, contentType?: string) =>
+      files.set(path, { bytes: Buffer.from(raw).toString(), updatedAt: tick(), contentType, raw }),
+    setRpcAnswer: (name: string, value: unknown) => {
+      rpcAnswers[name] = value;
+    },
     setReportedSize: (path: string, size: number) => sizes.set(path, size),
     setFailure: (key: string, message: string | null) => {
       fail[key] = message ? { message } : null;

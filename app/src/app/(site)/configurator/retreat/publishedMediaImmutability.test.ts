@@ -1,6 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { makeFakeSupabase, type FakeSupabase } from "@/lib/media/fakeSupabase.test-util";
 // TASK B4: these suites exercise legacy (no billing row) Spaces; enforcement has its own suite.
+// TASK 032 (0045): the trusted-media module is server-only; legacy Spaces never reach its service-role path.
+vi.mock("server-only", () => ({}));
 vi.mock("@/lib/billing/audioQuota.server", () => ({ loadAudioQuotaPolicy: async () => ({ mode: "unenforced", reason: "legacy" }) }));
 vi.mock("@/lib/billing/audioFinalize.server", () => ({ deriveStoredAudioSeconds: async () => null, writeEnforcedAudioFile: async () => ({ ok: false, reason: "failed" }) }));
 
@@ -19,10 +21,13 @@ let fake: FakeSupabase;
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => fake.supabase }));
 vi.mock("@/lib/entitlements/getSpaceEntitlement", () => ({ getSpaceEntitlement: async () => null }));
 vi.mock("@/lib/entitlements/availability", () => ({ deriveCommercialAvailability: () => ({ canPublish: true }) }));
-// sharp: identity transform - the bytes uploaded are the bytes we passed in.
+// A complete PNG signature + IHDR (1x1): TASK 032 (0045) checks the upload's
+// bytes before sharp runs, so each test "image" is this header + a marker.
+const PNG_HEADER = Buffer.from("89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489", "hex");
+// sharp: identity transform minus the header - the bytes stored are the marker we passed in.
 vi.mock("sharp", () => ({
   default: (input: Buffer) => {
-    const chain = { rotate: () => chain, resize: () => chain, webp: () => chain, toBuffer: async () => input };
+    const chain = { rotate: () => chain, resize: () => chain, webp: () => chain, toBuffer: async () => input.subarray(33) };
     return chain;
   },
 }));
@@ -35,7 +40,7 @@ function fd(fields: Record<string, string | File>) {
   for (const [k, v] of Object.entries(fields)) f.set(k, v);
   return f;
 }
-const png = (bytes: string) => new File([bytes], "p.png", { type: "image/png" });
+const png = (bytes: string) => new File([PNG_HEADER, bytes], "p.png", { type: "image/png" });
 
 async function uploadItem(moduleKey: string, itemId: string, bytes: string, previousRef = "") {
   const r = await actions.uploadModuleItemPhoto(PREV, fd({ tenantId: T, moduleKey, itemId, previousRef, title: "X", sortOrder: "0", file: png(bytes) }));

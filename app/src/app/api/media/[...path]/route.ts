@@ -3,12 +3,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 import {
+  IMAGE_REF_EXTENSIONS,
   MEDIA_BUCKET,
+  collectAudioRefs,
+  collectImageRefs,
   collectMediaRefs,
   isDraftMediaPath,
   isWellFormedMediaPath,
+  mediaPathExtension,
 } from "@/lib/media/path";
-import { parseAudioDraftRef } from "@/lib/media/audio";
+import { AUDIO_EXTENSIONS, parseAudioDraftRef } from "@/lib/media/audio";
 import { isReferencedDraftAudio } from "@/lib/media/draftAuthorization";
 import { resolveGuestAccessDetailed } from "@/lib/guestAccess/effectiveAccess";
 import { publishedIdentityImageRefs } from "@/lib/guestAccess/publishedIdentity";
@@ -84,6 +88,18 @@ export async function GET(
 
   const publishedRefs = collectMediaRefs(space.modules);
   if (!publishedRefs.has(objectPath)) return notFound();
+
+  // TASK 032 (0045), defense in depth: the field that names a path decides
+  // what kind of file it may be. A path named only under `imageRef` must
+  // carry an image extension, one named only under `audioRef` an audio
+  // extension - so an audio file pointed at from an image field (or the
+  // reverse) is the same bare 404. The bytes behind a path are controlled
+  // upstream (upload re-encode + magic-byte checks, and on paid Spaces
+  // 0045's Storage policies and published_spaces trigger).
+  const ext = mediaPathExtension(objectPath);
+  const servableAsImage = IMAGE_REF_EXTENSIONS.has(ext) && collectImageRefs(space.modules).has(objectPath);
+  const servableAsAudio = AUDIO_EXTENSIONS.has(ext) && collectAudioRefs(space.modules).has(objectPath);
+  if (!servableAsImage && !servableAsAudio) return notFound();
 
   // A guest is served PUBLISHED objects only, whatever the snapshot
   // claims. publish_space() derives every published ref from its draft

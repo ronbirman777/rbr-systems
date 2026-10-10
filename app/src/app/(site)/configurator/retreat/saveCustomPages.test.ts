@@ -1,5 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 // TASK B4: these suites exercise legacy (no billing row) Spaces; enforcement has its own suite.
+// TASK 032 (0045): the trusted-media module is server-only; legacy Spaces never reach its service-role path.
+vi.mock("server-only", () => ({}));
 vi.mock("@/lib/billing/audioQuota.server", () => ({ loadAudioQuotaPolicy: async () => ({ mode: "unenforced", reason: "legacy" }) }));
 vi.mock("@/lib/billing/audioFinalize.server", () => ({ deriveStoredAudioSeconds: async () => null, writeEnforcedAudioFile: async () => ({ ok: false, reason: "failed" }) }));
 

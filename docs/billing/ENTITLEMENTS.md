@@ -80,6 +80,7 @@ The database applies the same decision (`billing_audio_policy`, 0043), so the ru
 | Library total (240 + 240 x add-ons minutes) | **Enforced**: other files + this one <= allowance (exactly at allowance passes); re-checked by the database on the write under a per-Space lock | **Refused** (as above) | **Enforced**, before any media copy | **Enforced** (`AUDIO_LIMIT`) | n/a |
 | Unknown length | **Refused** when the server cannot measure the file (`audioDurationUnknown`; suggests MP3/M4A) | **Refused** | **Refused** | **Refused** | n/a |
 | Audio published from anywhere other than a counted file | n/a | n/a | n/a | **Refused**: every `"audioRef"` anywhere in the snapshot being published must be a counted file | n/a |
+| Audio (or any non-image bytes) behind an image reference (0045) | n/a (images: see "Media content guard" below) | **Storage refuses** a member upload of any image object or published copy on a paid Space; a draft field may hold any string, but it cannot be published unless it names one of the Space's own image paths | **Enforced**: service-role copy, published image re-validated from its bytes | **Refused** (`MEDIA_REF_INVALID`), also for a direct owner write to `published_spaces` | `/api/media` serves an `imageRef` path only with an image extension |
 | Listening 100,000 + 70,000 x add-ons min/month | - | - | - | - | **Not enforced, not metered** (see below) |
 
 Legacy (no billing row) and exempt Spaces are unchanged at every layer: no measurement download, the browser-reported duration normalized as before, member-session writes, and the database trigger and publish guard return immediately.
@@ -111,10 +112,44 @@ The stored `durationSeconds` is that measurement rounded to the nearest whole se
 
 ### What remains unenforced (explicit)
 
-- **Audio bytes under an image reference.** A member can upload any bytes to their own tenant folder (Storage policies check the folder, not the content) and point an `image_ref` / `imageRef` at them; the guest media route serves any snapshot `imageRef`. Such a file is not counted. Closing this needs Storage-level rules (e.g. member uploads only as `draft.*`, publish copies made by the service role, content-type/magic-byte checks on images). Abuse requires a deliberately hostile paying organizer and only affects their own Space.
+- **Audio bytes under an image reference: closed on paid Spaces by 0045** (see "Media content guard" below). Still open by design on **legacy and exempt** Spaces, where a member can still write any bytes into their own folder through the Storage API and name them from an image field (the upload content check applies to them too, but the direct Storage/PostgREST path is unchanged there). The serve-time extension check in `/api/media` applies to every Space.
+- **Draft audio swapped after measurement (paid Spaces).** A member may still DELETE a measured `draft.<audio>` object and upload different audio bytes at the same versioned path (0045 allows member inserts of draft audio, and deletes). The publish copy is server-side and does not re-measure, so the swapped bytes would be published under the measured length. Closing this needs either a stored content hash checked at publish or making draft-audio deletion service-role only. Not done in TASK A.
 - **Rows written while a Space was unenforced** keep their browser-reported length. Today paid Spaces are always newly provisioned, so this only matters if an existing legacy/exempt Space is ever converted; the publish guard still sums those values.
 - **Exempt Spaces** are never limited (by design).
 - **Listening minutes**: not enforced and not metered - below.
+
+### Media content guard (0045): no audio or other non-image bytes behind an image reference
+
+Gap closed: Storage policies checked the tenant folder, never the content, and a member could write image refs directly (module_items, module_configs, brand_configs, settings JSON, and even `published_spaces.modules`, which the owner may write because `publish_space()` is SECURITY INVOKER). An hour of audio named `draft.webp` would have been served by `/api/media` as an "image" and never counted.
+
+Where image refs are set, and how the bytes get there (map at the time of 0045):
+
+| Ref | Set by | Bytes written by |
+|---|---|---|
+| `module_items.image_ref` (meals, treatments, facilities, facilitators, custom pages, Teach items/covers) | `uploadModuleItemPhoto` (upsert), item Saves carry it over | Server Action: upload -> magic-byte check -> sharp re-encode -> Storage |
+| `module_configs.image_ref` (module covers) | `uploadModuleCoverPhoto` | same |
+| `brand_configs.hero_image_ref / space_image_ref / logo_ref` | `uploadBrandImage` | same |
+| `module_settings.data` `imageRef` (Teach About profile, Contact cover, Explore cards) | Studio stores the ref returned by `uploadTeachSettingsImage`, then `saveTeachSettings` | same |
+| `published_spaces.modules` `imageRef` (every one of the above, draft -> published) | `publish_space()` (or a direct owner write) | Publish: `copyDraftToPublished` |
+| `metadata.audioRef` (audio, for comparison) | `attachTeachAudio` / `attachFlowAudio` | Browser -> Storage directly (signed path minted by the server), measured by the service role at attach (0043) |
+
+There is no browser-direct image upload: every image passes through a Server Action. The weakness was only the bypass (direct Storage upload + direct ref write).
+
+| Layer | Every Space | Paid (billing-governed, non-exempt) Space |
+|---|---|---|
+| Upload content check (`lib/media/imageSignature.ts` `sniffImage`) | The uploaded bytes must be a JPEG, PNG or WebP (magic bytes + complete header, 1..16383 px) **before** sharp runs. Extension, declared MIME and folder are ignored. Refuses audio renamed `.jpg`, SVG/HTML (sharp would otherwise rasterise SVG), GIF/AVIF/HEIC, truncated headers | same |
+| Re-encode | sharp -> WebP <= 2000 px (unchanged); nothing appended to the source survives | same |
+| Who writes the image object | Member session (unchanged) | **Service role** (`lib/media/trustedMedia.server.ts` `storeDraftImage`), after checking the caller is a tenant member and `space_studio_writable()`; the stored bytes must be a canonical WebP (`isCanonicalStoredImage`: RIFF length covers the whole file, so no appended payload; dims <= 2000) |
+| Storage (0045 restrictive policies) | unchanged | A member may INSERT only `{tenant}/{module}/{item}/{uploadId}/draft.{mp3,m4a,aac,wav,ogg}` (the browser-direct audio upload) and may never UPDATE (overwrite/move). DELETE unchanged. So no member-written bytes can sit at an image path or a published path |
+| Publish copy | Member session (unchanged) | **Service role**, only for this tenant's own `draft.webp`; every newly created published image is downloaded and must be a canonical WebP, otherwise the published copy **and** the draft are deleted and the publish fails before the RPC. Audio copies: service role, tenant-checked |
+| Snapshot (0045 trigger `billing_guard_published_media`) | unchanged | Every `imageRef` must be null/empty or `{tenant}/{2-3 segments}/{draft|published}.{webp,png,jpg,jpeg}`, else `MEDIA_REF_INVALID`; the 0043 audio rules are re-run on the row actually written (closes a direct `published_spaces` write that skipped `publish_space()`) |
+| Serve (`/api/media`) | A path named only under `imageRef` must have an image extension, one named only under `audioRef` an audio extension; otherwise the usual bare 404 | same |
+
+Design choice: unlike 0043 for audio, member writes of draft image refs are NOT forbidden at the four source tables. Those refs live in four tables and free-form settings JSON written by ordinary Save actions, and a draft ref is never served; the snapshot is the only thing `/api/media` serves. With the Storage policies, a snapshot image ref on a paid Space can only name bytes the trusted pipeline wrote. Serve-time sniffing was rejected as the primary control: `/api/media` redirects to a signed Storage URL and never sees the bytes (it would need a download per request, and the Content-Type/nosniff headers come from Storage, not from us).
+
+Legacy and exempt Spaces: no behaviour change except the upload content check and the serve-time extension check (both pure safety: a real image always passes). Studio errors reuse existing messages (`imageNotProcessed`, `needsActiveAccess`, `couldNotPublishPhotos`/`couldNotPublishMedia`); no new strings.
+
+Code: `src/lib/media/imageSignature.ts`, `src/lib/media/trustedMedia.server.ts`, `src/lib/media/publish.ts`, `src/lib/media/optimizeImage.ts`, the upload/publish actions in `configurator/retreat/actions.ts` and `configurator/teach/actions.ts`, `src/app/api/media/[...path]/route.ts`; database: `supabase/migrations/0045_billing_media_content_guard.sql` (rollback `supabase/verification/0045_billing_media_content_guard_rollback.sql`). Tests: `src/lib/media/imageSignature.test.ts`, `src/app/(site)/configurator/mediaContentGuard.test.ts`, `src/app/api/media/[...path]/route.test.ts`, `src/lib/spaceTypes/billingRollback.test.ts`; local database behaviour: `rehearse-billing-rollback.sh` step 4b (22 checks); Staging check: `scripts/billing-db-verify.mjs` section O (not run). Not applied to Staging or Production.
 
 ### Listening minutes / month - NOT ENFORCED (launch blocker)
 

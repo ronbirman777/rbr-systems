@@ -21,6 +21,9 @@ vi.mock("@/lib/entitlements/getSpaceEntitlement", () => ({ getSpaceEntitlement: 
 vi.mock("@/lib/entitlements/availability", () => ({ deriveCommercialAvailability: () => ({ canPublish: true }) }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => fake.supabase }));
 vi.mock("@/lib/billing/audioQuota.server", () => ({ loadAudioQuotaPolicy: async () => policy }));
+// TASK 032 (0045): on an enforced Space the media copies use the service-role
+// client; here that is the same in-memory fake.
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => fake.supabase }));
 // TASK B4b - the service-role finalize half: the server-measured length and
 // the verified write. The real module (download + parse with the secret key)
 // is covered by lib/media/audioDuration.test.ts; here it is driven per test.

@@ -312,6 +312,16 @@ export const adminFr: { [K in keyof typeof adminEn]: string } = {
   payDiscount: "remise {amount}",
   payPaid: "payée le {time}",
   payFailed: "échouée le {time}",
+  colAmounts: "Montants",
+  invAmtTotal: "Total de la facture",
+  invAmtDue: "Montant dû",
+  invAmtPaid: "Payé",
+  invAmtRefunded: "Remboursé",
+  invAmtNet: "Net (payé - remboursé)",
+  invAmtUncollected: "Non encaissé",
+  invAmtNoteVoid: "Annulée : rien n’est dû.",
+  invAmtNoteNoCharge: "Aucun prélèvement (facture à 0, p. ex. remise de 100 %).",
+  payAmountsHelp: "Le total de la facture est ce que Stripe a facturé après remises et taxes. Le montant dû est ce qui reste à payer sur une facture ouverte. Payé est ce qui a réellement été encaissé (il peut être inférieur au total si un crédit de compte a été appliqué). Remboursé est l’argent restitué ; Net = Payé - Remboursé.",
 
   // --- Coupons list ---
   cpNew: "Nouveau code promo",

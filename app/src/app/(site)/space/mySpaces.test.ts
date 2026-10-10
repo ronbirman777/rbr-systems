@@ -227,6 +227,10 @@ describe("My Spaces - Restore / Replace under billing (TASK 032 B2)", () => {
       expect(copy.archiveBody).toContain("Archiving does not cancel its subscription");
       expect(copy.replaceBody).toContain("starts a new draft in the same Space");
       expect(`${copy.archiveBody} ${copy.replaceBody}`.toLowerCase()).not.toContain("slot");
+      // C3: buttons and dialog labels come translated from the server too (billing namespace).
+      const ui = (c[id].paidCopy as { ui: Record<string, string> }).ui;
+      expect(ui).toMatchObject({ archive: "Archive", replace: "Replace", restore: "Restore", cancel: "Cancel", discardReplace: "Discard & Replace" });
+      expect(ui.typeNameLabel).toMatch(/^Type “.+” to confirm$/);
     }
     expect(textOf(tree)).not.toContain("Still uses one Space slot");
     expect(textOf(tree)).not.toContain("slot used");

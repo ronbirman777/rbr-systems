@@ -70,7 +70,11 @@ export function invoiceLink(inv: Pick<InvoiceRow, "hostedInvoiceUrl" | "receiptU
  */
 export function invoiceDisplayMinor(inv: Pick<InvoiceRow, "status" | "amountPaidMinor" | "totalMinor" | "amountDueMinor">): number | null {
   if (inv.status === "paid") return inv.amountPaidMinor;
-  if (inv.status === "open" || inv.status === "draft") return inv.amountDueMinor ?? inv.totalMinor;
+  if (inv.status === "open" || inv.status === "draft") {
+    const due = inv.amountDueMinor ?? inv.totalMinor;
+    // Still owed: a partially paid open invoice shows the remainder, never the amount already paid again.
+    return due == null ? null : Math.max(0, due - (inv.amountPaidMinor ?? 0));
+  }
   return inv.totalMinor;
 }
 

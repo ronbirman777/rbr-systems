@@ -117,3 +117,23 @@ export function FilterLinks({ base, param, options, current, label }: { base: st
     </nav>
   );
 }
+
+/**
+ * Stacked label/value lines for an invoice's amounts (total / due / paid / refunded / net / not collected).
+ * Lines wrap instead of overflowing at 320px; the headline figure is bold. An ISO currency code is appended
+ * when given, so USD and CAD "$" amounts are never confused.
+ */
+export function InvoiceAmounts({ lines, note, currency }: { lines: { kind: string; label: string; value: string; headline: boolean }[]; note?: string | null; currency?: string }) {
+  return (
+    <span className="block min-w-0 text-right md:text-left">
+      {lines.map((l) => (
+        <span key={l.kind} className="flex flex-wrap justify-end gap-x-2 md:justify-start">
+          <span className="text-xs text-idw-forest/70">{l.label}</span>
+          <span className={`tabular-nums ${l.headline ? "font-semibold text-idw-forest" : "text-idw-forest/85"}`}>{l.value}</span>
+        </span>
+      ))}
+      {currency ? <span className="block text-xs text-idw-forest/60">{currency}</span> : null}
+      {note ? <span className="block text-xs text-idw-forest/70">{note}</span> : null}
+    </span>
+  );
+}

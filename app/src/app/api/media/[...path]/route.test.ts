@@ -657,3 +657,56 @@ describe("CP4 security regression: published audio", () => {
     }
   });
 });
+
+// TASK 032 (0045) - serve-time defense in depth: the snapshot FIELD that names a
+// path decides what kind of file it may be. The bytes are controlled upstream
+// (upload re-encode + magic bytes; on paid Spaces the 0045 Storage policies and
+// published_spaces trigger) - this only makes a mismatched ref a bare 404.
+describe("GET /api/media - a ref's field decides the kind of file it may name (0045)", () => {
+  const audio = `${TENANT}/audioFile/i/up-A/published.mp3`;
+  const image = `${TENANT}/meals/a/up-A/published.webp`;
+  beforeEach(() => {
+    accessMode = "code";
+    vi.clearAllMocks();
+    mockAccess.mockResolvedValue("granted");
+    mockSign.mockResolvedValue({ data: { signedUrl: "http://storage/sign/x?token=t" }, error: null });
+  });
+
+  it("an audio file named under imageRef is never served (404, nothing signed)", async () => {
+    snapshot = { modules: { brand: { hero: { imageRef: audio } } } };
+    const res = await call(audio.split("/"));
+    expect(res.status).toBe(404);
+    expect(mockSign).not.toHaveBeenCalled();
+  });
+
+  it("an image path named under audioRef is never served", async () => {
+    snapshot = { modules: { audio: [{ metadata: { audioRef: image } }] } };
+    expect((await call(image.split("/"))).status).toBe(404);
+    expect(mockSign).not.toHaveBeenCalled();
+  });
+
+  it("an HTML/SVG or extensionless object named under imageRef is never served", async () => {
+    for (const p of [`${TENANT}/meals/a/up-A/published.svg`, `${TENANT}/meals/a/up-A/published.html`, `${TENANT}/meals/a/up-A/published`]) {
+      snapshot = { modules: { meals: [{ imageRef: p }] } };
+      expect((await call(p.split("/"))).status, p).toBe(404);
+    }
+    expect(mockSign).not.toHaveBeenCalled();
+  });
+
+  it("images under imageRef (webp, legacy jpg/png, any case) and audio under audioRef are still served", async () => {
+    for (const [p, mods] of [
+      [image, { meals: [{ imageRef: image }] }],
+      [`${TENANT}/meals/b/published.JPG`, { meals: [{ imageRef: `${TENANT}/meals/b/published.JPG` }] }],
+      [`${TENANT}/meals/c/published.png`, { meals: [{ imageRef: `${TENANT}/meals/c/published.png` }] }],
+      [audio, { audio: [{ metadata: { audioRef: audio } }] }],
+    ] as const) {
+      snapshot = { modules: mods };
+      expect((await call(p.split("/"))).status, p).toBe(307);
+    }
+  });
+
+  it("the same path named under BOTH fields is judged by its extension (served once as the matching kind)", async () => {
+    snapshot = { modules: { brand: { hero: { imageRef: audio } }, audio: [{ metadata: { audioRef: audio } }] } };
+    expect((await call(audio.split("/"))).status).toBe(307);
+  });
+});

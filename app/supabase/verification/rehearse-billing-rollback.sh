@@ -1,23 +1,27 @@
 #!/usr/bin/env bash
-# TASK 032: rehearse the 0036-0044 billing rollbacks on THROWAWAY LOCAL
+# TASK 032: rehearse the 0036-0045 billing rollbacks on THROWAWAY LOCAL
 # databases, start to finish, and compare catalog fingerprints.
 #
 #   1. db PRE   = 0001..0035                 -> expected pre-TASK-032 fingerprint
-#      db M42   = 0001..0042, db M43 = 0001..0043 (intermediate references)
-#   2. db FULL  = 0001..0044 + synthetic data -> expected post-0044 fingerprint
-#   3. behaviour on FULL (inside a transaction that is rolled back): the 0044
+#      db M42   = 0001..0042, db M43 = 0001..0043, db M44 = 0001..0044
+#      (intermediate references)
+#   2. db FULL  = 0001..0045 + synthetic data -> expected post-0045 fingerprint
+#   3. behaviour on FULL (inside transactions that are rolled back): the 0044
 #      definer-RPC guards refuse a Studio-suspended paid Space with
-#      BILLING_LOCKED and allow active paid, exempt and legacy Spaces.
+#      BILLING_LOCKED and allow active paid, exempt and legacy Spaces; the
+#      0045 media guard (Storage RLS as a real `authenticated` session, and the
+#      published_spaces trigger) refuses member image/published writes and
+#      foreign/audio image refs on a paid Space and leaves legacy/exempt alone.
 #   4. guard checks on FULL: wrong token, paid flag ON, live subscription,
 #      out-of-order (every rollback is tried once BEFORE its turn), and the
 #      data-specific refusals (sending email, payment_confirmation outbox row,
 #      open checkout). Each refusal must leave the fingerprint unchanged.
-#   5. rollbacks 0044 -> 0036 in order with their tokens (0036 also with the
-#      audit-drop token); after 0044 the catalog must equal M43, after 0043 it
-#      must equal M42, at the end it must equal PRE exactly.
+#   5. rollbacks 0045 -> 0036 in order with their tokens (0036 also with the
+#      audit-drop token); after 0045 the catalog must equal M44, after 0044
+#      M43, after 0043 M42, at the end it must equal PRE exactly.
 #   6. variant on a clone of FULL: 0036 with the default (audit log KEPT) ->
 #      the only difference from PRE must be the admin_audit_log objects.
-#   7. re-apply 0036..0044 forward on the rolled-back db -> fingerprint must
+#   7. re-apply 0036..0045 forward on the rolled-back db -> fingerprint must
 #      equal FULL exactly.
 #
 # SAFETY. It only ever talks to a LOCAL Postgres:
@@ -41,7 +45,7 @@ C="${DB_CONTAINER:-supabase_db_app}"
 LOCAL_DB_URL="${LOCAL_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
 OUT="${OUT:-$(mktemp -d -t rbr_rh)}"
 P="rbr_rh"
-PRE="${P}_pre"; FULL="${P}_full"; RB="${P}_rb"; KEEPAUDIT="${P}_keepaudit"; M42="${P}_m42"; M43="${P}_m43"
+PRE="${P}_pre"; FULL="${P}_full"; RB="${P}_rb"; KEEPAUDIT="${P}_keepaudit"; M42="${P}_m42"; M43="${P}_m43"; M44="${P}_m44"
 MIG=supabase/migrations
 VER=supabase/verification
 FAILS=0
@@ -144,9 +148,10 @@ expect_ok() { # label db file token [extra]
   local msg; if msg=$(rollback "$2" "$3" "$4" "${5:-}"); then ok "$1"; else bad "$1: $msg"; die "rollback failed; stopping"; fi
   if [ "$2" = "$RB" ]; then local n; n=$(basename "$3" | cut -c1-4); fp "$RB" "after_rb_$n" > /dev/null; fi; }
 
-ls "$MIG" | grep -q '^004[5-9]' && echo "NOTE: a migration beyond 0044 is present in migrations/; this rehearsal deliberately covers 0001..0044 only."
+ls "$MIG" | grep -q '^004[6-9]' && echo "NOTE: a migration beyond 0045 is present in migrations/; this rehearsal deliberately covers 0001..0045 only."
 M_PRE=$(ls "$MIG"/00*.sql | awk -F/ '{print $NF}' | awk '$0 < "0036"' | sed "s|^|$MIG/|")
-M_032=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-4]_*.sql)
+M_032=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-5]_*.sql)
+M_032_TO44=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-4]_*.sql)
 M_032_TO42=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-2]_*.sql)
 M_032_TO43=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-3]_*.sql)
 RESTATED="'publish_space','handle_new_tenant','enforce_space_slot_capacity','restore_space','replace_space','set_guest_access_code','disable_guest_access_code','submit_featured_listing'"
@@ -167,14 +172,16 @@ prep() {
           grant usage on schema public to anon, authenticated, service_role;" > /dev/null 2>&1
 }
 
-say "2/8  PRE = 0001..0035 ; M42 = 0001..0042 ; M43 = 0001..0043 ; FULL = 0001..0044"
+say "2/8  PRE = 0001..0035 ; M42 = 0001..0042 ; M43 = 0001..0043 ; M44 = 0001..0044 ; FULL = 0001..0045"
 prep "$PRE";  apply "$PRE"  $M_PRE
 prep "$M42";  apply "$M42"  $M_PRE $M_032_TO42
 prep "$M43";  apply "$M43"  $M_PRE $M_032_TO43
+prep "$M44";  apply "$M44"  $M_PRE $M_032_TO44
 prep "$FULL"; apply "$FULL" $M_PRE $M_032
 fp "$PRE" pre > /dev/null
 fp "$M42" m42 > /dev/null
 fp "$M43" m43 > /dev/null
+fp "$M44" m44 > /dev/null
 q "$PRE" "select proname || ' ' || md5(pg_get_functiondef(oid)) from pg_proc where pronamespace = 'public'::regnamespace
           and proname in ($RESTATED) order by 1" \
   | tee "$OUT/pre_restated.txt"
@@ -286,27 +293,119 @@ fp "$FULL" full_after_behaviour > /dev/null
 same "behaviour transaction left FULL's catalog unchanged" full full_after_behaviour
 [ "$(q "$FULL" "select count(*) from public.tenants where id = '$B3'")" = "0" ] && ok "behaviour transaction rolled back (no legacy tenant left behind)" || bad "behaviour transaction left data behind"
 
-newdb "$RB" "$FULL"            # the db we roll back (FULL stays as the post-0044 reference)
+# --------------------------------------------------------------------------
+# 3c. 0045 behaviour (one transaction, ROLLED BACK): Storage RLS evaluated for a
+#     real `authenticated` session on storage.objects, and the published_spaces
+#     trigger, on a paid (active), an exempt and a legacy Space.
+# --------------------------------------------------------------------------
+say "4b/8 0045 media content guard: Storage RLS + published_spaces trigger as the owner (transaction rolled back)"
+U1=00000000-0000-4000-8000-0000000000c9; U2=00000000-0000-4000-8000-0000000000ca; I1=00000000-0000-4000-8000-0000000000cb
+B45_DO=$(cat <<'SQL'
+do $$
+declare
+  t record; v_hint text; v_state text; n integer; outcome text;
+begin
+  for t in select * from tmp_cases order by ord loop
+    begin
+      execute t.stmt;
+      get diagnostics n = row_count;
+      outcome := case when n = 0 then 'noop' else 'allowed' end;
+    exception when others then
+      get stacked diagnostics v_hint = pg_exception_hint, v_state = returned_sqlstate;
+      outcome := case when v_state = '42501' then 'denied' else coalesce(nullif(v_hint, ''), 'error: ' || sqlerrm) end;
+    end;
+    raise notice 'B45|%|%|%', case when outcome = t.want then 'PASS' else 'FAIL' end, t.label, outcome;
+  end loop;
+end;
+$$;
+SQL
+)
+obj() { printf "'insert into storage.objects (bucket_id, name) values (''tenant-media'', ''%s'')'" "$1"; }
+snap() { # tenant modules-json
+  printf "'insert into public.published_spaces (tenant_id, product_type, name, theme, timezone, enabled_modules, modules) values (''%s'', ''teach'', ''r'', ''{}''::jsonb, ''UTC'', ''{}'', ''%s''::jsonb) on conflict (tenant_id) do update set modules = excluded.modules'" "$1" "$2"; }
+B45_OUT=$(run_psql "$FULL" -f - 2>&1 <<SQL || true
+begin;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a1","role":"authenticated"}', true);
+insert into public.tenants (id, name, product_type) values ('$B3', 'Rehearsal legacy space', 'retreat');
+update public.space_subscriptions set status = 'active' where id = '00000000-0000-4000-8000-0000000000d2';
+-- Objects already written by a trusted (non-member) writer.
+insert into storage.objects (bucket_id, name) values
+  ('tenant-media', '$B2/brand/hero/draft.webp'), ('tenant-media', '$B3/brand/hero/draft.webp');
+create temp table tmp_cases (ord int, label text, stmt text, want text) on commit drop;
+grant select on tmp_cases to authenticated;
+insert into tmp_cases values
+ (1,  'paid: member uploads an image object (draft.webp)', $(obj "$B2/brand/hero/$U1/draft.webp"), 'denied'),
+ (2,  'paid: member uploads audio bytes named as an image', $(obj "$B2/teachAudioFile/$I1/$U1/draft.webp"), 'denied'),
+ (3,  'paid: member uploads a versioned draft audio object', $(obj "$B2/teachAudioFile/$I1/$U1/draft.mp3"), 'allowed'),
+ (4,  'paid: member pre-creates a published audio copy', $(obj "$B2/teachAudioFile/$I1/$U1/published.mp3"), 'denied'),
+ (5,  'paid: member pre-creates a published image copy', $(obj "$B2/brand/hero/$U2/published.webp"), 'denied'),
+ (6,  'paid: member uploads draft audio at an unversioned path', $(obj "$B2/teachAudioFile/$I1/draft.mp3"), 'denied'),
+ (7,  'paid: member uploads SVG/HTML disguised under a media folder', $(obj "$B2/customPages/$I1/$U1/draft.svg"), 'denied'),
+ (8,  'paid: member overwrites an existing object (update)', 'update storage.objects set metadata = ''{"x":1}''::jsonb where name = ''$B2/brand/hero/draft.webp''', 'noop'),
+ (9,  'paid: member renames (moves) an object', 'update storage.objects set name = ''$B2/brand/hero/$U2/draft.webp'' where name = ''$B2/brand/hero/draft.webp''', 'noop'),
+ (10, 'paid: member deletes an object (allowed)', 'delete from storage.objects where name = ''$B2/brand/hero/draft.webp''', 'allowed'),
+ (11, 'legacy: member uploads an image object (unchanged)', $(obj "$B3/brand/hero/$U1/draft.webp"), 'allowed'),
+ (12, 'legacy: member overwrites an unversioned object (unchanged)', 'update storage.objects set metadata = ''{"x":1}''::jsonb where name = ''$B3/brand/hero/draft.webp''', 'allowed'),
+ (13, 'exempt: member uploads an image object (unchanged)', $(obj "$B1/brand/hero/$U1/draft.webp"), 'allowed'),
+ (20, 'paid: snapshot imageRef naming an audio object', $(snap "$B2" "{\"brand\":{\"hero\":{\"imageRef\":\"$B2/teachAudioFile/$I1/$U1/published.mp3\"}}}"), 'MEDIA_REF_INVALID'),
+ (21, 'paid: snapshot imageRef naming another tenant''s image', $(snap "$B2" "{\"brand\":{\"hero\":{\"imageRef\":\"$B1/brand/hero/$U1/published.webp\"}}}"), 'MEDIA_REF_INVALID'),
+ (22, 'paid: snapshot imageRef with traversal', $(snap "$B2" "{\"x\":[{\"imageRef\":\"$B2/../brand/hero/published.webp\"}]}"), 'MEDIA_REF_INVALID'),
+ (23, 'paid: snapshot imageRef that is not a string', $(snap "$B2" "{\"x\":{\"imageRef\":42}}"), 'MEDIA_REF_INVALID'),
+ (24, 'paid: snapshot with an own published image (direct insert)', $(snap "$B2" "{\"brand\":{\"hero\":{\"imageRef\":\"$B2/brand/hero/$U1/published.webp\"}},\"y\":{\"imageRef\":null}}"), 'allowed'),
+ (25, 'paid: direct snapshot update smuggling an uncounted audioRef', $(snap "$B2" "{\"x\":{\"audioRef\":\"$B2/teachAudioFile/$I1/$U1/published.mp3\"}}"), 'AUDIO_LIMIT'),
+ (26, 'paid: publish_space() still succeeds', 'select public.publish_space(''$B2'')', 'allowed'),
+ (27, 'legacy: snapshot imageRef naming an audio object (unchanged)', $(snap "$B3" "{\"x\":{\"imageRef\":\"$B3/audioFile/$I1/$U1/published.mp3\"}}"), 'allowed'),
+ (28, 'exempt: snapshot imageRef naming an audio object (unchanged)', $(snap "$B1" "{\"x\":{\"imageRef\":\"$B1/audioFile/$I1/$U1/published.mp3\"}}"), 'allowed');
+-- What storage-api sets for its own deletes (storage.protect_delete refuses direct SQL deletes otherwise).
+set local storage.allow_delete_query = 'true';
+set local role authenticated;
+$B45_DO
+rollback;
+SQL
+)
+printf '%s\n' "$B45_OUT" | grep -o 'B45|.*' > "$OUT/behaviour_0045.txt" || true
+NB=$(wc -l < "$OUT/behaviour_0045.txt" | tr -d ' ')
+[ "$NB" = "22" ] || { bad "0045 behaviour: expected 22 results, got $NB"; printf '%s\n' "$B45_OUT" | tail -20; }
+while IFS='|' read -r _ verdict label outcome; do
+  [ "$verdict" = "PASS" ] && ok "0045 $label -> $outcome" || bad "0045 $label -> $outcome"
+done < "$OUT/behaviour_0045.txt"
+fp "$FULL" full_after_b45 > /dev/null
+same "0045 behaviour transaction left FULL's catalog unchanged" full full_after_b45
+[ "$(q "$FULL" "select count(*) from storage.objects where bucket_id = 'tenant-media'")" = "0" ] && ok "0045 behaviour transaction rolled back (no storage rows left behind)" || bad "0045 behaviour transaction left storage rows behind"
+
+newdb "$RB" "$FULL"            # the db we roll back (FULL stays as the post-0045 reference)
 
 # --------------------------------------------------------------------------
 # 4. Guards refuse when prerequisites fail
 # --------------------------------------------------------------------------
 say "5/8  guard refusals (each must abort and leave the catalog unchanged)"
-expect_refusal "0044 without token"      "$RB" "$(RBF 0044)" ""       "REFUSED: set idw.rollback_confirm"
-expect_refusal "0044 with wrong token"   "$RB" "$(RBF 0044)" "0043"   "REFUSED: set idw.rollback_confirm"
+expect_refusal "0045 without token"      "$RB" "$(RBF 0045)" ""       "REFUSED: set idw.rollback_confirm"
+expect_refusal "0045 with wrong token"   "$RB" "$(RBF 0045)" "0044"   "REFUSED: set idw.rollback_confirm"
 q "$RB" "update public.billing_settings set paid_checkout_enabled = true" > /dev/null
-expect_refusal "0044 with paid flag ON"  "$RB" "$(RBF 0044)" "0044"   "paid checkout is ON"
+expect_refusal "0045 with paid flag ON"  "$RB" "$(RBF 0045)" "0045"   "paid checkout is ON"
 q "$RB" "update public.billing_settings set paid_checkout_enabled = false" > /dev/null
 q "$RB" "update public.space_subscriptions set status = 'active' where id = '00000000-0000-4000-8000-0000000000d2'" > /dev/null
-expect_refusal "0044 with live subscription" "$RB" "$(RBF 0044)" "0044" "live paid subscription"
+expect_refusal "0045 with live subscription" "$RB" "$(RBF 0045)" "0045" "live paid subscription"
 q "$RB" "update public.space_subscriptions set status = 'canceled' where id = '00000000-0000-4000-8000-0000000000d2'" > /dev/null
+expect_refusal "0044 before 0045 (out of order)" "$RB" "$(RBF 0044)" "0044" "0045 is still applied"
+expect_refusal "0044 without token"      "$RB" "$(RBF 0044)" ""       "REFUSED: set idw.rollback_confirm"
+expect_refusal "0044 with wrong token"   "$RB" "$(RBF 0044)" "0043"   "REFUSED: set idw.rollback_confirm"
 expect_refusal "0043 before 0044 (out of order)" "$RB" "$(RBF 0043)" "0043" "0044 is still applied"
 expect_refusal "0036 before everything"          "$RB" "$(RBF 0036)" "0036-exported" "still applied"
 
 # --------------------------------------------------------------------------
 # 5. Rollbacks in order; before each step, try the NEXT-EARLIER file (must refuse)
 # --------------------------------------------------------------------------
-say "6/8  rollbacks 0044 -> 0036"
+say "6/8  rollbacks 0045 -> 0036"
+expect_ok "0045 rollback" "$RB" "$(RBF 0045)" "0045"
+same "after the 0045 rollback the catalog == M44 (0001..0044)" m44 after_rb_0045
+# 0044's own data guards (checked after 0045 is gone: the 0045-applied refusal comes first).
+q "$RB" "update public.billing_settings set paid_checkout_enabled = true" > /dev/null
+expect_refusal "0044 with paid flag ON"  "$RB" "$(RBF 0044)" "0044"   "paid checkout is ON"
+q "$RB" "update public.billing_settings set paid_checkout_enabled = false" > /dev/null
+q "$RB" "update public.space_subscriptions set status = 'active' where id = '00000000-0000-4000-8000-0000000000d2'" > /dev/null
+expect_refusal "0044 with live subscription" "$RB" "$(RBF 0044)" "0044" "live paid subscription"
+q "$RB" "update public.space_subscriptions set status = 'canceled' where id = '00000000-0000-4000-8000-0000000000d2'" > /dev/null
 expect_ok "0044 rollback" "$RB" "$(RBF 0044)" "0044"
 same "after the 0044 rollback the catalog == M43 (0001..0043)" m43 after_rb_0044
 expect_refusal "0042 before 0043 (out of order)" "$RB" "$(RBF 0042)" "0042" "0043 is still applied"
@@ -366,17 +465,17 @@ else bad "audit-kept variant: unexpected difference"; printf '%s\n' "$EXTRA" | h
 # --------------------------------------------------------------------------
 # 7. Restore forward
 # --------------------------------------------------------------------------
-say "8/8  re-apply 0036..0044 on the rolled-back db"
+say "8/8  re-apply 0036..0045 on the rolled-back db"
 apply "$RB" $M_032
 fp "$RB" reapplied > /dev/null
-same "re-applied catalog == FULL (0001..0044)" full reapplied
+same "re-applied catalog == FULL (0001..0045)" full reapplied
 
-if [ "${KEEP:-0}" = "1" ]; then say "kept databases: $PRE $M42 $M43 $FULL $RB $KEEPAUDIT"
-else for d in "$PRE" "$M42" "$M43" "$FULL" "$RB" "$KEEPAUDIT"; do dropdb_ "$d"; done; say "throwaway databases dropped"; fi
+if [ "${KEEP:-0}" = "1" ]; then say "kept databases: $PRE $M42 $M43 $M44 $FULL $RB $KEEPAUDIT"
+else for d in "$PRE" "$M42" "$M43" "$M44" "$FULL" "$RB" "$KEEPAUDIT"; do dropdb_ "$d"; done; say "throwaway databases dropped"; fi
 # "Comparable" = without storage-api-managed storage indexes/triggers, which differ between
 # hosted and local; this is the form to compare with a hosted environment.
 say "expected comparable fingerprints (md5 of sorted lines) per state"
-for f in pre m42 m43 full after_rb_0044 after_rb_0043 after_rb_0042 after_rb_0041 after_rb_0040 after_rb_0039 after_rb_0038 after_rb_0037 after_rb_0036 reapplied keepaudit; do
+for f in pre m42 m43 m44 full after_rb_0045 after_rb_0044 after_rb_0043 after_rb_0042 after_rb_0041 after_rb_0040 after_rb_0039 after_rb_0038 after_rb_0037 after_rb_0036 reapplied keepaudit; do
   [ -f "$OUT/$f.fp" ] || continue
   grep -vE '^(idx|trg)\|storage\.' "$OUT/$f.fp" > "$OUT/$f.comparable.fp"
   printf '   %-16s %s  %s lines\n' "$f" "$( (md5sum < "$OUT/$f.comparable.fp" 2>/dev/null || md5 -q "$OUT/$f.comparable.fp") | cut -c1-32)" "$(wc -l < "$OUT/$f.comparable.fp" | tr -d ' ')"

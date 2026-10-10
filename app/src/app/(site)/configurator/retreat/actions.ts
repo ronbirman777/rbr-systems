@@ -48,7 +48,6 @@ import {
   MAX_IMAGE_DIMENSION,
   ALLOWED_IMAGE_TYPES,
   OPTIMIZED_IMAGE_EXTENSION,
-  OPTIMIZED_IMAGE_MIME,
   isFileSizeAllowed,
   tenantMediaPath,
   newUploadId,
@@ -57,6 +56,8 @@ import {
   versionedMediaPath,
 } from "@/lib/media/path";
 import { copyDraftToPublished, copyDraftAudioToPublished } from "@/lib/media/publish";
+import { sniffImage } from "@/lib/media/imageSignature";
+import { resolveMediaWriter, storeDraftImage } from "@/lib/media/trustedMedia.server";
 import { cleanupStalePublishedMedia } from "@/lib/media/publishedCleanup";
 
 import { localeFromFormData, studioMessages, translate, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
@@ -91,6 +92,9 @@ async function removeDraftObjects(
  */
 async function optimizeUploadedImage(file: File): Promise<Buffer> {
   const input = Buffer.from(await file.arrayBuffer());
+  // TASK 032 (0045): content check from the bytes (JPEG/PNG/WebP magic and a
+  // sane header) before sharp runs - never the declared type, name or folder.
+  if (!sniffImage(input)) throw new Error("The upload is not a JPEG, PNG or WebP image.");
   return sharp(input)
     .rotate() // apply EXIF orientation, then strip it - avoids sideways photos
     .resize({
@@ -101,6 +105,16 @@ async function optimizeUploadedImage(file: File): Promise<Buffer> {
     })
     .webp({ quality: 82 })
     .toBuffer();
+}
+
+/**
+ * TASK 032 (0045): the Studio message for a storeDraftImage refusal. A raw
+ * Storage error message is passed through exactly as before.
+ */
+function storedImageError(t: ReturnType<typeof studioMessages>, error: string): string {
+  if (error === "studioLocked") return t("needsActiveAccess");
+  if (error === "unavailable" || error === "invalid") return t("imageNotProcessed");
+  return error;
 }
 
 export type SaveDraftState = {
@@ -962,10 +976,10 @@ export async function uploadModuleItemPhoto(
     .maybeSingle();
   const oldDraftRef = (existing?.image_ref as string | null | undefined) ?? null;
 
-  const { error: uploadError } = await supabase.storage
-    .from(MEDIA_BUCKET)
-    .upload(path, optimized, { upsert: false, contentType: OPTIMIZED_IMAGE_MIME });
-  if (uploadError) return { error: uploadError.message, imageRef: null, imageUrl: null };
+  // TASK 032 (0045): on a paid Space the object is written by the service
+  // role (members cannot create image objects there); legacy/exempt unchanged.
+  const stored = await storeDraftImage(supabase, tenantId, path, optimized);
+  if (stored.error) return { error: storedImageError(t, stored.error), imageRef: null, imageUrl: null };
 
   const { data: signed, error: signError } = await supabase.storage
     .from(MEDIA_BUCKET)
@@ -1113,10 +1127,10 @@ export async function uploadModuleCoverPhoto(
     .maybeSingle();
   const oldDraftRef = (existing?.image_ref as string | null | undefined) ?? null;
 
-  const { error: uploadError } = await supabase.storage
-    .from(MEDIA_BUCKET)
-    .upload(path, optimized, { upsert: false, contentType: OPTIMIZED_IMAGE_MIME });
-  if (uploadError) return { error: uploadError.message, imageRef: null, imageUrl: null };
+  // TASK 032 (0045): on a paid Space the object is written by the service
+  // role (members cannot create image objects there); legacy/exempt unchanged.
+  const stored = await storeDraftImage(supabase, tenantId, path, optimized);
+  if (stored.error) return { error: storedImageError(t, stored.error), imageRef: null, imageUrl: null };
 
   const { data: signed, error: signError } = await supabase.storage
     .from(MEDIA_BUCKET)
@@ -1315,10 +1329,10 @@ export async function uploadBrandImage(
     | string
     | null;
 
-  const { error: uploadError } = await supabase.storage
-    .from(MEDIA_BUCKET)
-    .upload(path, optimized, { upsert: false, contentType: OPTIMIZED_IMAGE_MIME });
-  if (uploadError) return { error: uploadError.message, imageRef: null, imageUrl: null };
+  // TASK 032 (0045): on a paid Space the object is written by the service
+  // role (members cannot create image objects there); legacy/exempt unchanged.
+  const stored = await storeDraftImage(supabase, tenantId, path, optimized);
+  if (stored.error) return { error: storedImageError(t, stored.error), imageRef: null, imageUrl: null };
 
   const { data: signed, error: signError } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600);
   if (signError || !signed) {
@@ -1614,10 +1628,19 @@ export async function publishSpace(
     if (typeof ref === "string" && isDraftMediaPathForTenant(tenantId, ref)) audioDraftRefs.add(ref);
   }
 
+  // TASK 032 (0045): on a paid Space the published copies are made by the
+  // service role (members cannot create objects there) and each new published
+  // image is validated from its stored bytes; legacy/exempt unchanged.
+  const writer = await resolveMediaWriter(supabase, tenantId);
+  if (!writer.ok) {
+    return { error: writer.reason === "studioLocked" ? t("needsActiveAccess") : t("couldNotPublishPhotos"), publishedAt: null };
+  }
+  const copyOptions = writer.trusted ? { trustedTenantId: tenantId } : {};
+
   try {
     await Promise.all([
-      ...[...draftRefs].map((ref) => copyDraftToPublished(supabase, ref)),
-      ...[...audioDraftRefs].map((ref) => copyDraftAudioToPublished(supabase, ref)),
+      ...[...draftRefs].map((ref) => copyDraftToPublished(writer.client, ref, copyOptions)),
+      ...[...audioDraftRefs].map((ref) => copyDraftAudioToPublished(writer.client, ref, copyOptions)),
     ]);
   } catch (err) {
     return {

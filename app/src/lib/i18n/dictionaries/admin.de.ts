@@ -312,6 +312,16 @@ export const adminDe: { [K in keyof typeof adminEn]: string } = {
   payDiscount: "Rabatt {amount}",
   payPaid: "bezahlt {time}",
   payFailed: "fehlgeschlagen {time}",
+  colAmounts: "Beträge",
+  invAmtTotal: "Rechnungsbetrag",
+  invAmtDue: "Fälliger Betrag",
+  invAmtPaid: "Bezahlt",
+  invAmtRefunded: "Erstattet",
+  invAmtNet: "Netto (bezahlt - erstattet)",
+  invAmtUncollected: "Nicht eingezogen",
+  invAmtNoteVoid: "Storniert - es ist nichts geschuldet.",
+  invAmtNoteNoCharge: "Keine Belastung (Rechnung über 0, z. B. 100 % Rabatt).",
+  payAmountsHelp: "Der Rechnungsbetrag ist, was Stripe nach Rabatten und Steuern berechnet hat. Der fällige Betrag ist, was bei einer offenen Rechnung noch geschuldet wird. Bezahlt ist, was tatsächlich eingezogen wurde (kann niedriger als der Rechnungsbetrag sein, wenn ein Guthaben verrechnet wurde). Erstattet ist zurückgezahltes Geld; Netto = Bezahlt - Erstattet.",
 
   // --- Coupons list ---
   cpNew: "Neuer Gutschein",

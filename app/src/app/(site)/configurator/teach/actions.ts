@@ -16,7 +16,6 @@ import {
   MEDIA_BUCKET,
   ALLOWED_IMAGE_TYPES,
   OPTIMIZED_IMAGE_EXTENSION,
-  OPTIMIZED_IMAGE_MIME,
   isFileSizeAllowed,
   isDraftMediaPathForTenant,
   collectMediaRefs,
@@ -26,6 +25,7 @@ import {
 } from "@/lib/media/path";
 import { cleanupStalePublishedMedia } from "@/lib/media/publishedCleanup";
 import { copyDraftAudioToPublished, copyDraftToPublished } from "@/lib/media/publish";
+import { resolveMediaWriter, storeDraftImage } from "@/lib/media/trustedMedia.server";
 import { removeDraftObjects } from "@/lib/media/draftCleanup";
 import {
   AUDIO_ALLOWED_TYPES,
@@ -634,10 +634,13 @@ export async function uploadTeachSettingsImage(formData: FormData): Promise<Teac
   }
   // A new uploadId per upload: an existing object is never overwritten.
   const path = tenantMediaPath(tenantId, key, slot, OPTIMIZED_IMAGE_EXTENSION, newUploadId());
-  const { error: uploadError } = await supabase.storage
-    .from(MEDIA_BUCKET)
-    .upload(path, optimized, { upsert: false, contentType: OPTIMIZED_IMAGE_MIME });
-  if (uploadError) return fail(uploadError.message);
+  // TASK 032 (0045): on a paid Space the object is written by the service
+  // role (members cannot create image objects there); legacy/exempt unchanged.
+  const stored = await storeDraftImage(supabase, tenantId, path, optimized);
+  if (stored.error) {
+    if (stored.error === "studioLocked") return fail(t("needsActiveAccess"));
+    return fail(stored.error === "unavailable" || stored.error === "invalid" ? t("imageNotProcessed") : stored.error);
+  }
   const { data: signed } = await supabase.storage.from(MEDIA_BUCKET).createSignedUrl(path, 3600);
   return { error: null, imageRef: path, imageUrl: signed?.signedUrl ?? null };
 }
@@ -907,6 +910,16 @@ export async function publishTeachSpace(tenantId: string,
     return typeof ref === "string" && isTenantMediaRef(tenantId, ref) ? ref : null;
   };
 
+  // TASK 032 (0045): on a paid Space the published copies are made by the
+  // service role (members cannot create objects there) and each new published
+  // image is validated from its stored bytes; legacy/exempt unchanged.
+  const writer = await resolveMediaWriter(supabase, tenantId);
+  if (!writer.ok) {
+    return { error: writer.reason === "studioLocked" ? t("needsActiveAccess") : t("couldNotPublishMedia"), publishedAt: null };
+  }
+  const copyOptions = writer.trusted ? { trustedTenantId: tenantId } : {};
+  const copyImage = (ref: string | null) => copyDraftToPublished(writer.client, ref, copyOptions);
+
   const jobs: Promise<unknown>[] = [];
   for (const ref of [
     brandRow?.hero_image_ref ?? null,
@@ -914,18 +927,18 @@ export async function publishTeachSpace(tenantId: string,
     brandRow?.logo_ref ?? null,
     ...(coverRows ?? []).map((r) => r.image_ref as string | null),
   ]) {
-    if (ref && isDraftMediaPathForTenant(tenantId, ref)) jobs.push(copyDraftToPublished(supabase, ref));
+    if (ref && isDraftMediaPathForTenant(tenantId, ref)) jobs.push(copyImage(ref));
   }
   for (const row of itemRows ?? []) {
     const imageRef = typeof row.image_ref === "string" && isDraftMediaPathForTenant(tenantId, row.image_ref) ? row.image_ref : null;
-    jobs.push(copyDraftToPublished(supabase, imageRef));
+    jobs.push(copyImage(imageRef));
     if (row.module_key === "teachAudio") {
       const audioRef = (row.metadata as { audioRef?: unknown } | null)?.audioRef;
-      jobs.push(copyDraftAudioToPublished(supabase, typeof audioRef === "string" ? audioRef : null));
+      jobs.push(copyDraftAudioToPublished(writer.client, typeof audioRef === "string" ? audioRef : null, copyOptions));
     }
   }
   for (const [key, slots] of Object.entries(SETTINGS_IMAGE_SLOTS)) {
-    for (const slot of slots) jobs.push(copyDraftToPublished(supabase, slotRef(key, slot)));
+    for (const slot of slots) jobs.push(copyImage(slotRef(key, slot)));
   }
 
   try {

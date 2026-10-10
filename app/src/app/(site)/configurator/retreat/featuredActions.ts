@@ -95,7 +95,7 @@ export async function submitFeaturedListing(
   // "billing allows studio writes" policies never see it - ask the same
   // predicate here. Legacy Spaces are always writable.
   if (!(await isStudioWritableForWrite(supabase, tenantId))) {
-    return { error: translateAccount(localeFromFormData(formData), "billing", "studioSuspendedTitle"), submission: await getFeaturedSubmissionForOwner(tenantId) };
+    return { error: translateAccount(localeFromFormData(formData), "billing", "studioLockedChangeRefused"), submission: await getFeaturedSubmissionForOwner(tenantId) };
   }
 
   const description = String(formData.get("description") ?? "").trim() || null;
@@ -139,7 +139,7 @@ export async function submitFeaturedListing(
       return { error: t("featuredUnavailable"), submission: EMPTY_SUBMISSION };
     }
     if (isBillingLockedError(error)) {
-      return { error: translateAccount(localeFromFormData(formData), "billing", "studioSuspendedTitle"), submission: await getFeaturedSubmissionForOwner(tenantId) };
+      return { error: translateAccount(localeFromFormData(formData), "billing", "studioLockedChangeRefused"), submission: await getFeaturedSubmissionForOwner(tenantId) };
     }
     return { error: error.message, submission: await getFeaturedSubmissionForOwner(tenantId) };
   }

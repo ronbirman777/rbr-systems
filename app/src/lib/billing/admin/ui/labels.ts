@@ -181,6 +181,77 @@ export function invoiceStatusLabel(i: { status: string; amount_refunded_minor?: 
   return status;
 }
 
+/**
+ * The money facts of one billing_invoices row (migration 0040), kept apart so Admin never confuses them:
+ *   total     - what Stripe billed (after discounts and tax), total_minor;
+ *   due       - what is still owed on an open/draft invoice (amount_due_minor, else the total);
+ *   paid      - what was actually collected (amount_paid_minor; less than total when account credit applied, 0 for 100% off);
+ *   refunded  - amount_refunded_minor (absolute, set from the Stripe charge);
+ *   net       - paid - refunded (never below 0), shown only when something was refunded;
+ *   uncollected - an uncollectible invoice's unpaid remainder (Stripe gave up collecting it).
+ * `headline` is the single most relevant figure for the row; `note` explains $0 and void rows.
+ */
+export type InvoiceAmountKind = "total" | "due" | "paid" | "refunded" | "net" | "uncollected";
+export type InvoiceAmountLine = { kind: InvoiceAmountKind; minor: number };
+export type InvoiceAmountNote = "void" | "no_charge" | null;
+export type InvoiceAmounts = { lines: InvoiceAmountLine[]; headline: InvoiceAmountKind | null; note: InvoiceAmountNote };
+export type InvoiceAmountInput = {
+  status: string; total_minor?: number | null; amount_due_minor?: number | null; amount_paid_minor?: number | null; amount_refunded_minor?: number | null;
+};
+
+const nonNeg = (v: number | null | undefined): number | null => (v == null || !Number.isFinite(Number(v)) ? null : Math.max(0, Math.trunc(Number(v))));
+
+export function invoiceAmounts(i: InvoiceAmountInput): InvoiceAmounts {
+  const total = nonNeg(i.total_minor);
+  const paid = nonNeg(i.amount_paid_minor) ?? 0;
+  const refunded = nonNeg(i.amount_refunded_minor) ?? 0;
+  const lines: InvoiceAmountLine[] = [];
+  if (total != null) lines.push({ kind: "total", minor: total });
+  let headline: InvoiceAmountKind | null = total != null ? "total" : null;
+  let note: InvoiceAmountNote = null;
+
+  if (i.status === "open" || i.status === "draft") {
+    const due = nonNeg(i.amount_due_minor) ?? total;
+    const outstanding = due == null ? null : Math.max(0, due - paid);
+    if (outstanding != null) { lines.push({ kind: "due", minor: outstanding }); headline = "due"; }
+    if (paid > 0) lines.push({ kind: "paid", minor: paid });
+  } else if (i.status === "uncollectible") {
+    const due = nonNeg(i.amount_due_minor) ?? total;
+    if (paid > 0) lines.push({ kind: "paid", minor: paid });
+    if (due != null) { lines.push({ kind: "uncollected", minor: Math.max(0, due - paid) }); headline = "uncollected"; }
+  } else if (i.status === "void") {
+    if (paid > 0) lines.push({ kind: "paid", minor: paid });
+    note = "void";
+  } else {
+    // paid (or an unknown status from a future Stripe version): show what was collected.
+    lines.push({ kind: "paid", minor: paid });
+    headline = "paid";
+    if (paid === 0 && (total ?? 0) === 0) note = "no_charge";
+  }
+  if (refunded > 0) {
+    lines.push({ kind: "refunded", minor: refunded });
+    lines.push({ kind: "net", minor: Math.max(0, paid - refunded) });
+    if (headline === "paid") headline = "net";
+  }
+  return { lines, headline, note };
+}
+
+const AMOUNT_KEYS: Record<InvoiceAmountKind, AdminKey> = {
+  total: "invAmtTotal", due: "invAmtDue", paid: "invAmtPaid", refunded: "invAmtRefunded", net: "invAmtNet", uncollected: "invAmtUncollected",
+};
+
+/** Localized label/value lines for an invoice's amounts (currency formatted with the shared money helper). */
+export function invoiceAmountLines(i: InvoiceAmountInput & { currency?: string | null }, c: AdminCtx): { kind: InvoiceAmountKind; label: string; value: string; headline: boolean }[] {
+  const a = invoiceAmounts(i);
+  const cur = i.currency ? String(i.currency).trim() : null;
+  return a.lines.map((l) => ({ kind: l.kind, label: c.t(AMOUNT_KEYS[l.kind]), value: money(l.minor, cur, c.locale), headline: l.kind === a.headline }));
+}
+
+export function invoiceAmountNote(i: InvoiceAmountInput, c: AdminCtx): string | null {
+  const n = invoiceAmounts(i).note;
+  return n === "void" ? c.t("invAmtNoteVoid") : n === "no_charge" ? c.t("invAmtNoteNoCharge") : null;
+}
+
 /** Only absolute https URLs are ever rendered as links (Stripe-hosted documents). */
 export function safeHttpsUrl(u: unknown): string | null {
   if (typeof u !== "string" || !u) return null;
