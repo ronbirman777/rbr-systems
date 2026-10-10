@@ -1,0 +1,726 @@
+col|access_code_redemptions.access_ends_at_granted|timestamp with time zone|nn=true|def=
+col|access_code_redemptions.code_id|uuid|nn=true|def=
+col|access_code_redemptions.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|access_code_redemptions.redeemed_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|access_code_redemptions.redeemed_by|uuid|nn=false|def=
+col|access_code_redemptions.tenant_id|uuid|nn=true|def=
+col|access_codes.allow_stacking|boolean|nn=true|def=68934a3e9455fa72420237eb05902327
+col|access_codes.code|text|nn=true|def=
+col|access_codes.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|access_codes.duration_days|integer|nn=true|def=
+col|access_codes.enabled|boolean|nn=true|def=b326b5062b2f0e69046810717534cb09
+col|access_codes.expires_at|timestamp with time zone|nn=false|def=
+col|access_codes.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|access_codes.max_redemptions|integer|nn=true|def=
+col|access_codes.redemption_count|integer|nn=true|def=cfcd208495d565ef66e7dff9f98764da
+col|access_codes.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|admin_audit_log.action|text|nn=true|def=
+col|admin_audit_log.admin_user_id|uuid|nn=false|def=
+col|admin_audit_log.after_state|jsonb|nn=false|def=
+col|admin_audit_log.before_state|jsonb|nn=false|def=
+col|admin_audit_log.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|admin_audit_log.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|admin_audit_log.reason|text|nn=false|def=
+col|admin_audit_log.request_id|text|nn=false|def=
+col|admin_audit_log.target_id|text|nn=false|def=
+col|admin_audit_log.target_type|text|nn=true|def=
+col|admin_users.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|admin_users.created_by|uuid|nn=false|def=
+col|admin_users.disabled_at|timestamp with time zone|nn=false|def=
+col|admin_users.note|text|nn=false|def=
+col|admin_users.role|text|nn=true|def=9710141b0d84540ef43b8f0980686d38
+col|admin_users.user_id|uuid|nn=true|def=
+col|billing_acceptances.accepted_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|billing_acceptances.billing_terms_version|text|nn=true|def=
+col|billing_acceptances.consent_text_id|text|nn=true|def=
+col|billing_acceptances.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|billing_acceptances.immediate_service_consent|boolean|nn=true|def=
+col|billing_acceptances.locale|text|nn=false|def=
+col|billing_acceptances.pending_checkout_id|uuid|nn=false|def=
+col|billing_acceptances.privacy_version|text|nn=true|def=
+col|billing_acceptances.space_subscription_id|uuid|nn=false|def=
+col|billing_acceptances.stripe_checkout_session_id|text|nn=false|def=
+col|billing_acceptances.tenant_id|uuid|nn=false|def=
+col|billing_acceptances.terms_version|text|nn=true|def=
+col|billing_acceptances.user_id|uuid|nn=false|def=
+col|billing_acceptances.withdrawal_acknowledged|boolean|nn=true|def=
+col|billing_customers.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|billing_customers.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|billing_customers.stripe_customer_id|text|nn=true|def=
+col|billing_customers.stripe_mode|text|nn=true|def=
+col|billing_customers.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|billing_customers.user_id|uuid|nn=false|def=
+col|billing_email_outbox.attempts|integer|nn=true|def=cfcd208495d565ef66e7dff9f98764da
+col|billing_email_outbox.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|billing_email_outbox.dedupe_key|text|nn=true|def=
+col|billing_email_outbox.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|billing_email_outbox.last_error|text|nn=false|def=
+col|billing_email_outbox.locale|text|nn=true|def=7dd17df245e1a451687e98bba2f62d23
+col|billing_email_outbox.payload|jsonb|nn=true|def=f3db357cf4f4a03883484fa3281a056c
+col|billing_email_outbox.provider_message_id|text|nn=false|def=
+col|billing_email_outbox.scheduled_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|billing_email_outbox.sent_at|timestamp with time zone|nn=false|def=
+col|billing_email_outbox.space_subscription_id|uuid|nn=false|def=
+col|billing_email_outbox.status|text|nn=true|def=3d0c12821e68f0fc31291c72ad568aa9
+col|billing_email_outbox.template|text|nn=true|def=
+col|billing_email_outbox.tenant_id|uuid|nn=false|def=
+col|billing_email_outbox.user_id|uuid|nn=false|def=
+col|billing_events.attempts|integer|nn=true|def=cfcd208495d565ef66e7dff9f98764da
+col|billing_events.error_code|text|nn=false|def=
+col|billing_events.error_detail|text|nn=false|def=
+col|billing_events.event_type|text|nn=true|def=
+col|billing_events.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|billing_events.pending_checkout_id|uuid|nn=false|def=
+col|billing_events.processed_at|timestamp with time zone|nn=false|def=
+col|billing_events.processing_started_at|timestamp with time zone|nn=false|def=
+col|billing_events.received_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|billing_events.status|text|nn=true|def=eb3d3468b697e2759afad10809c99cb5
+col|billing_events.stripe_customer_id|text|nn=false|def=
+col|billing_events.stripe_event_id|text|nn=true|def=
+col|billing_events.stripe_mode|text|nn=true|def=
+col|billing_events.stripe_subscription_id|text|nn=false|def=
+col|billing_events.tenant_id|uuid|nn=false|def=
+col|billing_plans.active|boolean|nn=true|def=b326b5062b2f0e69046810717534cb09
+col|billing_plans.billing_interval|text|nn=true|def=f5882c73056230206ff23bb863402f23
+col|billing_plans.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|billing_plans.currency|character(3)|nn=true|def=
+col|billing_plans.display_name|text|nn=true|def=
+col|billing_plans.entitlement_version|integer|nn=true|def=c4ca4238a0b923820dcc509a6f75849b
+col|billing_plans.entitlements|jsonb|nn=true|def=f3db357cf4f4a03883484fa3281a056c
+col|billing_plans.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|billing_plans.plan_key|text|nn=true|def=
+col|billing_plans.space_types|text[]|nn=true|def=2bcee83e7abe35ef682a1db8e4a0470f
+col|billing_plans.stripe_live_price_id|text|nn=false|def=
+col|billing_plans.stripe_live_product_id|text|nn=false|def=
+col|billing_plans.stripe_test_price_id|text|nn=false|def=
+col|billing_plans.stripe_test_product_id|text|nn=false|def=
+col|billing_plans.unit_amount_minor|integer|nn=true|def=
+col|billing_plans.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|billing_settings.paid_checkout_enabled|boolean|nn=true|def=68934a3e9455fa72420237eb05902327
+col|billing_settings.singleton|boolean|nn=true|def=b326b5062b2f0e69046810717534cb09
+col|billing_settings.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|billing_settings.updated_by|uuid|nn=false|def=
+col|brand_configs.atmosphere|text|nn=true|def=a10329b3029fc72d2ce9624c9c027cb0
+col|brand_configs.custom_navigation|text|nn=false|def=
+col|brand_configs.custom_primary|text|nn=false|def=
+col|brand_configs.custom_secondary|text|nn=false|def=
+col|brand_configs.custom_surface|text|nn=false|def=
+col|brand_configs.custom_text|text|nn=false|def=
+col|brand_configs.hero_image_ref|text|nn=false|def=
+col|brand_configs.image_style|text|nn=false|def=255ea5d291c0a715bce954396491f005
+col|brand_configs.logo_ref|text|nn=false|def=
+col|brand_configs.name|text|nn=true|def=86e751880b3791dd7c2efae188915799
+col|brand_configs.palette|text|nn=true|def=f902b358640b513687eea1723e49e4a8
+col|brand_configs.space_image_ref|text|nn=false|def=
+col|brand_configs.tenant_id|uuid|nn=true|def=
+col|brand_configs.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|coupon_redemptions.amount_off_minor|integer|nn=false|def=
+col|coupon_redemptions.coupon_id|uuid|nn=true|def=
+col|coupon_redemptions.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|coupon_redemptions.currency|character(3)|nn=false|def=
+col|coupon_redemptions.cycles_completed|integer|nn=true|def=cfcd208495d565ef66e7dff9f98764da
+col|coupon_redemptions.cycles_total|integer|nn=false|def=
+col|coupon_redemptions.discount_ends_at|timestamp with time zone|nn=false|def=
+col|coupon_redemptions.discount_starts_at|timestamp with time zone|nn=false|def=
+col|coupon_redemptions.discount_type|text|nn=true|def=
+col|coupon_redemptions.duration_cycles|integer|nn=false|def=
+col|coupon_redemptions.duration_type|text|nn=true|def=
+col|coupon_redemptions.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|coupon_redemptions.last_cycle_invoice_id|text|nn=false|def=
+col|coupon_redemptions.pending_checkout_id|uuid|nn=true|def=
+col|coupon_redemptions.percent_off|numeric(5,2)|nn=false|def=
+col|coupon_redemptions.redeemed_at|timestamp with time zone|nn=false|def=
+col|coupon_redemptions.released_reason|text|nn=false|def=
+col|coupon_redemptions.reservation_expires_at|timestamp with time zone|nn=true|def=
+col|coupon_redemptions.reserved_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|coupon_redemptions.space_subscription_id|uuid|nn=false|def=
+col|coupon_redemptions.status|text|nn=true|def=96b666e63f65c9aefc87f3cea8441f38
+col|coupon_redemptions.stripe_coupon_id|text|nn=false|def=
+col|coupon_redemptions.stripe_mode|text|nn=true|def=
+col|coupon_redemptions.tenant_id|uuid|nn=false|def=
+col|coupon_redemptions.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|coupon_redemptions.usage_rule|text|nn=true|def=
+col|coupon_redemptions.user_id|uuid|nn=false|def=
+col|coupons.active|boolean|nn=true|def=b326b5062b2f0e69046810717534cb09
+col|coupons.amount_off_minor|integer|nn=false|def=
+col|coupons.code|text|nn=true|def=
+col|coupons.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|coupons.created_by|uuid|nn=false|def=
+col|coupons.currency|character(3)|nn=false|def=
+col|coupons.description|text|nn=false|def=
+col|coupons.discount_type|text|nn=true|def=
+col|coupons.duration_cycles|integer|nn=false|def=
+col|coupons.duration_type|text|nn=true|def=
+col|coupons.global_max_redemptions|integer|nn=false|def=
+col|coupons.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|coupons.max_redemptions_per_user|integer|nn=false|def=
+col|coupons.normalized_code|text|nn=true|def=
+col|coupons.percent_off|numeric(5,2)|nn=false|def=
+col|coupons.plan_keys|text[]|nn=false|def=
+col|coupons.space_types|text[]|nn=false|def=
+col|coupons.stripe_live_coupon_id|text|nn=false|def=
+col|coupons.stripe_test_coupon_id|text|nn=false|def=
+col|coupons.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|coupons.usage_rule|text|nn=true|def=
+col|coupons.valid_from|timestamp with time zone|nn=false|def=
+col|coupons.valid_until|timestamp with time zone|nn=false|def=
+col|guest_access_ip_attempts.attempt_count|integer|nn=true|def=c4ca4238a0b923820dcc509a6f75849b
+col|guest_access_ip_attempts.ip_hmac|text|nn=true|def=
+col|guest_access_ip_attempts.tenant_id|uuid|nn=true|def=
+col|guest_access_ip_attempts.window_start|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|module_configs.enabled|boolean|nn=true|def=b326b5062b2f0e69046810717534cb09
+col|module_configs.image_position|jsonb|nn=false|def=
+col|module_configs.image_ref|text|nn=false|def=
+col|module_configs.module_key|text|nn=true|def=
+col|module_configs.tenant_id|uuid|nn=true|def=
+col|module_items.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|module_items.description|text|nn=false|def=
+col|module_items.external_link|text|nn=false|def=
+col|module_items.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|module_items.image_ref|text|nn=false|def=
+col|module_items.metadata|jsonb|nn=true|def=f3db357cf4f4a03883484fa3281a056c
+col|module_items.module_key|text|nn=true|def=
+col|module_items.sort_order|integer|nn=true|def=cfcd208495d565ef66e7dff9f98764da
+col|module_items.subtitle|text|nn=false|def=
+col|module_items.tenant_id|uuid|nn=true|def=
+col|module_items.title|text|nn=true|def=
+col|module_items.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|module_settings.data|jsonb|nn=true|def=f3db357cf4f4a03883484fa3281a056c
+col|module_settings.module_key|text|nn=true|def=
+col|module_settings.tenant_id|uuid|nn=true|def=
+col|module_settings.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|pending_space_checkouts.completed_at|timestamp with time zone|nn=false|def=
+col|pending_space_checkouts.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|pending_space_checkouts.expires_at|timestamp with time zone|nn=true|def=
+col|pending_space_checkouts.failed_at|timestamp with time zone|nn=false|def=
+col|pending_space_checkouts.failure_code|text|nn=false|def=
+col|pending_space_checkouts.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|pending_space_checkouts.locale|text|nn=false|def=
+col|pending_space_checkouts.payment_confirmed_at|timestamp with time zone|nn=false|def=
+col|pending_space_checkouts.plan_id|uuid|nn=true|def=
+col|pending_space_checkouts.provisioned_at|timestamp with time zone|nn=false|def=
+col|pending_space_checkouts.provisioning_key|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|pending_space_checkouts.provisioning_started_at|timestamp with time zone|nn=false|def=
+col|pending_space_checkouts.quote|jsonb|nn=true|def=f3db357cf4f4a03883484fa3281a056c
+col|pending_space_checkouts.space_type|text|nn=true|def=
+col|pending_space_checkouts.status|text|nn=true|def=6732543db8eeba378481a790e6978c7c
+col|pending_space_checkouts.stripe_checkout_session_id|text|nn=false|def=
+col|pending_space_checkouts.stripe_customer_id|text|nn=false|def=
+col|pending_space_checkouts.stripe_mode|text|nn=true|def=
+col|pending_space_checkouts.stripe_subscription_id|text|nn=false|def=
+col|pending_space_checkouts.tenant_id|uuid|nn=false|def=
+col|pending_space_checkouts.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|pending_space_checkouts.user_id|uuid|nn=false|def=
+col|profiles.business_name|text|nn=false|def=
+col|profiles.country|text|nn=false|def=
+col|profiles.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|profiles.full_name|text|nn=false|def=
+col|profiles.id|uuid|nn=true|def=
+col|profiles.phone|text|nn=false|def=
+col|profiles.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|published_spaces.enabled_modules|text[]|nn=true|def=f81a5133416544064d5b9b182f73a6e1
+col|published_spaces.modules|jsonb|nn=true|def=f3db357cf4f4a03883484fa3281a056c
+col|published_spaces.name|text|nn=true|def=
+col|published_spaces.product_type|text|nn=true|def=
+col|published_spaces.published_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|published_spaces.slug|text|nn=false|def=
+col|published_spaces.tenant_id|uuid|nn=true|def=
+col|published_spaces.theme|jsonb|nn=true|def=
+col|published_spaces.timezone|text|nn=true|def=672a69bdf3d511d0f10f809a42bafa11
+col|reserved_slugs.slug|text|nn=true|def=
+col|schedule_items.category|text|nn=false|def=
+col|schedule_items.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|schedule_items.date|date|nn=true|def=
+col|schedule_items.description|text|nn=false|def=
+col|schedule_items.end_time|time without time zone|nn=false|def=
+col|schedule_items.facilitator|text|nn=false|def=
+col|schedule_items.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|schedule_items.location|text|nn=false|def=
+col|schedule_items.metadata|jsonb|nn=true|def=f3db357cf4f4a03883484fa3281a056c
+col|schedule_items.recurrence_parent_id|uuid|nn=false|def=
+col|schedule_items.recurrence_rule|text|nn=false|def=
+col|schedule_items.start_time|time without time zone|nn=true|def=
+col|schedule_items.tenant_id|uuid|nn=true|def=
+col|schedule_items.title|text|nn=true|def=
+col|schedule_items.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_entitlements.access_ends_at|timestamp with time zone|nn=true|def=
+col|space_entitlements.access_type|text|nn=true|def=
+col|space_entitlements.cancel_at_period_end|boolean|nn=true|def=68934a3e9455fa72420237eb05902327
+col|space_entitlements.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_entitlements.starts_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_entitlements.stripe_customer_id|text|nn=false|def=
+col|space_entitlements.stripe_subscription_id|text|nn=false|def=
+col|space_entitlements.tenant_id|uuid|nn=true|def=
+col|space_entitlements.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_featured_submissions.additional_links|jsonb|nn=true|def=8b4b2df56ad0773943ef9179742da01b
+col|space_featured_submissions.approved_at|timestamp with time zone|nn=false|def=
+col|space_featured_submissions.approved_by|uuid|nn=false|def=
+col|space_featured_submissions.approved_snapshot|jsonb|nn=false|def=
+col|space_featured_submissions.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_featured_submissions.description|text|nn=false|def=
+col|space_featured_submissions.instagram|text|nn=false|def=
+col|space_featured_submissions.location|text|nn=false|def=
+col|space_featured_submissions.reviewed_at|timestamp with time zone|nn=false|def=
+col|space_featured_submissions.reviewed_by|uuid|nn=false|def=
+col|space_featured_submissions.status|text|nn=true|def=921cc03c558118142b3d57fa1d4d6e67
+col|space_featured_submissions.submitted_at|timestamp with time zone|nn=false|def=
+col|space_featured_submissions.tenant_id|uuid|nn=true|def=
+col|space_featured_submissions.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_featured_submissions.website|text|nn=false|def=
+col|space_guest_access.code_hash|text|nn=false|def=
+col|space_guest_access.failed_attempts|integer|nn=true|def=cfcd208495d565ef66e7dff9f98764da
+col|space_guest_access.mode|text|nn=true|def=4ca4342c78b459943a0c8c391f50aba5
+col|space_guest_access.tenant_id|uuid|nn=true|def=
+col|space_guest_access.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_guest_access.version|integer|nn=true|def=cfcd208495d565ef66e7dff9f98764da
+col|space_subscription_addons.addon_key|text|nn=true|def=
+col|space_subscription_addons.quantity|integer|nn=true|def=
+col|space_subscription_addons.subscription_id|uuid|nn=true|def=
+col|space_subscription_addons.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_subscriptions.base_amount_minor|integer|nn=false|def=
+col|space_subscriptions.billing_customer_id|uuid|nn=false|def=
+col|space_subscriptions.billing_owner_user_id|uuid|nn=false|def=
+col|space_subscriptions.cancel_at_period_end|boolean|nn=true|def=68934a3e9455fa72420237eb05902327
+col|space_subscriptions.cancel_at|timestamp with time zone|nn=false|def=
+col|space_subscriptions.canceled_at|timestamp with time zone|nn=false|def=
+col|space_subscriptions.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_subscriptions.currency|character(3)|nn=false|def=
+col|space_subscriptions.current_effective_amount_minor|integer|nn=false|def=
+col|space_subscriptions.current_period_end|timestamp with time zone|nn=false|def=
+col|space_subscriptions.current_period_start|timestamp with time zone|nn=false|def=
+col|space_subscriptions.deletion_warning_at|timestamp with time zone|nn=false|def=
+col|space_subscriptions.eligible_for_deletion_at|timestamp with time zone|nn=false|def=
+col|space_subscriptions.ended_at|timestamp with time zone|nn=false|def=
+col|space_subscriptions.exempt_at|timestamp with time zone|nn=false|def=
+col|space_subscriptions.exempt_by|uuid|nn=false|def=
+col|space_subscriptions.exempt_expires_at|timestamp with time zone|nn=false|def=
+col|space_subscriptions.exempt_reason|text|nn=false|def=
+col|space_subscriptions.guest_suspended_at|timestamp with time zone|nn=false|def=
+col|space_subscriptions.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|space_subscriptions.last_paid_invoice_id|text|nn=false|def=
+col|space_subscriptions.latest_invoice_id|text|nn=false|def=
+col|space_subscriptions.next_action_at|timestamp with time zone|nn=false|def=
+col|space_subscriptions.next_action|text|nn=true|def=3efd06564e0691c4ca7f3df332cbb312
+col|space_subscriptions.next_expected_charge_minor|integer|nn=false|def=
+col|space_subscriptions.payment_failed_at|timestamp with time zone|nn=false|def=
+col|space_subscriptions.plan_id|uuid|nn=false|def=
+col|space_subscriptions.recovered_at|timestamp with time zone|nn=false|def=
+col|space_subscriptions.status|text|nn=true|def=
+col|space_subscriptions.stripe_mode|text|nn=false|def=
+col|space_subscriptions.stripe_price_id|text|nn=false|def=
+col|space_subscriptions.stripe_subscription_id|text|nn=false|def=
+col|space_subscriptions.studio_suspended_at|timestamp with time zone|nn=false|def=
+col|space_subscriptions.tenant_id|uuid|nn=true|def=
+col|space_subscriptions.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|tenant_members.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|tenant_members.role|text|nn=true|def=362a2c6724442dd7c1d7efa41798eedb
+col|tenant_members.tenant_id|uuid|nn=true|def=
+col|tenant_members.user_id|uuid|nn=true|def=
+col|tenants.archived_at|timestamp with time zone|nn=false|def=
+col|tenants.content_updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|tenants.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|tenants.created_by|uuid|nn=false|def=ddeb331049bfce569b78a580d1e1abe4
+col|tenants.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|tenants.name|text|nn=true|def=
+col|tenants.product_type|text|nn=true|def=
+col|tenants.slug|text|nn=false|def=
+col|tenants.status|text|nn=true|def=c248d674101d8b24c97279095c3a6dde
+col|tenants.timezone|text|nn=true|def=672a69bdf3d511d0f10f809a42bafa11
+col|tenants.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|user_space_slots.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|user_space_slots.slots_allowed|integer|nn=true|def=c4ca4238a0b923820dcc509a6f75849b
+col|user_space_slots.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|user_space_slots.user_id|uuid|nn=true|def=
+con|access_code_redemptions|access_code_redemptions_code_id_fkey|6f384ac42be063d00ee2915fb44fa3fd
+con|access_code_redemptions|access_code_redemptions_code_id_tenant_id_key|4ae0287c68a07942939cc597a396cdc8
+con|access_code_redemptions|access_code_redemptions_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|access_code_redemptions|access_code_redemptions_redeemed_by_fkey|e6812aea0661eafdd18a799e55e83a34
+con|access_code_redemptions|access_code_redemptions_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|access_codes|access_codes_code_check|9b834ae4d420049d7a6634256ffb33f4
+con|access_codes|access_codes_code_key|62cc54e4d671b4dc6829956b3bc420bd
+con|access_codes|access_codes_duration_days_check|2eb4b244fb726d8d0c863f2e20c180ec
+con|access_codes|access_codes_max_redemptions_check|d671e77cfc466f538cebdb4468086c11
+con|access_codes|access_codes_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|access_codes|access_codes_redemption_count_check|24145bb51a4db4b6adc725b5c6f2d5cc
+con|admin_audit_log|admin_audit_log_action_check|2d863301e63fc028770ae8fc010a14d4
+con|admin_audit_log|admin_audit_log_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|admin_audit_log|admin_audit_log_reason_check|8b023b1d608da63187cc2612493fb6ec
+con|admin_audit_log|admin_audit_log_target_type_check|10bdbaf07fbeb90ce62ff5612b036911
+con|admin_users|admin_users_created_by_fkey|1ceab562a11c774dbbb18205981be824
+con|admin_users|admin_users_note_check|f560ba52b9531c9378014d838a560d9b
+con|admin_users|admin_users_pkey|0a0db78b5fb70bf8475b3bd434e6842b
+con|admin_users|admin_users_role_check|cf793615fc5474946a38eb1c16c543da
+con|admin_users|admin_users_user_id_fkey|85d8b2f5f0c0f6b4dcb854efb61a8cb1
+con|billing_acceptances|billing_acceptances_consent_required|15d331055c015036f06f701a0c38fb27
+con|billing_acceptances|billing_acceptances_pending_checkout_id_fkey|699910958bc70ec392045faa58ccfec0
+con|billing_acceptances|billing_acceptances_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|billing_acceptances|billing_acceptances_space_subscription_id_fkey|404fc4749d59d4976177872d9182644b
+con|billing_acceptances|billing_acceptances_tenant_id_fkey|8900c4374df8e2819ba2ce8a7e95e050
+con|billing_acceptances|billing_acceptances_user_id_fkey|c3025b918f5d330db0d4b19482474b87
+con|billing_customers|billing_customers_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|billing_customers|billing_customers_stripe_customer_id_check|195d742a7d2a26d8daa6c6f346aa6359
+con|billing_customers|billing_customers_stripe_mode_check|b90e440e5625655095d06cfb29f0647d
+con|billing_customers|billing_customers_stripe_mode_stripe_customer_id_key|cb8fc10caa315337e323db9c59d61e2b
+con|billing_customers|billing_customers_user_id_fkey|c3025b918f5d330db0d4b19482474b87
+con|billing_email_outbox|billing_email_outbox_dedupe_key_key|fd2987cb78a8cd86a308dd59f3456d5e
+con|billing_email_outbox|billing_email_outbox_last_error_check|2f3ee8d5b9b739cf0ca2ef34abced210
+con|billing_email_outbox|billing_email_outbox_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|billing_email_outbox|billing_email_outbox_space_subscription_id_fkey|404fc4749d59d4976177872d9182644b
+con|billing_email_outbox|billing_email_outbox_status_check|fc7ab25979d3ae685154b5408086be0c
+con|billing_email_outbox|billing_email_outbox_template_check|4174a8f21d993b9873794f93d653f23d
+con|billing_email_outbox|billing_email_outbox_tenant_id_fkey|8900c4374df8e2819ba2ce8a7e95e050
+con|billing_email_outbox|billing_email_outbox_user_id_fkey|c3025b918f5d330db0d4b19482474b87
+con|billing_events|billing_events_error_detail_check|4c3b7e1dd347f786ce0039abd0c7d2d7
+con|billing_events|billing_events_pending_checkout_id_fkey|699910958bc70ec392045faa58ccfec0
+con|billing_events|billing_events_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|billing_events|billing_events_status_check|71f2972d90f004cc2ef58568cd7da84f
+con|billing_events|billing_events_stripe_mode_check|b90e440e5625655095d06cfb29f0647d
+con|billing_events|billing_events_stripe_mode_stripe_event_id_key|c81a21018c9195af04550b2a465ef0bf
+con|billing_events|billing_events_tenant_id_fkey|8900c4374df8e2819ba2ce8a7e95e050
+con|billing_plans|billing_plans_billing_interval_check|8786a75db214c50b3eb24401e8c9764e
+con|billing_plans|billing_plans_currency_check|584f57c60ba70372b7192bd6739070b2
+con|billing_plans|billing_plans_display_name_check|d760590fecd48427adeebfc6aa9cb4f6
+con|billing_plans|billing_plans_entitlement_version_check|dc1fd689123a64f67c53ba529d7b8c9c
+con|billing_plans|billing_plans_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|billing_plans|billing_plans_plan_key_check|b907fcc7624319111f85fd32c4578f3b
+con|billing_plans|billing_plans_plan_key_key|4ee1dc05bbbde796a8c846308af5c10c
+con|billing_plans|billing_plans_unit_amount_minor_check|521b0ee027c73ae5cc03b15721ddc85c
+con|billing_settings|billing_settings_pkey|7511e9a8e50c073e1d6eff73afcc0f24
+con|billing_settings|billing_settings_singleton_check|ae6f6dfbe38290d5bfa8f3e96d1aff91
+con|billing_settings|billing_settings_updated_by_fkey|e0e8dee5c90c66c9bd5ac7c250a96799
+con|brand_configs|brand_configs_atmosphere_check|8a30bd4a97088f6a6846dd6c59ad43d5
+con|brand_configs|brand_configs_custom_navigation_check|dc5c4a9c1c19ac9aaf345cfd57025935
+con|brand_configs|brand_configs_custom_primary_check|1cefe6bf54614361d30dd1689c5dde06
+con|brand_configs|brand_configs_custom_secondary_check|73057f5126d3c60a75fdd8f6f48e0d5a
+con|brand_configs|brand_configs_custom_surface_check|ea461b8ddf9dcb6efd5ebfca67c4c68b
+con|brand_configs|brand_configs_custom_text_check|7f632858f174282cfb55e1f8e710c19c
+con|brand_configs|brand_configs_image_style_check|dc92dc4b255472ff0e7b9a0a441107bd
+con|brand_configs|brand_configs_palette_check|1dabbfdd83ad5b793bdc59fcca0c06a6
+con|brand_configs|brand_configs_pkey|7c4ca80043d2f2af17462dab542c6336
+con|brand_configs|brand_configs_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|coupon_redemptions|coupon_redemptions_coupon_id_fkey|caae9d9922a4afbd16768ddfed3708dc
+con|coupon_redemptions|coupon_redemptions_cycles_completed_check|0cdbc27ae0b9e307a693502ee156319a
+con|coupon_redemptions|coupon_redemptions_cycles_total_check|dc4af5f716175da6a06e1a12a55aecf8
+con|coupon_redemptions|coupon_redemptions_discount_type_check|9e1dce8919fd0e9d2e66ba40dda0b24d
+con|coupon_redemptions|coupon_redemptions_duration_type_check|da205c3c0d057f842eef1332e9d85f08
+con|coupon_redemptions|coupon_redemptions_pending_checkout_id_fkey|4e12ec0007388349cc9d3139f56bb505
+con|coupon_redemptions|coupon_redemptions_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|coupon_redemptions|coupon_redemptions_space_subscription_id_fkey|404fc4749d59d4976177872d9182644b
+con|coupon_redemptions|coupon_redemptions_status_check|276ceb873a8d4bdcf063d6f335b66173
+con|coupon_redemptions|coupon_redemptions_stripe_mode_check|b90e440e5625655095d06cfb29f0647d
+con|coupon_redemptions|coupon_redemptions_tenant_id_fkey|8900c4374df8e2819ba2ce8a7e95e050
+con|coupon_redemptions|coupon_redemptions_usage_rule_check|991c01d4cdd467c6fdfe38cf6038ee44
+con|coupon_redemptions|coupon_redemptions_user_id_fkey|c3025b918f5d330db0d4b19482474b87
+con|coupons|coupons_amount_off_minor_check|c66f9fe1cfc2d03e65add7f409d87ec2
+con|coupons|coupons_check|03def1adb9f3aef85951c7a17a9e8656
+con|coupons|coupons_code_check|4be63977efaace64c015adcdde11ac36
+con|coupons|coupons_created_by_fkey|1ceab562a11c774dbbb18205981be824
+con|coupons|coupons_currency_check|537cb36859e649b2ed6d2d0d78db99ea
+con|coupons|coupons_description_check|86f361bd9f5eefba4e9cc089a5748e6d
+con|coupons|coupons_discount_shape|9a0b0133a34a5cff44c9b83d837838ca
+con|coupons|coupons_discount_type_check|9e1dce8919fd0e9d2e66ba40dda0b24d
+con|coupons|coupons_duration_cycles_check|d2aa0338aa87b0b076a4998d9c7fbfe5
+con|coupons|coupons_duration_shape|7cb718c5f82f804e3063d13c67c465d8
+con|coupons|coupons_duration_type_check|da205c3c0d057f842eef1332e9d85f08
+con|coupons|coupons_global_max_redemptions_check|f4e48cc23ccb934c1006544ce69533e4
+con|coupons|coupons_max_redemptions_per_user_check|0e33e2cfbc4ff6ec90b7fca9787f0e80
+con|coupons|coupons_normalized_code_key|907b246901a1b07d5b1d5da21b5e500f
+con|coupons|coupons_percent_off_check|b03b588783feb57bd8dba779c1122587
+con|coupons|coupons_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|coupons|coupons_usage_rule_check|991c01d4cdd467c6fdfe38cf6038ee44
+con|coupons|coupons_window_order|df48c29195bb00c763a83d6df197cb67
+con|guest_access_ip_attempts|guest_access_ip_attempts_pkey|ecd1055699b165d83ea627d11788d827
+con|guest_access_ip_attempts|guest_access_ip_attempts_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|module_configs|module_configs_pkey|47797628800d1187fe914c3abfcd1487
+con|module_configs|module_configs_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|module_items|module_items_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|module_items|module_items_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|module_settings|module_settings_pkey|47797628800d1187fe914c3abfcd1487
+con|module_settings|module_settings_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|pending_space_checkouts|pending_space_checkouts_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|pending_space_checkouts|pending_space_checkouts_plan_id_fkey|e21161c0ba9737c42fb53f87cee0aa56
+con|pending_space_checkouts|pending_space_checkouts_provisioning_key_key|18ad5dd86722c1ebe0ab400c900d408f
+con|pending_space_checkouts|pending_space_checkouts_space_type_check|a630c577d9265e8a7e479bb07fd3de75
+con|pending_space_checkouts|pending_space_checkouts_status_check|44a1234804e51a3a6a00d91027c6c861
+con|pending_space_checkouts|pending_space_checkouts_stripe_mode_check|b90e440e5625655095d06cfb29f0647d
+con|pending_space_checkouts|pending_space_checkouts_tenant_id_fkey|8900c4374df8e2819ba2ce8a7e95e050
+con|pending_space_checkouts|pending_space_checkouts_user_id_fkey|c3025b918f5d330db0d4b19482474b87
+con|profiles|profiles_id_fkey|0061c9fb3a9abcf2edbcd4a42467a9c3
+con|profiles|profiles_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|published_spaces|published_spaces_pkey|7c4ca80043d2f2af17462dab542c6336
+con|published_spaces|published_spaces_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|reserved_slugs|reserved_slugs_pkey|df1d6753f9f1b7aeda2246f8247da522
+con|schedule_items|schedule_items_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|schedule_items|schedule_items_recurrence_parent_id_fkey|13310bc3c2aa3f45cf6278dffa6685f7
+con|schedule_items|schedule_items_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|space_entitlements|space_entitlements_access_type_check|510d48e31ed4bc7811fef53a05d3f112
+con|space_entitlements|space_entitlements_pkey|7c4ca80043d2f2af17462dab542c6336
+con|space_entitlements|space_entitlements_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|space_featured_submissions|space_featured_submissions_additional_links_check|17497f4aaa8880a54450bd2c177df586
+con|space_featured_submissions|space_featured_submissions_approved_by_fkey|605edf7a887a2105b2c0312e5bc6fd91
+con|space_featured_submissions|space_featured_submissions_description_check|7f17da1ca03f61023a5966170990b249
+con|space_featured_submissions|space_featured_submissions_instagram_check|03eb787990de6ce5bbf3e591892a7d92
+con|space_featured_submissions|space_featured_submissions_location_check|926a919627e29372013dfc3f9fc06ad8
+con|space_featured_submissions|space_featured_submissions_pkey|7c4ca80043d2f2af17462dab542c6336
+con|space_featured_submissions|space_featured_submissions_reviewed_by_fkey|f64ec06d4f9bb4a4421251b98777440c
+con|space_featured_submissions|space_featured_submissions_status_check|f5b4a54be6237bf5ee1d5f422a8a0144
+con|space_featured_submissions|space_featured_submissions_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|space_featured_submissions|space_featured_submissions_website_check|5ab4bca14624cb75b1834cd7ab3d1a4a
+con|space_guest_access|space_guest_access_check|31f4b1c77b7666bd6cb5533dd78503a2
+con|space_guest_access|space_guest_access_mode_check|77f113193dd11134d046493a7a574aee
+con|space_guest_access|space_guest_access_pkey|7c4ca80043d2f2af17462dab542c6336
+con|space_guest_access|space_guest_access_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|space_subscription_addons|space_subscription_addons_addon_key_check|3e1676dc037cf2248db74b96a96ca694
+con|space_subscription_addons|space_subscription_addons_pkey|ede7eb3ba33b84f4d2a10d9c5c25e5d2
+con|space_subscription_addons|space_subscription_addons_quantity_check|47445c500251d9bee6082141f3e079ac
+con|space_subscription_addons|space_subscription_addons_subscription_id_fkey|c40f2b4a42e5199fe2c0ac90b3b1cc76
+con|space_subscriptions|space_subscriptions_base_amount_minor_check|ebeed8bb3a249373178e34c97a490065
+con|space_subscriptions|space_subscriptions_billing_customer_id_fkey|dc715e90af475d35d140cb83a84d1ec1
+con|space_subscriptions|space_subscriptions_billing_owner_user_id_fkey|55d132f0052509557a688b4b2449a859
+con|space_subscriptions|space_subscriptions_currency_check|537cb36859e649b2ed6d2d0d78db99ea
+con|space_subscriptions|space_subscriptions_current_effective_amount_minor_check|b5a5d53804b665791a7a679d2f6b66ae
+con|space_subscriptions|space_subscriptions_exempt_by_fkey|e24bc3d9d22ba9674b2d37be80dfa1f2
+con|space_subscriptions|space_subscriptions_exempt_shape|c93d83675240922773e8348b8c876aba
+con|space_subscriptions|space_subscriptions_next_action_check|fb51b3712fec3e10ae86288e310f6622
+con|space_subscriptions|space_subscriptions_next_expected_charge_minor_check|79b076d1129536b8478c26cb07cc2b28
+con|space_subscriptions|space_subscriptions_paid_shape|2465596c0928430e8a54d592551d102f
+con|space_subscriptions|space_subscriptions_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|space_subscriptions|space_subscriptions_plan_id_fkey|e21161c0ba9737c42fb53f87cee0aa56
+con|space_subscriptions|space_subscriptions_status_check|1a3f0328ac9bd15ddf8eff301480676b
+con|space_subscriptions|space_subscriptions_stripe_mode_check|b90e440e5625655095d06cfb29f0647d
+con|space_subscriptions|space_subscriptions_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|space_subscriptions|space_subscriptions_tenant_id_key|5014d6ea211895d80fc06566189444a8
+con|tenant_members|tenant_members_pkey|8b75bb76860604bfbe000dedf3308e27
+con|tenant_members|tenant_members_role_check|ca40a8771037d6152c96fc5ba9a6dfde
+con|tenant_members|tenant_members_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|tenant_members|tenant_members_user_id_fkey|85d8b2f5f0c0f6b4dcb854efb61a8cb1
+con|tenants|tenants_created_by_fkey|1ceab562a11c774dbbb18205981be824
+con|tenants|tenants_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|tenants|tenants_product_type_check|9de4ae2ce71dc63a77b574e8201c7e5f
+con|tenants|tenants_slug_format|54547e6bea1142ccd048b600d5284d81
+con|tenants|tenants_status_check|246a30fbfb0ff934c73c2031827ad32c
+con|user_space_slots|user_space_slots_pkey|0a0db78b5fb70bf8475b3bd434e6842b
+con|user_space_slots|user_space_slots_slots_allowed_check|28e01d9300b1fb2ea541e0dd1f8c06d0
+con|user_space_slots|user_space_slots_user_id_fkey|85d8b2f5f0c0f6b4dcb854efb61a8cb1
+fn|admin_audit_log_immutable()|03a1544327dd909450684aa6add45a69|acl=postgres=X/postgres,service_role=X/postgres
+fn|archive_space(uuid)|ed11b4f0cabd2bf049b2c63dce6bf532|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|billing_apply_lifecycle(timestamp with time zone)|345b1f07dee379536b1ee78c29c311ea|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_apply_subscription_state(text,text,jsonb,timestamp with time zone)|8fa2db3ba14b2b38f9b1432688756827|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_clear_internal_exempt(uuid)|f841921881b5a721f8feb946bd3d6ed4|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_confirm_checkout_payment(uuid,text,text,text)|9ac4ca5225d5aea7f6ce10ba22ff2645|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_expire_open_checkouts()|7b93390301af5ed53c7693ccff401410|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_expire_stale_reservations()|e49e624803badf2da9c3cc8795a23f8e|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_fail_checkout(uuid,text)|54133574f0b980e93395a27fc8a90ed7|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_finalize_coupon_redemption(uuid,uuid,uuid,timestamp with time zone)|3679ef58651c1048e20ad0a2b329743a|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_is_paid_checkout_required()|d597817e252c4b4edf52ced751e95fbd|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_normalize_coupon_code(text)|628f217422b33bd1c0281ab71e9fa6c3|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_provision_paid_space(uuid,jsonb,text,text)|2c8dce054bccd6c24c8cbe5dc3402079|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_record_discount_cycle(uuid,text,boolean,timestamp with time zone)|caf3e8d73a8a1360d0624e14d11b1f59|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_release_coupon_reservation(uuid,text)|a78fd0b192a42591665e6f7e225892eb|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_reserve_coupon(uuid,text,uuid,text,text,text,interval)|de1047124b0b2e7fd71168341b1f33ac|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_set_internal_exempt(uuid,text,uuid,timestamp with time zone)|6b9c9cbaadc41779c63b00b1a45d3478|acl=postgres=X/postgres,service_role=X/postgres
+fn|billing_set_next_action(uuid,text,timestamp with time zone,integer)|62e77b33271d3f6c9a5dfa4a7cff78b6|acl=postgres=X/postgres,service_role=X/postgres
+fn|build_teach_payload(uuid)|3625755cfc2c76e893e6faf5a7ac812c|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|check_and_record_guest_attempt(uuid,text)|325d1b10fec51c9a4e9f040381380225|acl=postgres=X/postgres,service_role=X/postgres
+fn|check_tenant_slug_not_reserved()|36f5253b060dd63e07198aee1d9b9406|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|delete_space(uuid)|33d97cd17f2f0250e40360b65e8cd404|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|disable_guest_access_code(uuid)|c5e6be2b4739200c2d6b4b29afe353b0|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|enforce_space_slot_capacity()|c0aa990267c42c4564bf6eb7f243d1a6|acl=postgres=X/postgres,service_role=X/postgres
+fn|get_guest_access_mode(uuid)|2ed4be30ef092f585dfdb6d0225f3400|acl=postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|get_guest_access_settings(uuid)|542b3aac07191babd3708ec3051accd1|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|get_guest_access_version(uuid)|2917d087733a5abcdfe1b5773a521b42|acl=postgres=X/postgres,service_role=X/postgres
+fn|guard_tenant_delete_with_subscription()|84da609508661a20782dae4a0a93fa84|acl=postgres=X/postgres,service_role=X/postgres
+fn|handle_new_tenant()|34bbee47661ba2e561b396210532e2ef|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|handle_new_user_profile()|1a93fd49553227d51a09014ae73c7993|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|is_slug_available(text)|998da0061d4c39bc83cc6075c26a9ea3|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|is_tenant_member(uuid)|fa7a4da9825774a0804ba4925a355c00|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|is_tenant_owner(uuid)|fe0490631c4067093c7098ae2a178409|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|is_valid_additional_links(jsonb)|37696b0ad3c9be2d8d4c882f6657027a|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|is_versioned_media_object(text)|7347d458c3f0585f19b17a5db89abeed|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|jsonb_pick(jsonb,text[])|7d9398cf7e485c0f10c99e71c09e061b|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|provision_user_space_slot()|07dfcad131b9624b2203cb860bce192d|acl=postgres=X/postgres,service_role=X/postgres
+fn|publish_space(uuid)|db254f1eb184d2d25deb7f83dfb09ac1|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|redeem_access_code(uuid,text)|4d4d1bfa0e78b3ba63aae37d5d58b4b4|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|replace_space(uuid,text)|3a2af65a96d60ac2dfc90ee6f73d5236|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|restore_space(uuid)|9a31bcf90162a2ce7001078d1fdbcfa0|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|set_guest_access_code(uuid,text)|d5d835ac1a663482387a3d07a7006f59|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|space_access_state(uuid,timestamp with time zone)|c3c15b5d2887f08c0e499c482ebe86bc|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|space_audio_entitlements(uuid)|951212846caad45f6c793d6830c67a86|acl=postgres=X/postgres,service_role=X/postgres
+fn|space_studio_writable(uuid)|61422d33b50b77eb699c34a6b5c85a8b|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|submit_featured_listing(uuid,text,text,text,text,jsonb)|4c81a4b7e8fd63e63305c50b50554599|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|tenant_is_archived(uuid)|cb98e22b9fc775324705ad12b848f190|acl=postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|touch_tenant_content()|97fce402eca1542e8d25ce1a6fa68b0e|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|touch_tenant_identity_content()|386073c3b45bf0e24be32f75cafd680c|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|verify_guest_access_code(uuid,text)|2acf1ac1c74795184e3b68a542a80f12|acl=postgres=X/postgres,service_role=X/postgres
+idx|public.access_code_redemptions_code_id_tenant_id_key|4e36e679965072fc6949466fd2ed4ce8
+idx|public.access_code_redemptions_pkey|f243c517b1d9ddc2ad46503ae1d657e7
+idx|public.access_code_redemptions_tenant_id_idx|b7de3bf29153aecfb4680f55b84eb5c8
+idx|public.access_codes_code_key|c547b87ddd114765bd8490725e44c23b
+idx|public.access_codes_pkey|7986c3b791dd4becbcba6b27148adf48
+idx|public.admin_audit_log_created_idx|4d69b58a953d096511d722fe114ce134
+idx|public.admin_audit_log_pkey|29fda601e4c4b3790790c6b6b28f1b8a
+idx|public.admin_audit_log_target_idx|9e1073c453d06e194405697bf59c5c2d
+idx|public.admin_users_pkey|18fc0f3f103ea350cd4143137a0fcd43
+idx|public.billing_acceptances_checkout_uidx|fb295ac0b4a6b7b706cae84022f5044a
+idx|public.billing_acceptances_pkey|41ac6c081e040c9ce71d9d1211d2d975
+idx|public.billing_acceptances_user_idx|93561c15f5f27980b3cf30151bf01e1b
+idx|public.billing_customers_one_per_user_mode|cff5872cadf89b75c228d74dbf456ee2
+idx|public.billing_customers_pkey|245e5ba67ecd4d1ffa83be666f9f3af1
+idx|public.billing_customers_stripe_mode_stripe_customer_id_key|9adb0e91e1e7b4c9a8d34558d2275944
+idx|public.billing_email_outbox_dedupe_key_key|028d10be1f5b1e86b5095195a99a8e81
+idx|public.billing_email_outbox_pending_idx|7158e9a754e331a28fbe9c9702d30662
+idx|public.billing_email_outbox_pkey|8e7dc936f0e46a76f8b9a5d6960c3159
+idx|public.billing_events_pkey|de170f49ad9b075833e1f8762f862d88
+idx|public.billing_events_status_idx|19b6240b51eb370c7388f5f3273d14ac
+idx|public.billing_events_stripe_mode_stripe_event_id_key|d6d46ba4c9872a064d58ca85ea87cbae
+idx|public.billing_events_subscription_idx|f1acbd5b9fef36c69d9a77d8cbf90360
+idx|public.billing_plans_pkey|20c236ab0ac379a1923a55df77962d9d
+idx|public.billing_plans_plan_key_key|01dbb3350737045b4a518b44f4c9596d
+idx|public.billing_settings_pkey|864e01a5c9533d02e6930f72ca1ff914
+idx|public.brand_configs_pkey|6d4d01cd016771bb5ae91ca8e1f2cc12
+idx|public.coupon_redemptions_coupon_status_idx|e6f5ab0ba9d68108f19ea82927e9598c
+idx|public.coupon_redemptions_once_per_space_uidx|94a6390f84142c2dfa33afd9c2cb1b14
+idx|public.coupon_redemptions_once_per_user_uidx|ee1215744cac31516cd445e7eea89995
+idx|public.coupon_redemptions_one_per_checkout_uidx|46ea8341e1006ea9392870f738dfe625
+idx|public.coupon_redemptions_pkey|2cbfcccb71fbda5828cac414dcd82e82
+idx|public.coupon_redemptions_reserved_expiry_idx|916dbe0e4aa52aea7e9ad99b9cde0485
+idx|public.coupon_redemptions_subscription_idx|a6fbf1cfbf710bd611415bf8d3606426
+idx|public.coupon_redemptions_user_idx|a59023631edcd5ecdb86a5c618d0b74e
+idx|public.coupons_active_window_idx|bf87df10f03cf506554843e416209315
+idx|public.coupons_normalized_code_key|84e6f2ad0467f3cdb9f86d9e01bf7a42
+idx|public.coupons_pkey|a4213634ed4cb4582f2a04fa0f2e38fb
+idx|public.guest_access_ip_attempts_pkey|b650cbc1cf84c495e26f5c3004797993
+idx|public.module_configs_pkey|ed8297ead234b7d69920c3369333f925
+idx|public.module_items_pkey|f6a02943b3ad71e24a2b8623cdc20b68
+idx|public.module_settings_pkey|19aeb93334ceb6091184fcb71800ad32
+idx|public.pending_space_checkouts_one_open_per_user_type|0c2e434b5baad5aeb6836f177bc3ad90
+idx|public.pending_space_checkouts_open_expiry_idx|2b5474241580313bd7588abdb5c1e2a5
+idx|public.pending_space_checkouts_pkey|4eeb997ba000c849abaf1c006c1e428a
+idx|public.pending_space_checkouts_provisioning_key_key|11e499dbac13c903bf74f7e8fd0c0d22
+idx|public.pending_space_checkouts_session_uidx|cebd56f3bd5bbfb9966ade92e1b8db6c
+idx|public.pending_space_checkouts_stuck_idx|04e38cdc6c523faba981ffb75d629057
+idx|public.pending_space_checkouts_user_idx|e2468cff79cc25855493e340dc8b0b7e
+idx|public.profiles_pkey|b7142bbffc23de763c1bd9f00489ec05
+idx|public.published_spaces_pkey|0c43042cbfe3b9024232866a4d1b356b
+idx|public.published_spaces_slug_unique_idx|6eb47ee834e964511febd8a8d4dfb9d7
+idx|public.reserved_slugs_pkey|fc2f173ecb61062a6494eb359dd5ba45
+idx|public.schedule_items_pkey|e05cad88e2c1c49f204a7334791531d8
+idx|public.space_entitlements_access_ends_at_idx|705988f35c4b5d228340e9e7819c4253
+idx|public.space_entitlements_pkey|716cd23eab2e11dd422304b08f978e32
+idx|public.space_featured_submissions_pkey|999134203fa2fd90e31b5238c859a5d7
+idx|public.space_guest_access_pkey|39acf74cde46394182d997ab7059759a
+idx|public.space_subscription_addons_pkey|84f92f11a4865ca0f43b5f065703b312
+idx|public.space_subscriptions_next_action_idx|695dff503d8e5f17240242efc4575e03
+idx|public.space_subscriptions_owner_idx|0671065e52cd7ec6da9a7ddc8d8d6bf6
+idx|public.space_subscriptions_payment_failed_idx|43c5b41e14524d8dd8ed12f338b6968e
+idx|public.space_subscriptions_pkey|dddfdd18d17343e6e0900fa6d61e3c3e
+idx|public.space_subscriptions_status_idx|3863690f8d350dc14d16a6dc777c3cf1
+idx|public.space_subscriptions_stripe_sub_uidx|f354b06819995351ae1aad63bb9293be
+idx|public.space_subscriptions_tenant_id_key|6aa77a28957ea8de5021bed9682db36e
+idx|public.tenant_members_pkey|d719fc4046807df59cc27d0dc8e4a35e
+idx|public.tenants_pkey|5284b9c618f8618b72a402ea2c593753
+idx|public.tenants_slug_unique_idx|ec50fc244a060c68477fb2292063ed95
+idx|public.user_space_slots_pkey|e6af2108f42ae14541e6122cec05fadb
+pol|public.access_code_redemptions|access_code_redemptions: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.brand_configs|brand_configs: billing allows studio writes (insert)|RESTRICTIVE|INSERT|authenticated|d41d8cd98f00b204e9800998ecf8427e|685d44c4ae6a7d2125e329db10a89396
+pol|public.brand_configs|brand_configs: billing allows studio writes (update)|RESTRICTIVE|UPDATE|authenticated|685d44c4ae6a7d2125e329db10a89396|685d44c4ae6a7d2125e329db10a89396
+pol|public.brand_configs|brand_configs: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.brand_configs|brand_configs: members can update|PERMISSIVE|UPDATE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.brand_configs|brand_configs: members can upsert|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|887f567a931a6a4446cdf36bde169fd8
+pol|public.module_configs|module_configs: billing allows studio writes (insert)|RESTRICTIVE|INSERT|authenticated|d41d8cd98f00b204e9800998ecf8427e|685d44c4ae6a7d2125e329db10a89396
+pol|public.module_configs|module_configs: billing allows studio writes (update)|RESTRICTIVE|UPDATE|authenticated|685d44c4ae6a7d2125e329db10a89396|685d44c4ae6a7d2125e329db10a89396
+pol|public.module_configs|module_configs: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_configs|module_configs: members can update|PERMISSIVE|UPDATE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_configs|module_configs: members can upsert|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|887f567a931a6a4446cdf36bde169fd8
+pol|public.module_items|module_items: billing allows studio writes (delete)|RESTRICTIVE|DELETE|authenticated|685d44c4ae6a7d2125e329db10a89396|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_items|module_items: billing allows studio writes (insert)|RESTRICTIVE|INSERT|authenticated|d41d8cd98f00b204e9800998ecf8427e|685d44c4ae6a7d2125e329db10a89396
+pol|public.module_items|module_items: billing allows studio writes (update)|RESTRICTIVE|UPDATE|authenticated|685d44c4ae6a7d2125e329db10a89396|685d44c4ae6a7d2125e329db10a89396
+pol|public.module_items|module_items: members can delete|PERMISSIVE|DELETE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_items|module_items: members can insert|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|887f567a931a6a4446cdf36bde169fd8
+pol|public.module_items|module_items: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_items|module_items: members can update|PERMISSIVE|UPDATE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_settings|module_settings: billing allows studio writes (delete)|RESTRICTIVE|DELETE|authenticated|685d44c4ae6a7d2125e329db10a89396|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_settings|module_settings: billing allows studio writes (insert)|RESTRICTIVE|INSERT|authenticated|d41d8cd98f00b204e9800998ecf8427e|685d44c4ae6a7d2125e329db10a89396
+pol|public.module_settings|module_settings: billing allows studio writes (update)|RESTRICTIVE|UPDATE|authenticated|685d44c4ae6a7d2125e329db10a89396|685d44c4ae6a7d2125e329db10a89396
+pol|public.module_settings|module_settings: members can delete|PERMISSIVE|DELETE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_settings|module_settings: members can insert|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|887f567a931a6a4446cdf36bde169fd8
+pol|public.module_settings|module_settings: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_settings|module_settings: members can update|PERMISSIVE|UPDATE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.pending_space_checkouts|pending_space_checkouts: users can select their own|PERMISSIVE|SELECT|public|3a807491e0a912fbfbee0ffa087b82f6|d41d8cd98f00b204e9800998ecf8427e
+pol|public.profiles|profiles: users can select their own row|PERMISSIVE|SELECT|public|bc9c729a84690340789a4e4f01175335|d41d8cd98f00b204e9800998ecf8427e
+pol|public.published_spaces|published_spaces: anyone can read non-archived|PERMISSIVE|SELECT|public|7ffc8590e72c8f84aa11cbe09b9cb26b|d41d8cd98f00b204e9800998ecf8427e
+pol|public.published_spaces|published_spaces: billing allows studio writes (delete)|RESTRICTIVE|DELETE|authenticated|685d44c4ae6a7d2125e329db10a89396|d41d8cd98f00b204e9800998ecf8427e
+pol|public.published_spaces|published_spaces: billing allows studio writes (insert)|RESTRICTIVE|INSERT|authenticated|d41d8cd98f00b204e9800998ecf8427e|685d44c4ae6a7d2125e329db10a89396
+pol|public.published_spaces|published_spaces: billing allows studio writes (update)|RESTRICTIVE|UPDATE|authenticated|685d44c4ae6a7d2125e329db10a89396|685d44c4ae6a7d2125e329db10a89396
+pol|public.published_spaces|published_spaces: owner can publish|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|3df8090a2b0d6818c0b76d1d415fb9b9
+pol|public.published_spaces|published_spaces: owner can republish|PERMISSIVE|UPDATE|public|3df8090a2b0d6818c0b76d1d415fb9b9|3df8090a2b0d6818c0b76d1d415fb9b9
+pol|public.published_spaces|published_spaces: owner can unpublish|PERMISSIVE|DELETE|public|911a570d567c3516a7254d6460817375|d41d8cd98f00b204e9800998ecf8427e
+pol|public.reserved_slugs|reserved_slugs: authenticated can select|PERMISSIVE|SELECT|authenticated|b326b5062b2f0e69046810717534cb09|d41d8cd98f00b204e9800998ecf8427e
+pol|public.schedule_items|schedule_items: billing allows studio writes (delete)|RESTRICTIVE|DELETE|authenticated|685d44c4ae6a7d2125e329db10a89396|d41d8cd98f00b204e9800998ecf8427e
+pol|public.schedule_items|schedule_items: billing allows studio writes (insert)|RESTRICTIVE|INSERT|authenticated|d41d8cd98f00b204e9800998ecf8427e|685d44c4ae6a7d2125e329db10a89396
+pol|public.schedule_items|schedule_items: billing allows studio writes (update)|RESTRICTIVE|UPDATE|authenticated|685d44c4ae6a7d2125e329db10a89396|685d44c4ae6a7d2125e329db10a89396
+pol|public.schedule_items|schedule_items: members can delete|PERMISSIVE|DELETE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.schedule_items|schedule_items: members can insert|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|887f567a931a6a4446cdf36bde169fd8
+pol|public.schedule_items|schedule_items: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.schedule_items|schedule_items: members can update|PERMISSIVE|UPDATE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.space_entitlements|space_entitlements: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.space_featured_submissions|space_featured_submissions: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.space_subscriptions|space_subscriptions: owners can select|PERMISSIVE|SELECT|public|911a570d567c3516a7254d6460817375|d41d8cd98f00b204e9800998ecf8427e
+pol|public.tenant_members|tenant_members: members can select their tenant roster|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.tenants|tenants: authenticated users can create|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|692b6414b78f0298bca8d160c35411e9
+pol|public.tenants|tenants: billing allows studio writes (update)|RESTRICTIVE|UPDATE|authenticated|3234d5fb6ab353ff5f759c194adf3045|3234d5fb6ab353ff5f759c194adf3045
+pol|public.tenants|tenants: members can select|PERMISSIVE|SELECT|public|0c48345dcc17e0565063c07e78c86a89|d41d8cd98f00b204e9800998ecf8427e
+pol|public.tenants|tenants: owners can update|PERMISSIVE|UPDATE|public|18917d22e526240cdca9e3cd717099a4|d41d8cd98f00b204e9800998ecf8427e
+pol|public.user_space_slots|user_space_slots: users can select their own row|PERMISSIVE|SELECT|public|3a807491e0a912fbfbee0ffa087b82f6|d41d8cd98f00b204e9800998ecf8427e
+pol|storage.objects|tenant media: billing allows studio writes (delete)|RESTRICTIVE|DELETE|authenticated|4adf4798323099488b8c8af0d902ac49|d41d8cd98f00b204e9800998ecf8427e
+pol|storage.objects|tenant media: billing allows studio writes (insert)|RESTRICTIVE|INSERT|authenticated|d41d8cd98f00b204e9800998ecf8427e|4adf4798323099488b8c8af0d902ac49
+pol|storage.objects|tenant media: billing allows studio writes (update)|RESTRICTIVE|UPDATE|authenticated|4adf4798323099488b8c8af0d902ac49|4adf4798323099488b8c8af0d902ac49
+pol|storage.objects|tenant members can delete their own media|PERMISSIVE|DELETE|authenticated|c202b5e772cb0f16aa6878ab7c1b6c78|d41d8cd98f00b204e9800998ecf8427e
+pol|storage.objects|tenant members can read their own media|PERMISSIVE|SELECT|authenticated|c202b5e772cb0f16aa6878ab7c1b6c78|d41d8cd98f00b204e9800998ecf8427e
+pol|storage.objects|tenant members can replace their own media|PERMISSIVE|UPDATE|authenticated|c202b5e772cb0f16aa6878ab7c1b6c78|c202b5e772cb0f16aa6878ab7c1b6c78
+pol|storage.objects|tenant members can upload their own media|PERMISSIVE|INSERT|authenticated|d41d8cd98f00b204e9800998ecf8427e|c202b5e772cb0f16aa6878ab7c1b6c78
+pol|storage.objects|versioned media is immutable (no overwrite)|RESTRICTIVE|UPDATE|authenticated|007d0472977b54394b9875c029d55d21|007d0472977b54394b9875c029d55d21
+tbl|access_code_redemptions|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|access_codes|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|admin_audit_log|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|admin_users|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|billing_acceptances|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|billing_customers|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|billing_email_outbox|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|billing_events|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|billing_plans|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|billing_settings|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|brand_configs|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|coupon_redemptions|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|coupons|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|guest_access_ip_attempts|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|module_configs|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|module_items|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|module_settings|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|pending_space_checkouts|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres
+tbl|profiles|r|rls=true|acl=postgres=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|published_spaces|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|reserved_slugs|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|schedule_items|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|space_entitlements|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|space_featured_submissions|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres
+tbl|space_guest_access|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|space_subscription_addons|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|space_subscriptions|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres
+tbl|tenant_members|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|tenants|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|user_space_slots|r|rls=true|acl=postgres=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+trg|admin_audit_log|admin_audit_log_no_truncate|9e627171a163fcd696601f066f692181
+trg|admin_audit_log|admin_audit_log_no_update|32e32f18c87a78326388619a913c6a89
+trg|auth.users|on_auth_user_created_profile|bed69d14abc6f243d5453769455b8488
+trg|auth.users|on_auth_user_created_space_slot|e7595353cf7412abb42c4a5e94c3d26f
+trg|brand_configs|touch_tenant_content_on_brand_configs|51a48bd97dbfd989bbbd5e57cfbd392f
+trg|module_configs|touch_tenant_content_on_module_configs|6308f473e91e417f26e66c6da2eb5116
+trg|module_items|touch_tenant_content_on_module_items|a82f39fc3c75d26de8675e7f49f03ffc
+trg|module_settings|touch_tenant_content_on_module_settings|505e39df55ef1b23fb3426d461a64aeb
+trg|schedule_items|touch_tenant_content_on_schedule_items|63a0356f5c71d3a5b73c82279a375cc4
+trg|tenants|enforce_space_slot_capacity_trigger|aa86f5317bbba95031573e2abef448fb
+trg|tenants|on_tenant_created|15791b1a6fba79410af250208ad3d9fb
+trg|tenants|tenants_check_slug_reserved|3b73bf161c1f74fc00f6a6c2d851f2fc
+trg|tenants|tenants_guard_delete_with_subscription|fb8ddbe8e73b0740ed967fb788eceade
+trg|tenants|tenants_touch_identity_content|d0eaba390fbf296a889ab0bbfc2d61c5

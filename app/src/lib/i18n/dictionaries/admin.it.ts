@@ -499,7 +499,7 @@ export const adminIt: { [K in keyof typeof adminEn]: string } = {
   codeChecking: "Verifica in corso...",
   stepUpAria: "Verifichi di nuovo con la sua app di autenticazione",
   stepUpTitle: "Conferma della sua identità",
-  stepUpBody: "Questa modifica richiede un nuovo codice dell'app di autenticazione. Dopo la conferma la pagina si ricarica e potrà riprovare la modifica.",
+  stepUpBody: "Questa modifica richiede un nuovo codice dell'app di autenticazione. Dopo la conferma la modifica viene reinviata automaticamente; i dati inseriti restano invariati.",
   stepUpConfirm: "Conferma",
 
   // --- MFA: enrol / verify ---

@@ -166,6 +166,9 @@ export const billingFr: { [K in keyof typeof billingEn]: string } = {
   chipEnded: "Terminé",
   billingLink: "Facturation",
   lifecycleBillingLocked: "Règle la facturation de cet Espace avant de le restaurer ou de le remplacer.",
+  lifecycleDeleteActiveSubscription: "Cet Espace a encore un abonnement actif, rien n’a donc été supprimé. Résilie l’abonnement sur la page Facturation et supprime l’Espace une fois qu’il a pris fin.",
+  lifecycleArchivePaidBody: "Archiver « {space} » le retire de l’usage actif/public. Les invités ne pourront plus y accéder. L’archivage ne résilie pas son abonnement.",
+  lifecycleReplacePaidBody: "Cette action supprime le contenu actuel de « {space} » (sa version publiée, son programme et le contenu de ses modules) et démarre un nouveau brouillon dans le même Espace. C’est irréversible. Saisis le nom actuel de l’Espace pour confirmer.",
 
   // --- emails ---
   emailGreeting: "Bonjour,",

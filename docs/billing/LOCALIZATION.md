@@ -37,4 +37,6 @@ Each lists concept, approved and rejected terms, context and sources (found by w
 
 Legal wording (consent, withdrawal, tax, terms) in every locale is unreviewed and is part of the legal launch gate (LAUNCH-GATES.md). Verified by tests: key parity against English (`adminDictionary.test.ts`, `i18n.test.ts`), no placeholder suffix patterns (`interpolationCallSites.test.ts`), terminology (`terminology.test.ts`), email rendering. Tests check structure, not linguistic quality.
 
+My Spaces paid-mode Archive / Replace confirmations (`lifecycleArchivePaidBody`, `lifecycleReplacePaidBody`, billing namespace) are translated on the server in the account locale and handed to `SpaceLifecycleControls` with their own `lang`/`dir`; non-English text is UNREVIEWED (tr/it follow the glossaries: abonelik / abbonamento, disdire, Space). The rest of that legacy component (buttons, labels, the legacy slot copy) is pre-032 English and stays English until the legacy My Spaces page is localized, so a non-English customer sees a translated paragraph inside an otherwise English dialog. Pinned by `spaceLifecycleControlsCopy.test.ts` (no English literal in the paid branches, keys present in all seven locales) and `mySpaces.test.ts`.
+
 Note: a comment in `emails/render.ts` still says "five locales"; the renderer itself serves all seven.

@@ -498,7 +498,7 @@ export const adminFr: { [K in keyof typeof adminEn]: string } = {
   codeChecking: "Vérification...",
   stepUpAria: "Revérifier avec ton authentificateur",
   stepUpTitle: "Confirme que c’est bien toi",
-  stepUpBody: "Cette modification demande un nouveau code d’authentification. Après confirmation, la page se recharge et tu pourras réessayer la modification.",
+  stepUpBody: "Cette modification demande un nouveau code d’authentification. Après confirmation, la modification est renvoyée automatiquement ; ce que tu as saisi est conservé.",
   stepUpConfirm: "Confirmer",
 
   // --- MFA: enrol / verify ---

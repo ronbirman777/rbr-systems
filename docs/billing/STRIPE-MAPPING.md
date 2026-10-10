@@ -44,9 +44,11 @@ Subscribe the endpoint to exactly these; anything else is acknowledged as `ignor
 | `invoice.paid`, `invoice.payment_succeeded` | `processInvoice`: record, count discount cycle (only `subscription_create`/`subscription_cycle` invoices), apply state, queue the one confirmation email |
 | `invoice.payment_failed` | `processInvoice` with failure time = event time; queues `payment_failed` (not for `subscription_create`) |
 | `invoice.finalized`, `.updated`, `.voided`, `.marked_uncollectible`, `.created` | Record only; no email |
-| `charge.refunded` | Find the invoice via the PaymentIntent and mirror `amount_refunded_minor` |
+| `charge.refunded`, `charge.refund.updated` | Re-retrieve the charge (`retrieveChargeRefund`), find the invoice via its PaymentIntent and mirror the charge's CURRENT cumulative `amount_refunded` into `amount_refunded_minor` (partial and full refunds; out-of-order deliveries and a refund that later fails converge on Stripe's total). The amount in the event body is never used. |
 
-Not handled: `checkout.session.async_payment_failed`, dispute events, `customer.deleted`, payment-method events, `invoice.upcoming`. Each event's body is never trusted: only the object id is used (fetch-on-event).
+Invoice service period: `period_start`/`period_end` are taken from the invoice's subscription line item (the period paid for), not Stripe's invoice-level fields (which describe the previous period on a renewal). Credit notes that credit the customer balance without a refund are not mirrored (no refund exists on the charge).
+
+Not handled: `checkout.session.async_payment_failed`, dispute events, `credit_note.*`, `customer.deleted`, payment-method events, `invoice.upcoming`. Each event's body is never trusted: only the object id is used (fetch-on-event).
 
 ## Webhook behaviour table
 

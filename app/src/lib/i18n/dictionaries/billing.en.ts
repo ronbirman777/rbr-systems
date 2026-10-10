@@ -172,6 +172,9 @@ export const billingEn = {
   chipEnded: "Ended",
   billingLink: "Billing",
   lifecycleBillingLocked: "Resolve billing for this Space before restoring or replacing it.",
+  lifecycleDeleteActiveSubscription: "This Space still has an active subscription, so nothing was deleted. Cancel the subscription on the Billing page and delete the Space after it has ended.",
+  lifecycleArchivePaidBody: "Archiving “{space}” removes it from active/public use. Guests will no longer be able to reach it. Archiving does not cancel its subscription.",
+  lifecycleReplacePaidBody: "This discards “{space}”'s existing content — its published version, schedule, and module content — and starts a new draft in the same Space. This cannot be undone. Type the Space's current name to confirm.",
 
   // --- emails ---
   emailGreeting: "Hello,",

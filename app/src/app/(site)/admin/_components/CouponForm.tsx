@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { createCouponAction, updateCouponAction, type AdminActionResult } from "../billing/actions";
 import { BASE_PLAN_KEY } from "@/lib/billing/constants";
@@ -8,6 +8,7 @@ import { LARGE_DISCOUNT_PERCENT } from "@/lib/billing/admin/policy";
 import { errorMessage, fieldErrors, isLargeDiscount, type AdminKey, type AdminT } from "@/lib/billing/admin/ui/labels";
 import { useAdminI18n } from "./AdminI18n";
 import { ResultNote } from "./ResultNote";
+import { useAdminForm } from "./useAdminForm";
 import { btnPrimary, errCls, hintCls, inputCls, labelCls } from "./styles";
 
 export type CouponFormInitial = {
@@ -48,7 +49,7 @@ export function CouponForm({ mode, couponId, initial = EMPTY_COUPON, lockFinanci
   const { t } = c;
   const router = useRouter();
   const action = useMemo<Act>(() => (mode === "edit" && couponId ? updateCouponAction.bind(null, couponId) : createCouponAction), [mode, couponId]);
-  const [state, formAction, pending] = useActionState<AdminActionResult | null, FormData>(action, null);
+  const { state, pending, onSubmit, retry } = useAdminForm(action);
   const [discountType, setDiscountType] = useState(initial.discountType);
   const [durationType, setDurationType] = useState(initial.durationType);
   const [percentOff, setPercentOff] = useState(initial.percentOff);
@@ -72,7 +73,7 @@ export function CouponForm({ mode, couponId, initial = EMPTY_COUPON, lockFinanci
 
   return (
     <>
-    <form action={formAction} className="max-w-2xl">
+    <form onSubmit={onSubmit} className="max-w-2xl">
       {state && !state.ok && state.error !== "step_up_required" ? (
         <div role="alert" className="mb-4 rounded-xl border border-idw-clay-text/40 bg-red-50 p-3 text-sm text-red-900">
           <p className="font-semibold">{errorMessage(state.error, c)}</p>
@@ -210,7 +211,7 @@ export function CouponForm({ mode, couponId, initial = EMPTY_COUPON, lockFinanci
     </form>
     {/* Kept outside the form element: the step-up box is a form of its own and forms must never nest. */}
     <div className="max-w-2xl">
-      <ResultNote result={state} okMessage={mode === "create" ? t("cfCreatedOk") : t("cfSavedOk")} />
+      <ResultNote result={state} onRetry={retry} okMessage={mode === "create" ? t("cfCreatedOk") : t("cfSavedOk")} />
     </div>
     </>
   );

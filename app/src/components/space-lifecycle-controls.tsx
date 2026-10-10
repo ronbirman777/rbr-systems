@@ -19,6 +19,9 @@ import { InnerDweSMark } from "@/components/brand/wordmark";
  * a non-owner member simply never sees these buttons - but even if they
  * did, the RPCs would reject them.
  */
+/** TASK 032 paid-mode confirmation copy, translated server-side (billing namespace). */
+export type PaidLifecycleCopy = { archiveBody: string; replaceBody: string; lang: string; dir: "ltr" | "rtl" };
+
 export function SpaceLifecycleControls({
   tenantId,
   name,
@@ -27,7 +30,7 @@ export function SpaceLifecycleControls({
   showReplace,
   billingLockedNote,
   untitledName,
-  paidMode = false,
+  paidCopy = null,
 }: {
   tenantId: string;
   name: string;
@@ -41,10 +44,11 @@ export function SpaceLifecycleControls({
   untitledName: string;
   /**
    * TASK 032: paid checkout is on. Each Space is its own subscription, so the
-   * dialogs must not talk about "Space slots". false (legacy) keeps the Task 011
-   * text exactly.
+   * dialogs must not talk about "Space slots". Already translated on the server
+   * (billing namespace, account locale, Space name interpolated) together with
+   * the lang/dir it is written in. null (legacy) keeps the Task 011 text exactly.
    */
-  paidMode?: boolean;
+  paidCopy?: PaidLifecycleCopy | null;
 }) {
   const [archiveState, archiveAction, archivePending] = useActionState(archiveSpace, INITIAL_LIFECYCLE_STATE);
   const [restoreState, restoreAction, restorePending] = useActionState(restoreSpace, INITIAL_LIFECYCLE_STATE);
@@ -81,7 +85,7 @@ export function SpaceLifecycleControls({
         )}
         {showReplace && (
           <>
-            <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} paidMode={paidMode} open={replaceOpen} onOpenChange={setReplaceOpen} />
+            <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} paidCopy={paidCopy} open={replaceOpen} onOpenChange={setReplaceOpen} />
             <button type="button" onClick={() => setReplaceOpen(true)} className={safeChip}>
               Replace
             </button>
@@ -104,10 +108,9 @@ export function SpaceLifecycleControls({
         </button>
       ) : (
         <div className="rounded-xl border border-idw-forest/15 bg-idw-parchment/60 p-3 max-w-[260px] w-full">
-          {paidMode ? (
-            <p className="text-xs text-idw-forest/70 normal-case font-normal">
-              Archiving &ldquo;{name}&rdquo; removes it from active/public use. Guests will no longer
-              be able to reach it. Archiving does not cancel its subscription.
+          {paidCopy ? (
+            <p lang={paidCopy.lang} dir={paidCopy.dir} className="text-xs text-idw-forest/70 normal-case font-normal">
+              {paidCopy.archiveBody}
             </p>
           ) : (
             <p className="text-xs text-idw-forest/70 normal-case font-normal">
@@ -136,7 +139,7 @@ export function SpaceLifecycleControls({
       )}
       {showReplace && (
         <>
-          <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} paidMode={paidMode} open={replaceOpen} onOpenChange={setReplaceOpen} />
+          <ReplaceDialog tenantId={tenantId} name={name} untitledName={untitledName} paidCopy={paidCopy} open={replaceOpen} onOpenChange={setReplaceOpen} />
           <button type="button" onClick={() => setReplaceOpen(true)} className={safeChip}>
             Replace
           </button>
@@ -158,14 +161,14 @@ function ReplaceDialog({
   tenantId,
   name,
   untitledName,
-  paidMode,
+  paidCopy,
   open,
   onOpenChange,
 }: {
   tenantId: string;
   name: string;
   untitledName: string;
-  paidMode: boolean;
+  paidCopy: PaidLifecycleCopy | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -202,11 +205,9 @@ function ReplaceDialog({
         <h2 id="replace-space-title" className="text-[16px] text-idw-forest font-editorial italic">
           Replace this Space
         </h2>
-        {paidMode ? (
-          <p className="mt-2 text-[13px] leading-relaxed text-idw-forest/60">
-            This discards &ldquo;{name}&rdquo;&apos;s existing content — its published version,
-            schedule, and module content — and starts a new draft in the same Space. This
-            cannot be undone. Type the Space&apos;s current name to confirm.
+        {paidCopy ? (
+          <p lang={paidCopy.lang} dir={paidCopy.dir} className="mt-2 text-[13px] leading-relaxed text-idw-forest/60">
+            {paidCopy.replaceBody}
           </p>
         ) : (
           <p className="mt-2 text-[13px] leading-relaxed text-idw-forest/60">

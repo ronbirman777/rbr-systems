@@ -52,3 +52,24 @@ export async function verifyMfaAction(next: string, _prev: VerifyState, fd: Form
   if (error) return { ok: false, error: "invalid_code" };
   redirect(safeInternalRedirectPath(next, "/admin/billing"));
 }
+
+export type StepUpState = { ok: true; at: number } | { ok: false; error: string } | null;
+
+/**
+ * Inline step-up (re-verify) WITHOUT navigating away: verifies a fresh code exactly like verifyMfaAction (the new
+ * AAL2 session / TOTP timestamp is written to the session cookies of this response) and returns instead of
+ * redirecting, so the Admin form that asked for the step-up keeps its values and can re-submit. This grants nothing
+ * by itself: the retried action still re-checks admin_users, AAL2 and the recent-MFA timestamp on the server.
+ */
+export async function stepUpVerifyAction(_prev: StepUpState, fd: FormData): Promise<StepUpState> {
+  await requireAdminForMfaPages();
+  const parsed = code.safeParse(fd.get("code"));
+  if (!parsed.success) return { ok: false, error: "invalid_code" };
+  const supabase = await createClient();
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const factor = (factors?.totp ?? []).find((f) => f.status === "verified");
+  if (!factor) redirect("/admin/mfa/enroll");
+  const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code: parsed.data });
+  if (error) return { ok: false, error: "invalid_code" };
+  return { ok: true, at: Date.now() };
+}

@@ -18,6 +18,8 @@ export class FakeStripe implements StripeGateway {
   invoices = new Map<string, InvoiceDTO>();
   coupons = new Map<string, { id: string; valid: boolean; percentOff: number | null; amountOffMinor: number | null; currency: string | null; duration: "once" | "repeating" | "forever"; durationInMonths: number | null }>();
   couponOfSub = new Map<string, string>();
+  /** Charges by id: the payment intent and Stripe's CURRENT cumulative refunded amount. */
+  charges = new Map<string, { paymentIntentId: string | null; amountRefundedMinor: number }>();
   cyclesPaid = new Map<string, number>();
   now = new Date("2026-11-01T12:00:00.000Z");
   private n = 0;
@@ -80,6 +82,7 @@ export class FakeStripe implements StripeGateway {
     return this.clone(s);
   }
   async retrieveInvoice(id: string) { this.guard("retrieveInvoice"); const i = this.invoices.get(id); if (!i) throw new Error("no such invoice"); return this.clone(i); }
+  async retrieveChargeRefund(id: string) { this.guard("retrieveCharge"); const c = this.charges.get(id); return c ? { ...c } : null; }
   async findInvoiceIdForPaymentIntent(pi: string) { this.guard("findInvoice"); return [...this.invoices.keys()].find((k) => k.includes(pi)) ?? null; }
   async createBillingPortalSession() { this.guard("portal"); return { url: "https://billing.stripe.com/p/session/fake" }; }
 

@@ -92,7 +92,11 @@ export type StripeEventDTO = {
   createdAt: Date;
   /** id of the primary object (cs_/sub_/in_/ch_...). */
   objectId: string | null;
-  /** Only for charge.refunded: what the charge says about refunds. */
+  /**
+   * Only for charge.refunded / charge.refund.updated: the charge the refund belongs to. The amounts in the event body are
+   * a HINT only - the handler re-reads the charge from Stripe (fetch-on-event), so out-of-order partial refunds and a
+   * refund that later fails converge on Stripe's current total.
+   */
   refund?: { chargeId: string; paymentIntentId: string | null; amountRefundedMinor: number } | null;
 };
 
@@ -126,6 +130,8 @@ export interface StripeGateway {
   retrieveSubscription(subscriptionId: string): Promise<SubscriptionDTO>;
   setCancelAtPeriodEnd(subscriptionId: string, cancel: boolean): Promise<SubscriptionDTO>;
   retrieveInvoice(invoiceId: string): Promise<InvoiceDTO>;
+  /** Refund events: Stripe's CURRENT refund total for a charge (cumulative, partial or full). null = no such charge. */
+  retrieveChargeRefund(chargeId: string): Promise<{ paymentIntentId: string | null; amountRefundedMinor: number } | null>;
   /** For charge.refunded: find the invoice a payment belongs to. */
   findInvoiceIdForPaymentIntent(paymentIntentId: string): Promise<string | null>;
 

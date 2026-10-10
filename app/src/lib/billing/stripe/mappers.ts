@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import type { CheckoutSessionDTO, InvoiceDTO, InvoiceStatus, StripeSubscriptionStatus, SubscriptionDTO } from "./gateway";
+import type { CheckoutSessionDTO, InvoiceDTO, InvoiceStatus, StripeEventDTO, StripeSubscriptionStatus, SubscriptionDTO } from "./gateway";
 
 /**
  * The ONLY file that interprets Stripe SDK object shapes. Everything else in
@@ -68,10 +68,18 @@ export function mapInvoice(i: Stripe.Invoice): InvoiceDTO {
     status_transitions?: { paid_at?: number | null } | null;
     customer?: string | { id: string } | null;
     subscription?: string | { id: string } | null;
+    lines?: { data?: { period?: { start?: number | null; end?: number | null } | null; parent?: { type?: string | null } | null }[] } | null;
   };
   const status = (i.status ?? "draft") as InvoiceStatus;
   const discountMinor = (raw.total_discount_amounts ?? []).reduce((a, d) => a + d.amount, 0);
   const taxMinor = (raw.total_taxes ?? []).reduce((a, t) => a + t.amount, 0);
+  // Stripe's invoice-level period_start/period_end describe the PREVIOUS (usage) period: on a subscription_cycle invoice
+  // they are last month, and on the first invoice both equal the creation time. The period a licensed (pay-in-advance)
+  // subscription invoice actually pays for is the subscription line item's period, so that is what is stored.
+  const lines = raw.lines?.data ?? [];
+  const line = lines.find((l) => l.parent?.type === "subscription_item_details" && l.period) ?? lines.find((l) => l.period) ?? null;
+  const periodStart = date(line?.period?.start ?? i.period_start);
+  const periodEnd = date(line?.period?.end ?? i.period_end);
   return {
     id: i.id!,
     subscriptionId: idOf(raw.parent?.subscription_details?.subscription ?? raw.subscription ?? null),
@@ -89,8 +97,8 @@ export function mapInvoice(i: Stripe.Invoice): InvoiceDTO {
     hostedInvoiceUrl: i.hosted_invoice_url ?? null,
     invoicePdfUrl: i.invoice_pdf ?? null,
     receiptUrl: null,
-    periodStart: date(i.period_start),
-    periodEnd: date(i.period_end),
+    periodStart,
+    periodEnd,
     createdAt: date(i.created),
     paidAt: date(raw.status_transitions?.paid_at ?? null),
     failedAt: null, // set by the webhook handler from the payment_failed event time
@@ -124,4 +132,19 @@ export function mapCheckoutSession(s: Stripe.Checkout.Session): CheckoutSessionD
  */
 export function effectiveAmountFromInvoice(inv: Pick<InvoiceDTO, "subtotalMinor" | "discountMinor">): number {
   return Math.max(0, inv.subtotalMinor - inv.discountMinor);
+}
+
+/** Reduce a verified Stripe event to the routing DTO (pure; exported for tests). */
+export function eventToDto(ev: Pick<Stripe.Event, "id" | "type" | "livemode" | "created"> & { data: { object: unknown } }): StripeEventDTO {
+  const obj = ev.data.object as { id?: string; payment_intent?: string | { id: string } | null; amount_refunded?: number; charge?: string | { id: string } | null };
+  const ref = (v: string | { id: string } | null | undefined) => (v == null ? null : typeof v === "string" ? v : v.id);
+  let refund: StripeEventDTO["refund"] = null;
+  if (ev.type === "charge.refunded") {
+    refund = { chargeId: obj.id ?? "", paymentIntentId: ref(obj.payment_intent), amountRefundedMinor: obj.amount_refunded ?? 0 };
+  } else if (ev.type === "charge.refund.updated") {
+    // The object is a Refund (e.g. a refund that FAILED, which lowers the charge's refunded total). Only its charge matters.
+    const chargeId = ref(obj.charge);
+    refund = chargeId ? { chargeId, paymentIntentId: ref(obj.payment_intent), amountRefundedMinor: 0 } : null;
+  }
+  return { id: ev.id, type: ev.type, livemode: ev.livemode, createdAt: new Date(ev.created * 1000), objectId: obj.id ?? null, refund };
 }

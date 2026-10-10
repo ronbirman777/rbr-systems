@@ -1,6 +1,6 @@
-# TASK 032 migration recovery (0036-0042)
+# TASK 032 migration recovery (0036-0043)
 
-This document covers how to recover if one of the TASK 032 billing migrations (0036-0042) causes a problem in an environment. The rollback scripts are in `app/supabase/verification/`, one per migration:
+This document covers how to recover if one of the TASK 032 billing migrations (0036-0043) causes a problem in an environment. The rollback scripts are in `app/supabase/verification/`, one per migration:
 
 | Migration | Rollback file |
 |---|---|
@@ -11,6 +11,7 @@ This document covers how to recover if one of the TASK 032 billing migrations (0
 | 0040 payments / invoices | `0040_billing_payments_invoices_rollback.sql` |
 | 0041 event / email primitives | `0041_billing_event_email_primitives_rollback.sql` |
 | 0042 Space lifecycle guards | `0042_billing_space_lifecycle_guards_rollback.sql` |
+| 0043 audio enforcement (B4b) | `0043_billing_audio_enforcement_rollback.sql` |
 
 **Rollback is never automatic.** Nothing runs these files on its own: not CI, not the Supabase CLI (it only reads `migrations/`), not the application. Each file:
 
@@ -57,6 +58,8 @@ An arrow `A -> B` means A depends on B. Hard dependencies are ones Postgres reco
 | 0041 columns | 0036 `space_subscriptions`, `billing_email_outbox` | hard | |
 | 0041 `billing_claim_emails` | 0036 `billing_email_outbox` row type | hard (`RETURNS SETOF`) | |
 | 0041 `billing_transition_checkout` | 0037 `billing_release_coupon_reservation` | call | |
+| 0043 trigger `billing_guard_module_item_audio` on `module_items` | 0043 `billing_guard_module_item_audio` -> `billing_audio_policy` -> 0038 `space_audio_entitlements`, 0036 `space_subscriptions` | hard (trigger), call | |
+| 0043 `publish_space` (restated) | 0043 `billing_audio_assert_publishable`, 0038 `space_access_state` | call | |
 
 Functions that TASK 032 restates, and the definition each rollback restores:
 
@@ -67,6 +70,7 @@ Functions that TASK 032 restates, and the definition each rollback restores:
 | `enforce_space_slot_capacity()` | 0038 | `0017_space_management_slots.sql` | `708dde46d74624be4cb93b48d4972991` (recorded on Staging before 0028) |
 | `restore_space(uuid)` | 0042 | `0017_space_management_slots.sql` | `9a31bcf90162a2ce7001078d1fdbcfa0` (recorded on Staging before 0028) |
 | `replace_space(uuid, text)` | 0042 | `0027_replace_space_reset_module_covers.sql` | `3a2af65a96d60ac2dfc90ee6f73d5236` (recorded on Staging before 0028) |
+| `publish_space(uuid)` | 0043 | `0039_billing_access_enforcement.sql` | not recorded on a hosted project; `md5(prosrc)` = `85c5b820eab3e57a3e98ed4d455d312b` (0039 body; observed on a throwaway local database after the 0043 rollback) |
 
 The test reproduces these three fingerprints from the rollback text, by rebuilding what `pg_get_functiondef` prints. No migration from 0002 to 0037 redefines or alters `handle_new_tenant` or `enforce_space_slot_capacity`. The Production values for those two were not recorded in this repository. Capture them in the release baseline before 0038 is applied, and confirm they match.
 
@@ -77,11 +81,12 @@ TASK 032 does not touch any other pre-existing object. 0036, 0037, 0040 and 0041
 Roll back in strict reverse order, one file at a time, verifying each one before starting the next:
 
 ```
-0042 -> 0041 -> 0040 -> 0039 -> 0038 -> 0037 -> 0036
+0043 -> 0042 -> 0041 -> 0040 -> 0039 -> 0038 -> 0037 -> 0036
 ```
 
 Each file's guard refuses until the next-later rollback has run. The order is required in these places:
 
+- 0043 must come first: its restated `publish_space` and its trigger call `space_audio_entitlements` (0038), and it restates `publish_space` on top of 0039. The 0042 file refuses while `billing_audio_policy` (0043) still exists.
 - 0042 must come before 0038, because its restated `restore_space`/`replace_space` call `space_access_state`, `space_studio_writable` and `billing_is_paid_checkout_required`. The 0041 file refuses while the 0042 guard (`BILLING_LOCKED`) is still present.
 - 0039 must come before 0038, because of the hard policy-to-function dependency and because `publish_space` calls `space_access_state`.
 - 0038 and 0041 must come before 0037, because they call its functions.
@@ -104,6 +109,7 @@ A partial rollback is valid. Stopping after 0039 is the most likely useful one: 
 
 | Rollback | Reversible by re-running the migration | Data-destructive | Notes |
 |---|---|---|---|
+| 0043 | yes | none | Audio limits on paid Spaces are enforced only by the Studio server actions again: a member could write `metadata.audioRef`/`durationSeconds` through PostgREST or publish through a direct RPC call |
 | 0042 | yes | none | Restore/Replace stop consulting billing at the database; restore counts every owned Space against the legacy allowance again |
 | 0041 | yes | small: `next_payment_attempt_at` (a copy of Stripe's retry time, re-derivable) and `claimed_at` (a send lease) | refuses while any email is `sending` |
 | 0040 | yes (schema) | **yes: every `billing_invoices` row** (re-syncable from Stripe, but the local copy is lost) | refuses if any outbox row uses `payment_confirmation`; it never deletes those rows itself |
@@ -126,6 +132,7 @@ psql "$DATABASE_URL" -v ON_ERROR_STOP=1 \
 
 | File | Token |
 |---|---|
+| 0043 | `0043` |
 | 0042 | `0042` |
 | 0041 | `0041-exported` |
 | 0040 | `0040-exported` |
@@ -198,9 +205,6 @@ Run the prerequisites query only while 0036 is still present. After a full rollb
 - the reconstructed `pg_get_functiondef` fingerprints equal the recorded baseline values;
 - every created object has a matching drop.
 
-**Not verified:** none of these rollback files has been executed against a database, so their runtime behaviour has not been rehearsed. Before any rollback is used on Staging or Production, rehearse it on a throwaway database or a Supabase branch:
+**Rehearsed locally (2026-10-10):** every file has been executed, in order, on throwaway local databases by `app/supabase/verification/rehearse-billing-rollback.sh`. The guards refused on a missing or wrong token, the paid flag being on, a live subscription, out-of-order runs, a `sending` email, a `payment_confirmation` outbox row, and open or mid-payment checkouts. The rolled-back catalog equalled a fresh 0001-0035 database exactly, and re-applying 0036-0042 equalled a fresh 0001-0042 database exactly. The rehearsal found one defect, which is now fixed: the 0038 rollback did not refuse on an open checkout. See `ROLLBACK-REHEARSAL.md` for the results, the expected fingerprints after each step, and the hosted (Staging or branch) rehearsal plan.
 
-1. Apply 0036-0041.
-2. Run the six rollbacks in order.
-3. Compare the catalog with the pre-0036 baseline.
-4. Re-apply 0036-0041 to confirm the round trip.
+**Not verified:** no rollback has been run on a hosted Supabase project. The ledger repair and re-push path has not been exercised. A hosted rehearsal requires owner approval (`ROLLBACK-REHEARSAL.md` §4).

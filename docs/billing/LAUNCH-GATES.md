@@ -40,6 +40,12 @@ Status: **paid checkout is OFF.** `billing_settings.paid_checkout_enabled` seeds
 - [ ] Production migrations 0036-0041 applied (application state per environment not verified by this document)
 - [ ] Real-Stripe Test-mode end to end on Staging completed (not yet evidenced)
 
+## Product scope gates (owner decision before launch copy)
+
+- [ ] **Audio add-on (`audio_pack`) is NOT purchasable.** It exists only as entitlement arithmetic (plan JSON + `space_subscription_addons` + `space_audio_entitlements`). No checkout line item, no Stripe price, no Admin grant, no customer UI writes it (ENTITLEMENTS.md, "Status"). Launch copy, pricing pages and support answers must not offer "+$5 for more audio" until a separate task builds the sale. Every paid Space gets the base bundle only.
+- [ ] Listening minutes / month are display-only (not metered) - ENTITLEMENTS.md.
+- [ ] Internal / demo Spaces exempted on the target environment before the flag is turned on (PRODUCTION-RELEASE-PLAN.md, "Internal exemptions").
+
 ## Stripe live key activation checklist
 
 Do not start until every legal and operational gate above is closed and the task explicitly authorises it.

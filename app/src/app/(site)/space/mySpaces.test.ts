@@ -198,8 +198,8 @@ describe("My Spaces - Restore / Replace under billing (TASK 032 B2)", () => {
     state.slots = { slotsUsed: 1, slotsAllowed: 2, slotsAvailable: 1 };
     let c = controls(await render([tenant({ id: "live" }), tenant({ id: "arch", status: "archived" })]));
     expect(c.live).toMatchObject({ showRestore: false, showReplace: false, billingLockedNote: null });
-    expect(c.arch).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null, paidMode: false });
-    expect(c.live).toMatchObject({ paidMode: false });
+    expect(c.arch).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null, paidCopy: null });
+    expect(c.live).toMatchObject({ paidCopy: null });
 
     state.slots = { slotsUsed: 2, slotsAllowed: 2, slotsAvailable: 0 };
     c = controls(await render([tenant({ id: "live" })]));
@@ -220,8 +220,14 @@ describe("My Spaces - Restore / Replace under billing (TASK 032 B2)", () => {
     const tree = await render([tenant({ id: ID }), tenant({ id: PAID, status: "archived" })]);
     const c = controls(tree);
     expect(c[ID]).toMatchObject({ showRestore: false, showReplace: true, billingLockedNote: null });
-    expect(c[PAID]).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null, paidMode: true });
-    expect(c[ID]).toMatchObject({ paidMode: true });
+    expect(c[PAID]).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null });
+    for (const id of [ID, PAID]) {
+      const copy = c[id].paidCopy as { archiveBody: string; replaceBody: string; lang: string; dir: string };
+      expect(copy).toMatchObject({ lang: "en", dir: "ltr" });
+      expect(copy.archiveBody).toContain("Archiving does not cancel its subscription");
+      expect(copy.replaceBody).toContain("starts a new draft in the same Space");
+      expect(`${copy.archiveBody} ${copy.replaceBody}`.toLowerCase()).not.toContain("slot");
+    }
     expect(textOf(tree)).not.toContain("Still uses one Space slot");
     expect(textOf(tree)).not.toContain("slot used");
   });

@@ -393,21 +393,21 @@ async function main() {
     const t = await bodyText(p);
     const { data: made } = await admin.from("coupons").select("id").eq("normalized_code", cS);
     check("F1 with a STALE MFA timestamp a very large discount is REFUSED and an inline re-verify box appears", (made ?? []).length === 0 && /confirm|verify|authenticator|code/i.test(t) && /coupons\/new/.test(p.url()), t.slice(0, 120));
+    // The refused submit must NOT have cleared the form (React resets <form action> fields; Admin forms use onSubmit).
+    const couponForm = p.locator("form:has(input[name=percentOff])");
+    const kept = { code: await couponForm.locator("input[name=code]").inputValue(), pct: await couponForm.locator("input[name=percentOff]").inputValue() };
+    check("F1b the coupon form still holds the typed values while the re-verify box is open", kept.code.toUpperCase() === cS.toUpperCase() && kept.pct === "60", JSON.stringify(kept));
+    // Marker on the current document: a full reload would drop it.
+    await p.evaluate(() => { window.__idwNoReload = true; });
     await waitNextStep();
     const box = p.locator("input[inputmode=numeric], input[autocomplete=one-time-code]").last();
     await box.fill(totp(secret)); await p.getByRole("button", { name: /verify|confirm|continue/i }).last().click();
-    // By design a successful re-verify reloads the page (CodeForm), so the form is empty again: the admin re-enters it.
-    await p.waitForLoadState("load").catch(() => {}); await p.waitForLoadState("networkidle").catch(() => {});
-    const stepUpBox = p.locator("form[aria-label]:has(input[autocomplete=one-time-code]), form[aria-label]:has(input[inputmode=numeric])");
-    for (let i = 0; i < 40 && (await stepUpBox.count()) > 0; i++) await p.waitForTimeout(500);
-    const stepUpLeft = await stepUpBox.count();
-    if (stepUpLeft) console.log("step-up box still open after verify:", (await stepUpBox.first().innerText()).slice(0, 160));
-    const couponForm = p.locator("form:has(input[name=percentOff])");
-    await couponForm.locator("input[name=code]").fill(cS); await couponForm.locator("input[name=percentOff]").fill("60");
-    await couponForm.locator("select[name=usageRule]").selectOption("once_per_user"); await couponForm.locator("select[name=durationType]").selectOption("once");
-    await couponForm.getByRole("button", { name: /create coupon|save|create/i }).first().click(); await p.waitForTimeout(3000);
-    const { data: made2 } = await admin.from("coupons").select("id").eq("normalized_code", cS);
-    check("F2 after re-verifying, the same action succeeds", (made2 ?? []).length === 1);
+    // By design the re-verify happens in place and the pending action is re-sent automatically: NO re-fill here.
+    let made2 = [];
+    for (let i = 0; i < 40; i++) { ({ data: made2 } = await admin.from("coupons").select("id, percent_off").eq("normalized_code", cS)); if ((made2 ?? []).length) break; await p.waitForTimeout(500); }
+    const noReload = await p.evaluate(() => window.__idwNoReload === true).catch(() => false);
+    check("F2 after re-verifying, the same action succeeds WITHOUT re-entering the form (auto re-submit of the kept values)", (made2 ?? []).length === 1 && Number(made2[0].percent_off) === 60, JSON.stringify(made2));
+    check("F3 the re-verify did not reload the document", noReload);
     await c.close();
   }
 }

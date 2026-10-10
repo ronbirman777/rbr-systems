@@ -74,6 +74,15 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
+// TASK 032: service-role Storage client, used only to remove an ENDED paid Space's media on Delete.
+const adminStorage = vi.hoisted(() => ({ list: vi.fn(), remove: vi.fn(), created: 0 }));
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: () => {
+    adminStorage.created++;
+    return { storage: { from: () => ({ list: (...a: unknown[]) => adminStorage.list(...a), remove: (...a: unknown[]) => adminStorage.remove(...a) }) } };
+  },
+}));
+
 vi.mock("next/cache", () => ({ revalidatePath: (...args: unknown[]) => mockRevalidatePath(...args) }));
 
 async function loadActions() {
@@ -877,6 +886,100 @@ describe("lifecycleActions - Task 011", () => {
         expect(mockStorageList).not.toHaveBeenCalled();
       });
     });
+  });
+});
+
+describe("deleteSpace - TASK 032 billing (subscription guard before any Storage removal)", () => {
+  const T = "11111111-1111-4111-8111-111111111111";
+  const fd = () => formData({ tenantId: T, expectedName: "Real Name", confirmName: "Real Name" });
+  const file = { name: "a.jpg", id: "obj-1" };
+  beforeEach(() => {
+    vi.clearAllMocks();
+    adminStorage.created = 0;
+    mockGetUser.mockResolvedValue({ data: { user: { id: "user-1" } } });
+    mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+    mockStorageList.mockResolvedValue({ data: [file], error: null });
+    mockStorageRemove.mockResolvedValue({ data: [file], error: null });
+    adminStorage.list.mockResolvedValue({ data: [file], error: null });
+    adminStorage.remove.mockResolvedValue({ data: [file], error: null });
+    mockRpc.mockResolvedValue({ error: null });
+    billing.subs = {};
+    billing.subsError = null;
+  });
+
+  for (const status of ["active", "trialing", "past_due", "unpaid", "incomplete", "paused"]) {
+    it(`a '${status}' subscription refuses Delete BEFORE touching Storage (no media loss on a live paid Space)`, async () => {
+      billing.subs[T] = { tenant_id: T, status };
+      const { deleteSpace } = await loadActions();
+      const r = await deleteSpace({ error: null }, fd());
+      expect(r.success).toBeUndefined();
+      expect(r.activeSubscription).toBe(true);
+      // localized "cancel first" copy from the billing dictionary, not the generic "try again"
+      expect(r.error).toContain("active subscription");
+      expect(mockStorageList).not.toHaveBeenCalled();
+      expect(mockStorageRemove).not.toHaveBeenCalled();
+      expect(adminStorage.created).toBe(0);
+      expect(mockRpc).not.toHaveBeenCalled();
+    });
+  }
+
+  it("an unreadable billing row fails closed before touching Storage", async () => {
+    billing.subsError = { message: "boom" };
+    const { deleteSpace } = await loadActions();
+    const r = await deleteSpace({ error: null }, fd());
+    expect(r.error).toBeTruthy();
+    expect(r.activeSubscription).toBeUndefined();
+    expect(mockStorageList).not.toHaveBeenCalled();
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it("a legacy Space (no billing row) deletes exactly as before, with the owner's own session", async () => {
+    const { deleteSpace } = await loadActions();
+    const r = await deleteSpace({ error: null }, fd());
+    expect(r.success).toBe(true);
+    expect(mockStorageRemove).toHaveBeenCalledWith([`${T}/a.jpg`]);
+    expect(adminStorage.created).toBe(0);
+    expect(mockRpc).toHaveBeenCalledWith("delete_space", { p_tenant_id: T });
+  });
+
+  it("an exempt Space deletes with the owner's own session", async () => {
+    billing.subs[T] = { tenant_id: T, status: "exempt" };
+    const { deleteSpace } = await loadActions();
+    expect((await deleteSpace({ error: null }, fd())).success).toBe(true);
+    expect(adminStorage.created).toBe(0);
+  });
+
+  for (const status of ["canceled", "incomplete_expired"]) {
+    it(`an ended ('${status}') Space removes its media with the service client (owner storage writes are suspended), then delete_space`, async () => {
+      billing.subs[T] = { tenant_id: T, status };
+      const { deleteSpace } = await loadActions();
+      const r = await deleteSpace({ error: null }, fd());
+      expect(r.success).toBe(true);
+      expect(adminStorage.remove).toHaveBeenCalledWith([`${T}/a.jpg`]);
+      expect(mockStorageRemove).not.toHaveBeenCalled();
+      expect(mockRpc).toHaveBeenCalledWith("delete_space", { p_tenant_id: T });
+    });
+  }
+
+  it("an ended Space still requires ownership before the service client is ever created", async () => {
+    billing.subs[T] = { tenant_id: T, status: "canceled" };
+    mockFromCountSelect.mockResolvedValue({ data: [{ role: "practitioner" }], error: null });
+    const { deleteSpace } = await loadActions();
+    const r = await deleteSpace({ error: null }, fd());
+    expect(r.success).toBeUndefined();
+    expect(adminStorage.created).toBe(0);
+    expect(mockRpc).not.toHaveBeenCalled();
+  });
+
+  it("Replace never uses the service client, even for an ended Space (legacy mode, DB refuses BILLING_LOCKED)", async () => {
+    billing.mode = "legacy";
+    billing.subs[T] = { tenant_id: T, status: "canceled" };
+    mockTenantSelect.mockResolvedValue({ data: { product_type: "retreat" } });
+    mockStorageRemove.mockResolvedValue({ data: [], error: null });
+    const { replaceSpace } = await loadActions();
+    const r = await replaceSpace({ error: null }, formData({ tenantId: T, expectedName: "Real Name", confirmName: "Real Name" }));
+    expect(r.success).toBeUndefined();
+    expect(adminStorage.created).toBe(0);
   });
 });
 

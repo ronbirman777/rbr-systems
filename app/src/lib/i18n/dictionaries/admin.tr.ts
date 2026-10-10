@@ -499,7 +499,7 @@ export const adminTr: { [K in keyof typeof adminEn]: string } = {
   codeChecking: "Kontrol ediliyor...",
   stepUpAria: "Kimlik doğrulayıcınızla yeniden doğrulayın",
   stepUpTitle: "Kimliğinizi doğrulayın",
-  stepUpBody: "Bu değişiklik için yeni bir kimlik doğrulayıcı kodu gerekir. Onayladıktan sonra sayfa yeniden yüklenir ve değişikliği tekrar deneyebilirsiniz.",
+  stepUpBody: "Bu değişiklik için yeni bir kimlik doğrulayıcı kodu gerekir. Onayladıktan sonra değişiklik otomatik olarak yeniden gönderilir; girdiğiniz bilgiler korunur.",
   stepUpConfirm: "Onayla",
 
   // --- MFA: enrol / verify ---

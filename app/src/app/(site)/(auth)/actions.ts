@@ -8,6 +8,7 @@ import { APP_URL } from "@/lib/site-url";
 import { isSupportedCountry } from "@/lib/countries";
 import { toE164 } from "@/lib/phone";
 import { deleteSpaceCompletely } from "@/app/(site)/configurator/retreat/lifecycleActions";
+import { loadSpaceDeletionGate } from "@/lib/billing/spaceDeletion";
 
 /**
  * Task 014: `unconfirmedEmail` is set from the RAW Supabase error message
@@ -195,6 +196,22 @@ export async function deleteAccount(
     .eq("user_id", user.id)
     .eq("role", "owner");
   if (ownedError) return { error: "Couldn't check your Spaces. Please try again." };
+
+  // TASK 032: check every owned Space's billing BEFORE deleting any of them,
+  // so a live subscription on the last Space can't leave the account
+  // half-deleted (earlier Spaces gone, account still there). Each
+  // deleteSpaceCompletely() re-checks for itself.
+  for (const row of ownedRows ?? []) {
+    const gate = await loadSpaceDeletionGate(supabase, row.tenant_id);
+    if (!gate.allowed) {
+      return {
+        error:
+          gate.reason === "active_subscription"
+            ? "One of your Spaces still has an active subscription. Cancel it on its Billing page and wait until it has ended, then delete your account."
+            : "Couldn't check your Spaces. Please try again.",
+      };
+    }
+  }
 
   for (const row of ownedRows ?? []) {
     const result = await deleteSpaceCompletely(supabase, user.id, row.tenant_id);

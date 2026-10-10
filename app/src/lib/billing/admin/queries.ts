@@ -145,7 +145,7 @@ export async function getSubscriptionDetail(db: SupabaseClient, subscriptionId: 
   const sub = toSubscriptionRecord(r);
   const [{ data: red }, { data: invoices }, { data: events }, emails] = await Promise.all([
     db.from("coupon_redemptions").select("*, coupons(code)").eq("space_subscription_id", subscriptionId).order("redeemed_at", { ascending: false }).limit(1).maybeSingle(),
-    db.from("billing_invoices").select("*").eq("space_subscription_id", subscriptionId).order("issued_at", { ascending: false }).limit(100),
+    db.from("billing_invoices").select("*").eq("space_subscription_id", subscriptionId).order("issued_at", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false }).limit(100),
     r.stripe_subscription_id ? db.from("billing_events").select("stripe_event_id, event_type, status, received_at, processed_at, error_code").eq("stripe_subscription_id", r.stripe_subscription_id).order("received_at", { ascending: false }).limit(25) : Promise.resolve({ data: [] }),
     lookupEmails(db, [r.billing_owner_user_id]),
   ]);
@@ -210,7 +210,7 @@ export async function getCouponDetail(db: SupabaseClient, couponId: string, now:
 }
 
 export async function listInvoices(db: SupabaseClient, f: { status?: string; tenantId?: string; subscriptionId?: string; limit?: number }) {
-  let q = db.from("billing_invoices").select("*, tenants(name, product_type)").order("issued_at", { ascending: false }).limit(Math.min(f.limit ?? 100, 500));
+  let q = db.from("billing_invoices").select("*, tenants(name, product_type)").order("issued_at", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false }).limit(Math.min(f.limit ?? 100, 500));
   if (f.status) q = q.eq("status", f.status);
   if (f.tenantId) q = q.eq("tenant_id", f.tenantId);
   if (f.subscriptionId) q = q.eq("space_subscription_id", f.subscriptionId);

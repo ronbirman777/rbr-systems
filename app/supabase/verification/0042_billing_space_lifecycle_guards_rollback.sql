@@ -7,8 +7,9 @@
 -- migration that corrects the defect) is preferred over this rollback.
 --
 -- ORDER: TASK 032 rollbacks run in strict reverse order, one at a time:
---   0042 (this file) -> 0041 -> 0040 -> 0039 -> 0038 -> 0037 -> 0036.
--- This is the first one; nothing must be rolled back before it. It must run
+--   0043 -> 0042 (this file) -> 0041 -> 0040 -> 0039 -> 0038 -> 0037 -> 0036.
+-- The 0043 rollback (audio enforcement) must run first; this file refuses
+-- while billing_audio_policy() (0043) still exists. It must run
 -- BEFORE the 0038 rollback: the restated bodies call space_access_state(),
 -- space_studio_writable() and billing_is_paid_checkout_required() (all 0038).
 -- The 0041 rollback refuses to run while these guards are still in place.
@@ -59,6 +60,9 @@ do $$
 begin
   if coalesce(current_setting('idw.rollback_confirm', true), '') <> '0042' then
     raise exception 'ROLLBACK 0042 REFUSED: set idw.rollback_confirm = ''0042'' to confirm';
+  end if;
+  if to_regprocedure('public.billing_audio_policy(uuid)') is not null then
+    raise exception 'ROLLBACK 0042 REFUSED: 0043 is still applied; run the 0043 rollback first';
   end if;
   if exists (select 1 from public.billing_settings where paid_checkout_enabled) then
     raise exception 'ROLLBACK 0042 REFUSED: paid checkout is ON (billing_settings.paid_checkout_enabled)';

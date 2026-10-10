@@ -28,7 +28,9 @@ export function ConfirmActionButton({
   const id = useId();
   const triggerCls = variant === "danger" ? btnDanger : variant === "primary" ? btnPrimary : btnSecondary;
 
-  function confirm() {
+  // Runs the action. Also the step-up retry: after an inline re-verify the same action is re-sent (the server
+  // re-checks the recent-MFA timestamp); the confirmation dialog is not shown a second time.
+  function run() {
     startTransition(async () => {
       let r: AdminActionResult;
       try {
@@ -64,10 +66,10 @@ export function ConfirmActionButton({
         <div id={`${id}-d`} className="mt-2 text-sm text-idw-forest/85">{message}</div>
         <div className="mt-5 flex flex-wrap justify-end gap-2">
           <button type="button" autoFocus className={btnSecondary} onClick={() => dialogRef.current?.close()}>{t("cancelButton")}</button>
-          <button type="button" disabled={pending} className={variant === "danger" ? btnDanger : btnPrimary} onClick={confirm}>{pending ? t("working") : confirmLabel}</button>
+          <button type="button" disabled={pending} className={variant === "danger" ? btnDanger : btnPrimary} onClick={run}>{pending ? t("working") : confirmLabel}</button>
         </div>
       </dialog>
-      <ResultNote result={result} okMessage={okMessage} />
+      <ResultNote result={result} okMessage={okMessage} onRetry={run} />
     </div>
   );
 }

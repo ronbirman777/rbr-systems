@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState, useId, useMemo, type ReactNode } from "react";
+import { useId, useMemo, type ReactNode } from "react";
 import { clearExemptAction, grantAdminAction, setExemptAction, type AdminActionResult } from "../billing/actions";
 import { fieldErrors } from "@/lib/billing/admin/ui/labels";
 import { useAdminI18n } from "./AdminI18n";
 import { ResultNote } from "./ResultNote";
+import { useAdminForm } from "./useAdminForm";
 import { btnPrimary, errCls, hintCls, inputCls, labelCls } from "./styles";
 
 type Act = (prev: AdminActionResult | null, fd: FormData) => Promise<AdminActionResult>;
@@ -24,19 +25,15 @@ function Field({ name, label, hint, error, children }: { name: string; label: st
   );
 }
 
-function useAct(action: Act) {
-  return useActionState<AdminActionResult | null, FormData>(action, null);
-}
-
 export function SetExemptForm() {
   const action = useMemo<Act>(() => (prev, fd) => setExemptAction(String(fd.get("tenantId") ?? "").trim(), prev, fd), []);
   const c = useAdminI18n();
   const { t } = c;
-  const [state, formAction, pending] = useAct(action);
+  const { state, pending, onSubmit, retry } = useAdminForm(action);
   const f = fieldErrors(state, c);
   return (
     <>
-    <form action={formAction} noValidate={false}>
+    <form onSubmit={onSubmit} noValidate={false}>
       <Field name="tenantId" label={t("fmTenantId")} hint={t("fmTenantIdHint")} error={state && !state.ok && state.error === "invalid" ? f.tenantId ?? t("fmEnterUuid") : undefined}>
         {(p) => <input id={p.id} name="tenantId" required pattern="[0-9a-fA-F\-]{36}" autoComplete="off" spellCheck={false} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={`${inputCls} font-mono`} />}
       </Field>
@@ -49,7 +46,7 @@ export function SetExemptForm() {
       <button type="submit" disabled={pending} className={btnPrimary}>{pending ? t("fmSaving") : t("fmMarkExempt")}</button>
     </form>
     {/* Kept outside the form element: the step-up box is a form of its own and forms must never nest. */}
-    <ResultNote result={state} okMessage={t("fmExemptOk")} />
+    <ResultNote result={state} onRetry={retry} okMessage={t("fmExemptOk")} />
     </>
   );
 }
@@ -58,18 +55,18 @@ export function ClearExemptForm({ tenantId }: { tenantId: string }) {
   const action = useMemo<Act>(() => clearExemptAction.bind(null, tenantId), [tenantId]);
   const c = useAdminI18n();
   const { t } = c;
-  const [state, formAction, pending] = useAct(action);
+  const { state, pending, onSubmit, retry } = useAdminForm(action);
   const f = fieldErrors(state, c);
   return (
     <>
-    <form action={formAction}>
+    <form onSubmit={onSubmit}>
       <Field name="reason" label={t("fmClearReason")} hint={t("fmClearHint")} error={f.reason}>
         {(p) => <input id={p.id} name="reason" required minLength={5} maxLength={500} aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={inputCls} />}
       </Field>
       <button type="submit" disabled={pending} className={btnPrimary}>{pending ? t("fmSaving") : t("fmRemoveExemption")}</button>
     </form>
     {/* Kept outside the form element: the step-up box is a form of its own and forms must never nest. */}
-    <ResultNote result={state} okMessage={t("fmClearOk")} />
+    <ResultNote result={state} onRetry={retry} okMessage={t("fmClearOk")} />
     </>
   );
 }
@@ -77,11 +74,11 @@ export function ClearExemptForm({ tenantId }: { tenantId: string }) {
 export function GrantAdminForm() {
   const c = useAdminI18n();
   const { t } = c;
-  const [state, formAction, pending] = useAct(grantAdminAction);
+  const { state, pending, onSubmit, retry } = useAdminForm(grantAdminAction);
   const f = fieldErrors(state, c);
   return (
     <>
-    <form action={formAction}>
+    <form onSubmit={onSubmit}>
       <Field name="email" label={t("fmEmail")} hint={t("fmEmailHint")} error={f.email}>
         {(p) => <input id={p.id} name="email" type="email" required autoComplete="off" aria-describedby={p.describedBy} aria-invalid={p.invalid || undefined} className={inputCls} />}
       </Field>
@@ -96,7 +93,7 @@ export function GrantAdminForm() {
       <button type="submit" disabled={pending} className={btnPrimary}>{pending ? t("fmSaving") : t("fmGrantButton")}</button>
     </form>
     {/* Kept outside the form element: the step-up box is a form of its own and forms must never nest. */}
-    <ResultNote result={state} okMessage={t("fmGrantOk")} />
+    <ResultNote result={state} onRetry={retry} okMessage={t("fmGrantOk")} />
     </>
   );
 }

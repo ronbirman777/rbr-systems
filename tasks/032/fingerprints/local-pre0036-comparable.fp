@@ -1,0 +1,319 @@
+col|access_code_redemptions.access_ends_at_granted|timestamp with time zone|nn=true|def=
+col|access_code_redemptions.code_id|uuid|nn=true|def=
+col|access_code_redemptions.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|access_code_redemptions.redeemed_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|access_code_redemptions.redeemed_by|uuid|nn=false|def=
+col|access_code_redemptions.tenant_id|uuid|nn=true|def=
+col|access_codes.allow_stacking|boolean|nn=true|def=68934a3e9455fa72420237eb05902327
+col|access_codes.code|text|nn=true|def=
+col|access_codes.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|access_codes.duration_days|integer|nn=true|def=
+col|access_codes.enabled|boolean|nn=true|def=b326b5062b2f0e69046810717534cb09
+col|access_codes.expires_at|timestamp with time zone|nn=false|def=
+col|access_codes.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|access_codes.max_redemptions|integer|nn=true|def=
+col|access_codes.redemption_count|integer|nn=true|def=cfcd208495d565ef66e7dff9f98764da
+col|access_codes.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|brand_configs.atmosphere|text|nn=true|def=a10329b3029fc72d2ce9624c9c027cb0
+col|brand_configs.custom_navigation|text|nn=false|def=
+col|brand_configs.custom_primary|text|nn=false|def=
+col|brand_configs.custom_secondary|text|nn=false|def=
+col|brand_configs.custom_surface|text|nn=false|def=
+col|brand_configs.custom_text|text|nn=false|def=
+col|brand_configs.hero_image_ref|text|nn=false|def=
+col|brand_configs.image_style|text|nn=false|def=255ea5d291c0a715bce954396491f005
+col|brand_configs.logo_ref|text|nn=false|def=
+col|brand_configs.name|text|nn=true|def=86e751880b3791dd7c2efae188915799
+col|brand_configs.palette|text|nn=true|def=f902b358640b513687eea1723e49e4a8
+col|brand_configs.space_image_ref|text|nn=false|def=
+col|brand_configs.tenant_id|uuid|nn=true|def=
+col|brand_configs.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|guest_access_ip_attempts.attempt_count|integer|nn=true|def=c4ca4238a0b923820dcc509a6f75849b
+col|guest_access_ip_attempts.ip_hmac|text|nn=true|def=
+col|guest_access_ip_attempts.tenant_id|uuid|nn=true|def=
+col|guest_access_ip_attempts.window_start|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|module_configs.enabled|boolean|nn=true|def=b326b5062b2f0e69046810717534cb09
+col|module_configs.image_position|jsonb|nn=false|def=
+col|module_configs.image_ref|text|nn=false|def=
+col|module_configs.module_key|text|nn=true|def=
+col|module_configs.tenant_id|uuid|nn=true|def=
+col|module_items.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|module_items.description|text|nn=false|def=
+col|module_items.external_link|text|nn=false|def=
+col|module_items.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|module_items.image_ref|text|nn=false|def=
+col|module_items.metadata|jsonb|nn=true|def=f3db357cf4f4a03883484fa3281a056c
+col|module_items.module_key|text|nn=true|def=
+col|module_items.sort_order|integer|nn=true|def=cfcd208495d565ef66e7dff9f98764da
+col|module_items.subtitle|text|nn=false|def=
+col|module_items.tenant_id|uuid|nn=true|def=
+col|module_items.title|text|nn=true|def=
+col|module_items.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|module_settings.data|jsonb|nn=true|def=f3db357cf4f4a03883484fa3281a056c
+col|module_settings.module_key|text|nn=true|def=
+col|module_settings.tenant_id|uuid|nn=true|def=
+col|module_settings.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|profiles.business_name|text|nn=false|def=
+col|profiles.country|text|nn=false|def=
+col|profiles.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|profiles.full_name|text|nn=false|def=
+col|profiles.id|uuid|nn=true|def=
+col|profiles.phone|text|nn=false|def=
+col|profiles.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|published_spaces.enabled_modules|text[]|nn=true|def=f81a5133416544064d5b9b182f73a6e1
+col|published_spaces.modules|jsonb|nn=true|def=f3db357cf4f4a03883484fa3281a056c
+col|published_spaces.name|text|nn=true|def=
+col|published_spaces.product_type|text|nn=true|def=
+col|published_spaces.published_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|published_spaces.slug|text|nn=false|def=
+col|published_spaces.tenant_id|uuid|nn=true|def=
+col|published_spaces.theme|jsonb|nn=true|def=
+col|published_spaces.timezone|text|nn=true|def=672a69bdf3d511d0f10f809a42bafa11
+col|reserved_slugs.slug|text|nn=true|def=
+col|schedule_items.category|text|nn=false|def=
+col|schedule_items.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|schedule_items.date|date|nn=true|def=
+col|schedule_items.description|text|nn=false|def=
+col|schedule_items.end_time|time without time zone|nn=false|def=
+col|schedule_items.facilitator|text|nn=false|def=
+col|schedule_items.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|schedule_items.location|text|nn=false|def=
+col|schedule_items.metadata|jsonb|nn=true|def=f3db357cf4f4a03883484fa3281a056c
+col|schedule_items.recurrence_parent_id|uuid|nn=false|def=
+col|schedule_items.recurrence_rule|text|nn=false|def=
+col|schedule_items.start_time|time without time zone|nn=true|def=
+col|schedule_items.tenant_id|uuid|nn=true|def=
+col|schedule_items.title|text|nn=true|def=
+col|schedule_items.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_entitlements.access_ends_at|timestamp with time zone|nn=true|def=
+col|space_entitlements.access_type|text|nn=true|def=
+col|space_entitlements.cancel_at_period_end|boolean|nn=true|def=68934a3e9455fa72420237eb05902327
+col|space_entitlements.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_entitlements.starts_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_entitlements.stripe_customer_id|text|nn=false|def=
+col|space_entitlements.stripe_subscription_id|text|nn=false|def=
+col|space_entitlements.tenant_id|uuid|nn=true|def=
+col|space_entitlements.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_featured_submissions.additional_links|jsonb|nn=true|def=8b4b2df56ad0773943ef9179742da01b
+col|space_featured_submissions.approved_at|timestamp with time zone|nn=false|def=
+col|space_featured_submissions.approved_by|uuid|nn=false|def=
+col|space_featured_submissions.approved_snapshot|jsonb|nn=false|def=
+col|space_featured_submissions.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_featured_submissions.description|text|nn=false|def=
+col|space_featured_submissions.instagram|text|nn=false|def=
+col|space_featured_submissions.location|text|nn=false|def=
+col|space_featured_submissions.reviewed_at|timestamp with time zone|nn=false|def=
+col|space_featured_submissions.reviewed_by|uuid|nn=false|def=
+col|space_featured_submissions.status|text|nn=true|def=921cc03c558118142b3d57fa1d4d6e67
+col|space_featured_submissions.submitted_at|timestamp with time zone|nn=false|def=
+col|space_featured_submissions.tenant_id|uuid|nn=true|def=
+col|space_featured_submissions.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_featured_submissions.website|text|nn=false|def=
+col|space_guest_access.code_hash|text|nn=false|def=
+col|space_guest_access.failed_attempts|integer|nn=true|def=cfcd208495d565ef66e7dff9f98764da
+col|space_guest_access.mode|text|nn=true|def=4ca4342c78b459943a0c8c391f50aba5
+col|space_guest_access.tenant_id|uuid|nn=true|def=
+col|space_guest_access.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|space_guest_access.version|integer|nn=true|def=cfcd208495d565ef66e7dff9f98764da
+col|tenant_members.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|tenant_members.role|text|nn=true|def=362a2c6724442dd7c1d7efa41798eedb
+col|tenant_members.tenant_id|uuid|nn=true|def=
+col|tenant_members.user_id|uuid|nn=true|def=
+col|tenants.archived_at|timestamp with time zone|nn=false|def=
+col|tenants.content_updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|tenants.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|tenants.created_by|uuid|nn=false|def=ddeb331049bfce569b78a580d1e1abe4
+col|tenants.id|uuid|nn=true|def=f3b72bb359a50b640590970a2ab8e514
+col|tenants.name|text|nn=true|def=
+col|tenants.product_type|text|nn=true|def=
+col|tenants.slug|text|nn=false|def=
+col|tenants.status|text|nn=true|def=c248d674101d8b24c97279095c3a6dde
+col|tenants.timezone|text|nn=true|def=672a69bdf3d511d0f10f809a42bafa11
+col|tenants.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|user_space_slots.created_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|user_space_slots.slots_allowed|integer|nn=true|def=c4ca4238a0b923820dcc509a6f75849b
+col|user_space_slots.updated_at|timestamp with time zone|nn=true|def=75230039beb12ce952f24927f2bfa2f2
+col|user_space_slots.user_id|uuid|nn=true|def=
+con|access_code_redemptions|access_code_redemptions_code_id_fkey|6f384ac42be063d00ee2915fb44fa3fd
+con|access_code_redemptions|access_code_redemptions_code_id_tenant_id_key|4ae0287c68a07942939cc597a396cdc8
+con|access_code_redemptions|access_code_redemptions_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|access_code_redemptions|access_code_redemptions_redeemed_by_fkey|e6812aea0661eafdd18a799e55e83a34
+con|access_code_redemptions|access_code_redemptions_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|access_codes|access_codes_code_check|9b834ae4d420049d7a6634256ffb33f4
+con|access_codes|access_codes_code_key|62cc54e4d671b4dc6829956b3bc420bd
+con|access_codes|access_codes_duration_days_check|2eb4b244fb726d8d0c863f2e20c180ec
+con|access_codes|access_codes_max_redemptions_check|d671e77cfc466f538cebdb4468086c11
+con|access_codes|access_codes_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|access_codes|access_codes_redemption_count_check|24145bb51a4db4b6adc725b5c6f2d5cc
+con|brand_configs|brand_configs_atmosphere_check|8a30bd4a97088f6a6846dd6c59ad43d5
+con|brand_configs|brand_configs_custom_navigation_check|dc5c4a9c1c19ac9aaf345cfd57025935
+con|brand_configs|brand_configs_custom_primary_check|1cefe6bf54614361d30dd1689c5dde06
+con|brand_configs|brand_configs_custom_secondary_check|73057f5126d3c60a75fdd8f6f48e0d5a
+con|brand_configs|brand_configs_custom_surface_check|ea461b8ddf9dcb6efd5ebfca67c4c68b
+con|brand_configs|brand_configs_custom_text_check|7f632858f174282cfb55e1f8e710c19c
+con|brand_configs|brand_configs_image_style_check|dc92dc4b255472ff0e7b9a0a441107bd
+con|brand_configs|brand_configs_palette_check|1dabbfdd83ad5b793bdc59fcca0c06a6
+con|brand_configs|brand_configs_pkey|7c4ca80043d2f2af17462dab542c6336
+con|brand_configs|brand_configs_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|guest_access_ip_attempts|guest_access_ip_attempts_pkey|ecd1055699b165d83ea627d11788d827
+con|guest_access_ip_attempts|guest_access_ip_attempts_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|module_configs|module_configs_pkey|47797628800d1187fe914c3abfcd1487
+con|module_configs|module_configs_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|module_items|module_items_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|module_items|module_items_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|module_settings|module_settings_pkey|47797628800d1187fe914c3abfcd1487
+con|module_settings|module_settings_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|profiles|profiles_id_fkey|0061c9fb3a9abcf2edbcd4a42467a9c3
+con|profiles|profiles_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|published_spaces|published_spaces_pkey|7c4ca80043d2f2af17462dab542c6336
+con|published_spaces|published_spaces_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|reserved_slugs|reserved_slugs_pkey|df1d6753f9f1b7aeda2246f8247da522
+con|schedule_items|schedule_items_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|schedule_items|schedule_items_recurrence_parent_id_fkey|13310bc3c2aa3f45cf6278dffa6685f7
+con|schedule_items|schedule_items_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|space_entitlements|space_entitlements_access_type_check|510d48e31ed4bc7811fef53a05d3f112
+con|space_entitlements|space_entitlements_pkey|7c4ca80043d2f2af17462dab542c6336
+con|space_entitlements|space_entitlements_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|space_featured_submissions|space_featured_submissions_additional_links_check|17497f4aaa8880a54450bd2c177df586
+con|space_featured_submissions|space_featured_submissions_approved_by_fkey|605edf7a887a2105b2c0312e5bc6fd91
+con|space_featured_submissions|space_featured_submissions_description_check|7f17da1ca03f61023a5966170990b249
+con|space_featured_submissions|space_featured_submissions_instagram_check|03eb787990de6ce5bbf3e591892a7d92
+con|space_featured_submissions|space_featured_submissions_location_check|926a919627e29372013dfc3f9fc06ad8
+con|space_featured_submissions|space_featured_submissions_pkey|7c4ca80043d2f2af17462dab542c6336
+con|space_featured_submissions|space_featured_submissions_reviewed_by_fkey|f64ec06d4f9bb4a4421251b98777440c
+con|space_featured_submissions|space_featured_submissions_status_check|f5b4a54be6237bf5ee1d5f422a8a0144
+con|space_featured_submissions|space_featured_submissions_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|space_featured_submissions|space_featured_submissions_website_check|5ab4bca14624cb75b1834cd7ab3d1a4a
+con|space_guest_access|space_guest_access_check|31f4b1c77b7666bd6cb5533dd78503a2
+con|space_guest_access|space_guest_access_mode_check|77f113193dd11134d046493a7a574aee
+con|space_guest_access|space_guest_access_pkey|7c4ca80043d2f2af17462dab542c6336
+con|space_guest_access|space_guest_access_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|tenant_members|tenant_members_pkey|8b75bb76860604bfbe000dedf3308e27
+con|tenant_members|tenant_members_role_check|ca40a8771037d6152c96fc5ba9a6dfde
+con|tenant_members|tenant_members_tenant_id_fkey|695f2bdba621667ae56a0544d2ad1ec2
+con|tenant_members|tenant_members_user_id_fkey|85d8b2f5f0c0f6b4dcb854efb61a8cb1
+con|tenants|tenants_created_by_fkey|1ceab562a11c774dbbb18205981be824
+con|tenants|tenants_pkey|4c6419b3704337bbfe50f018842a9ad3
+con|tenants|tenants_product_type_check|9de4ae2ce71dc63a77b574e8201c7e5f
+con|tenants|tenants_slug_format|54547e6bea1142ccd048b600d5284d81
+con|tenants|tenants_status_check|246a30fbfb0ff934c73c2031827ad32c
+con|user_space_slots|user_space_slots_pkey|0a0db78b5fb70bf8475b3bd434e6842b
+con|user_space_slots|user_space_slots_slots_allowed_check|28e01d9300b1fb2ea541e0dd1f8c06d0
+con|user_space_slots|user_space_slots_user_id_fkey|85d8b2f5f0c0f6b4dcb854efb61a8cb1
+fn|archive_space(uuid)|ed11b4f0cabd2bf049b2c63dce6bf532|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|build_teach_payload(uuid)|3625755cfc2c76e893e6faf5a7ac812c|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|check_and_record_guest_attempt(uuid,text)|325d1b10fec51c9a4e9f040381380225|acl=postgres=X/postgres,service_role=X/postgres
+fn|check_tenant_slug_not_reserved()|36f5253b060dd63e07198aee1d9b9406|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|delete_space(uuid)|33d97cd17f2f0250e40360b65e8cd404|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|disable_guest_access_code(uuid)|c5e6be2b4739200c2d6b4b29afe353b0|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|enforce_space_slot_capacity()|708dde46d74624be4cb93b48d4972991|acl=postgres=X/postgres,service_role=X/postgres
+fn|get_guest_access_mode(uuid)|2ed4be30ef092f585dfdb6d0225f3400|acl=postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|get_guest_access_settings(uuid)|542b3aac07191babd3708ec3051accd1|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|get_guest_access_version(uuid)|2917d087733a5abcdfe1b5773a521b42|acl=postgres=X/postgres,service_role=X/postgres
+fn|handle_new_tenant()|e3526abc627aa30a11616295c39cebef|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|handle_new_user_profile()|1a93fd49553227d51a09014ae73c7993|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|is_slug_available(text)|998da0061d4c39bc83cc6075c26a9ea3|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|is_tenant_member(uuid)|fa7a4da9825774a0804ba4925a355c00|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|is_tenant_owner(uuid)|fe0490631c4067093c7098ae2a178409|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|is_valid_additional_links(jsonb)|37696b0ad3c9be2d8d4c882f6657027a|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|is_versioned_media_object(text)|7347d458c3f0585f19b17a5db89abeed|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|jsonb_pick(jsonb,text[])|7d9398cf7e485c0f10c99e71c09e061b|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|provision_user_space_slot()|07dfcad131b9624b2203cb860bce192d|acl=postgres=X/postgres,service_role=X/postgres
+fn|publish_space(uuid)|5088d120877f74c02f845df398206c14|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|redeem_access_code(uuid,text)|4d4d1bfa0e78b3ba63aae37d5d58b4b4|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|replace_space(uuid,text)|3a2af65a96d60ac2dfc90ee6f73d5236|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|restore_space(uuid)|9a31bcf90162a2ce7001078d1fdbcfa0|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|set_guest_access_code(uuid,text)|d5d835ac1a663482387a3d07a7006f59|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|submit_featured_listing(uuid,text,text,text,text,jsonb)|4c81a4b7e8fd63e63305c50b50554599|acl=postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|tenant_is_archived(uuid)|cb98e22b9fc775324705ad12b848f190|acl=postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|touch_tenant_content()|97fce402eca1542e8d25ce1a6fa68b0e|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|touch_tenant_identity_content()|386073c3b45bf0e24be32f75cafd680c|acl==X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres
+fn|verify_guest_access_code(uuid,text)|2acf1ac1c74795184e3b68a542a80f12|acl=postgres=X/postgres,service_role=X/postgres
+idx|public.access_code_redemptions_code_id_tenant_id_key|4e36e679965072fc6949466fd2ed4ce8
+idx|public.access_code_redemptions_pkey|f243c517b1d9ddc2ad46503ae1d657e7
+idx|public.access_code_redemptions_tenant_id_idx|b7de3bf29153aecfb4680f55b84eb5c8
+idx|public.access_codes_code_key|c547b87ddd114765bd8490725e44c23b
+idx|public.access_codes_pkey|7986c3b791dd4becbcba6b27148adf48
+idx|public.brand_configs_pkey|6d4d01cd016771bb5ae91ca8e1f2cc12
+idx|public.guest_access_ip_attempts_pkey|b650cbc1cf84c495e26f5c3004797993
+idx|public.module_configs_pkey|ed8297ead234b7d69920c3369333f925
+idx|public.module_items_pkey|f6a02943b3ad71e24a2b8623cdc20b68
+idx|public.module_settings_pkey|19aeb93334ceb6091184fcb71800ad32
+idx|public.profiles_pkey|b7142bbffc23de763c1bd9f00489ec05
+idx|public.published_spaces_pkey|0c43042cbfe3b9024232866a4d1b356b
+idx|public.published_spaces_slug_unique_idx|6eb47ee834e964511febd8a8d4dfb9d7
+idx|public.reserved_slugs_pkey|fc2f173ecb61062a6494eb359dd5ba45
+idx|public.schedule_items_pkey|e05cad88e2c1c49f204a7334791531d8
+idx|public.space_entitlements_access_ends_at_idx|705988f35c4b5d228340e9e7819c4253
+idx|public.space_entitlements_pkey|716cd23eab2e11dd422304b08f978e32
+idx|public.space_featured_submissions_pkey|999134203fa2fd90e31b5238c859a5d7
+idx|public.space_guest_access_pkey|39acf74cde46394182d997ab7059759a
+idx|public.tenant_members_pkey|d719fc4046807df59cc27d0dc8e4a35e
+idx|public.tenants_pkey|5284b9c618f8618b72a402ea2c593753
+idx|public.tenants_slug_unique_idx|ec50fc244a060c68477fb2292063ed95
+idx|public.user_space_slots_pkey|e6af2108f42ae14541e6122cec05fadb
+pol|public.access_code_redemptions|access_code_redemptions: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.brand_configs|brand_configs: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.brand_configs|brand_configs: members can update|PERMISSIVE|UPDATE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.brand_configs|brand_configs: members can upsert|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|887f567a931a6a4446cdf36bde169fd8
+pol|public.module_configs|module_configs: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_configs|module_configs: members can update|PERMISSIVE|UPDATE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_configs|module_configs: members can upsert|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|887f567a931a6a4446cdf36bde169fd8
+pol|public.module_items|module_items: members can delete|PERMISSIVE|DELETE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_items|module_items: members can insert|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|887f567a931a6a4446cdf36bde169fd8
+pol|public.module_items|module_items: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_items|module_items: members can update|PERMISSIVE|UPDATE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_settings|module_settings: members can delete|PERMISSIVE|DELETE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_settings|module_settings: members can insert|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|887f567a931a6a4446cdf36bde169fd8
+pol|public.module_settings|module_settings: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.module_settings|module_settings: members can update|PERMISSIVE|UPDATE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.profiles|profiles: users can select their own row|PERMISSIVE|SELECT|public|bc9c729a84690340789a4e4f01175335|d41d8cd98f00b204e9800998ecf8427e
+pol|public.published_spaces|published_spaces: anyone can read non-archived|PERMISSIVE|SELECT|public|7ffc8590e72c8f84aa11cbe09b9cb26b|d41d8cd98f00b204e9800998ecf8427e
+pol|public.published_spaces|published_spaces: owner can publish|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|3df8090a2b0d6818c0b76d1d415fb9b9
+pol|public.published_spaces|published_spaces: owner can republish|PERMISSIVE|UPDATE|public|3df8090a2b0d6818c0b76d1d415fb9b9|3df8090a2b0d6818c0b76d1d415fb9b9
+pol|public.published_spaces|published_spaces: owner can unpublish|PERMISSIVE|DELETE|public|911a570d567c3516a7254d6460817375|d41d8cd98f00b204e9800998ecf8427e
+pol|public.reserved_slugs|reserved_slugs: authenticated can select|PERMISSIVE|SELECT|authenticated|b326b5062b2f0e69046810717534cb09|d41d8cd98f00b204e9800998ecf8427e
+pol|public.schedule_items|schedule_items: members can delete|PERMISSIVE|DELETE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.schedule_items|schedule_items: members can insert|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|887f567a931a6a4446cdf36bde169fd8
+pol|public.schedule_items|schedule_items: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.schedule_items|schedule_items: members can update|PERMISSIVE|UPDATE|public|887f567a931a6a4446cdf36bde169fd8|d41d8cd98f00b204e9800998ecf8427e
+pol|public.space_entitlements|space_entitlements: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.space_featured_submissions|space_featured_submissions: members can select|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.tenant_members|tenant_members: members can select their tenant roster|PERMISSIVE|SELECT|public|5c691f6a1aff2e4bcf324b5f5e17e041|d41d8cd98f00b204e9800998ecf8427e
+pol|public.tenants|tenants: authenticated users can create|PERMISSIVE|INSERT|public|d41d8cd98f00b204e9800998ecf8427e|692b6414b78f0298bca8d160c35411e9
+pol|public.tenants|tenants: members can select|PERMISSIVE|SELECT|public|0c48345dcc17e0565063c07e78c86a89|d41d8cd98f00b204e9800998ecf8427e
+pol|public.tenants|tenants: owners can update|PERMISSIVE|UPDATE|public|18917d22e526240cdca9e3cd717099a4|d41d8cd98f00b204e9800998ecf8427e
+pol|public.user_space_slots|user_space_slots: users can select their own row|PERMISSIVE|SELECT|public|3a807491e0a912fbfbee0ffa087b82f6|d41d8cd98f00b204e9800998ecf8427e
+pol|storage.objects|tenant members can delete their own media|PERMISSIVE|DELETE|authenticated|c202b5e772cb0f16aa6878ab7c1b6c78|d41d8cd98f00b204e9800998ecf8427e
+pol|storage.objects|tenant members can read their own media|PERMISSIVE|SELECT|authenticated|c202b5e772cb0f16aa6878ab7c1b6c78|d41d8cd98f00b204e9800998ecf8427e
+pol|storage.objects|tenant members can replace their own media|PERMISSIVE|UPDATE|authenticated|c202b5e772cb0f16aa6878ab7c1b6c78|c202b5e772cb0f16aa6878ab7c1b6c78
+pol|storage.objects|tenant members can upload their own media|PERMISSIVE|INSERT|authenticated|d41d8cd98f00b204e9800998ecf8427e|c202b5e772cb0f16aa6878ab7c1b6c78
+pol|storage.objects|versioned media is immutable (no overwrite)|RESTRICTIVE|UPDATE|authenticated|007d0472977b54394b9875c029d55d21|007d0472977b54394b9875c029d55d21
+tbl|access_code_redemptions|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|access_codes|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|brand_configs|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|guest_access_ip_attempts|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|module_configs|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|module_items|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|module_settings|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|profiles|r|rls=true|acl=postgres=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|published_spaces|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|reserved_slugs|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|schedule_items|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|space_entitlements|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|space_featured_submissions|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres,authenticated=r/postgres
+tbl|space_guest_access|r|rls=true|acl=postgres=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|tenant_members|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|tenants|r|rls=true|acl=postgres=arwdDxtm/postgres,anon=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+tbl|user_space_slots|r|rls=true|acl=postgres=arwdDxtm/postgres,authenticated=arwdDxtm/postgres,service_role=arwdDxtm/postgres
+trg|auth.users|on_auth_user_created_profile|bed69d14abc6f243d5453769455b8488
+trg|auth.users|on_auth_user_created_space_slot|e7595353cf7412abb42c4a5e94c3d26f
+trg|brand_configs|touch_tenant_content_on_brand_configs|51a48bd97dbfd989bbbd5e57cfbd392f
+trg|module_configs|touch_tenant_content_on_module_configs|6308f473e91e417f26e66c6da2eb5116
+trg|module_items|touch_tenant_content_on_module_items|a82f39fc3c75d26de8675e7f49f03ffc
+trg|module_settings|touch_tenant_content_on_module_settings|505e39df55ef1b23fb3426d461a64aeb
+trg|schedule_items|touch_tenant_content_on_schedule_items|63a0356f5c71d3a5b73c82279a375cc4
+trg|tenants|enforce_space_slot_capacity_trigger|aa86f5317bbba95031573e2abef448fb
+trg|tenants|on_tenant_created|15791b1a6fba79410af250208ad3d9fb
+trg|tenants|tenants_check_slug_reserved|3b73bf161c1f74fc00f6a6c2d851f2fc
+trg|tenants|tenants_touch_identity_content|d0eaba390fbf296a889ab0bbfc2d61c5

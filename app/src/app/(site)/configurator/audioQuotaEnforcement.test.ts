@@ -21,6 +21,26 @@ vi.mock("@/lib/entitlements/getSpaceEntitlement", () => ({ getSpaceEntitlement: 
 vi.mock("@/lib/entitlements/availability", () => ({ deriveCommercialAvailability: () => ({ canPublish: true }) }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => fake.supabase }));
 vi.mock("@/lib/billing/audioQuota.server", () => ({ loadAudioQuotaPolicy: async () => policy }));
+// TASK B4b - the service-role finalize half: the server-measured length and
+// the verified write. The real module (download + parse with the secret key)
+// is covered by lib/media/audioDuration.test.ts; here it is driven per test.
+let measured: number | null = null;
+let writeRefusal: "studioLocked" | "limit" | "failed" | null = null;
+const finalize = vi.hoisted(() => ({ derive: [] as string[], writes: [] as { tenantId: string; itemId: string }[] }));
+vi.mock("@/lib/billing/audioFinalize.server", () => ({
+  deriveStoredAudioSeconds: async (ref: string) => {
+    finalize.derive.push(ref);
+    return measured;
+  },
+  writeEnforcedAudioFile: async (tenantId: string, itemId: string, metadata: Record<string, unknown>) => {
+    finalize.writes.push({ tenantId, itemId });
+    if (writeRefusal) return { ok: false, reason: writeRefusal };
+    const row = fake.tables.module_items.find((r) => r.id === itemId && r.tenant_id === tenantId);
+    if (!row) return { ok: false, reason: "failed" };
+    row.metadata = metadata;
+    return { ok: true };
+  },
+}));
 
 const TEACH = "11111111-2222-4333-8444-555555555555";
 const FLOW = "22222222-2222-4333-8444-555555555555";
@@ -39,12 +59,21 @@ const flowRef = (item = ITEM, ext = "mp3") => `${FLOW}/audioFile/${item}/${UPLOA
 function seedItem(tenant: string, moduleKey: string, id: string, metadata: Record<string, unknown>) {
   fake.tables.module_items.push({ id, tenant_id: tenant, module_key: moduleKey, title: "Track", image_ref: null, metadata });
 }
+/** Sets what the server measures and returns a deliberately WRONG browser claim: on a paid Space the claim must not matter. */
+const server = (seconds: number | null) => {
+  measured = seconds;
+  return seconds === null ? 120 : 1;
+};
 const meta = (id = ITEM) => fake.tables.module_items.find((r) => r.id === id)?.metadata as Record<string, unknown> | undefined;
 
 beforeEach(() => {
   fake = makeFakeSupabase();
   fake.tables.tenants.push({ id: TEACH, product_type: "teach", timezone: "UTC" }, { id: FLOW, product_type: "retreat", timezone: "UTC" });
   policy = base();
+  measured = null;
+  writeRefusal = null;
+  finalize.derive.length = 0;
+  finalize.writes.length = 0;
 });
 
 async function teach() {
@@ -62,13 +91,13 @@ describe("Teach attach - per-recording maximum", () => {
 
   it("60:00 (3600 s) is accepted and stored", async () => {
     const { attachTeachAudio } = await teach();
-    expect(await attachTeachAudio(TEACH, ITEM, teachRef(), 3600)).toEqual({ error: null });
+    expect(await attachTeachAudio(TEACH, ITEM, teachRef(), server(3600))).toEqual({ error: null });
     expect(meta()).toMatchObject({ audioRef: teachRef(), durationSeconds: 3600 });
   });
 
   it("60:01 (3601 s) is refused, localized, and the new upload is removed", async () => {
     const { attachTeachAudio } = await teach();
-    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), 3601)).error).toBe(
+    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(3601))).error).toBe(
       "Each recording can be up to 60 minutes long. Please upload a shorter file."
     );
     expect(meta()?.audioRef).toBeNull();
@@ -78,29 +107,51 @@ describe("Teach attach - per-recording maximum", () => {
   it("the refusal is translated (de/he) and Studio tr/it fall back to English", async () => {
     const { attachTeachAudio } = await teach();
     fake.put(teachRef(), "x", undefined, "audio/mpeg");
-    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), 4000, "de")).error).toMatch(/höchstens 60 Minuten/);
+    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(4000), "de")).error).toMatch(/höchstens 60 Minuten/);
     fake.put(teachRef(), "x", undefined, "audio/mpeg");
-    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), 4000, "he")).error).toMatch(/עד 60 דקות/);
+    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(4000), "he")).error).toMatch(/עד 60 דקות/);
     fake.put(teachRef(), "x", undefined, "audio/mpeg");
-    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), 4000, "it")).error).toMatch(/up to 60 minutes/);
+    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(4000), "it")).error).toMatch(/up to 60 minutes/);
   });
 
   it("an unknown (null) length is refused on a paid Space", async () => {
     const { attachTeachAudio } = await teach();
-    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), null)).error).toMatch(/couldn't read how long/);
+    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(null))).error).toMatch(/couldn't read how long/);
   });
 
-  it("an under-reported length is raised to the byte-size floor (100 MB MP3 claimed as 1 s)", async () => {
-    fake.setReportedSize(teachRef(), 100 * 1024 * 1024);
+  it("the browser claim is ignored: a 2 h file claimed as 1 s is measured on the server and refused", async () => {
     const { attachTeachAudio } = await teach();
-    expect(await attachTeachAudio(TEACH, ITEM, teachRef(), 1)).toEqual({ error: null });
-    expect(meta()?.durationSeconds).toBe(Math.ceil((100 * 1024 * 1024) / 64_000));
+    measured = 7200;
+    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), 1)).error).toMatch(/up to 60 minutes/);
+    expect(finalize.derive).toEqual([teachRef()]);
+    expect(meta()?.audioRef).toBeNull();
+  });
+
+  it("the verified file fields are written through the service-role finalize path, never the member session", async () => {
+    const { attachTeachAudio } = await teach();
+    expect(await attachTeachAudio(TEACH, ITEM, teachRef(), server(1800))).toEqual({ error: null });
+    expect(finalize.writes).toEqual([{ tenantId: TEACH, itemId: ITEM }]);
+    expect(meta()).toMatchObject({ audioRef: teachRef(), durationSeconds: 1800 });
+  });
+
+  it("a database AUDIO_LIMIT refusal on the finalize write (concurrent upload) is reported and the upload removed", async () => {
+    const { attachTeachAudio } = await teach();
+    writeRefusal = "limit";
+    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(60))).error).toMatch(/240-minute allowance/);
+    expect(fake.files.has(teachRef())).toBe(false);
+  });
+
+  it("a Studio-locked Space cannot attach through the service-role path", async () => {
+    const { attachTeachAudio } = await teach();
+    writeRefusal = "studioLocked";
+    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(60))).error).toMatch(/needs active access/);
+    expect(meta()?.audioRef).toBeNull();
   });
 
   it("an unavailable policy fails closed", async () => {
     policy = { mode: "unavailable" };
     const { attachTeachAudio } = await teach();
-    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), 10)).error).toMatch(/couldn't check your audio allowance/);
+    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(10))).error).toMatch(/couldn't check your audio allowance/);
     expect(meta()?.audioRef).toBeNull();
   });
 });
@@ -114,18 +165,18 @@ describe("Teach attach - library total (incl. add-ons)", () => {
   it("exactly at 240 minutes passes; one second over is refused with the used total", async () => {
     seedItem(TEACH, "teachAudio", OTHER, { audioRef: teachRef(OTHER), durationSeconds: 239 * 60 });
     const { attachTeachAudio } = await teach();
-    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), 61)).error).toBe(
+    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(61))).error).toBe(
       "This recording would take your audio library over its 240-minute allowance (239 minutes already used)."
     );
     fake.put(teachRef(), "x", undefined, "audio/mpeg");
-    expect(await attachTeachAudio(TEACH, ITEM, teachRef(), 60)).toEqual({ error: null });
+    expect(await attachTeachAudio(TEACH, ITEM, teachRef(), server(60))).toEqual({ error: null });
   });
 
   it("one audio add-on (480 library minutes from space_audio_entitlements) admits what the base refuses", async () => {
     seedItem(TEACH, "teachAudio", OTHER, { audioRef: teachRef(OTHER), durationSeconds: 239 * 60 });
     policy = base(480);
     const { attachTeachAudio } = await teach();
-    expect(await attachTeachAudio(TEACH, ITEM, teachRef(), 3600)).toEqual({ error: null });
+    expect(await attachTeachAudio(TEACH, ITEM, teachRef(), server(3600))).toEqual({ error: null });
   });
 
   it("replacing a file does not count the item's own previous length", async () => {
@@ -133,7 +184,7 @@ describe("Teach attach - library total (incl. add-ons)", () => {
     meta()!.audioRef = `${TEACH}/teachAudioFile/${ITEM}/44444444-4444-4444-8444-444444444444/draft.mp3`;
     meta()!.durationSeconds = 40 * 60;
     const { attachTeachAudio } = await teach();
-    expect(await attachTeachAudio(TEACH, ITEM, teachRef(), 40 * 60)).toEqual({ error: null });
+    expect(await attachTeachAudio(TEACH, ITEM, teachRef(), server(40 * 60))).toEqual({ error: null });
   });
 });
 
@@ -151,6 +202,9 @@ describe("Teach - legacy and exempt Spaces are unchanged", () => {
     fake.put(teachRef(), "x", undefined, "audio/mpeg");
     expect(await attachTeachAudio(TEACH, ITEM, teachRef(), null)).toEqual({ error: null });
     expect(meta()?.durationSeconds).toBeNull();
+    // Nothing is downloaded or measured, and the member-session write is used as before.
+    expect(finalize.derive).toEqual([]);
+    expect(finalize.writes).toEqual([]);
   });
 });
 
@@ -221,17 +275,17 @@ describe("Flow attach and publish", () => {
 
   it("60:00 passes, 60:01 is refused and removed", async () => {
     const { attachFlowAudio } = await flow();
-    expect(await attachFlowAudio(FLOW, ITEM, flowRef(), 3601)).toEqual({ error: "Each recording can be up to 60 minutes long. Please upload a shorter file." });
+    expect(await attachFlowAudio(FLOW, ITEM, flowRef(), server(3601))).toEqual({ error: "Each recording can be up to 60 minutes long. Please upload a shorter file." });
     expect(fake.files.has(flowRef())).toBe(false);
     fake.put(flowRef(), "x", undefined, "audio/mpeg");
-    expect(await attachFlowAudio(FLOW, ITEM, flowRef(), 3600)).toEqual({ error: null });
+    expect(await attachFlowAudio(FLOW, ITEM, flowRef(), server(3600))).toEqual({ error: null });
     expect(meta()?.durationSeconds).toBe(3600);
   });
 
   it("library total counts the Space's other Flow audio", async () => {
     seedItem(FLOW, "audio", OTHER, { audioRef: flowRef(OTHER), durationSeconds: 230 * 60 });
     const { attachFlowAudio } = await flow();
-    expect((await attachFlowAudio(FLOW, ITEM, flowRef(), 11 * 60)).error).toMatch(/240-minute allowance \(230 minutes already used\)/);
+    expect((await attachFlowAudio(FLOW, ITEM, flowRef(), server(11 * 60))).error).toMatch(/240-minute allowance \(230 minutes already used\)/);
   });
 
   it("exempt Space is not blocked", async () => {

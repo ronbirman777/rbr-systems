@@ -16,6 +16,8 @@ const mockSignOut = vi.fn();
 const mockSignUp = vi.fn();
 const mockGetUser = vi.fn();
 const mockOwnedTenantsSelect = vi.fn();
+// TASK 032: tenant_id -> space_subscriptions.status read by the pre-deletion billing check.
+const subs = vi.hoisted(() => ({ byTenant: {} as Record<string, string>, error: null as { message: string } | null }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
@@ -29,6 +31,15 @@ vi.mock("@/lib/supabase/server", () => ({
     from: (table: string) => {
       if (table === "tenant_members") {
         return { select: () => ({ eq: () => ({ eq: mockOwnedTenantsSelect }) }) };
+      }
+      if (table === "space_subscriptions") {
+        return {
+          select: () => ({
+            eq: (_c: string, id: string) => ({
+              maybeSingle: async () => ({ data: subs.error ? null : subs.byTenant[id] ? { status: subs.byTenant[id] } : null, error: subs.error }),
+            }),
+          }),
+        };
       }
       throw new Error(`unexpected table in test: ${table}`);
     },
@@ -282,6 +293,43 @@ describe("deleteAccount - Task 017", () => {
     expect(mockDeleteSpaceCompletely).toHaveBeenCalledTimes(1);
     expect(mockDeleteUser).not.toHaveBeenCalled();
     expect(mockSignOut).not.toHaveBeenCalled();
+  });
+
+  it("TASK 032: a live subscription on ANY owned Space refuses before a single Space is deleted", async () => {
+    mockOwnedTenantsSelect.mockResolvedValue({ data: [{ tenant_id: "t1" }, { tenant_id: "t2" }], error: null });
+    subs.byTenant = { t2: "active" };
+    const { deleteAccount } = await import("./actions");
+
+    const result = await deleteAccount({ error: null }, formData({ confirmEmail: "jane@example.com" }));
+
+    expect(result.error).toMatch(/active subscription/i);
+    expect(mockDeleteSpaceCompletely).not.toHaveBeenCalled();
+    expect(mockDeleteUser).not.toHaveBeenCalled();
+    subs.byTenant = {};
+  });
+
+  it("TASK 032: an unreadable billing row refuses before any deletion (fail closed)", async () => {
+    mockOwnedTenantsSelect.mockResolvedValue({ data: [{ tenant_id: "t1" }], error: null });
+    subs.error = { message: "boom" };
+    const { deleteAccount } = await import("./actions");
+
+    const result = await deleteAccount({ error: null }, formData({ confirmEmail: "jane@example.com" }));
+
+    expect(result.error).toBeTruthy();
+    expect(mockDeleteSpaceCompletely).not.toHaveBeenCalled();
+    subs.error = null;
+  });
+
+  it("TASK 032: ended and exempt Spaces do not block account deletion", async () => {
+    mockOwnedTenantsSelect.mockResolvedValue({ data: [{ tenant_id: "t1" }, { tenant_id: "t2" }], error: null });
+    subs.byTenant = { t1: "canceled", t2: "exempt" };
+    mockDeleteSpaceCompletely.mockResolvedValue({ ok: true });
+    mockDeleteUser.mockResolvedValue({ error: null });
+    const { deleteAccount } = await import("./actions");
+
+    await expect(deleteAccount({ error: null }, formData({ confirmEmail: "jane@example.com" }))).rejects.toThrow("REDIRECT:/log-in?accountDeleted=1");
+    expect(mockDeleteSpaceCompletely).toHaveBeenCalledTimes(2);
+    subs.byTenant = {};
   });
 
   it("reports failure rather than fabricating success when auth.admin.deleteUser itself fails", async () => {

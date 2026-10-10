@@ -165,6 +165,9 @@ export const billingDe: { [K in keyof typeof billingEn]: string } = {
   chipEnded: "Beendet",
   billingLink: "Abrechnung",
   lifecycleBillingLocked: "Kläre die Abrechnung für diesen Space, bevor du ihn wiederherstellst oder ersetzt.",
+  lifecycleDeleteActiveSubscription: "Dieser Space hat noch ein aktives Abo, daher wurde nichts gelöscht. Kündige das Abo auf der Abrechnungsseite und lösche den Space, nachdem es beendet ist.",
+  lifecycleArchivePaidBody: "Durch das Archivieren wird „{space}“ aus der aktiven/öffentlichen Nutzung genommen. Gäste können ihn dann nicht mehr erreichen. Das Archivieren kündigt das Abo nicht.",
+  lifecycleReplacePaidBody: "Dadurch werden die bestehenden Inhalte von „{space}“ verworfen – die veröffentlichte Version, der Zeitplan und die Modulinhalte – und im selben Space beginnt ein neuer Entwurf. Das lässt sich nicht rückgängig machen. Gib zur Bestätigung den aktuellen Namen des Space ein.",
 
   // --- emails ---
   emailGreeting: "Hallo,",

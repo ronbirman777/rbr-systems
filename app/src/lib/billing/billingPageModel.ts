@@ -63,6 +63,17 @@ export function invoiceLink(inv: Pick<InvoiceRow, "hostedInvoiceUrl" | "receiptU
   return safeHttpsUrl(inv.hostedInvoiceUrl) ?? safeHttpsUrl(inv.receiptUrl);
 }
 
+/**
+ * The amount a history row shows: what was actually PAID for a paid invoice (after discounts and any account credit;
+ * a refund is shown separately), what is still DUE for an open/failed one, and the invoice total otherwise (void /
+ * uncollectible). A 100%-discounted paid invoice correctly shows 0.
+ */
+export function invoiceDisplayMinor(inv: Pick<InvoiceRow, "status" | "amountPaidMinor" | "totalMinor" | "amountDueMinor">): number | null {
+  if (inv.status === "paid") return inv.amountPaidMinor;
+  if (inv.status === "open" || inv.status === "draft") return inv.amountDueMinor ?? inv.totalMinor;
+  return inv.totalMinor;
+}
+
 export type InvoiceDisplay = {
   id: string; date: string; amount: string; status: string; kind: InvoiceStatusKind; reference: string; refunded: string | null; href: string | null;
 };
@@ -162,7 +173,7 @@ export function buildBillingPageModel(view: BillingViewModel, locale: Locale): B
           const statusKey: Record<InvoiceStatusKind, AccountKey<"billing">> = {
             paid: "invoicePaid", pending: "invoiceOpen", failed: "invoiceFailed", void: "invoiceVoid", uncollectible: "invoiceUncollectible",
           };
-          const minor = i.status === "paid" ? i.amountPaidMinor : i.totalMinor;
+          const minor = invoiceDisplayMinor(i);
           return {
             id: i.id,
             date: date(i.paidAt ? new Date(i.paidAt) : i.issuedAt ? new Date(i.issuedAt) : null),

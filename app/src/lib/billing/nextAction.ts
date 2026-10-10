@@ -25,6 +25,8 @@ export type NextActionResult = {
   discountProgress: null | { currentCycle: number; totalCycles: number | null };
 };
 
+const DAY_MS = 86_400_000;
+
 const NONE: NextActionResult = { action: "none", at: null, expectedChargeMinor: null, currency: null, discountProgress: null };
 
 /**
@@ -80,6 +82,15 @@ export function computeNextAction(
     const total = redemption.cyclesTotal ?? discountCycleCount(redemption.terms);
     if (redemption.status === "redeemed") {
       const remaining = total == null ? Infinity : total - redemption.cyclesCompleted;
+      // Stripe ends a `once`/`repeating` discount by TIME (N months after it started, discount_ends_at), not by counting
+      // paid invoices. When an invoice inside the window was skipped (voided, uncollectible, paused) the counter still shows
+      // cycles left although the next invoice is dated at or after the window's end: that invoice is full price. In the
+      // ordinary case the next discounted invoice is a whole month before the window ends, so a one-day margin (clock and
+      // anchor drift) can never misfire there.
+      const windowClosed = !!redemption.discountEndsAt && total != null && periodEnd.getTime() >= redemption.discountEndsAt.getTime() - DAY_MS;
+      if (windowClosed) {
+        return { action: "discount_ends", at: periodEnd, expectedChargeMinor: base, currency, discountProgress: null };
+      }
       if (remaining > 0) {
         return {
           action: "discount_cycle",

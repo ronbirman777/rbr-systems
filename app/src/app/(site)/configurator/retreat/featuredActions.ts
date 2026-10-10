@@ -2,6 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { validateAdditionalLinks } from "./featuredValidation";
+import { isStudioWritableForWrite } from "@/lib/billing/spaceDeletion";
+import { translateAccount } from "@/lib/i18n/account";
 
 import { localeFromFormData, studioMessages } from "@/lib/i18n";
 export type FeaturedStatus = "not_submitted" | "submitted" | "approved" | "rejected";
@@ -80,6 +82,13 @@ export async function submitFeaturedListing(
 
   const tenantId = String(formData.get("tenantId") ?? "");
   if (!tenantId) return { error: t("missingSpace"), submission: EMPTY_SUBMISSION };
+
+  // TASK 032: submit_featured_listing() is SECURITY DEFINER, so the 0039
+  // "billing allows studio writes" policies never see it - ask the same
+  // predicate here. Legacy Spaces are always writable.
+  if (!(await isStudioWritableForWrite(supabase, tenantId))) {
+    return { error: translateAccount(localeFromFormData(formData), "billing", "studioSuspendedTitle"), submission: await getFeaturedSubmissionForOwner(tenantId) };
+  }
 
   const description = String(formData.get("description") ?? "").trim() || null;
   const location = String(formData.get("location") ?? "").trim() || null;

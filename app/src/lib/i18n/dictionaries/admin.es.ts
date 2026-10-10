@@ -498,7 +498,7 @@ export const adminEs: { [K in keyof typeof adminEn]: string } = {
   codeChecking: "Comprobando...",
   stepUpAria: "Volver a verificar con tu autenticador",
   stepUpTitle: "Confirma que eres tú",
-  stepUpBody: "Este cambio necesita un código nuevo del autenticador. Tras confirmar, la página se recargará y podrás reintentar el cambio.",
+  stepUpBody: "Este cambio necesita un código nuevo del autenticador. Tras confirmar, el cambio se enviará de nuevo automáticamente; lo que escribiste se conserva.",
   stepUpConfirm: "Confirmar",
 
   // --- MFA: enrol / verify ---

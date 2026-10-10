@@ -22,7 +22,7 @@ Supabase Auth owns the factor; InnerDweS never generates, stores or checks an OT
 
 ## Step-up (600 seconds)
 
-`ADMIN_STEP_UP_MAX_AGE_SECONDS = 600`. Dangerous actions call `requireAdminAction({ recentMfa: true })`: the latest `amr` entry with `method: "totp"` must be at most 600 s old (and not more than 60 s in the future). Otherwise the page redirects to `/admin/mfa/verify?stepup=1`; verifying a fresh code refreshes the timestamp.
+`ADMIN_STEP_UP_MAX_AGE_SECONDS = 600`. Dangerous actions call `requireAdminAction({ recentMfa: true })`: the latest `amr` entry with `method: "totp"` must be at most 600 s old (and not more than 60 s in the future). Otherwise a page render redirects to `/admin/mfa/verify?stepup=1`, and a server action answers `step_up_required`, which opens an inline re-verify box next to the form. That box calls `stepUpVerifyAction` (verifies the code through Supabase Auth, writes the refreshed session cookies, and returns without navigating), then re-sends the pending action with the FormData the admin already submitted (`useAdminForm.retry`; `ConfirmActionButton` re-runs its action). The form keeps its values: Admin forms submit through `onSubmit` rather than `<form action>`, because React resets uncontrolled fields after a `<form action>` submission. Security is unchanged: the retried action runs `requireAdminAction({ recentMfa: true })` again on the server. Pinned by `admin/_components/stepUpRetry.test.ts` and `noNestedForms.test.ts`; `scripts/admin-qa.mjs` F1b-F3 check it in a browser (not re-run since this change).
 
 | Needs step-up | Does not |
 |---|---|

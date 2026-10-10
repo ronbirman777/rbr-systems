@@ -67,6 +67,12 @@ describe("webhook signature verification (real Stripe verification, signed here 
     const body = payload({ type: "charge.refunded", data: { object: { id: "ch_1", payment_intent: "pi_9", amount_refunded: 500 } } });
     expect(gw.verifyWebhook(body, sign(body)).refund).toEqual({ chargeId: "ch_1", paymentIntentId: "pi_9", amountRefundedMinor: 500 });
   });
+  it("charge.refund.updated (a refund that failed) is reduced to its charge, so the handler re-reads the charge", () => {
+    const body = payload({ type: "charge.refund.updated", data: { object: { id: "re_1", object: "refund", charge: "ch_7", payment_intent: "pi_7", amount: 1000, status: "failed" } } });
+    expect(gw.verifyWebhook(body, sign(body)).refund).toEqual({ chargeId: "ch_7", paymentIntentId: "pi_7", amountRefundedMinor: 0 });
+    const other = payload({ type: "invoice.paid", data: { object: { id: "in_1", charge: "ch_7" } } });
+    expect(gw.verifyWebhook(other, sign(other)).refund).toBeNull();
+  });
   it("the real gateway reports its mode from the key", () => {
     expect(gw.mode).toBe("test");
     expect(createStripeGateway({ secretKey: "sk_live_unit", webhookSecret: null }).mode).toBe("live");
@@ -114,6 +120,21 @@ describe("object mappers (Stripe SDK shapes -> plain DTOs)", () => {
     });
     expect(effectiveAmountFromInvoice({ subtotalMinor: 2500, discountMinor: 250 })).toBe(2250);
     expect(effectiveAmountFromInvoice({ subtotalMinor: 100, discountMinor: 500 })).toBe(0);
+  });
+  it("an invoice's service period comes from its subscription line, not Stripe's invoice-level (previous-period) dates", () => {
+    const base = {
+      id: "in_2", status: "paid", billing_reason: "subscription_cycle", currency: "usd", subtotal: 2500, total: 2500, amount_due: 2500, amount_paid: 2500, number: null,
+      hosted_invoice_url: null, invoice_pdf: null, created: 1_702_592_000, attempt_count: 1, next_payment_attempt: null, livemode: false, customer: "cus_1",
+      // Stripe: the invoice-level period of a renewal is the month that just ENDED.
+      period_start: 1_700_000_000, period_end: 1_702_592_000,
+    };
+    const withLines = { ...base, lines: { data: [
+      { period: { start: 1, end: 2 }, parent: { type: "invoice_item_details" } },
+      { period: { start: 1_702_592_000, end: 1_705_270_400 }, parent: { type: "subscription_item_details" } },
+    ] } } as unknown as Stripe.Invoice;
+    expect(mapInvoice(withLines)).toMatchObject({ periodStart: new Date(1_702_592_000_000), periodEnd: new Date(1_705_270_400_000) });
+    // No line data: fall back to the invoice-level fields rather than inventing dates.
+    expect(mapInvoice(base as unknown as Stripe.Invoice)).toMatchObject({ periodStart: new Date(1_700_000_000_000), periodEnd: new Date(1_702_592_000_000) });
   });
   it("maps a checkout session", () => {
     const s = { id: "cs_1", status: "complete", payment_status: "paid", customer: "cus_1", subscription: "sub_1", client_reference_id: "pc_1", metadata: { a: "b" }, url: null, expires_at: 1_700_000_000, livemode: false } as unknown as Stripe.Checkout.Session;

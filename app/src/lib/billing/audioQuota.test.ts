@@ -5,7 +5,7 @@ import {
   checkAudioAttach,
   checkAudioPublish,
   decideAudioQuotaPolicy,
-  minPlausibleDurationSeconds,
+  enforcedAttachWriteIssue,
   normalizeReportedDuration,
   type AudioQuotaIssue,
   type AudioQuotaPolicy,
@@ -22,8 +22,9 @@ const enforced = (qty = 0): AudioQuotaPolicy => ({ mode: "enforced", limits: com
 const LEGACY: AudioQuotaPolicy = { mode: "unenforced", reason: "legacy" };
 const EXEMPT: AudioQuotaPolicy = { mode: "unenforced", reason: "exempt" };
 const file = (durationSeconds: unknown) => ({ metadata: { audioRef: "t/m/i/u/draft.mp3", durationSeconds } });
-const attach = (policy: AudioQuotaPolicy, claimedSeconds: unknown, others: StoredAudioItem[] = [], sizeBytes = 1000, ext = "mp3") =>
-  checkAudioAttach(policy, { claimedSeconds, sizeBytes, ext, otherItems: others });
+/** Enforced Spaces are checked against the SERVER-measured seconds; unenforced ones against the browser claim. */
+const attach = (policy: AudioQuotaPolicy, seconds: unknown, others: StoredAudioItem[] = [], claimedSeconds: unknown = seconds) =>
+  checkAudioAttach(policy, { claimedSeconds, serverSeconds: seconds as number | null, otherItems: others });
 
 describe("decideAudioQuotaPolicy", () => {
   it("no billing row = legacy (unchanged), exempt = unenforced, others enforced from the entitlement row", () => {
@@ -52,37 +53,42 @@ describe("per-recording maximum (never raised by add-ons)", () => {
     }
   });
 
-  it("whole-second rounding: 3600.4 passes, 3600.5 is 3601 and refused", () => {
-    expect(attach(enforced(), 3600.4).ok).toBe(true);
-    expect(attach(enforced(), 3600.5).ok).toBe(false);
+  it("the measured value must be whole seconds (rounding is the measurer's job: toWholeSeconds)", () => {
+    expect(attach(enforced(), 3600.4)).toEqual({ ok: false, issue: { code: "durationUnknown" } });
   });
 
-  it("unknown, negative, NaN or non-number claims are refused when enforced", () => {
+  it("an unmeasurable file (null), negative, NaN or non-number is refused when enforced", () => {
     for (const v of [null, undefined, -1, Number.NaN, Infinity, "3600"]) {
       expect(attach(enforced(), v)).toEqual({ ok: false, issue: { code: "durationUnknown" } });
     }
   });
 
-  it("a claim over 12 h is too long (not unknown)", () => {
+  it("a measured length over 12 h is too long (not unknown)", () => {
     expect(attach(enforced(), 13 * 3600)).toEqual({ ok: false, issue: { code: "recordingTooLong", maxMinutes: 60 } });
   });
 });
 
-describe("byte-size floor (trust-gap bound)", () => {
-  it("compressed 64,000 B/s, wav 576,000 B/s, unknown ext most lenient", () => {
-    expect(minPlausibleDurationSeconds(64_000 * 10, "mp3")).toBe(10);
-    expect(minPlausibleDurationSeconds(64_001, "m4a")).toBe(2);
-    expect(minPlausibleDurationSeconds(576_000 * 3, "wav")).toBe(3);
-    expect(minPlausibleDurationSeconds(576_000, "xyz")).toBe(1);
-    expect(minPlausibleDurationSeconds(0, "mp3")).toBe(0);
+describe("the browser-reported length is ignored on an enforced Space (TASK B4b)", () => {
+  it("an under-reported claim changes nothing: the server-measured seconds are checked and stored", () => {
+    expect(attach(enforced(), 600, [], 1)).toEqual({ ok: true, durationSeconds: 600 });
+    expect(attach(enforced(), 3601, [], 60)).toEqual({ ok: false, issue: { code: "recordingTooLong", maxMinutes: 60 } });
   });
 
-  it("an under-reported claim is raised to the floor and stored that way", () => {
-    expect(attach(enforced(), 0, [], 64_000 * 600)).toEqual({ ok: true, durationSeconds: 600 });
+  it("a plausible claim cannot rescue a file the server could not measure", () => {
+    expect(attach(enforced(), null, [], 120)).toEqual({ ok: false, issue: { code: "durationUnknown" } });
   });
 
-  it("the floor alone can refuse a recording (pure rule; the 100 MB cap is checked separately)", () => {
-    expect(attach(enforced(), 1, [], 64_000 * 3601)).toEqual({ ok: false, issue: { code: "recordingTooLong", maxMinutes: 60 } });
+  it("unenforced Spaces never consult the server value", () => {
+    expect(attach(LEGACY, 99_999, [], 125.4)).toEqual({ ok: true, durationSeconds: 125 });
+  });
+});
+
+describe("a refused service-role finalize write", () => {
+  it("maps to a localized issue (DB AUDIO_LIMIT race -> library full with the used minutes)", () => {
+    const limits = computeAudioEntitlements(BUNDLE, 0);
+    expect(enforcedAttachWriteIssue("limit", limits, [file(3600), file(30)])).toEqual({ code: "libraryFull", limitMinutes: 240, usedMinutes: 61 });
+    expect(enforcedAttachWriteIssue("failed", limits, [])).toEqual({ code: "unavailable" });
+    expect(enforcedAttachWriteIssue("studioLocked", limits, [])).toBe("studioLocked");
   });
 });
 

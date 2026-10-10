@@ -9,7 +9,8 @@ import { getSpaceEntitlement } from "@/lib/entitlements/getSpaceEntitlement";
 import { getSpaceCommercialAvailability } from "@/lib/billing/commercialAccess";
 import { getCreateMode } from "@/lib/billing/funnelMode";
 import { loadAudioQuotaPolicy } from "@/lib/billing/audioQuota.server";
-import { audioQuotaMessageKey, audioQuotaMessageValues, checkAudioAttach, checkAudioPublish } from "@/lib/billing/audioQuota";
+import { deriveStoredAudioSeconds, writeEnforcedAudioFile } from "@/lib/billing/audioFinalize.server";
+import { audioQuotaMessageKey, audioQuotaMessageValues, checkAudioAttach, checkAudioPublish, enforcedAttachWriteIssue } from "@/lib/billing/audioQuota";
 import { getCustomPagesLimit } from "@/lib/entitlements/customPagesLimit";
 import {
   MEDIA_BUCKET,
@@ -752,10 +753,11 @@ export async function attachTeachAudio(tenantId: string, itemId: string, ref: st
   }
 
   // TASK B4 - audio entitlement (paid Spaces only; legacy/exempt unchanged).
-  // Per-recording maximum and library total, checked against what Storage
-  // actually holds (size floor) and the Space's other audio items.
+  // Per-recording maximum and library total, checked against the length the
+  // server measures from the stored bytes (B4b) and the Space's other audio.
   const quota = await loadAudioQuotaPolicy(tenantId);
   let otherAudio: { id: string; metadata: Record<string, unknown> | null }[] = [];
+  let serverSeconds: number | null = null;
   if (quota.mode === "enforced") {
     const { data: audioRows, error: audioError } = await supabase
       .from("module_items")
@@ -764,8 +766,11 @@ export async function attachTeachAudio(tenantId: string, itemId: string, ref: st
       .eq("module_key", "teachAudio");
     if (audioError || !audioRows) return reject(t("audioAllowanceUnavailable"));
     otherAudio = (audioRows as typeof otherAudio).filter((r) => r.id !== itemId);
+    // TASK B4b - the length is measured from the STORED bytes with the
+    // service role; the browser-reported `durationSeconds` is ignored here.
+    serverSeconds = await deriveStoredAudioSeconds(ref, parts.ext);
   }
-  const quotaCheck = checkAudioAttach(quota, { claimedSeconds: durationSeconds, sizeBytes: Number(info.size), ext: parts.ext, otherItems: otherAudio });
+  const quotaCheck = checkAudioAttach(quota, { claimedSeconds: durationSeconds, serverSeconds, otherItems: otherAudio });
   if (!quotaCheck.ok) return reject(t(audioQuotaMessageKey(quotaCheck.issue, "attach"), audioQuotaMessageValues(quotaCheck.issue)));
   const duration = quotaCheck.durationSeconds;
 
@@ -778,14 +783,27 @@ export async function attachTeachAudio(tenantId: string, itemId: string, ref: st
     if (publishedExists) return { error: t("audioRefInvalidReupload") };
   }
 
-  const { error } = await supabase
-    .from("module_items")
-    .update({ metadata: { ...(row.metadata ?? {}), audioRef: ref, durationSeconds: duration } })
-    .eq("tenant_id", tenantId)
-    .eq("id", itemId);
-  if (error) {
-    if (ref !== previousRef) await removeDraftObjects(supabase, tenantId, [ref]);
-    return { error: error.message };
+  const nextMetadata = { ...(row.metadata ?? {}), audioRef: ref, durationSeconds: duration };
+  if (quota.mode === "enforced") {
+    // TASK B4b - on a paid Space the database (0043) refuses a member-session
+    // write of the file fields; only this verified service-role write may
+    // set them, and the database re-checks the limits on it.
+    const written = await writeEnforcedAudioFile(tenantId, itemId, nextMetadata);
+    if (!written.ok) {
+      if (ref !== previousRef) await removeDraftObjects(supabase, tenantId, [ref]);
+      const issue = enforcedAttachWriteIssue(written.reason, quota.limits, otherAudio);
+      return { error: issue === "studioLocked" ? t("needsActiveAccess") : t(audioQuotaMessageKey(issue, "attach"), audioQuotaMessageValues(issue)) };
+    }
+  } else {
+    const { error } = await supabase
+      .from("module_items")
+      .update({ metadata: nextMetadata })
+      .eq("tenant_id", tenantId)
+      .eq("id", itemId);
+    if (error) {
+      if (ref !== previousRef) await removeDraftObjects(supabase, tenantId, [ref]);
+      return { error: error.message };
+    }
   }
   // Committed: the replaced draft (only that one) is now unreferenced.
   if (previousRef && previousRef !== ref) await removeDraftObjects(supabase, tenantId, [previousRef]);

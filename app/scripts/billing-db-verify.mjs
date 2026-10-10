@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * TASK 032 - database-level behavioural verification for the billing
- * migrations (0036-0042; section L covers the 0042 Restore/Replace guards). STAGING ONLY: the script refuses to run against any
+ * migrations (0036-0043; section L covers the 0042 Restore/Replace guards, section M the 0043 audio enforcement). STAGING ONLY: the script refuses to run against any
  * project other than the Staging ref, creates its own synthetic users/rows
  * (prefix qa032-), and removes everything it created (and restores the launch
  * flag) in a finally block.
@@ -13,7 +13,7 @@
  * calls (each a separate Postgres connection), not simulated.
  */
 import { readFileSync } from "node:fs";
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
 import { STAGING_REF, assertStagingTarget, runScopedDelete } from "./stagingGuard.mjs";
@@ -736,6 +736,98 @@ async function main() {
   // Non-owners are still refused before any billing logic.
   const strangerRs = await gc.rpc("restore_space", { p_tenant_id: paidT });
   check("L12 a non-owner is still refused (42501), never told the billing state", !!strangerRs.error && strangerRs.error.code === "42501" && !locked(strangerRs), JSON.stringify(strangerRs.error));
+  await setFlag(flagWasEnabled);
+
+  // ------------------------------------------------------------------ M. 0043 audio enforcement (paid Spaces)
+  {
+    // Synthetic tracks only: no audio bytes are uploaded; refs are well-formed strings in each test tenant's folder.
+    const audioDenied = (res) => !!res.error && res.error.hint === "AUDIO_SERVER_ONLY";
+    const audioLimit = (res) => !!res.error && res.error.hint === "AUDIO_LIMIT";
+    const aRef = (tenant, item, ext = "mp3") => `${tenant}/teachAudioFile/${item}/${randomUUID()}/draft.${ext}`;
+    const uAu = await mkUser("uau"); const mOwner = await userClient(uAu);
+    await setFlag(false);
+    const ckAu = await mkCheckout(uAu, "teach"); const pAu = await provision(ckAu.id, subJson(uAu), "QA032 audio paid");
+    const tAu = pAu.data?.tenant_id; if (tAu) created.tenants.push(tAu);
+    // Legacy (billing row removed) and exempt shapes for the same owner.
+    const ckAl = await mkCheckout(uAu, "retreat"); const pAl = await provision(ckAl.id, subJson(uAu), "QA032 audio legacy");
+    const tAl = pAl.data?.tenant_id; if (tAl) created.tenants.push(tAl);
+    if (tAl) {
+      await admin.from("space_subscriptions").delete().eq("tenant_id", tAl);
+      await admin.from("space_entitlements").upsert({ tenant_id: tAl, access_type: "complimentary", access_ends_at: H(24 * 30) });
+    }
+    const uAe = await mkUser("uae"); const mExOwner = await userClient(uAe);
+    const ckAe = await mkCheckout(uAe, "teach"); const pAe = await provision(ckAe.id, subJson(uAe), "QA032 audio exempt");
+    const tAe = pAe.data?.tenant_id; if (tAe) created.tenants.push(tAe);
+    if (tAe) {
+      await admin.from("space_subscriptions").delete().eq("tenant_id", tAe);
+      await admin.rpc("billing_set_internal_exempt", { p_tenant_id: tAe, p_reason: "qa032 audio exemption", p_actor: uAe });
+    }
+    check("M0 setup: paid, legacy and exempt Spaces exist", !!tAu && !!tAl && !!tAe, JSON.stringify([pAu.error, pAl.error, pAe.error]));
+    const mPol = await admin.rpc("billing_audio_policy", { p_tenant_id: tAu });
+    check("M1 policy helper: paid Space enforced at 14400 s library / 3600 s per recording", mPol.data?.[0]?.mode === "enforced" && mPol.data[0].library_seconds === 14400 && mPol.data[0].max_recording_seconds === 3600, JSON.stringify(mPol));
+
+    const it1 = randomUUID();
+    let mRes = await mOwner.from("module_items").insert({ id: it1, tenant_id: tAu, module_key: "teachAudio", title: "qa032 track", metadata: { audioRef: aRef(tAu, it1), durationSeconds: 10 } }).select("id");
+    check("M2 paid: a direct member INSERT carrying a file is refused (AUDIO_SERVER_ONLY)", audioDenied(mRes), JSON.stringify(mRes.error));
+    mRes = await mOwner.from("module_items").insert({ id: it1, tenant_id: tAu, module_key: "teachAudio", title: "qa032 track", metadata: { audioRef: null, durationSeconds: null } }).select("id");
+    check("M3 paid: a member INSERT without a file (upload prepare) is allowed", !mRes.error, JSON.stringify(mRes.error));
+    const ref1 = aRef(tAu, it1);
+    mRes = await mOwner.from("module_items").update({ metadata: { audioRef: ref1, durationSeconds: 1 } }).eq("id", it1).select("id");
+    check("M4 paid: a direct member UPDATE setting the file is refused", audioDenied(mRes), JSON.stringify(mRes.error ?? mRes.data));
+    mRes = await admin.from("module_items").update({ metadata: { audioRef: ref1, durationSeconds: 3600 } }).eq("id", it1).select("id");
+    check("M5 paid: the service-role finalize write of a verified 3600 s file is allowed", !mRes.error && mRes.data?.length === 1, JSON.stringify(mRes.error));
+    mRes = await admin.from("module_items").update({ metadata: { audioRef: ref1, durationSeconds: 3601 } }).eq("id", it1).select("id");
+    check("M6 paid: the database refuses a 3601 s file even from the server path (AUDIO_LIMIT)", audioLimit(mRes), JSON.stringify(mRes.error));
+    mRes = await mOwner.from("module_items").update({ metadata: { audioRef: ref1, durationSeconds: 60 } }).eq("id", it1).select("id");
+    check("M7 paid: a member cannot lower the stored length", audioDenied(mRes), JSON.stringify(mRes.error ?? mRes.data));
+    mRes = await mOwner.from("module_items").update({ title: "qa032 renamed" }).eq("id", it1).select("id");
+    check("M8 paid: a member text edit that leaves the file untouched still works", !mRes.error && mRes.data?.length === 1, JSON.stringify(mRes.error));
+    mRes = await mOwner.from("module_items").upsert({ id: it1, tenant_id: tAu, module_key: "teachAudio", title: "qa032 saved", metadata: { audioRef: ref1, durationSeconds: 3600, note: "x" } }, { onConflict: "id" }).select("id");
+    check("M9 paid: a Save-style upsert carrying the stored file over still works", !mRes.error, JSON.stringify(mRes.error));
+    let mPub = await mOwner.rpc("publish_space", { p_tenant_id: tAu });
+    check("M10 paid: direct publish within the allowance succeeds", !mPub.error, JSON.stringify(mPub.error));
+
+    for (let i = 0; i < 3; i++) {
+      const id = randomUUID();
+      await admin.from("module_items").insert({ id, tenant_id: tAu, module_key: "teachAudio", title: `qa032 fill ${i}`, metadata: { audioRef: aRef(tAu, id), durationSeconds: 3600 } });
+    }
+    const it5 = randomUUID();
+    mRes = await admin.from("module_items").insert({ id: it5, tenant_id: tAu, module_key: "teachAudio", title: "qa032 over", metadata: { audioRef: aRef(tAu, it5), durationSeconds: 60 } }).select("id");
+    check("M11 paid: library at exactly 240:00, one more minute is refused by the database", audioLimit(mRes), JSON.stringify(mRes.error));
+    const { data: subAu } = await admin.from("space_subscriptions").select("id").eq("tenant_id", tAu).single();
+    await admin.from("space_subscription_addons").upsert({ subscription_id: subAu.id, addon_key: "audio_pack", quantity: 1 });
+    mRes = await admin.from("module_items").insert({ id: it5, tenant_id: tAu, module_key: "teachAudio", title: "qa032 over", metadata: { audioRef: aRef(tAu, it5), durationSeconds: 60 } }).select("id");
+    check("M12 paid: with one audio add-on the same minute is allowed", !mRes.error, JSON.stringify(mRes.error));
+    await admin.from("space_subscription_addons").delete().eq("subscription_id", subAu.id);
+    mPub = await mOwner.rpc("publish_space", { p_tenant_id: tAu });
+    check("M13 paid: after the add-on is removed, a DIRECT publish_space RPC over the library is refused (AUDIO_LIMIT)", audioLimit(mPub), JSON.stringify(mPub.error));
+    await admin.from("module_items").delete().eq("id", it5);
+    await mOwner.from("module_settings").upsert({ tenant_id: tAu, module_key: "spaceSettings", data: { qa: { audioRef: aRef(tAu, randomUUID()) } } });
+    mPub = await mOwner.rpc("publish_space", { p_tenant_id: tAu });
+    check("M14 paid: an audioRef smuggled into a published settings object is refused at publish", audioLimit(mPub), JSON.stringify(mPub.error));
+    await mOwner.from("module_settings").delete().eq("tenant_id", tAu).eq("module_key", "spaceSettings");
+    mPub = await mOwner.rpc("publish_space", { p_tenant_id: tAu });
+    check("M15 paid: back within the rules, publish succeeds again", !mPub.error, JSON.stringify(mPub.error));
+    mRes = await mOwner.from("module_items").update({ metadata: { audioRef: null, durationSeconds: null } }).eq("id", it1).select("id");
+    check("M16 paid: a member can still detach (clear) a file", !mRes.error && mRes.data?.length === 1, JSON.stringify(mRes.error));
+
+    const itL = randomUUID();
+    mRes = await mOwner.from("module_items").insert({ id: itL, tenant_id: tAl, module_key: "audio", title: "qa032 legacy long", metadata: { audioRef: `${tAl}/audioFile/${itL}/${randomUUID()}/draft.mp3`, durationSeconds: 18000 } }).select("id");
+    check("M17 legacy: a member writes a 5 h file directly, exactly as before 0043", !mRes.error, JSON.stringify(mRes.error));
+    mPub = await mOwner.rpc("publish_space", { p_tenant_id: tAl });
+    check("M18 legacy: direct publish is unaffected", !mPub.error, JSON.stringify(mPub.error));
+    const itE = randomUUID();
+    mRes = await mExOwner.from("module_items").insert({ id: itE, tenant_id: tAe, module_key: "teachAudio", title: "qa032 exempt long", metadata: { audioRef: aRef(tAe, itE), durationSeconds: 18000 } }).select("id");
+    check("M19 exempt: a member writes a 5 h file directly (not blocked)", !mRes.error, JSON.stringify(mRes.error));
+    mPub = await mExOwner.rpc("publish_space", { p_tenant_id: tAe });
+    check("M20 exempt: direct publish is unaffected", !mPub.error, JSON.stringify(mPub.error));
+
+    const strangerPol = await mExOwner.rpc("billing_audio_policy", { p_tenant_id: tAu });
+    check("M21 a non-member learns nothing from the audio policy helper", strangerPol.data?.[0]?.mode === "unavailable", JSON.stringify(strangerPol.data));
+    const anonPol = await createClient(URL_, PUB, { auth: { persistSession: false } }).rpc("billing_audio_policy", { p_tenant_id: tAu });
+    check("M22 anon cannot call the audio policy helper", !!anonPol.error);
+    await admin.rpc("billing_clear_internal_exempt", { p_tenant_id: tAe });
+  }
   await setFlag(flagWasEnabled);
 }
 

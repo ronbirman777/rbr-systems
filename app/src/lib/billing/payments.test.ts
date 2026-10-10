@@ -172,12 +172,44 @@ describe("payment confirmation email (addendum)", () => {
     const h = makeHarness();
     const b = await bought(h);
     h.store.invoices.get(b.invoiceId)!.refunded = undefined;
+    h.stripe.charges.set("ch_1", { paymentIntentId: b.invoiceId, amountRefundedMinor: 2500 });
     const refund = { chargeId: "ch_1", paymentIntentId: b.invoiceId, amountRefundedMinor: 2500 };
     const body = (id: string) => JSON.stringify({ id, type: "charge.refunded", objectId: "ch_1", refund });
     const { handleStripeWebhook } = await import("./webhook");
     await handleStripeWebhook(h.deps, body("evt_r1"), "t=1,v1=valid");
     await handleStripeWebhook(h.deps, body("evt_r2"), "t=1,v1=valid");
     expect(h.store.invoices.get(b.invoiceId)!.refunded).toBe(2500);
+  });
+
+  it("refunds: partial refunds delivered out of order, and a refund that later fails, converge on Stripe's current total", async () => {
+    const h = makeHarness();
+    const b = await bought(h);
+    const { handleStripeWebhook } = await import("./webhook");
+    const send = (id: string, type: string, hint: number) =>
+      handleStripeWebhook(h.deps, JSON.stringify({ id, type, objectId: type === "charge.refunded" ? "ch_p" : "re_1", refund: { chargeId: "ch_p", paymentIntentId: b.invoiceId, amountRefundedMinor: hint } }), "t=1,v1=valid");
+    // Two partial refunds ($5 then $10 more): Stripe's charge now says 1500 in total.
+    h.stripe.charges.set("ch_p", { paymentIntentId: b.invoiceId, amountRefundedMinor: 1500 });
+    await send("evt_second", "charge.refunded", 1500);
+    // The FIRST refund's event arrives late, carrying the stale 500 in its body: the mirror must not go back to 500.
+    await send("evt_first", "charge.refunded", 500);
+    expect(h.store.invoices.get(b.invoiceId)!.refunded).toBe(1500);
+    // The $10 refund fails at the bank: Stripe's total drops back to 500 (charge.refund.updated).
+    h.stripe.charges.set("ch_p", { paymentIntentId: b.invoiceId, amountRefundedMinor: 500 });
+    await send("evt_failed", "charge.refund.updated", 0);
+    expect(h.store.invoices.get(b.invoiceId)!.refunded).toBe(500);
+    // Full refund.
+    h.stripe.charges.set("ch_p", { paymentIntentId: b.invoiceId, amountRefundedMinor: 2500 });
+    await send("evt_full", "charge.refunded", 2500);
+    expect(h.store.invoices.get(b.invoiceId)!.refunded).toBe(2500);
+  });
+
+  it("refund for a charge Stripe does not know: nothing is written", async () => {
+    const h = makeHarness();
+    const b = await bought(h);
+    h.store.invoices.get(b.invoiceId)!.refunded = undefined;
+    const { handleStripeWebhook } = await import("./webhook");
+    await handleStripeWebhook(h.deps, JSON.stringify({ id: "evt_x", type: "charge.refunded", objectId: "ch_none", refund: { chargeId: "ch_none", paymentIntentId: b.invoiceId, amountRefundedMinor: 2500 } }), "t=1,v1=valid");
+    expect(h.store.invoices.get(b.invoiceId)!.refunded).toBeUndefined();
   });
 
   it("a payment for one account's Space is never attributed to another account", async () => {

@@ -498,7 +498,7 @@ export const adminDe: { [K in keyof typeof adminEn]: string } = {
   codeChecking: "Wird geprüft...",
   stepUpAria: "Erneut mit dem Authenticator bestätigen",
   stepUpTitle: "Bestätige, dass du es bist",
-  stepUpBody: "Für diese Änderung ist ein neuer Authenticator-Code nötig. Nach der Bestätigung wird die Seite neu geladen und du kannst die Änderung erneut versuchen.",
+  stepUpBody: "Für diese Änderung ist ein neuer Authenticator-Code nötig. Nach der Bestätigung wird die Änderung automatisch erneut gesendet; deine Eingaben bleiben erhalten.",
   stepUpConfirm: "Bestätigen",
 
   // --- MFA: enrol / verify ---

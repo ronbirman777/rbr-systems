@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 import { makeFakeSupabase, type FakeSupabase } from "@/lib/media/fakeSupabase.test-util";
 // TASK B4: these suites exercise legacy (no billing row) Spaces; enforcement has its own suite.
 vi.mock("@/lib/billing/audioQuota.server", () => ({ loadAudioQuotaPolicy: async () => ({ mode: "unenforced", reason: "legacy" }) }));
+vi.mock("@/lib/billing/audioFinalize.server", () => ({ deriveStoredAudioSeconds: async () => null, writeEnforcedAudioFile: async () => ({ ok: false, reason: "failed" }) }));
 
 
 /**

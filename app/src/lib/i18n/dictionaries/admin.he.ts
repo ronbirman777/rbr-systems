@@ -504,7 +504,7 @@ export const adminHe: { [K in keyof typeof adminEn]: string } = {
   codeChecking: "בודק...",
   stepUpAria: "אימות מחדש באמצעות אפליקציית האימות",
   stepUpTitle: "אשרו שזה אתם",
-  stepUpBody: "השינוי הזה דורש קוד חדש מאפליקציית האימות. לאחר האישור העמוד ייטען מחדש ותוכלו לנסות שוב את השינוי.",
+  stepUpBody: "השינוי הזה דורש קוד חדש מאפליקציית האימות. לאחר האישור השינוי יישלח שוב אוטומטית, ומה שהזנתם יישמר.",
   stepUpConfirm: "אישור",
 
   // --- MFA: enrol / verify ---

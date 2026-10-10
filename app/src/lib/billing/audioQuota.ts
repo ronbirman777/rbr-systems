@@ -19,40 +19,21 @@ import type { SubscriptionStatus } from "./types";
  *
  * Metering is Space/resource level only. Nothing here sees a listener.
  *
- * TRUST GAP (documented in docs/billing/ENTITLEMENTS.md): a recording's
- * length is measured in the BROWSER (detectAudioDuration) and reported to
- * the server. The server cannot decode audio today, so it validates the
- * claim and bounds it from below by the stored object's real size
- * (minPlausibleDurationSeconds): a client can under-report a compressed
- * file, but never below what its byte size makes physically plausible.
+ * DURATION (TASK B4b): on an enforced Space the browser-reported length is
+ * IGNORED. The finalize action downloads the stored object with the service
+ * role and measures it (lib/media/audioDuration.ts through
+ * billing/audioFinalize.server.ts); that server-derived value is the one
+ * checked here and stored. A file the server cannot measure is refused. The
+ * database re-checks the same limits on the item write itself and inside
+ * publish_space() (migration 0043), so neither a direct PostgREST write nor
+ * a direct RPC call can skip them; these checks exist for clear, localized
+ * messages.
  */
 
 export const SECONDS_PER_MINUTE = 60;
 
 /** The existing schema ceiling on a stored durationSeconds (12 h). */
 export const MAX_STORED_DURATION_SECONDS = 60 * 60 * 12;
-
-/**
- * Highest byte rate we accept as plausible per container. Generous on
- * purpose so an honest file is never inflated:
- *   - wav: 24-bit / 96 kHz stereo PCM = 576,000 B/s
- *   - compressed (mp3/m4a/aac/ogg): 512 kbit/s = 64,000 B/s (above MP3's
- *     320 kbit/s ceiling and typical AAC/Vorbis maxima)
- * An unknown extension uses the most lenient (wav) rate.
- */
-export const MAX_PLAUSIBLE_BYTES_PER_SECOND: Readonly<Record<string, number>> = {
-  wav: 576_000,
-  mp3: 64_000,
-  m4a: 64_000,
-  aac: 64_000,
-  ogg: 64_000,
-};
-
-export function minPlausibleDurationSeconds(sizeBytes: number, ext: string): number {
-  if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) return 0;
-  const rate = MAX_PLAUSIBLE_BYTES_PER_SECOND[ext] ?? MAX_PLAUSIBLE_BYTES_PER_SECOND.wav;
-  return Math.ceil(sizeBytes / rate);
-}
 
 export type AudioQuotaPolicy =
   | { mode: "unenforced"; reason: "legacy" | "exempt" }
@@ -128,9 +109,11 @@ export type AttachCheckResult = { ok: true; durationSeconds: number | null } | {
 /**
  * The attach (upload-finalize) check. `otherItems` are the Space's OTHER
  * audio items (the one being replaced is excluded by the caller). Returns
- * the durationSeconds to STORE: for an enforced Space that is the claim
- * raised to the byte-size floor, so the publish-time sum cannot be lowered
- * below what the bytes make plausible.
+ * the durationSeconds to STORE:
+ *   - unenforced (legacy/exempt): the browser claim, normalized exactly as
+ *     before B4 (`serverSeconds` is not consulted - it is not even measured);
+ *   - enforced: the SERVER-DERIVED whole seconds; the browser claim is
+ *     ignored. null (could not be measured) is refused.
  *
  * Boundaries are inclusive at whole-second resolution: 60:00 (3600 s)
  * passes, 60:01 (3601 s) is refused; a library exactly at its allowance
@@ -138,23 +121,38 @@ export type AttachCheckResult = { ok: true; durationSeconds: number | null } | {
  */
 export function checkAudioAttach(
   policy: AudioQuotaPolicy,
-  input: { claimedSeconds: unknown; sizeBytes: number; ext: string; otherItems: readonly StoredAudioItem[] }
+  input: { claimedSeconds: unknown; serverSeconds: number | null; otherItems: readonly StoredAudioItem[] }
 ): AttachCheckResult {
   if (policy.mode === "unenforced") return { ok: true, durationSeconds: normalizeReportedDuration(input.claimedSeconds) };
   if (policy.mode === "unavailable") return { ok: false, issue: { code: "unavailable" } };
 
   const { maxRecordingMinutes, libraryMinutes } = policy.limits;
-  const claim = input.claimedSeconds;
-  if (typeof claim !== "number" || !Number.isFinite(claim) || claim < 0) return { ok: false, issue: { code: "durationUnknown" } };
-  const effective = Math.max(Math.round(claim), minPlausibleDurationSeconds(input.sizeBytes, input.ext));
-  if (effective > maxRecordingMinutes * SECONDS_PER_MINUTE) {
+  const measured = input.serverSeconds;
+  if (typeof measured !== "number" || !Number.isSafeInteger(measured) || measured < 0) return { ok: false, issue: { code: "durationUnknown" } };
+  if (measured > maxRecordingMinutes * SECONDS_PER_MINUTE) {
     return { ok: false, issue: { code: "recordingTooLong", maxMinutes: maxRecordingMinutes } };
   }
   const { totalSeconds } = summarizeLibrary(input.otherItems);
-  if (totalSeconds + effective > libraryMinutes * SECONDS_PER_MINUTE) {
+  if (totalSeconds + measured > libraryMinutes * SECONDS_PER_MINUTE) {
     return { ok: false, issue: { code: "libraryFull", limitMinutes: libraryMinutes, usedMinutes: Math.ceil(totalSeconds / SECONDS_PER_MINUTE) } };
   }
-  return { ok: true, durationSeconds: effective };
+  return { ok: true, durationSeconds: measured };
+}
+
+/**
+ * Maps a refused service-role finalize write (audioFinalize.server.ts) to the
+ * message the organizer sees. "limit" is the database's own AUDIO_LIMIT
+ * refusal - reachable only when another upload committed between this
+ * action's check and its write - so it is reported as a full library.
+ */
+export function enforcedAttachWriteIssue(
+  reason: "studioLocked" | "limit" | "failed",
+  limits: AudioEntitlements,
+  otherItems: readonly StoredAudioItem[]
+): AudioQuotaIssue | "studioLocked" {
+  if (reason === "studioLocked") return "studioLocked";
+  if (reason === "failed") return { code: "unavailable" };
+  return { code: "libraryFull", limitMinutes: limits.libraryMinutes, usedMinutes: Math.ceil(summarizeLibrary(otherItems).totalSeconds / SECONDS_PER_MINUTE) };
 }
 
 /**

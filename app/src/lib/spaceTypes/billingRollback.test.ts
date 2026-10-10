@@ -8,7 +8,7 @@ import { extractFunctionBody, latestFunctionDefinition, stripSqlComments, type M
  * TASK 032 rollback guard (docs/billing/MIGRATION-RECOVERY.md).
  *
  * Static checks only - nothing here touches a database:
- *  - every TASK 032 migration (0036-0042) has a rollback file in supabase/verification/;
+ *  - every TASK 032 migration (0036-0043) has a rollback file in supabase/verification/;
  *  - a rollback that restores a function restated by 0038/0039/0042 restores EXACTLY the body of the
  *    migration that defined that function before (found mechanically, not hard-coded);
  *  - every object a migration creates is dropped by its rollback;
@@ -25,7 +25,7 @@ const migrations = read("migrations");
 const num = (name: string) => Number(/^(\d+)_/.exec(name)?.[1] ?? -1);
 const migration = (n: string) => migrations.find((m) => m.name.startsWith(`${n}_`))!;
 
-const TASK032 = ["0036", "0037", "0038", "0039", "0040", "0041", "0042"] as const;
+const TASK032 = ["0036", "0037", "0038", "0039", "0040", "0041", "0042", "0043"] as const;
 const rollbackPath = (n: string) =>
   path.join(ROOT, "verification", migration(n).name.replace(/\.sql$/, "_rollback.sql"));
 const rollback = (n: string) => fs.readFileSync(rollbackPath(n), "utf8");
@@ -98,8 +98,23 @@ describe("TASK 032 rollback files", () => {
     expect(fs.existsSync(path.join(ROOT, "verification", ref!))).toBe(true);
   });
 
+  it("the 0038 and 0036 rollbacks refuse while any checkout is open or mid-payment", () => {
+    // Found by the local rehearsal (rehearse-billing-rollback.sh): 0038 used to refuse only on
+    // payment_confirmed/provisioning, so it ran with an awaiting_payment checkout and removed the
+    // function that would have expired it.
+    for (const n of ["0038", "0036"]) {
+      const guard = code(rollback(n)).split("$$")[1] ?? "";
+      for (const status of ["created", "checkout_created", "awaiting_payment", "payment_confirmed", "provisioning"]) {
+        expect(guard, `${n} guard: ${status}`).toMatch(
+          new RegExp(`from public\\.pending_space_checkouts\\s+where status in \\([^)]*'${status}'`)
+        );
+      }
+    }
+  });
+
   it("each rollback (except the first) refuses until the next-later rollback has run", () => {
     const later: Record<string, string> = {
+      "0042": "to_regprocedure('public.billing_audio_policy(uuid)')", // 0043 (audio enforcement helper)
       "0041": "billing_locked", // 0042 (its restated restore_space/replace_space carry hint BILLING_LOCKED)
       "0040": "public.billing_claim_event(", // 0041
       "0039": "public.billing_invoices", // 0040
@@ -121,6 +136,7 @@ describe("restated functions are restored to their previous definition, byte for
     { rb: "0038", fn: "enforce_space_slot_capacity", expectedPrevious: /^0017_/ },
     { rb: "0042", fn: "restore_space", expectedPrevious: /^0017_/ },
     { rb: "0042", fn: "replace_space", expectedPrevious: /^0027_/ },
+    { rb: "0043", fn: "publish_space", expectedPrevious: /^0039_/ },
   ] as const;
 
   for (const { rb, fn, expectedPrevious } of RESTORED) {
@@ -280,5 +296,39 @@ describe("the rollback checks themselves catch a wrong restore", () => {
     expect(previousDefinition("publish_space", "0039")!.file).toMatch(/^0034_/);
     expect(previousDefinition("handle_new_tenant", "0038")!.file).toMatch(/^0001_/);
     expect(previousDefinition("handle_new_tenant", "0039")!.file).toMatch(/^0038_/);
+  });
+});
+
+/**
+ * TASK 032 B4b (0043): audio enforcement. publish_space() is restated with ONE marked block (proved against
+ * 0039 in publishSpaceRegression.test.ts); the rollback restores 0039's text and drops what 0043 created.
+ */
+describe("0043 audio enforcement rollback", () => {
+  it("restores publish_space() BEFORE dropping the helper it calls, then drops trigger before its function", () => {
+    const c = code(rollback("0043"));
+    const restore = c.indexOf("create or replace function public.publish_space(");
+    expect(restore).toBeGreaterThan(-1);
+    expect(restore).toBeLessThan(c.indexOf("drop function public.billing_audio_assert_publishable("));
+    expect(c.indexOf("drop trigger billing_guard_module_item_audio on public.module_items;")).toBeLessThan(
+      c.indexOf("drop function public.billing_guard_module_item_audio(")
+    );
+    // The policy helper is dropped last (the guard functions call it).
+    expect(c.indexOf("drop function public.billing_audio_policy(")).toBeGreaterThan(c.indexOf("drop function public.billing_audio_assert_publishable("));
+    expect(extractFunctionBody(rollback("0043"), "publish_space")).not.toContain("billing_audio_assert_publishable");
+  });
+
+  it("the restored publish_space() keeps the 0039 security posture and grants", () => {
+    const c = code(rollback("0043"));
+    const ddl = c.slice(c.lastIndexOf("create or replace function public.publish_space"));
+    expect(ddl).toMatch(/security invoker/);
+    expect(ddl).toMatch(/set search_path = public/);
+    expect(ddl).toContain("revoke all on function public.publish_space(uuid) from public;");
+    expect(ddl).toContain("revoke execute on function public.publish_space(uuid) from anon;");
+    expect(ddl).toContain("grant execute on function public.publish_space(uuid) to authenticated;");
+  });
+
+  it("the 0042 rollback refuses while 0043 is applied (named check, not just the marker)", () => {
+    const guard = code(rollback("0042")).split("$$")[1] ?? "";
+    expect(guard).toMatch(/if to_regprocedure\('public\.billing_audio_policy\(uuid\)'\) is not null then\s+raise exception 'rollback 0042 refused: 0043 is still applied/);
   });
 });

@@ -14,6 +14,9 @@ const SUBSCRIPTION_EVENTS = new Set([
 ]);
 const INVOICE_RECORD = new Set(["invoice.finalized", "invoice.updated", "invoice.voided", "invoice.marked_uncollectible", "invoice.created"]);
 
+/** Refund events: a full or partial refund (charge.refunded) and a refund whose state changed, e.g. failed (charge.refund.updated). */
+const REFUND_EVENTS = new Set(["charge.refunded", "charge.refund.updated"]);
+
 type Outcome = { kind: "processed" | "ignored"; tenantId?: string | null; pendingCheckoutId?: string | null };
 
 async function route(deps: BillingDeps, ev: StripeEventDTO): Promise<Outcome> {
@@ -50,10 +53,16 @@ async function route(deps: BillingDeps, ev: StripeEventDTO): Promise<Outcome> {
     const { row } = await processInvoice(deps, inv);
     return { kind: "processed", tenantId: row.tenantId };
   }
-  if (ev.type === "charge.refunded" && ev.refund) {
-    const invoiceId = ev.refund.paymentIntentId ? await deps.stripe.findInvoiceIdForPaymentIntent(ev.refund.paymentIntentId) : null;
-    if (invoiceId) await deps.store.setInvoiceRefund(deps.stripe.mode, invoiceId, ev.refund.amountRefundedMinor);
-    return { kind: "processed" };
+  if (REFUND_EVENTS.has(ev.type) && ev.refund?.chargeId) {
+    // Fetch-on-event: the charge's CURRENT cumulative refund total, never the event body's number. Two partial refunds
+    // delivered out of order, a redelivered old event, or a refund that later fails (charge.refund.updated) all converge
+    // on Stripe's truth instead of overwriting it with a stale amount.
+    const charge = await deps.stripe.retrieveChargeRefund(ev.refund.chargeId);
+    if (!charge) return { kind: "ignored" };
+    const pi = charge.paymentIntentId ?? ev.refund.paymentIntentId;
+    const invoiceId = pi ? await deps.stripe.findInvoiceIdForPaymentIntent(pi) : null;
+    if (invoiceId) await deps.store.setInvoiceRefund(deps.stripe.mode, invoiceId, charge.amountRefundedMinor);
+    return { kind: invoiceId ? "processed" : "ignored" };
   }
   return { kind: "ignored" };
 }

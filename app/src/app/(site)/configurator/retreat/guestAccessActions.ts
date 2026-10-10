@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { isStudioWritableForWrite } from "@/lib/billing/spaceDeletion";
+import { translateAccount } from "@/lib/i18n/account";
 
 import { localeFromFormData, studioMessages } from "@/lib/i18n";
 export type GuestAccessSettings = {
@@ -58,6 +60,12 @@ export async function setGuestAccessCode(
     return { error: t("codeMustBe6Digits"), settings: await getGuestAccessSettingsForOwner(tenantId) };
   }
 
+  // TASK 032: set/disable_guest_access_code() are SECURITY DEFINER, so the
+  // 0039 restrictive policies never apply to them - same predicate, here.
+  if (!(await isStudioWritableForWrite(supabase, tenantId))) {
+    return { error: translateAccount(localeFromFormData(formData), "billing", "studioSuspendedTitle"), settings: await getGuestAccessSettingsForOwner(tenantId) };
+  }
+
   const { error } = await supabase.rpc("set_guest_access_code", { p_tenant_id: tenantId, p_code: code });
   if (error) {
     if (isFunctionMissingError(error)) {
@@ -87,6 +95,10 @@ export async function disableGuestAccessCode(
 
   const tenantId = String(formData.get("tenantId") ?? "");
   if (!tenantId) return { error: t("missingSpace"), settings: DEFAULT_SETTINGS };
+
+  if (!(await isStudioWritableForWrite(supabase, tenantId))) {
+    return { error: translateAccount(localeFromFormData(formData), "billing", "studioSuspendedTitle"), settings: await getGuestAccessSettingsForOwner(tenantId) };
+  }
 
   const { error } = await supabase.rpc("disable_guest_access_code", { p_tenant_id: tenantId });
   if (error) {

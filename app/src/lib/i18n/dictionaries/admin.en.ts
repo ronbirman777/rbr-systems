@@ -507,7 +507,7 @@ export const adminEn = {
   codeChecking: "Checking...",
   stepUpAria: "Re-verify with your authenticator",
   stepUpTitle: "Confirm it's you",
-  stepUpBody: "This change needs a fresh authenticator code. After you confirm, this page reloads and you can retry the change.",
+  stepUpBody: "This change needs a fresh authenticator code. After you confirm, the change is sent again automatically; what you entered is kept.",
   stepUpConfirm: "Confirm",
 
   // --- MFA: enrol / verify ---

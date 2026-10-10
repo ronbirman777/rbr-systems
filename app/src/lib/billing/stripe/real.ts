@@ -1,7 +1,7 @@
 import "server-only";
 import Stripe from "stripe";
 import { eventMatchesMode, stripeModeFromSecretKey } from "./mode";
-import { mapCheckoutSession, mapInvoice, mapSubscription } from "./mappers";
+import { eventToDto, mapCheckoutSession, mapInvoice, mapSubscription } from "./mappers";
 import type { PriceCheck, StripeEventDTO, StripeGateway } from "./gateway";
 
 /**
@@ -100,6 +100,17 @@ export function createStripeGateway(opts: { secretKey: string; webhookSecret: st
       }
       return dto;
     },
+    async retrieveChargeRefund(chargeId) {
+      let c: Stripe.Charge;
+      try {
+        c = await stripe.charges.retrieve(chargeId);
+      } catch (e) {
+        if ((e as { code?: string }).code === "resource_missing") return null;
+        throw e; // transient: the webhook answers 500 and Stripe retries
+      }
+      const pi = c.payment_intent;
+      return { paymentIntentId: typeof pi === "string" ? pi : (pi?.id ?? null), amountRefundedMinor: c.amount_refunded ?? 0 };
+    },
     async findInvoiceIdForPaymentIntent(paymentIntentId) {
       try {
         const list = await stripe.invoicePayments.list({ payment: { type: "payment_intent", payment_intent: paymentIntentId }, limit: 1 });
@@ -159,11 +170,8 @@ export function createStripeGateway(opts: { secretKey: string; webhookSecret: st
       // constructEvent verifies the HMAC signature AND the timestamp tolerance; it throws otherwise.
       const ev = stripe.webhooks.constructEvent(rawBody, signatureHeader, opts.webhookSecret);
       if (!eventMatchesMode(mode, ev.livemode)) throw new Error("event livemode does not match this deployment's Stripe mode");
-      const obj = ev.data.object as unknown as { id?: string; payment_intent?: string | { id: string } | null; amount_refunded?: number };
-      const refund = ev.type === "charge.refunded"
-        ? { chargeId: obj.id ?? "", paymentIntentId: typeof obj.payment_intent === "string" ? obj.payment_intent : (obj.payment_intent?.id ?? null), amountRefundedMinor: obj.amount_refunded ?? 0 }
-        : null;
-      return { id: ev.id, type: ev.type, livemode: ev.livemode, createdAt: new Date(ev.created * 1000), objectId: obj.id ?? null, refund };
+      return eventToDto(ev);
     },
   };
 }
+

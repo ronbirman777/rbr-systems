@@ -8,6 +8,8 @@ import { removeAllTenantMedia, TenantMediaCleanupError } from "@/lib/media/tenan
 import { getCreateMode } from "@/lib/billing/funnelMode";
 import { loadLifecycleDecision, type LifecycleAction, type LifecycleDecision } from "@/lib/billing/lifecycleAccess";
 import { translateAccount } from "@/lib/i18n/account";
+import { loadSpaceDeletionGate } from "@/lib/billing/spaceDeletion";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 import { localeFromFormData, studioMessages } from "@/lib/i18n";
 /** Same "hint" contract as saveDraft's isSlotLimitError (actions.ts) -
@@ -32,6 +34,8 @@ export type LifecycleActionState = {
   slotLimitReached?: boolean;
   /** TASK 032: paid mode refused because this Space's billing must be resolved first. */
   billingLocked?: boolean;
+  /** TASK 032: Delete refused before anything was removed - the Space still has a live subscription. */
+  activeSubscription?: boolean;
   success?: boolean;
 };
 
@@ -264,7 +268,12 @@ export async function replaceSpace(
 async function removeSpaceMediaAsOwner(
   supabase: SupabaseClient,
   userId: string,
-  tenantId: string
+  tenantId: string,
+  // TASK 032: "service" only from deleteSpaceCompletely, for an ENDED paid
+  // Space (see lib/billing/spaceDeletion.ts) whose own Storage policy no
+  // longer lets the owner remove media. Ownership is still verified first,
+  // through the owner's session, exactly as for "owner".
+  mediaVia: "owner" | "service" = "owner"
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
   const { data: memberRows, error: membershipError } = await supabase
     .from("tenant_members")
@@ -275,7 +284,7 @@ async function removeSpaceMediaAsOwner(
   if (memberRows?.[0]?.role !== "owner") return { ok: false, reason: "not authorized to change this Space" };
 
   try {
-    await removeAllTenantMedia(supabase, tenantId);
+    await removeAllTenantMedia(mediaVia === "service" ? createAdminClient() : supabase, tenantId);
   } catch (e) {
     return { ok: false, reason: e instanceof TenantMediaCleanupError ? e.message : "could not remove Space media" };
   }
@@ -295,8 +304,17 @@ export async function deleteSpaceCompletely(
   supabase: SupabaseClient,
   userId: string,
   tenantId: string
-): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const media = await removeSpaceMediaAsOwner(supabase, userId, tenantId);
+): Promise<{ ok: true } | { ok: false; reason: string; activeSubscription?: boolean }> {
+  // TASK 032: decide BEFORE any Storage removal. The 0038 delete guard only
+  // fires at delete_space(), after the media would already be gone.
+  const gate = await loadSpaceDeletionGate(supabase, tenantId);
+  if (!gate.allowed) {
+    return gate.reason === "active_subscription"
+      ? { ok: false, reason: "the Space still has an active subscription", activeSubscription: true }
+      : { ok: false, reason: "could not read the Space's billing state" };
+  }
+
+  const media = await removeSpaceMediaAsOwner(supabase, userId, tenantId, gate.mediaVia);
   if (!media.ok) return media;
 
   const { error: dbError } = await supabase.rpc("delete_space", { p_tenant_id: tenantId });
@@ -340,7 +358,13 @@ export async function deleteSpace(
   }
 
   const result = await deleteSpaceCompletely(supabase, user.id, tenantId);
-  if (!result.ok) return { error: t("deleteFailed") };
+  // TASK 032: a live subscription is refused before anything is removed;
+  // say so (account dictionary, all seven locales) instead of "try again".
+  if (!result.ok) {
+    return result.activeSubscription
+      ? { error: translateAccount(localeFromFormData(formData), "billing", "lifecycleDeleteActiveSubscription"), activeSubscription: true }
+      : { error: t("deleteFailed") };
+  }
 
   revalidatePath("/space");
   return { error: null, success: true };

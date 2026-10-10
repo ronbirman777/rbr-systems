@@ -168,6 +168,9 @@ export const billingHe: { [K in keyof typeof billingEn]: string } = {
   chipEnded: "הסתיים",
   billingLink: "חיוב",
   lifecycleBillingLocked: "יש להסדיר את החיוב של המרחב הזה לפני שחזור או החלפה.",
+  lifecycleDeleteActiveSubscription: "למרחב הזה עדיין יש מנוי פעיל, ולכן דבר לא נמחק. יש לבטל את המנוי בעמוד החיוב ולמחוק את המרחב אחרי שהמנוי מסתיים.",
+  lifecycleArchivePaidBody: "העברת „{space}” לארכיון מוציאה אותו משימוש פעיל/ציבורי. האורחים לא יוכלו עוד להגיע אליו. ההעברה לארכיון אינה מבטלת את המנוי שלו.",
+  lifecycleReplacePaidBody: "פעולה זו מוחקת את התוכן הקיים של „{space}” – הגרסה שפורסמה, לוח הזמנים ותוכן המודולים – ומתחילה טיוטה חדשה באותו מרחב. אי אפשר לבטל את הפעולה. כדי לאשר, הקלידו את השם הנוכחי של המרחב.",
 
   // --- emails ---
   emailGreeting: "שלום,",

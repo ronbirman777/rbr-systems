@@ -56,7 +56,12 @@
 --   1. 0041, 0040 and 0039 already rolled back.
 --   2. paid checkout OFF; no live paid subscription; no checkout mid-payment
 --      (status payment_confirmed / provisioning) - a paid-but-unprovisioned
---      customer must be provisioned or refunded first.
+--      customer must be provisioned or refunded first; and no OPEN checkout
+--      (created / checkout_created / awaiting_payment) - expire it first with
+--      `select public.billing_expire_open_checkouts();` (after its Stripe
+--      Checkout Session has expired) or cancel it. This file removes that
+--      expiry function, so an open checkout left behind could still be paid in
+--      Stripe with nothing left in the database to provision it.
 --   3. Production app on a pre-TASK-032 deployment (the 032 app calls
 --      space_access_state / billing_* RPCs and would fail closed).
 --   4. Billing cron routes not scheduled; Stripe webhook endpoint disabled.
@@ -93,6 +98,9 @@ begin
   end if;
   if exists (select 1 from public.pending_space_checkouts where status in ('payment_confirmed', 'provisioning')) then
     raise exception 'ROLLBACK 0038 REFUSED: a paid checkout is not yet provisioned';
+  end if;
+  if exists (select 1 from public.pending_space_checkouts where status in ('created', 'checkout_created', 'awaiting_payment')) then
+    raise exception 'ROLLBACK 0038 REFUSED: an open checkout exists; expire or cancel it first';
   end if;
 end;
 $$;

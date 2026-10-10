@@ -168,6 +168,9 @@ export const billingIt: { [K in keyof typeof billingEn]: string } = {
   chipEnded: "Terminato",
   billingLink: "Fatturazione",
   lifecycleBillingLocked: "Regolarizzi la fatturazione di questo Space prima di ripristinarlo o sostituirlo.",
+  lifecycleDeleteActiveSubscription: "Questo Space ha ancora un abbonamento attivo, quindi non è stato eliminato nulla. Disdica l'abbonamento nella pagina Fatturazione ed elimini lo Space quando sarà terminato.",
+  lifecycleArchivePaidBody: "Archiviando “{space}” lo si rimuove dall'uso attivo/pubblico. Gli ospiti non potranno più raggiungerlo. L'archiviazione non disdice l'abbonamento.",
+  lifecycleReplacePaidBody: "Questa operazione elimina il contenuto attuale di “{space}” (la versione pubblicata, il programma e il contenuto dei moduli) e avvia una nuova bozza nello stesso Space. Non può essere annullata. Per confermare, digiti il nome attuale dello Space.",
 
   // --- emails ---
   emailGreeting: "Buongiorno,",

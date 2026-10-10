@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useId, useMemo } from "react";
-import { verifyMfaAction, type VerifyState } from "../mfa/actions";
+import { useActionState, useEffect, useId, useRef } from "react";
+import { stepUpVerifyAction, type StepUpState } from "../mfa/actions";
 import { errorMessage } from "@/lib/billing/admin/ui/labels";
 import { useAdminI18n } from "./AdminI18n";
 import { btnPrimary, errCls, hintCls, inputCls, labelCls } from "./styles";
@@ -37,11 +37,21 @@ export function CodeFields({ error, pending, submitLabel }: { error: string | nu
   );
 }
 
-/** Inline re-verify box shown when an action answers "step_up_required". On success the browser is sent back to `next` (a full reload), then the user retries. */
-export function StepUp({ next }: { next: string }) {
+/**
+ * Inline re-verify box shown when an action answers "step_up_required". It verifies the fresh code in place (no
+ * navigation, so the surrounding form keeps what the admin typed) and then calls `onVerified`, which re-submits the
+ * pending action. The server action still re-checks the recent-MFA timestamp itself.
+ */
+export function StepUp({ onVerified }: { onVerified: () => void }) {
   const { t } = useAdminI18n();
-  const bound = useMemo(() => verifyMfaAction.bind(null, next), [next]);
-  const [state, formAction, pending] = useActionState<VerifyState, FormData>(bound, null);
+  const [state, formAction, pending] = useActionState<StepUpState, FormData>(stepUpVerifyAction, null);
+  const done = useRef<number | null>(null);
+  useEffect(() => {
+    if (state?.ok && done.current !== state.at) {
+      done.current = state.at;
+      onVerified();
+    }
+  }, [state, onVerified]);
   return (
     <form action={formAction} className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-4" aria-label={t("stepUpAria")}>
       <h3 className="font-ui text-base text-idw-forest">{t("stepUpTitle")}</h3>

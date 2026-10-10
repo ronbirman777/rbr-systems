@@ -24,7 +24,7 @@ export function customerBillingState(sub: SubscriptionRecord, now: Date): Custom
 
 export type InvoiceRow = {
   id: string; stripeInvoiceId: string; status: "draft" | "open" | "paid" | "void" | "uncollectible"; issuedAt: string | null; paidAt: string | null;
-  failedAt: string | null; currency: string; totalMinor: number | null; amountPaidMinor: number; amountRefundedMinor: number;
+  failedAt: string | null; currency: string; totalMinor: number | null; amountDueMinor?: number | null; amountPaidMinor: number; amountRefundedMinor: number;
   discountMinor: number; number: string | null; hostedInvoiceUrl: string | null; invoicePdfUrl: string | null; receiptUrl: string | null;
 };
 
@@ -66,7 +66,9 @@ export async function loadBillingView(
     catalog.from("coupon_redemptions").select("*, coupons(code)").eq("space_subscription_id", subscription.id).in("status", ["redeemed", "completed", "canceled"]).order("redeemed_at", { ascending: false }).limit(1).maybeSingle(),
     subscription.planId ? catalog.from("billing_plans").select("display_name, entitlements").eq("id", subscription.planId).maybeSingle() : Promise.resolve({ data: null }),
     catalog.from("space_subscription_addons").select("quantity").eq("subscription_id", subscription.id).eq("addon_key", "audio_pack").maybeSingle(),
-    supabase.from("billing_invoices").select("id, stripe_invoice_id, status, issued_at, paid_at, failed_at, currency, total_minor, amount_paid_minor, amount_refunded_minor, discount_minor, invoice_number, hosted_invoice_url, invoice_pdf_url, receipt_url").eq("tenant_id", tenantId).order("issued_at", { ascending: false }).limit(50),
+    // RLS limits rows to the caller's own (billing_invoices.user_id = auth.uid()); the tenant filter scopes them to this Space.
+    // Drafts are not documents yet (no hosted page, amounts still changing) and are never shown to the customer.
+    supabase.from("billing_invoices").select("id, stripe_invoice_id, status, issued_at, paid_at, failed_at, currency, total_minor, amount_due_minor, amount_paid_minor, amount_refunded_minor, discount_minor, invoice_number, hosted_invoice_url, invoice_pdf_url, receipt_url, created_at").eq("tenant_id", tenantId).neq("status", "draft").order("issued_at", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false }).limit(50),
   ]);
 
   const bundle = (plan?.entitlements ?? null) as PlanEntitlementBundle | null;
@@ -101,10 +103,32 @@ export async function loadBillingView(
     redemption,
     planName: plan?.display_name ?? null,
     audio,
-    invoices: (invs ?? []).map((i) => ({
-      id: i.id, stripeInvoiceId: i.stripe_invoice_id, status: i.status, issuedAt: i.issued_at, paidAt: i.paid_at, failedAt: i.failed_at,
-      currency: String(i.currency).trim(), totalMinor: i.total_minor, amountPaidMinor: i.amount_paid_minor, amountRefundedMinor: i.amount_refunded_minor,
-      discountMinor: i.discount_minor, number: i.invoice_number, hostedInvoiceUrl: i.hosted_invoice_url, invoicePdfUrl: i.invoice_pdf_url, receiptUrl: i.receipt_url,
-    })),
+    invoices: toCustomerInvoices((invs ?? []) as CustomerInvoiceDbRow[]),
   };
+}
+
+export type CustomerInvoiceDbRow = {
+  id: string; stripe_invoice_id: string; status: InvoiceRow["status"]; issued_at: string | null; paid_at: string | null; failed_at: string | null;
+  currency: string; total_minor: number | null; amount_due_minor?: number | null; amount_paid_minor: number; amount_refunded_minor: number; discount_minor: number;
+  invoice_number: string | null; hosted_invoice_url: string | null; invoice_pdf_url: string | null; receipt_url: string | null; created_at?: string | null;
+};
+
+const ts = (v: string | null | undefined) => (v ? Date.parse(v) || 0 : 0);
+
+/**
+ * The customer's payment history rows (pure). Drafts are dropped (also filtered in the query: defence in depth), and
+ * rows are newest first by issue date, falling back to paid/created time so a row without an issue date never jumps
+ * to the top (Postgres would sort NULL first in a descending order).
+ */
+export function toCustomerInvoices(rows: CustomerInvoiceDbRow[]): InvoiceRow[] {
+  return rows
+    .filter((i) => i.status !== "draft")
+    .map((i) => ({ i, at: ts(i.issued_at) || ts(i.paid_at) || ts(i.created_at) }))
+    .sort((a, b) => b.at - a.at)
+    .map(({ i }) => ({
+      id: i.id, stripeInvoiceId: i.stripe_invoice_id, status: i.status, issuedAt: i.issued_at, paidAt: i.paid_at, failedAt: i.failed_at,
+      currency: String(i.currency).trim(), totalMinor: i.total_minor, amountDueMinor: i.amount_due_minor ?? null, amountPaidMinor: i.amount_paid_minor,
+      amountRefundedMinor: i.amount_refunded_minor, discountMinor: i.discount_minor, number: i.invoice_number, hostedInvoiceUrl: i.hosted_invoice_url,
+      invoicePdfUrl: i.invoice_pdf_url, receiptUrl: i.receipt_url,
+    }));
 }

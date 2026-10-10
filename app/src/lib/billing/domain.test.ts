@@ -169,6 +169,22 @@ describe("next action (one calculator for Admin, My Spaces and Billing)", () => 
     const r = computeNextAction(sub({ currentEffectiveAmountMinor: 2250 }), red({ done: 40, total: null, kind: "forever" }), { now: NOW });
     expect(r).toMatchObject({ action: "discount_cycle", expectedChargeMinor: 2250, discountProgress: { currentCycle: 41, totalCycles: null } });
   });
+  it("discount window (time-based, like Stripe): ordinary repeating discount still discounted until its last cycle", () => {
+    // Started 2026-09-01, 3 months -> ends 2026-12-01. Paid Sep + Oct; the running period ends 2026-11-01 -> 3rd discounted.
+    const r = computeNextAction(
+      sub({ currentPeriodStart: new Date("2026-10-01T00:00:00Z"), currentPeriodEnd: new Date("2026-11-01T00:00:00Z") }),
+      red({ done: 2, total: 3, discountEndsAt: new Date("2026-12-01T00:00:00Z") }), { now: new Date("2026-10-10T00:00:00Z") });
+    expect(r).toMatchObject({ action: "discount_cycle", expectedChargeMinor: 2250, discountProgress: { currentCycle: 3, totalCycles: 3 } });
+  });
+  it("discount window closed although the counter has cycles left (an invoice in the window was voided): next charge is full price", () => {
+    // Same discount, but the October invoice was voided: only 2 counted, and the next invoice (2026-12-01) is at the window end.
+    const r = computeNextAction(sub(), red({ done: 2, total: 3, discountEndsAt: new Date("2026-12-01T00:00:00Z") }), { now: NOW });
+    expect(r).toMatchObject({ action: "discount_ends", at: new Date("2026-12-01T00:00:00Z"), expectedChargeMinor: 2500, discountProgress: null });
+  });
+  it("a forever discount has no window and never closes", () => {
+    const r = computeNextAction(sub(), red({ done: 2, total: null, kind: "forever", discountEndsAt: null }), { now: NOW });
+    expect(r.action).toBe("discount_cycle");
+  });
   it("cancel at period end: access ends at the period end, nothing more is charged", () => {
     expect(computeNextAction(sub({ cancelAtPeriodEnd: true }), null, { now: NOW })).toMatchObject({ action: "cancel_at_period_end", expectedChargeMinor: 0, at: new Date("2026-12-01T00:00:00Z") });
   });
