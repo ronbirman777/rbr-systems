@@ -1,4 +1,4 @@
-# TASK 032 rollback rehearsal (0036-0045)
+# TASK 032 rollback rehearsal (0036-0046)
 
 This document follows on from `MIGRATION-RECOVERY.md`. §6 of that document said the rollback files had never been run against a database. This one records where they have now been run, what happened, and the plan for a hosted rehearsal, which still needs approval.
 
@@ -186,6 +186,48 @@ Negative control (manual, same run): on a clone of `full` with the 0045 rollback
 | post-0045 | `35136de53d3d6ac4580c7b668a7cf95d` | 805 |
 | after 0045 rollback (= post-0044) | `c13f3ddd46a13ff5f109a3960af3730f` | 800 |
 
+## 2d. Extension to 0046 (observed, run 2026-10-10)
+
+The script now covers 0036..0046 and builds a fifth reference, `rbr_rh_m45` (0001..0045); `full` is 0001..0046. Same container `supabase_db_app`, throwaway `rbr_rh_*` databases only, dropped afterwards; 0046 is not applied to any hosted project. `RESULT: ALL CHECKS PASSED` (123 checks). Run twice (the second after granting `delete` on `billing_audio_backfill_findings` to `service_role`; identical results). Re-run 2026-10-10 after the independent-review fixes to 0046 (published-copy columns, published-sibling refusal, item binding, backfill folder check, lock order, the space_subscriptions invariant trigger): `RESULT: ALL CHECKS PASSED`, 132 checks, 0 failures.
+
+**0046 behaviour** (step 4c, on `full`, one transaction rolled back; catalog unchanged, no items or findings left afterwards). Three "pre-0046" rows (browser-reported length, no provenance; one of them holding another item's ref) were created on the paid Space with the 0043 trigger disabled inside the transaction, plus one Storage object on the legacy Space. `postgres` = a trusted (non-member) session, as the service-role finalize path is; `authenticated` = the owner's JWT claims. Re-run 2026-10-10 after the review fixes (36 checks; previously 27):
+
+| # | As | Check | Result |
+|---|---|---|---|
+| 1 | trusted | bare file write without provenance | `AUDIO_UNVERIFIED` |
+| 2 | trusted | `billing_audio_attach_verified` (provenance + metadata) | allowed |
+| 3-4 | trusted | the same RPC over the per-recording maximum; its provenance row is rolled back with it | `AUDIO_LIMIT`; previous provenance kept |
+| 5 | trusted | RPC with a ref outside the item's folder | `AUDIO_UNVERIFIED` |
+| 6-8 | trusted | a published object planted in an upload folder; the RPC for that folder's draft; the item keeps its previous file | allowed; `AUDIO_REUPLOAD`; unchanged |
+| 9-13 | member | read / insert / update provenance; call the finalize RPC; call the backfill recorder | denied (`42501`) |
+| 14-15 | member | `publish_space()`; a direct `published_spaces` write, while an unverified file is attached | `AUDIO_UNVERIFIED` |
+| 16 | trusted | backfill recorder, measurement equal to the stored length | `stamped` |
+| 17-19 | trusted | recorder with a mismatch; an `ok` verdict that disagrees with the stored length; a stale ref | `flagged`, `flagged`, `skipped_changed`; stored length unchanged, nothing stamped |
+| 20 | trusted | recorder for a row whose ref is in another item's folder | `flagged`, nothing stamped |
+| 21 | trusted | one audit row per recorder call for the run id | 5 rows |
+| 22-23 | member | publish refused while the mismatched file is attached; detach | `AUDIO_UNVERIFIED`, allowed |
+| 24-26 | member | publish while a row borrows another item's verified ref and length (item binding); detach it; publish with verified files only | `AUDIO_UNVERIFIED`, allowed, allowed |
+| 27-28 | member | `replace_space()` on the exempt Space; nothing reset | `EXEMPT_REPLACE_REQUIRES_ADMIN`; name unchanged |
+| 29-30 | member | exempt Space: 5 h file written directly, publish | allowed (unchanged) |
+| 31-32 | trusted | flip the exempt Space (now holding audio) to `active`; insert a paid row for the legacy Space holding a Storage object | `BILLING_SPACE_HAS_MEDIA` both |
+| 33-35 | member | legacy and paid `replace_space()`; paid replace removed the Space's provenance rows (FK cascade) | allowed, allowed, 0 rows left |
+| 36 | trusted | a status change between paid statuses (`active` -> `past_due`) | allowed (unaffected) |
+
+**New guard refusals:** 0046 with no token / wrong token / paid flag ON / `active` subscription; 0045 before 0046 ("0046 is still applied"). The 0045 paid-flag and live-subscription refusals now run after the 0046 rollback (0045's 0046-applied check comes right after its token check).
+
+| Comparison | Result |
+|---|---|
+| after the 0046 rollback vs a fresh 0001..0045 | identical, 834 lines |
+| 0036..0046 re-applied to the rolled-back db vs `full` | identical, 892 lines (881 before the review fixes) |
+| full chain 0046 -> 0036 vs a fresh 0001..0035 | identical, 348 lines |
+
+| State | md5 (comparable) | lines |
+|---|---|---|
+| post-0046 | `a7b41439e73c6ac904200bbb7029f779` | 863 (was `6b014cd0512c9f5faf1415a08c7da992` / 852 before the review fixes) |
+| after 0046 rollback (= post-0045) | `35136de53d3d6ac4580c7b668a7cf95d` | 805 |
+
+Note: the local scaffolding (like hosted Supabase) grants `service_role` everything on new public tables by default privileges, so the explicit `grant ... to service_role` lines in 0046 do not change the catalog; the `revoke ... from public, anon, authenticated` lines do.
+
 ## 3. Defect found and fixed
 
 **Defect: the 0038 rollback ran with an open checkout.**
@@ -243,12 +285,14 @@ After **every** step:
 - run that file's own trailing verification query;
 - run the legacy count query from `MIGRATION-RECOVERY.md` §5, and confirm tenants, published_spaces and module_items are unchanged from 4.1(6) (5 / 4 / 79 on 2026-10-10).
 
-If the target already has 0043 and/or 0044 applied (Staging did not on 2026-10-10), run these first, in this order, and expect the baseline in 4.1(6) to be the post-0044 md5 `c13f3ddd46a13ff5f109a3960af3730f` (or post-0043 `be50d56c49a7d26864ab04a13dd5f387`):
+If the target already has 0043..0046 applied (Staging had none of them on 2026-10-10), run these first, in this order, starting at the highest applied one, and expect the baseline in 4.1(6) to be the matching md5 (post-0046 `a7b41439e73c6ac904200bbb7029f779`, post-0045 `35136de53d3d6ac4580c7b668a7cf95d`, post-0044 `c13f3ddd46a13ff5f109a3960af3730f`, post-0043 `be50d56c49a7d26864ab04a13dd5f387`):
 
 | # | File | Token | Expected md5 after | Data-destructive |
 |---|---|---|---|---|
-| 0a | 0044 | `0044` | `be50d56c49a7d26864ab04a13dd5f387` | no |
-| 0b | 0043 | `0043` | `868f35d7f344ae4c02792f031addc0d9` | no |
+| 0a | 0046 | `0046` | `35136de53d3d6ac4580c7b668a7cf95d` | the two 0046 tables (provenance, backfill audit; export findings first) **[approval]** |
+| 0b | 0045 | `0045` | `c13f3ddd46a13ff5f109a3960af3730f` | no |
+| 0c | 0044 | `0044` | `be50d56c49a7d26864ab04a13dd5f387` | no |
+| 0d | 0043 | `0043` | `868f35d7f344ae4c02792f031addc0d9` | no |
 
 | # | File | Token | Expected md5 after | Data-destructive |
 |---|---|---|---|---|

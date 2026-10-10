@@ -54,6 +54,11 @@ describe("decideSpaceLifecycle - flag ON", () => {
   it.each(STATES)("%s", (_label, subscription, kind) => {
     for (const action of ["restore", "replace"] as const) {
       const d = decideSpaceLifecycle({ mode: "paid", action, subscription, legacySlots: roomy, now: NOW });
+      // TASK 032 (0046): an exempt Space (expired or not) is never replaced - tested separately below.
+      if (action === "replace" && subscription?.status === "exempt") {
+        expect(d).toEqual({ allowed: false, governedBy: "billing", blockedBy: "exempt_replace" });
+        continue;
+      }
       if (kind === "billing_ok") expect(d).toEqual({ allowed: true, governedBy: "billing" });
       if (kind === "billing_locked") expect(d).toEqual({ allowed: false, governedBy: "billing", blockedBy: "billing_locked" });
       if (kind === "legacy") expect(d).toEqual({ allowed: true, governedBy: "legacy" });
@@ -73,6 +78,18 @@ describe("decideSpaceLifecycle - flag ON", () => {
       blockedBy: "slot_limit",
     });
     expect(decideSpaceLifecycle({ mode: "paid", action: "restore", subscription: null, legacySlots: { slotsAllowed: 2, legacySpacesOwned: 2 }, now: NOW }).allowed).toBe(true);
+  });
+
+  it("0046: an exempt Space cannot be replaced (expired or not); restore is unaffected; paid/legacy replace unchanged", () => {
+    const blocked = { allowed: false, governedBy: "billing", blockedBy: "exempt_replace" };
+    expect(decideSpaceLifecycle({ mode: "paid", action: "replace", subscription: sub({ status: "exempt" }), now: NOW })).toEqual(blocked);
+    expect(decideSpaceLifecycle({ mode: "paid", action: "replace", subscription: sub({ status: "exempt", exemptExpiresAt: hoursAgo(1) }), now: NOW })).toEqual(blocked);
+    expect(decideSpaceLifecycle({ mode: "paid", action: "restore", subscription: sub({ status: "exempt" }), legacySlots: null, now: NOW }).allowed).toBe(true);
+    expect(decideSpaceLifecycle({ mode: "paid", action: "replace", subscription: sub(), now: NOW }).allowed).toBe(true);
+    expect(decideSpaceLifecycle({ mode: "paid", action: "replace", subscription: null, now: NOW }).allowed).toBe(true);
+    // My Spaces hides Replace for it (and does not call it "billing locked").
+    const view = lifecycleControlsView({ mode: "paid", isArchived: true, slotsAvailable: 1, restore: { allowed: true, governedBy: "billing" }, replace: blocked as never });
+    expect(view).toEqual({ showRestore: true, showReplace: false, billingLocked: false });
   });
 
   it("legacy Space replace never needs a slot", () => {

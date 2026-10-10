@@ -29,14 +29,21 @@ vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => fake.supabase 
 // is covered by lib/media/audioDuration.test.ts; here it is driven per test.
 let measured: number | null = null;
 let writeRefusal: "studioLocked" | "limit" | "failed" | null = null;
-const finalize = vi.hoisted(() => ({ derive: [] as string[], writes: [] as { tenantId: string; itemId: string }[] }));
+const finalize = vi.hoisted(() => ({
+  derive: [] as string[],
+  writes: [] as { tenantId: string; itemId: string }[],
+  fingerprints: [] as { sizeBytes: number; sha256: string }[],
+}));
 vi.mock("@/lib/billing/audioFinalize.server", () => ({
-  deriveStoredAudioSeconds: async (ref: string) => {
+  // TASK 032 (0046): the measurement carries the stored file's fingerprint.
+  measureStoredAudio: async (ref: string) => {
     finalize.derive.push(ref);
-    return measured;
+    return measured === null ? null : { seconds: measured, sizeBytes: 1000, sha256: "f".repeat(64) };
   },
-  writeEnforcedAudioFile: async (tenantId: string, itemId: string, metadata: Record<string, unknown>) => {
+  loadAudioFingerprints: async () => new Map(),
+  writeEnforcedAudioFile: async (tenantId: string, itemId: string, metadata: Record<string, unknown>, fingerprint: { sizeBytes: number; sha256: string }) => {
     finalize.writes.push({ tenantId, itemId });
+    finalize.fingerprints.push(fingerprint);
     if (writeRefusal) return { ok: false, reason: writeRefusal };
     const row = fake.tables.module_items.find((r) => r.id === itemId && r.tenant_id === tenantId);
     if (!row) return { ok: false, reason: "failed" };
@@ -77,6 +84,7 @@ beforeEach(() => {
   writeRefusal = null;
   finalize.derive.length = 0;
   finalize.writes.length = 0;
+  finalize.fingerprints.length = 0;
 });
 
 async function teach() {
@@ -135,6 +143,8 @@ describe("Teach attach - per-recording maximum", () => {
     expect(await attachTeachAudio(TEACH, ITEM, teachRef(), server(1800))).toEqual({ error: null });
     expect(finalize.writes).toEqual([{ tenantId: TEACH, itemId: ITEM }]);
     expect(meta()).toMatchObject({ audioRef: teachRef(), durationSeconds: 1800 });
+    // TASK 032 (0046): the fingerprint of the measured bytes goes with the write (server provenance).
+    expect(finalize.fingerprints).toEqual([{ sizeBytes: 1000, sha256: "f".repeat(64) }]);
   });
 
   it("a database AUDIO_LIMIT refusal on the finalize write (concurrent upload) is reported and the upload removed", async () => {
@@ -307,5 +317,45 @@ describe("Flow attach and publish", () => {
     const res = await publishSpace({ error: null, publishedAt: null }, form);
     expect(res.error).toMatch(/longer than 60 minutes/);
     expect(fake.rpc).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * TASK 032 (0046) MEDIUM-1: on a paid Space a published object already in the upload's folder is refused even when
+ * the attach re-uses the item's CURRENT ref (previousRef === ref) - its bytes were never measured by this attach and
+ * publish would adopt it. Nothing is deleted (the live snapshot may reference it). Legacy/exempt: unchanged.
+ */
+describe("re-attach of the same ref over an existing published copy", () => {
+  const publishedOf = (ref: string) => ref.replace("/draft.mp3", "/published.mp3");
+
+  it("Teach paid: refused, nothing written, nothing deleted", async () => {
+    seedItem(TEACH, "teachAudio", ITEM, { audioRef: teachRef(), durationSeconds: 60 });
+    fake.put(teachRef(), "x", undefined, "audio/mpeg");
+    fake.put(publishedOf(teachRef()), "different bytes", undefined, "audio/mpeg");
+    const { attachTeachAudio } = await teach();
+    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(60))).error).toMatch(/re-upload/);
+    expect(finalize.writes).toHaveLength(0);
+    expect(fake.files.has(teachRef())).toBe(true);
+    expect(fake.files.has(publishedOf(teachRef()))).toBe(true);
+  });
+
+  it("Flow paid: refused, nothing written, nothing deleted", async () => {
+    seedItem(FLOW, "audio", ITEM, { audioRef: flowRef(), durationSeconds: 60 });
+    fake.put(flowRef(), "x", undefined, "audio/mpeg");
+    fake.put(publishedOf(flowRef()), "different bytes", undefined, "audio/mpeg");
+    const { attachFlowAudio } = await flow();
+    expect((await attachFlowAudio(FLOW, ITEM, flowRef(), server(60))).error).toMatch(/re-upload/);
+    expect(finalize.writes).toHaveLength(0);
+    expect(fake.files.has(flowRef())).toBe(true);
+    expect(fake.files.has(publishedOf(flowRef()))).toBe(true);
+  });
+
+  it("legacy Space: the same-ref re-attach is unchanged (allowed)", async () => {
+    policy = { mode: "unenforced", reason: "legacy" };
+    seedItem(TEACH, "teachAudio", ITEM, { audioRef: teachRef(), durationSeconds: 60 });
+    fake.put(teachRef(), "x", undefined, "audio/mpeg");
+    fake.put(publishedOf(teachRef()), "x", undefined, "audio/mpeg");
+    const { attachTeachAudio } = await teach();
+    expect(await attachTeachAudio(TEACH, ITEM, teachRef(), 60)).toEqual({ error: null });
   });
 });

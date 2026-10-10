@@ -460,7 +460,7 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     }
   });
 
-  it("migration chain: one migration per number, 0045 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
+  it("migration chain: one migration per number, 0046 is the head, main's 0019 untouched, the 0023 gap is never filled", () => {
     const names = migrations.map((m) => m.name);
     expect(names.filter((n) => n.startsWith("0028_"))).toEqual(["0028_teach_foundation.sql"]);
     expect(names.filter((n) => n.startsWith("0029_"))).toEqual(["0029_versioned_media_update_deny.sql"]);
@@ -472,14 +472,16 @@ describe("0028: Teach foundation on top of 0025's publish_space() (TASK 027.5 Ph
     // renumbered or back-filled.
     expect(names.filter((n) => n.startsWith("0034_"))).toEqual(["0034_flow_daily_inspiration.sql"]);
     expect(names.filter((n) => n.startsWith("0035_"))).toEqual(["0035_teach_my_retreats.sql"]);
-    // TASK 032's billing foundation: 0036-0041, the 0042 lifecycle guards, the 0043 audio enforcement, the 0044 definer-RPC guards and the 0045 media content guard (which does NOT restate publish_space); one each, nothing beyond.
-    for (const [n, file] of [["0036", "0036_billing_core_tables.sql"], ["0037", "0037_billing_coupon_engine.sql"], ["0038", "0038_billing_provisioning_lifecycle.sql"], ["0039", "0039_billing_access_enforcement.sql"], ["0040", "0040_billing_payments_invoices.sql"], ["0041", "0041_billing_event_email_primitives.sql"], ["0042", "0042_billing_space_lifecycle_guards.sql"], ["0043", "0043_billing_audio_enforcement.sql"], ["0044", "0044_billing_definer_rpc_guards.sql"], ["0045", "0045_billing_media_content_guard.sql"]] as const) {
+    // TASK 032's billing foundation: 0036-0041, the 0042 lifecycle guards, the 0043 audio enforcement, the 0044 definer-RPC guards, the 0045 media content guard and the 0046 audio provenance / exempt-Replace guard (neither 0045 nor 0046 restates publish_space); one each, nothing beyond.
+    for (const [n, file] of [["0036", "0036_billing_core_tables.sql"], ["0037", "0037_billing_coupon_engine.sql"], ["0038", "0038_billing_provisioning_lifecycle.sql"], ["0039", "0039_billing_access_enforcement.sql"], ["0040", "0040_billing_payments_invoices.sql"], ["0041", "0041_billing_event_email_primitives.sql"], ["0042", "0042_billing_space_lifecycle_guards.sql"], ["0043", "0043_billing_audio_enforcement.sql"], ["0044", "0044_billing_definer_rpc_guards.sql"], ["0045", "0045_billing_media_content_guard.sql"], ["0046", "0046_billing_audio_provenance_and_exemption.sql"]] as const) {
       expect(names.filter((x) => x.startsWith(`${n}_`))).toEqual([file]);
     }
-    expect(names.some((n) => /^00(4[6-9]|[5-9]\d)_/.test(n))).toBe(false);
+    expect(names.some((n) => /^00(4[7-9]|[5-9]\d)_/.test(n))).toBe(false);
     // 0044 restates only the Guest Access / Featured RPCs: publish_space() is still last defined by 0043.
     expect(latestFunctionDefinition(migrations, "publish_space")!.file).toMatch(/^0043_/);
     expect(stripSqlComments(migrations.find((m) => m.name.startsWith("0044_"))!.sql).toLowerCase()).not.toContain("publish_space");
+    // 0046 restates billing_audio_assert_publishable() (which publish_space() calls) but never publish_space() itself.
+    expect(stripSqlComments(migrations.find((m) => m.name.startsWith("0046_"))!.sql).toLowerCase()).not.toContain("function public.publish_space");
     expect(names.filter((n) => n.startsWith("0019_"))).toEqual(["0019_signup_profile.sql"]);
     expect(names.some((n) => n.startsWith("0023_"))).toBe(false);
   });

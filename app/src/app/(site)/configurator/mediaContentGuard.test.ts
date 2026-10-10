@@ -3,6 +3,7 @@ import sharp from "sharp";
 import { makeFakeSupabase, type FakeSupabase } from "@/lib/media/fakeSupabase.test-util";
 import type { AudioQuotaPolicy } from "@/lib/billing/audioQuota";
 import { isCanonicalStoredImage } from "@/lib/media/imageSignature";
+import { createHash } from "node:crypto";
 
 /**
  * TASK 032 (0045) - no audio (or any non-image bytes) behind an image
@@ -39,7 +40,9 @@ vi.mock("@/lib/entitlements/availability", () => ({ deriveCommercialAvailability
 vi.mock("@/lib/supabase/server", () => ({ createClient: async () => fake.supabase }));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => adminView(fake) }));
 vi.mock("@/lib/billing/audioQuota.server", () => ({ loadAudioQuotaPolicy: async () => policy }));
-vi.mock("@/lib/billing/audioFinalize.server", () => ({ deriveStoredAudioSeconds: async () => null, writeEnforcedAudioFile: async () => ({ ok: false, reason: "failed" }) }));
+// TASK 032 (0046): the recorded fingerprints Publish compares each published audio copy against (per test).
+const recorded = vi.hoisted(() => ({ fingerprints: new Map() as Map<string, { sizeBytes: number; sha256: string }> | null }));
+vi.mock("@/lib/billing/audioFinalize.server", () => ({ measureStoredAudio: async () => null, writeEnforcedAudioFile: async () => ({ ok: false, reason: "failed" }), loadAudioFingerprints: async () => recorded.fingerprints }));
 
 const T = "11111111-1111-4111-8111-111111111111";
 const OTHER = "22222222-2222-4222-8222-222222222222";
@@ -78,6 +81,7 @@ beforeEach(async () => {
   fake = makeFakeSupabase();
   policy = LEGACY;
   adminCalls.length = 0;
+  recorded.fingerprints = new Map();
 });
 
 describe("upload content check (every Space): bytes decide, never the name or declared type", () => {
@@ -233,6 +237,62 @@ describe("publish copy cannot launder bytes (paid Spaces: service-role copy + st
     fake.putRaw(planted, new Uint8Array(MP3), "image/webp");
     fake.tables.brand_configs.push({ tenant_id: T, hero_image_ref: planted });
     expect((await publish()).error).toBeNull();
+    expect(adminCalls).toEqual([]);
+  });
+});
+
+describe("0046: audio swapped after the server measured it cannot be published (paid Spaces)", () => {
+  const ITEM = "44444444-4444-4444-8444-444444444444";
+  const draft = `${T}/audioFile/${ITEM}/${UP}/draft.mp3`;
+  const published = `${T}/audioFile/${ITEM}/${UP}/published.mp3`;
+  const measuredBytes = new Uint8Array(Buffer.concat([MP3, Buffer.from("measured")]));
+  const fingerprintOf = (b: Uint8Array) => ({ sizeBytes: b.byteLength, sha256: createHash("sha256").update(b).digest("hex") });
+  beforeEach(() => {
+    policy = ENFORCED;
+    fake.tables.module_items.push({ id: ITEM, tenant_id: T, module_key: "audio", title: "Track", image_ref: null, metadata: { audioRef: draft, durationSeconds: 60 } });
+    recorded.fingerprints = new Map([[draft, fingerprintOf(measuredBytes)]]);
+  });
+
+  it("the measured file is copied by the service role, re-read, and the publish goes ahead", async () => {
+    fake.putRaw(draft, measuredBytes, "audio/mpeg");
+    expect((await publish()).error).toBeNull();
+    expect(adminCalls).toContain(`copy:${draft}`);
+    expect(adminCalls).toContain(`download:${published}`);
+    expect(fake.rpc).toHaveBeenCalledWith("publish_space", expect.anything());
+  });
+
+  it("a draft deleted and re-uploaded with other bytes after measurement: refused, new copy removed, no RPC", async () => {
+    fake.putRaw(draft, new Uint8Array(Buffer.concat([MP3, Buffer.alloc(4096, 7)])), "audio/mpeg");
+    const res = await publish();
+    expect(res.error).toMatch(/not the file that was measured when it was uploaded; upload it again/);
+    expect(fake.files.has(published)).toBe(false);
+    expect(fake.rpc).not.toHaveBeenCalledWith("publish_space", expect.anything());
+  });
+
+  it("a file the server never measured (no recorded fingerprint) is refused before any copy", async () => {
+    fake.putRaw(draft, measuredBytes, "audio/mpeg");
+    recorded.fingerprints = new Map();
+    expect((await publish()).error).toMatch(/has not been verified by the server; upload it again/);
+    expect(adminCalls.filter((c) => c.startsWith("copy:") && c.includes("/audioFile/"))).toEqual([]);
+    expect(fake.rpc).not.toHaveBeenCalledWith("publish_space", expect.anything());
+  });
+
+  it("unreadable fingerprints fail closed before any copy", async () => {
+    fake.putRaw(draft, measuredBytes, "audio/mpeg");
+    recorded.fingerprints = null;
+    expect((await publish()).error).toBeTruthy();
+    expect(adminCalls.filter((c) => c.startsWith("copy:"))).toEqual([]);
+    expect(fake.rpc).not.toHaveBeenCalledWith("publish_space", expect.anything());
+  });
+
+  it("legacy / exempt Spaces are unchanged: member-session copy, no fingerprint read or compare", async () => {
+    for (const p of [LEGACY, EXEMPT]) {
+      policy = p;
+      recorded.fingerprints = null;
+      fake.putRaw(draft, new Uint8Array(Buffer.concat([MP3, Buffer.alloc(16, 1)])), "audio/mpeg");
+      fake.files.delete(published);
+      expect((await publish()).error).toBeNull();
+    }
     expect(adminCalls).toEqual([]);
   });
 });

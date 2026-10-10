@@ -24,9 +24,14 @@
  *          MP4 parser; ADIF is refused).
  *   m4a  - ISO-BMFF: the first box must be `ftyp`, the top-level boxes must
  *          chain exactly to the end, exactly one `moov`, no fragments
- *          (`moof`/`mvex`). Per sound track: max(sum of stts deltas, mdhd,
- *          tkhd, sum of elst segments - which can REPEAT media); overall max
- *          with mvhd. stts and stsz sample counts must agree.
+ *          (`moof`/`mvex`). Per sound track the single sample entry must be
+ *          `mp4a` with an AAC `esds`; the decoder floor is sample count x
+ *          1024 / min(sample-entry rate, AudioSpecificConfig rate) - every
+ *          header length is uploader-controlled, so it can only ADD:
+ *          max(floor, sum of stts deltas, mdhd, tkhd, sum of elst segments -
+ *          which can REPEAT media); overall max with mvhd. stts and stsz
+ *          sample counts must agree; an mdhd timescale above 4x the codec
+ *          rate, a 0/absurd rate, or a non-AAC entry is refused.
  *   ogg  - one logical stream only (Vorbis or Opus); every packet's decoded
  *          length is computed from the codec (Vorbis block sizes via the
  *          setup header's mode table, Opus TOC bytes) and summed; the larger
@@ -336,6 +341,116 @@ function elstTotal(b: Uint8Array, box: Box): number | "bad" {
   return total;
 }
 
+/** MPEG-4 audio sampling-frequency table (ISO/IEC 14496-3, 1.6.3.4). */
+const MP4A_RATES = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
+/**
+ * Audio object types whose decoded frame is AT MOST 1024 samples at the
+ * AudioSpecificConfig (core) rate: AAC Main/LC/SSR/LTP, SBR/PS (HE-AAC v1/v2:
+ * 1024 core samples = 2048 output samples at twice the rate, the same time),
+ * ER AAC LC/LD/ELD (1024/960/512/480). Anything else (e.g. MP3-in-MP4, 1152
+ * samples per frame) could decode longer than samples x 1024 and is refused.
+ */
+const MP4A_AOTS = new Set([1, 2, 3, 4, 5, 17, 23, 29, 39]);
+const MIN_AUDIO_RATE = 7350;
+const MAX_AUDIO_RATE = 96000;
+/** mdhd timescale may be the output rate of HE-AAC (2x core); more than this is a forged clock. */
+const MAX_TIMESCALE_TO_RATE = 4;
+
+/** Bit reader over an AudioSpecificConfig. */
+function ascRate(asc: Uint8Array): number | null {
+  let pos = 0;
+  const bits = (n: number) => {
+    let v = 0;
+    for (let k = 0; k < n; k++, pos++) {
+      if (pos >> 3 >= asc.length) return -1;
+      v = v * 2 + ((asc[pos >> 3] >> (7 - (pos & 7))) & 1);
+    }
+    return v;
+  };
+  const aot = () => {
+    const v = bits(5);
+    return v === 31 ? 32 + bits(6) : v;
+  };
+  const rate = () => {
+    const i = bits(4);
+    if (i === 15) return bits(24);
+    return i >= 0 && i < MP4A_RATES.length ? MP4A_RATES[i] : -1;
+  };
+  const type = aot();
+  if (!MP4A_AOTS.has(type)) return null;
+  const core = rate(); // explicit SBR/PS: this is the CORE (AAC) rate; the extension rate follows
+  if (type === 5 || type === 29) {
+    bits(4); // channelConfiguration
+    if (rate() < 0) return null; // extensionSamplingFrequency
+    const coreType = aot();
+    if (!MP4A_AOTS.has(coreType) || coreType === 5 || coreType === 29) return null;
+  }
+  return core > 0 ? core : null;
+}
+
+/** MPEG-4 descriptor (tag + 7-bit-chained size) at `p` inside [p, end). */
+function descriptorAt(b: Uint8Array, p: number, end: number): { tag: number; start: number; end: number } | null {
+  if (p >= end) return null;
+  const tag = b[p];
+  let size = 0;
+  let q = p + 1;
+  for (let i = 0; i < 4; i++, q++) {
+    if (q >= end) return null;
+    size = size * 128 + (b[q] & 0x7f);
+    if (!(b[q] & 0x80)) {
+      q += 1;
+      return q + size <= end ? { tag, start: q, end: q + size } : null;
+    }
+  }
+  return null;
+}
+
+/** AudioSpecificConfig sampling rate from an `esds` box, or null when absent/unparseable/not AAC. */
+function esdsCoreRate(b: Uint8Array, esds: Box): number | null {
+  const es = descriptorAt(b, esds.start + 4, esds.end);
+  if (!es || es.tag !== 3 || es.start + 3 > es.end) return null;
+  const flags = b[es.start + 2];
+  let p = es.start + 3;
+  if (flags & 0x80) p += 2; // dependsOn_ES_ID
+  if (flags & 0x40) p += 1 + (p < es.end ? b[p] : 0); // URL
+  if (flags & 0x20) p += 2; // OCR_ES_Id
+  const dc = descriptorAt(b, p, es.end);
+  if (!dc || dc.tag !== 4 || dc.start + 13 > dc.end) return null;
+  const oti = b[dc.start];
+  if (oti !== 0x40 && oti !== 0x66 && oti !== 0x67 && oti !== 0x68) return null; // MPEG-4 / MPEG-2 AAC
+  const dsi = descriptorAt(b, dc.start + 13, dc.end);
+  if (!dsi || dsi.tag !== 5 || dsi.end - dsi.start < 2) return null;
+  return ascRate(b.subarray(dsi.start, dsi.end));
+}
+
+/**
+ * The rate a decoder actually runs the track at: the single `stsd` entry
+ * must be `mp4a` (AudioSampleEntry v0/v1) carrying an AAC `esds`. Returns
+ * the SMALLER of the sample-entry rate and the AudioSpecificConfig rate
+ * (smaller rate = longer measured duration, so HE-AAC declared at its output
+ * rate is never under-counted), or a failure reason.
+ */
+function mp4aDecoderRate(b: Uint8Array, stsd: Box | null): number | AudioDurationFailure {
+  if (!stsd || stsd.start + 8 > stsd.end) return "malformed";
+  if (u32be(b, stsd.start + 4) !== 1) return "unsupported"; // one sample description only
+  const entries = readBoxes(b, stsd.start + 8, stsd.end, false);
+  const entry = entries?.[0];
+  if (!entry) return "malformed";
+  if (entry.type !== "mp4a") return "unsupported"; // ALAC, Opus-in-MP4, encrypted, ...
+  if (entry.start + 28 > entry.end) return "malformed";
+  const soundVersion = (b[entry.start + 8] << 8) | b[entry.start + 9];
+  if (soundVersion > 1) return "unsupported";
+  const entryRate = (b[entry.start + 24] << 8) | b[entry.start + 25]; // 16.16 fixed point, integer part
+  const kids = readBoxes(b, entry.start + 28 + (soundVersion === 1 ? 16 : 0), entry.end, false);
+  const esds = child(kids, "esds");
+  if (!esds) return "malformed";
+  const core = esdsCoreRate(b, esds);
+  if (core === null) return "unsupported";
+  const inRange = (r: number) => r >= MIN_AUDIO_RATE && r <= MAX_AUDIO_RATE;
+  if (!inRange(entryRate) || !inRange(core)) return "malformed"; // 0 or absurd
+  return Math.min(core, entryRate);
+}
+
 function mp4Duration(b: Uint8Array): AudioDurationResult {
   if (!ascii(b, 4, "ftyp")) return fail("unrecognized");
   const top = readBoxes(b, 0, b.length, true);
@@ -379,7 +494,14 @@ function mp4Duration(b: Uint8Array): AudioDurationResult {
       ticks += count * u32be(b, stts.start + 12 + i * 8);
     }
     if (samples === 0 || samples !== u32be(b, stsz.start + 8)) return fail("malformed");
-    let track = ticks / mdhd.timescale;
+    // Every header length above is uploader-controlled (a huge mdhd timescale
+    // or tiny stts deltas shrink it). The decoder plays one AAC frame of at
+    // most 1024 samples per MP4 sample at the codec's rate, whatever the
+    // headers say: that is the floor, the headers can only add to it.
+    const rate = mp4aDecoderRate(b, child(stbl, "stsd"));
+    if (typeof rate !== "number") return fail(rate);
+    if (mdhd.timescale > rate * MAX_TIMESCALE_TO_RATE) return fail("malformed");
+    let track = Math.max((samples * 1024) / rate, ticks / mdhd.timescale);
     if (mdhd.duration !== null) track = Math.max(track, mdhd.duration / mdhd.timescale);
     const tkhdBox = child(tk, "tkhd");
     const tkhd = tkhdBox ? tkhdDuration(b, tkhdBox) : null;

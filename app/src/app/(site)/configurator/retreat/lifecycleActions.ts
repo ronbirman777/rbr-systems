@@ -29,11 +29,33 @@ function isBillingLockedError(error: { hint?: string | null } | null | undefined
   return error?.hint === "BILLING_LOCKED";
 }
 
+/** TASK 032 (0046): replace_space() RAISE ... USING HINT =
+ * 'EXEMPT_REPLACE_REQUIRES_ADMIN' for an internally exempt Space - the
+ * exemption must not carry over to replacement content automatically. */
+function isExemptReplaceError(error: { hint?: string | null } | null | undefined): boolean {
+  return error?.hint === "EXEMPT_REPLACE_REQUIRES_ADMIN";
+}
+
+/**
+ * TASK 032 (0046): is this Space internally exempt? Read through the owner's
+ * own RLS-scoped session (owners can select their space_subscriptions row) in
+ * EVERY mode, because replace_space() refuses an exempt Space in every mode
+ * and Replace removes Storage media BEFORE the RPC runs - the refusal must
+ * come first. null = unreadable (the caller fails closed).
+ */
+async function isExemptSpace(supabase: SupabaseClient, tenantId: string): Promise<boolean | null> {
+  const { data, error } = await supabase.from("space_subscriptions").select("status").eq("tenant_id", tenantId).maybeSingle();
+  if (error) return null;
+  return (data as { status?: string } | null)?.status === "exempt";
+}
+
 export type LifecycleActionState = {
   error: string | null;
   slotLimitReached?: boolean;
   /** TASK 032: paid mode refused because this Space's billing must be resolved first. */
   billingLocked?: boolean;
+  /** TASK 032 (0046): Replace refused before anything was removed - the Space is internally exempt. */
+  exemptReplace?: boolean;
   /** TASK 032: Delete refused before anything was removed - the Space still has a live subscription. */
   activeSubscription?: boolean;
   success?: boolean;
@@ -211,9 +233,20 @@ export async function replaceSpace(
   // change. replace_space() (0042) also refuses with BILLING_LOCKED, mapped below.
   const gate = await lifecycleGate(supabase, user.id, tenantId, "replace");
   if (!gate.decision.allowed) {
+    if (gate.decision.blockedBy === "exempt_replace") {
+      return { error: translateAccount(localeFromFormData(formData), "billing", "lifecycleExemptReplaceRequiresAdmin"), exemptReplace: true };
+    }
     return gate.decision.blockedBy === "billing_locked"
       ? { error: translateAccount(localeFromFormData(formData), "billing", "lifecycleBillingLocked"), billingLocked: true }
       : { error: t("replaceFailed") };
+  }
+
+  // TASK 032 (0046): an internally exempt Space is never replaced (any mode;
+  // replace_space() refuses it too) - checked BEFORE the Storage removal below.
+  const exempt = await isExemptSpace(supabase, tenantId);
+  if (exempt === null) return { error: t("replaceFailed") };
+  if (exempt) {
+    return { error: translateAccount(localeFromFormData(formData), "billing", "lifecycleExemptReplaceRequiresAdmin"), exemptReplace: true };
   }
 
   // TASK 024: Replace keeps the tenant identity (same id, slot, membership,
@@ -235,6 +268,9 @@ export async function replaceSpace(
   if (error) {
     if (isBillingLockedError(error)) {
       return { error: translateAccount(localeFromFormData(formData), "billing", "lifecycleBillingLocked"), billingLocked: true };
+    }
+    if (isExemptReplaceError(error)) {
+      return { error: translateAccount(localeFromFormData(formData), "billing", "lifecycleExemptReplaceRequiresAdmin"), exemptReplace: true };
     }
     return { error: t("replaceFailed") };
   }

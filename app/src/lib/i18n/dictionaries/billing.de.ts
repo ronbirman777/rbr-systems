@@ -166,6 +166,8 @@ export const billingDe: { [K in keyof typeof billingEn]: string } = {
   billingLink: "Abrechnung",
   lifecycleBillingLocked: "Kläre die Abrechnung für diesen Space, bevor du ihn wiederherstellst oder ersetzt.",
   lifecycleDeleteActiveSubscription: "Dieser Space hat noch ein aktives Abo, daher wurde nichts gelöscht. Kündige das Abo auf der Abrechnungsseite und lösche den Space, nachdem es beendet ist.",
+  // TASK 032 (0046): Replace refused for an internally exempt Space. UNREVIEWED (non-English).
+  lifecycleExemptReplaceRequiresAdmin: "Dieser Space ist von InnerDweS inklusive und kann daher nicht ersetzt werden. Bitte InnerDweS zuerst, die Inklusion zu beenden; es wurde nichts geändert.",
   lifecycleArchivePaidBody: "Durch das Archivieren wird „{space}“ aus der aktiven/öffentlichen Nutzung genommen. Gäste können ihn dann nicht mehr erreichen. Das Archivieren kündigt das Abo nicht.",
   lifecycleReplacePaidBody: "Dadurch werden die bestehenden Inhalte von „{space}“ verworfen – die veröffentlichte Version, der Zeitplan und die Modulinhalte – und im selben Space beginnt ein neuer Entwurf. Das lässt sich nicht rückgängig machen. Gib zur Bestätigung den aktuellen Namen des Space ein.",
   lifecycleArchiveButton: "Archivieren",

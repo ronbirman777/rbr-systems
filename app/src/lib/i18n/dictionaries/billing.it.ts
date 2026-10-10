@@ -169,6 +169,8 @@ export const billingIt: { [K in keyof typeof billingEn]: string } = {
   billingLink: "Fatturazione",
   lifecycleBillingLocked: "Regolarizzi la fatturazione di questo Space prima di ripristinarlo o sostituirlo.",
   lifecycleDeleteActiveSubscription: "Questo Space ha ancora un abbonamento attivo, quindi non è stato eliminato nulla. Disdica l'abbonamento nella pagina Fatturazione ed elimini lo Space quando sarà terminato.",
+  // TASK 032 (0046): Replace refused for an internally exempt Space. UNREVIEWED (non-English).
+  lifecycleExemptReplaceRequiresAdmin: "Questo Space è incluso da InnerDweS, quindi non può essere sostituito. Chieda prima a InnerDweS di revocare l'esenzione; non è stato modificato nulla.",
   lifecycleArchivePaidBody: "Archiviando “{space}” lo si rimuove dall'uso attivo/pubblico. Gli ospiti non potranno più raggiungerlo. L'archiviazione non disdice l'abbonamento.",
   lifecycleReplacePaidBody: "Questa operazione elimina il contenuto attuale di “{space}” (la versione pubblicata, il programma e il contenuto dei moduli) e avvia una nuova bozza nello stesso Space. Non può essere annullata. Per confermare, digiti il nome attuale dello Space.",
   lifecycleArchiveButton: "Archivia",

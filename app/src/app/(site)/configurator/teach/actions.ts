@@ -9,7 +9,7 @@ import { getSpaceEntitlement } from "@/lib/entitlements/getSpaceEntitlement";
 import { getSpaceCommercialAvailability } from "@/lib/billing/commercialAccess";
 import { getCreateMode } from "@/lib/billing/funnelMode";
 import { loadAudioQuotaPolicy } from "@/lib/billing/audioQuota.server";
-import { deriveStoredAudioSeconds, writeEnforcedAudioFile } from "@/lib/billing/audioFinalize.server";
+import { loadAudioFingerprints, measureStoredAudio, recordPublishedAudioFingerprint, writeEnforcedAudioFile, type StoredAudioMeasurement } from "@/lib/billing/audioFinalize.server";
 import { audioQuotaMessageKey, audioQuotaMessageValues, checkAudioAttach, checkAudioPublish, enforcedAttachWriteIssue } from "@/lib/billing/audioQuota";
 import { getCustomPagesLimit } from "@/lib/entitlements/customPagesLimit";
 import {
@@ -761,6 +761,7 @@ export async function attachTeachAudio(tenantId: string, itemId: string, ref: st
   const quota = await loadAudioQuotaPolicy(tenantId);
   let otherAudio: { id: string; metadata: Record<string, unknown> | null }[] = [];
   let serverSeconds: number | null = null;
+  let measured: StoredAudioMeasurement | null = null;
   if (quota.mode === "enforced") {
     const { data: audioRows, error: audioError } = await supabase
       .from("module_items")
@@ -771,16 +772,23 @@ export async function attachTeachAudio(tenantId: string, itemId: string, ref: st
     otherAudio = (audioRows as typeof otherAudio).filter((r) => r.id !== itemId);
     // TASK B4b - the length is measured from the STORED bytes with the
     // service role; the browser-reported `durationSeconds` is ignored here.
-    serverSeconds = await deriveStoredAudioSeconds(ref, parts.ext);
+    // TASK 032 (0046): the same download is fingerprinted (size + sha256) and
+    // recorded with the length as server provenance.
+    measured = await measureStoredAudio(ref, parts.ext);
+    serverSeconds = measured?.seconds ?? null;
   }
   const quotaCheck = checkAudioAttach(quota, { claimedSeconds: durationSeconds, serverSeconds, otherItems: otherAudio });
   if (!quotaCheck.ok) return reject(t(audioQuotaMessageKey(quotaCheck.issue, "attach"), audioQuotaMessageValues(quotaCheck.issue)));
   const duration = quotaCheck.durationSeconds;
 
-  if (ref !== previousRef) {
+  if (ref !== previousRef || quota.mode === "enforced") {
     // A published object already living in this upload's folder is never a
     // fresh upload; refuse to adopt the folder rather than risk replacing
     // what the live snapshot may reference.
+    // TASK 032 (0046): on a paid Space this holds even for a re-attach of the
+    // SAME ref - the published sibling's bytes were never measured on this
+    // attach, so publish must not adopt it under the new measurement. Refuse
+    // (deleting nothing); the organizer re-uploads into a fresh folder.
     const published = versionedMediaPath("published", { ...parts });
     const { data: publishedExists } = await bucket.exists(published);
     if (publishedExists) return { error: t("audioRefInvalidReupload") };
@@ -791,7 +799,9 @@ export async function attachTeachAudio(tenantId: string, itemId: string, ref: st
     // TASK B4b - on a paid Space the database (0043) refuses a member-session
     // write of the file fields; only this verified service-role write may
     // set them, and the database re-checks the limits on it.
-    const written = await writeEnforcedAudioFile(tenantId, itemId, nextMetadata);
+    const written = measured
+      ? await writeEnforcedAudioFile(tenantId, itemId, nextMetadata, { sizeBytes: measured.sizeBytes, sha256: measured.sha256 })
+      : ({ ok: false, reason: "failed" } as const);
     if (!written.ok) {
       if (ref !== previousRef) await removeDraftObjects(supabase, tenantId, [ref]);
       const issue = enforcedAttachWriteIssue(written.reason, quota.limits, otherAudio);
@@ -919,6 +929,20 @@ export async function publishTeachSpace(tenantId: string,
   }
   const copyOptions = writer.trusted ? { trustedTenantId: tenantId } : {};
   const copyImage = (ref: string | null) => copyDraftToPublished(writer.client, ref, copyOptions);
+  // TASK 032 (0046): on a paid Space each published audio copy is checked
+  // against the fingerprint the server recorded when it measured the draft.
+  const needsFingerprints =
+    writer.trusted && (itemRows ?? []).some((r) => r.module_key === "teachAudio" && typeof (r.metadata as { audioRef?: unknown } | null)?.audioRef === "string");
+  const audioFingerprints = needsFingerprints ? await loadAudioFingerprints(tenantId) : null;
+  if (needsFingerprints && !audioFingerprints) return { error: t("couldNotPublishMedia"), publishedAt: null };
+  const audioCopyOptions = (ref: string | null) => {
+    if (!writer.trusted) return copyOptions;
+    const audioFingerprint = (ref && audioFingerprints?.get(ref)) || null;
+    // Once the published copy is hashed and equal, its ETag is recorded so a later publish skips the re-hash.
+    const onAudioPublishedVerified = (draftRef: string, etag: string) =>
+      audioFingerprint ? recordPublishedAudioFingerprint(tenantId, draftRef, audioFingerprint, etag) : undefined;
+    return { ...copyOptions, audioFingerprint, onAudioPublishedVerified };
+  };
 
   const jobs: Promise<unknown>[] = [];
   for (const ref of [
@@ -934,7 +958,8 @@ export async function publishTeachSpace(tenantId: string,
     jobs.push(copyImage(imageRef));
     if (row.module_key === "teachAudio") {
       const audioRef = (row.metadata as { audioRef?: unknown } | null)?.audioRef;
-      jobs.push(copyDraftAudioToPublished(writer.client, typeof audioRef === "string" ? audioRef : null, copyOptions));
+      const ref = typeof audioRef === "string" ? audioRef : null;
+      jobs.push(copyDraftAudioToPublished(writer.client, ref, audioCopyOptions(ref)));
     }
   }
   for (const [key, slots] of Object.entries(SETTINGS_IMAGE_SLOTS)) {

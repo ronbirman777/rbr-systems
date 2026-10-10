@@ -171,6 +171,8 @@ export const billingTr: { [K in keyof typeof billingEn]: string } = {
   billingLink: "Faturalama",
   lifecycleBillingLocked: "Bu Space'i geri yüklemeden veya değiştirmeden önce faturalamasını çözün.",
   lifecycleDeleteActiveSubscription: "Bu Space'in hâlâ aktif bir aboneliği olduğu için hiçbir şey silinmedi. Aboneliği Faturalama sayfasından iptal edin ve abonelik sona erdikten sonra Space'i silin.",
+  // TASK 032 (0046): Replace refused for an internally exempt Space. UNREVIEWED (non-English).
+  lifecycleExemptReplaceRequiresAdmin: "Bu Space InnerDweS tarafından dahil edildiği için değiştirilemez. Önce InnerDweS'ten muafiyeti kaldırmasını isteyin; hiçbir şey değiştirilmedi.",
   lifecycleArchivePaidBody: "“{space}” arşivlendiğinde aktif/herkese açık kullanımdan kaldırılır. Misafirler artık ona erişemez. Arşivlemek aboneliği iptal etmez.",
   lifecycleReplacePaidBody: "Bu işlem “{space}” içindeki mevcut içeriği (yayınlanmış sürümü, programı ve modül içeriğini) siler ve aynı Space'te yeni bir taslak başlatır. Bu işlem geri alınamaz. Onaylamak için Space'in mevcut adını yazın.",
   lifecycleArchiveButton: "Arşivle",

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 /**
  * TASK 032 - database-level behavioural verification for the billing
- * migrations (0036-0045; section L covers the 0042 Restore/Replace guards, section M the 0043 audio enforcement,
- * section N the 0044 Guest Access / Featured definer-RPC guards, section O the 0045 media content guard). STAGING ONLY: the script refuses to run against any
+ * migrations (0036-0046; section L covers the 0042 Restore/Replace guards, section M the 0043 audio enforcement,
+ * section N the 0044 Guest Access / Featured definer-RPC guards, section O the 0045 media content guard, section P
+ * the 0046 audio provenance / exempt-Replace guard). STAGING ONLY: the script refuses to run against any
  * project other than the Staging ref, creates its own synthetic users/rows
  * (prefix qa032-), and removes everything it created (and restores the launch
  * flag) in a finally block.
@@ -14,7 +15,7 @@
  * calls (each a separate Postgres connection), not simulated.
  */
 import { readFileSync } from "node:fs";
-import { randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 
 import { STAGING_REF, assertStagingTarget, runScopedDelete } from "./stagingGuard.mjs";
@@ -134,6 +135,8 @@ async function cleanup() {
       ["space_subscriptions", "id", await idsWhere("space_subscriptions", (q) => q.in("tenant_id", T))],
       ["published_spaces", "tenant_id", await idsWhere("published_spaces", (q) => q.in("tenant_id", T), "tenant_id")],
       ["module_items", "id", await idsWhere("module_items", (q) => q.in("tenant_id", T))],
+      // 0046 backfill audit rows written by section P (tenant FK is SET NULL, so they are removed by this run's id).
+      ["billing_audio_backfill_findings", "id", await idsWhere("billing_audio_backfill_findings", (q) => q.eq("run_id", `qa032-${runId}`))],
       ["tenants", "id", tIds],
       ["pending_space_checkouts", "id", created.checkouts],
       ["billing_customers", "id", await idsWhere("billing_customers", (q) => q.in("user_id", U))],
@@ -161,6 +164,8 @@ async function cleanup() {
       const { count } = await admin.from(table).select("*", { count: "exact", head: true }).ilike(col, pat);
       if (count) residue.push(`${table}: ${count} row(s) still carry this run's id`);
     }
+    const { count: leftFindings } = await admin.from("billing_audio_backfill_findings").select("*", { count: "exact", head: true }).eq("run_id", `qa032-${runId}`);
+    if (leftFindings) residue.push(`billing_audio_backfill_findings: ${leftFindings} row(s) still carry this run's id`);
     const { count: leftUsers } = await admin.from("billing_customers").select("*", { count: "exact", head: true }).in("user_id", U);
     if (leftUsers) residue.push(`billing_customers: ${leftUsers} rows still point at this run's users`);
     console.log(residue.length ? `RESIDUE: ${residue.join("; ")}` : "cleanup done (no residue carrying this run's id)");
@@ -730,8 +735,9 @@ async function main() {
     const rs = await lc.rpc("restore_space", { p_tenant_id: paidT });
     check(`L10 flag ${on ? "ON" : "OFF"}: an exempt Space restores without a legacy slot`, !exLc.error && !rs.error && (await statusOf(paidT))?.status === "draft", JSON.stringify(exLc.error ?? rs.error));
   }
+  // 0046: an exemption must not carry over to replacement content - Replace is refused until an Admin clears it.
   const exRp = await lc.rpc("replace_space", { p_tenant_id: paidT, p_new_name: "qa032 exempt replaced" });
-  check("L11 an exempt Space can be replaced", !exRp.error && (await statusOf(paidT))?.name === "qa032 exempt replaced", JSON.stringify(exRp.error));
+  check("L11 an exempt Space cannot be replaced (EXEMPT_REPLACE_REQUIRES_ADMIN, 0046) and nothing was reset", exRp.error?.hint === "EXEMPT_REPLACE_REQUIRES_ADMIN" && (await statusOf(paidT))?.name !== "qa032 exempt replaced", JSON.stringify(exRp.error));
   await admin.rpc("billing_clear_internal_exempt", { p_tenant_id: paidT });
 
   // Non-owners are still refused before any billing logic.
@@ -745,6 +751,11 @@ async function main() {
     const audioDenied = (res) => !!res.error && res.error.hint === "AUDIO_SERVER_ONLY";
     const audioLimit = (res) => !!res.error && res.error.hint === "AUDIO_LIMIT";
     const aRef = (tenant, item, ext = "mp3") => `${tenant}/teachAudioFile/${item}/${randomUUID()}/draft.${ext}`;
+    // From 0046 the service-role finalize write goes through billing_audio_attach_verified() (provenance + metadata
+    // in one transaction); a bare service-role update of the file fields is refused (section P). Synthetic fingerprint.
+    const attach = (tenant, item, ref, seconds) => admin.rpc("billing_audio_attach_verified", {
+      p_tenant_id: tenant, p_item_id: item, p_metadata: { audioRef: ref, durationSeconds: seconds }, p_size_bytes: 1000, p_sha256: "a".repeat(64),
+    });
     const uAu = await mkUser("uau"); const mOwner = await userClient(uAu);
     await setFlag(false);
     const ckAu = await mkCheckout(uAu, "teach"); const pAu = await provision(ckAu.id, subJson(uAu), "QA032 audio paid");
@@ -775,9 +786,9 @@ async function main() {
     const ref1 = aRef(tAu, it1);
     mRes = await mOwner.from("module_items").update({ metadata: { audioRef: ref1, durationSeconds: 1 } }).eq("id", it1).select("id");
     check("M4 paid: a direct member UPDATE setting the file is refused", audioDenied(mRes), JSON.stringify(mRes.error ?? mRes.data));
-    mRes = await admin.from("module_items").update({ metadata: { audioRef: ref1, durationSeconds: 3600 } }).eq("id", it1).select("id");
-    check("M5 paid: the service-role finalize write of a verified 3600 s file is allowed", !mRes.error && mRes.data?.length === 1, JSON.stringify(mRes.error));
-    mRes = await admin.from("module_items").update({ metadata: { audioRef: ref1, durationSeconds: 3601 } }).eq("id", it1).select("id");
+    mRes = await attach(tAu, it1, ref1, 3600);
+    check("M5 paid: the service-role finalize write of a verified 3600 s file is allowed", !mRes.error, JSON.stringify(mRes.error));
+    mRes = await attach(tAu, it1, ref1, 3601);
     check("M6 paid: the database refuses a 3601 s file even from the server path (AUDIO_LIMIT)", audioLimit(mRes), JSON.stringify(mRes.error));
     mRes = await mOwner.from("module_items").update({ metadata: { audioRef: ref1, durationSeconds: 60 } }).eq("id", it1).select("id");
     check("M7 paid: a member cannot lower the stored length", audioDenied(mRes), JSON.stringify(mRes.error ?? mRes.data));
@@ -790,14 +801,16 @@ async function main() {
 
     for (let i = 0; i < 3; i++) {
       const id = randomUUID();
-      await admin.from("module_items").insert({ id, tenant_id: tAu, module_key: "teachAudio", title: `qa032 fill ${i}`, metadata: { audioRef: aRef(tAu, id), durationSeconds: 3600 } });
+      await admin.from("module_items").insert({ id, tenant_id: tAu, module_key: "teachAudio", title: `qa032 fill ${i}`, metadata: { audioRef: null, durationSeconds: null } });
+      await attach(tAu, id, aRef(tAu, id), 3600);
     }
     const it5 = randomUUID();
-    mRes = await admin.from("module_items").insert({ id: it5, tenant_id: tAu, module_key: "teachAudio", title: "qa032 over", metadata: { audioRef: aRef(tAu, it5), durationSeconds: 60 } }).select("id");
+    await admin.from("module_items").insert({ id: it5, tenant_id: tAu, module_key: "teachAudio", title: "qa032 over", metadata: { audioRef: null, durationSeconds: null } });
+    mRes = await attach(tAu, it5, aRef(tAu, it5), 60);
     check("M11 paid: library at exactly 240:00, one more minute is refused by the database", audioLimit(mRes), JSON.stringify(mRes.error));
     const { data: subAu } = await admin.from("space_subscriptions").select("id").eq("tenant_id", tAu).single();
     await admin.from("space_subscription_addons").upsert({ subscription_id: subAu.id, addon_key: "audio_pack", quantity: 1 });
-    mRes = await admin.from("module_items").insert({ id: it5, tenant_id: tAu, module_key: "teachAudio", title: "qa032 over", metadata: { audioRef: aRef(tAu, it5), durationSeconds: 60 } }).select("id");
+    mRes = await attach(tAu, it5, aRef(tAu, it5), 60);
     check("M12 paid: with one audio add-on the same minute is allowed", !mRes.error, JSON.stringify(mRes.error));
     await admin.from("space_subscription_addons").delete().eq("subscription_id", subAu.id);
     mPub = await mOwner.rpc("publish_space", { p_tenant_id: tAu });
@@ -971,6 +984,153 @@ async function main() {
     const anonPred = await createClient(URL_, PUB, { auth: { persistSession: false } }).rpc("billing_media_member_write_allowed", { p_name: `${tP}/x/y/z/draft.webp`, p_command: "insert" });
     check("O15 anon cannot call the Storage predicate", !!anonPred.error);
     await admin.rpc("billing_clear_internal_exempt", { p_tenant_id: tE });
+  }
+
+  // ------------------------------------------------------------------ P. 0046 audio provenance + exempt Replace
+  {
+    // A length on a paid Space is authoritative only when the server measured that exact file
+    // (billing_audio_verifications, written by billing_audio_attach_verified in the finalize path). Real Storage
+    // objects are used for the fingerprint (synthetic bytes; recorded in created.storage). The publish-time byte
+    // comparison itself is application code (lib/media/publish.ts, proven in mediaContentGuard.test.ts against the
+    // real publish action); P6 proves the database side of it: a swapped draft no longer matches the recorded
+    // fingerprint, and a member can neither re-stamp provenance nor create the published copy. Review fixes: P1a/P17
+    // the "never enforced while holding media" invariant, P14 a planted published sibling, P15 item binding, P16 the
+    // backfill folder check.
+    const UNVERIFIED = (res) => !!res.error && res.error.hint === "AUDIO_UNVERIFIED";
+    const sha = (bytes) => createHash("sha256").update(bytes).digest("hex");
+    const upP = async (client, path, bytes) => {
+      const r = await client.storage.from("tenant-media").upload(path, new Blob([bytes], { type: "audio/mpeg" }), { upsert: false, contentType: "audio/mpeg" });
+      if (!r.error) created.storage.push(path);
+      return r;
+    };
+    const measured = new Uint8Array([0x49, 0x44, 0x33, 4, 0, 0, 0, 0, 0, 0, 0xff, 0xfb, 0x90, 0x64, 1, 2, 3, 4]);
+    const swapped = new Uint8Array([0x49, 0x44, 0x33, 4, 0, 0, 0, 0, 0, 0, 0xff, 0xfb, 0x90, 0x64, 9, 9, 9, 9, 9, 9, 9, 9]);
+    const uP = await mkUser("up"); const pc = await userClient(uP);
+    await setFlag(false);
+    const ckPp = await mkCheckout(uP, "teach"); const pPp = await provision(ckPp.id, subJson(uP), "QA032 provenance paid");
+    const tPP = pPp.data?.tenant_id; if (tPP) created.tenants.push(tPP);
+    const ckPl = await mkCheckout(uP, "retreat"); const pPl = await provision(ckPl.id, subJson(uP), "QA032 provenance legacy");
+    const tPL = pPl.data?.tenant_id; if (tPL) created.tenants.push(tPL);
+    if (tPL) {
+      await admin.from("space_subscriptions").delete().eq("tenant_id", tPL);
+      await admin.from("space_entitlements").upsert({ tenant_id: tPL, access_type: "complimentary", access_ends_at: H(24 * 30) });
+    }
+    const ckPe = await mkCheckout(uP, "teach"); const pPe = await provision(ckPe.id, subJson(uP), "QA032 provenance exempt");
+    const tPE = pPe.data?.tenant_id; if (tPE) created.tenants.push(tPE);
+    if (tPE) {
+      await admin.from("space_subscriptions").delete().eq("tenant_id", tPE);
+      await admin.rpc("billing_set_internal_exempt", { p_tenant_id: tPE, p_reason: "qa032 provenance exemption", p_actor: uP });
+    }
+    check("P0 setup: paid, legacy and exempt Spaces exist", !!tPP && !!tPL && !!tPE, JSON.stringify([pPp.error, pPl.error, pPe.error]));
+
+    // Invariant (0046 H): billing never starts governing a Space that already holds media. A Space that held audio
+    // while billing did not govern it cannot get its paid row back.
+    const paidRow = (await admin.from("space_subscriptions").select("*").eq("tenant_id", tPP).single()).data;
+    await admin.from("space_subscriptions").delete().eq("tenant_id", tPP);
+    const itOld = randomUUID();
+    const refOld = `${tPP}/teachAudioFile/${itOld}/${randomUUID()}/draft.mp3`;
+    let pRes = await pc.from("module_items").insert({ id: itOld, tenant_id: tPP, module_key: "teachAudio", title: "qa032 pre-0046", metadata: { audioRef: refOld, durationSeconds: 600 } }).select("id");
+    const backRefused = await admin.from("space_subscriptions").insert(paidRow);
+    check("P1a invariant: a paid row cannot be (re)inserted on a Space that already holds audio (BILLING_SPACE_HAS_MEDIA)", !pRes.error && backRefused.error?.hint === "BILLING_SPACE_HAS_MEDIA", JSON.stringify([pRes.error, backRefused.error]));
+    // A "pre-0046" row: an attached file with no provenance on an enforced Space (what a paid Space's audio attached
+    // before 0046 looks like). Built through the real writers: detach while legacy, the paid row back, a verified
+    // attach, then its provenance row removed by the service role.
+    await pc.from("module_items").update({ metadata: { audioRef: null, durationSeconds: null } }).eq("id", itOld);
+    const back = await admin.from("space_subscriptions").insert(paidRow);
+    const oldAttach = await admin.rpc("billing_audio_attach_verified", { p_tenant_id: tPP, p_item_id: itOld, p_metadata: { audioRef: refOld, durationSeconds: 600 }, p_size_bytes: 1, p_sha256: "0".repeat(64) });
+    const oldProvDel = await admin.from("billing_audio_verifications").delete().eq("item_id", itOld);
+    const pol = await admin.rpc("billing_audio_policy", { p_tenant_id: tPP });
+    check("P1 setup: an unverified (no provenance) file is attached on an enforced Space", !back.error && !oldAttach.error && !oldProvDel.error && pol.data?.[0]?.mode === "enforced",
+      JSON.stringify([back.error, oldAttach.error, oldProvDel.error, pol.data]));
+    let pPub = await pc.rpc("publish_space", { p_tenant_id: tPP });
+    check("P2 paid: publishing an unverified (browser-reported) length is refused (AUDIO_UNVERIFIED)", UNVERIFIED(pPub), JSON.stringify(pPub.error));
+
+    // New upload: a real draft object, measured + fingerprinted "by the server" and attached through the RPC.
+    const itNew = randomUUID();
+    const refNew = `${tPP}/teachAudioFile/${itNew}/${randomUUID()}/draft.mp3`;
+    await pc.from("module_items").insert({ id: itNew, tenant_id: tPP, module_key: "teachAudio", title: "qa032 new", metadata: { audioRef: null, durationSeconds: null } });
+    const upNew = await upP(pc, refNew, measured);
+    pRes = await admin.from("module_items").update({ metadata: { audioRef: refNew, durationSeconds: 30 } }).eq("id", itNew).select("id");
+    check("P3 paid: a bare service-role file write without provenance is refused (AUDIO_UNVERIFIED)", !upNew.error && UNVERIFIED(pRes), JSON.stringify([upNew.error, pRes.error]));
+    const fp = { p_size_bytes: measured.byteLength, p_sha256: sha(measured) };
+    const memberAttach = await pc.rpc("billing_audio_attach_verified", { p_tenant_id: tPP, p_item_id: itNew, p_metadata: { audioRef: refNew, durationSeconds: 30 }, ...fp });
+    const memberRead = await pc.from("billing_audio_verifications").select("item_id");
+    const memberForge = await pc.from("billing_audio_verifications").insert({ item_id: itOld, tenant_id: tPP, audio_ref: refOld, duration_seconds: 600, size_bytes: 1, sha256: "e".repeat(64), source: "server" });
+    check("P4 a member can neither call the finalize RPC nor read or forge provenance", !!memberAttach.error && (!!memberRead.error || (memberRead.data ?? []).length === 0) && !!memberForge.error,
+      JSON.stringify([memberAttach.error, memberRead.error, memberForge.error]));
+    pRes = await admin.rpc("billing_audio_attach_verified", { p_tenant_id: tPP, p_item_id: itNew, p_metadata: { audioRef: refNew, durationSeconds: 30 }, ...fp });
+    const prov = (await admin.from("billing_audio_verifications").select("audio_ref, duration_seconds, size_bytes, sha256, source").eq("item_id", itNew).single()).data;
+    check("P5 paid: the finalize RPC records provenance (ref, length, size, sha256, source=server) and attaches", !pRes.error && prov?.audio_ref === refNew && prov?.duration_seconds === 30 && Number(prov?.size_bytes) === measured.byteLength && prov?.sha256 === sha(measured) && prov?.source === "server",
+      JSON.stringify([pRes.error, prov]));
+    pPub = await pc.rpc("publish_space", { p_tenant_id: tPP });
+    check("P6 paid: still refused while the unverified pre-0046 file is attached", UNVERIFIED(pPub), JSON.stringify(pPub.error));
+    pRes = await pc.from("module_items").update({ metadata: { audioRef: null, durationSeconds: null } }).eq("id", itOld).select("id");
+    pPub = await pc.rpc("publish_space", { p_tenant_id: tPP });
+    check("P7 paid: after the unverified file is detached, publishing server-verified audio succeeds", !pRes.error && !pPub.error, JSON.stringify([pRes.error, pPub.error]));
+
+    // Swap after measurement: the member deletes its draft (allowed) and uploads other bytes at the same path (allowed).
+    const del = await pc.storage.from("tenant-media").remove([refNew]);
+    const reup = await upP(pc, refNew, swapped);
+    const { data: nowBlob } = await admin.storage.from("tenant-media").download(refNew);
+    const nowSha = nowBlob ? sha(new Uint8Array(await nowBlob.arrayBuffer())) : null;
+    const reStamp = await pc.from("billing_audio_verifications").update({ sha256: nowSha, size_bytes: swapped.byteLength }).eq("item_id", itNew).select("item_id");
+    const preCopy = await upP(pc, refNew.replace("/draft.mp3", "/published.mp3"), swapped);
+    const stillSha = (await admin.from("billing_audio_verifications").select("sha256").eq("item_id", itNew).single()).data?.sha256;
+    check("P8 swapped draft: the bytes no longer match the recorded fingerprint (publish copy refuses), a member cannot re-stamp provenance or pre-create the published copy",
+      !del.error && !reup.error && !!nowSha && nowSha !== prov?.sha256 && (!!reStamp.error || (reStamp.data ?? []).length === 0) && stillSha === sha(measured) && !!preCopy.error,
+      JSON.stringify([del.error, reup.error, reStamp.error, preCopy.error]));
+
+    // Backfill recorder (service role only): flags a mismatch, never changes the stored length.
+    await admin.from("module_items").update({ title: "qa032 pre-0046 again" }).eq("id", itOld);
+    const bfRun = `qa032-${runId}`;
+    const memberBf = await pc.rpc("billing_audio_backfill_record", { p_run_id: bfRun, p_tenant_id: tPP, p_item_id: itNew, p_audio_ref: refNew, p_measured_seconds: 30, p_size_bytes: 1, p_sha256: "e".repeat(64), p_verdict: "ok" });
+    const bf = await admin.rpc("billing_audio_backfill_record", { p_run_id: bfRun, p_tenant_id: tPP, p_item_id: itNew, p_audio_ref: refNew, p_measured_seconds: 999, p_size_bytes: swapped.byteLength, p_sha256: nowSha, p_verdict: "mismatch" });
+    const afterBf = (await admin.from("module_items").select("metadata").eq("id", itNew).single()).data?.metadata;
+    const { count: bfRows } = await admin.from("billing_audio_backfill_findings").select("*", { count: "exact", head: true }).eq("run_id", bfRun);
+    check("P9 backfill recorder: member refused; a mismatch is flagged with an audit row and the stored length is kept", !!memberBf.error && bf.data === "flagged" && afterBf?.durationSeconds === 30 && bfRows === 1,
+      JSON.stringify([memberBf.error, bf.error, bf.data, afterBf, bfRows]));
+
+    // Published sibling planted (MEDIUM-1): a published object in the upload folder - here by the service role, the
+    // only writer that can create one on a paid Space - makes a re-attach of the SAME ref refuse (AUDIO_REUPLOAD).
+    const plantedPub = await upP(admin, refNew.replace("/draft.mp3", "/published.mp3"), swapped);
+    const reAttach = await admin.rpc("billing_audio_attach_verified", { p_tenant_id: tPP, p_item_id: itNew, p_metadata: { audioRef: refNew, durationSeconds: 30 }, ...fp });
+    check("P14 a re-attach of the same ref over an existing published sibling is refused (AUDIO_REUPLOAD)", !plantedPub.error && reAttach.error?.hint === "AUDIO_REUPLOAD", JSON.stringify([plantedPub.error, reAttach.error]));
+
+    // Item binding (LOW-1): no writer lets one item hold another item's (verified) file.
+    const itB = randomUUID();
+    await pc.from("module_items").insert({ id: itB, tenant_id: tPP, module_key: "teachAudio", title: "qa032 borrower", metadata: { audioRef: null, durationSeconds: null } });
+    const borrowSvc = await admin.rpc("billing_audio_attach_verified", { p_tenant_id: tPP, p_item_id: itB, p_metadata: { audioRef: refNew, durationSeconds: 30 }, ...fp });
+    const borrowMember = await pc.from("module_items").update({ metadata: { audioRef: refNew, durationSeconds: 30 } }).eq("id", itB).select("id");
+    check("P15 item binding: another item's file cannot be attached to an item (finalize RPC: AUDIO_UNVERIFIED; member: AUDIO_SERVER_ONLY)",
+      borrowSvc.error?.hint === "AUDIO_UNVERIFIED" && borrowMember.error?.hint === "AUDIO_SERVER_ONLY", JSON.stringify([borrowSvc.error, borrowMember.error]));
+
+    // Backfill folder check (LOW-3), on the exempt Space (members may write files there): a row whose ref lives in
+    // ANOTHER item's folder is flagged, never stamped.
+    const itF = randomUUID();
+    const refForeign = `${tPE}/teachAudioFile/${randomUUID()}/${randomUUID()}/draft.mp3`;
+    const fIns = await pc.from("module_items").insert({ id: itF, tenant_id: tPE, module_key: "teachAudio", title: "qa032 foreign folder", metadata: { audioRef: refForeign, durationSeconds: 30 } }).select("id");
+    const bfF = await admin.rpc("billing_audio_backfill_record", { p_run_id: bfRun, p_tenant_id: tPE, p_item_id: itF, p_audio_ref: refForeign, p_measured_seconds: 30, p_size_bytes: measured.byteLength, p_sha256: sha(measured), p_verdict: "ok" });
+    const { count: fProv } = await admin.from("billing_audio_verifications").select("*", { count: "exact", head: true }).eq("item_id", itF);
+    check("P16 backfill: a ref outside the item's own folder is flagged and nothing is stamped", !fIns.error && bfF.data === "flagged" && fProv === 0, JSON.stringify([fIns.error, bfF.error, bfF.data, fProv]));
+
+    // Invariant (0046 H) on an exemption: an exempt Space holding media cannot be flipped to a paid status.
+    const flip = await admin.from("space_subscriptions").update({ status: "active" }).eq("tenant_id", tPE).select("id");
+    const stillExempt = (await admin.from("space_subscriptions").select("status").eq("tenant_id", tPE).single()).data?.status;
+    check("P17 invariant: an exempt Space holding media cannot be flipped to paid (BILLING_SPACE_HAS_MEDIA)", flip.error?.hint === "BILLING_SPACE_HAS_MEDIA" && stillExempt === "exempt", JSON.stringify([flip.error, stillExempt]));
+
+    // Exempt Replace (0046).
+    const exName = (await admin.from("tenants").select("name").eq("id", tPE).single()).data?.name;
+    let rp = await pc.rpc("replace_space", { p_tenant_id: tPE, p_new_name: "qa032 exempt replaced" });
+    const exAfter = (await admin.from("tenants").select("name").eq("id", tPE).single()).data?.name;
+    check("P10 exempt: replace refused (EXEMPT_REPLACE_REQUIRES_ADMIN) and nothing was reset", rp.error?.hint === "EXEMPT_REPLACE_REQUIRES_ADMIN" && exAfter === exName, JSON.stringify(rp.error));
+    await admin.rpc("billing_clear_internal_exempt", { p_tenant_id: tPE });
+    rp = await pc.rpc("replace_space", { p_tenant_id: tPE, p_new_name: "qa032 exempt cleared replaced" });
+    check("P11 after an Admin clears the exemption, replace works (the Space is then legacy)", !rp.error, JSON.stringify(rp.error));
+    rp = await pc.rpc("replace_space", { p_tenant_id: tPL, p_new_name: "qa032 legacy replaced" });
+    check("P12 legacy: replace still works (unchanged)", !rp.error, JSON.stringify(rp.error));
+    rp = await pc.rpc("replace_space", { p_tenant_id: tPP, p_new_name: "qa032 paid replaced" });
+    const { count: provLeft } = await admin.from("billing_audio_verifications").select("*", { count: "exact", head: true }).eq("tenant_id", tPP);
+    check("P13 paid: replace still works (unchanged) and removes the Space's provenance rows with its items", !rp.error && provLeft === 0, JSON.stringify([rp.error, provLeft]));
   }
   await setFlag(flagWasEnabled);
 }

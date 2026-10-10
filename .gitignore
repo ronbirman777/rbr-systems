@@ -8,3 +8,6 @@
 # Committing it pre-links every clone to one project, which is how a
 # command meant for Staging can end up pointed at Production.
 .vercel
+
+# Supabase CLI local state at the repo root (may link to Production) - never commit
+supabase/.temp/

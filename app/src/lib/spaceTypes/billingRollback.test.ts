@@ -8,8 +8,8 @@ import { extractFunctionBody, latestFunctionDefinition, stripSqlComments, type M
  * TASK 032 rollback guard (docs/billing/MIGRATION-RECOVERY.md).
  *
  * Static checks only - nothing here touches a database:
- *  - every TASK 032 migration (0036-0045) has a rollback file in supabase/verification/;
- *  - a rollback that restores a function restated by 0038/0039/0042/0043/0044 restores EXACTLY the body of the
+ *  - every TASK 032 migration (0036-0046) has a rollback file in supabase/verification/;
+ *  - a rollback that restores a function restated by 0038/0039/0042/0043/0044/0046 restores EXACTLY the body of the
  *    migration that defined that function before (found mechanically, not hard-coded);
  *  - every object a migration creates is dropped by its rollback;
  *  - rollbacks are transactional, confirmation-gated and never use CASCADE.
@@ -25,7 +25,7 @@ const migrations = read("migrations");
 const num = (name: string) => Number(/^(\d+)_/.exec(name)?.[1] ?? -1);
 const migration = (n: string) => migrations.find((m) => m.name.startsWith(`${n}_`))!;
 
-const TASK032 = ["0036", "0037", "0038", "0039", "0040", "0041", "0042", "0043", "0044", "0045"] as const;
+const TASK032 = ["0036", "0037", "0038", "0039", "0040", "0041", "0042", "0043", "0044", "0045", "0046"] as const;
 const rollbackPath = (n: string) =>
   path.join(ROOT, "verification", migration(n).name.replace(/\.sql$/, "_rollback.sql"));
 const rollback = (n: string) => fs.readFileSync(rollbackPath(n), "utf8");
@@ -114,6 +114,7 @@ describe("TASK 032 rollback files", () => {
 
   it("each rollback (except the first) refuses until the next-later rollback has run", () => {
     const later: Record<string, string> = {
+      "0045": "to_regclass('public.billing_audio_verifications')", // 0046 (audio provenance)
       "0044": "to_regprocedure('public.billing_media_member_write_allowed(text, text)')", // 0045 (media content guard)
       "0043": "billing_locked", // 0044 (its restated Guest Access / Featured RPCs carry hint BILLING_LOCKED)
       "0042": "to_regprocedure('public.billing_audio_policy(uuid)')", // 0043 (audio enforcement helper)
@@ -142,6 +143,7 @@ describe("restated functions are restored to their previous definition, byte for
     { rb: "0044", fn: "set_guest_access_code", expectedPrevious: /^0017_/ },
     { rb: "0044", fn: "disable_guest_access_code", expectedPrevious: /^0017_/ },
     { rb: "0044", fn: "submit_featured_listing", expectedPrevious: /^0017_/ },
+    { rb: "0046", fn: "replace_space", expectedPrevious: /^0042_/ },
   ] as const;
 
   for (const { rb, fn, expectedPrevious } of RESTORED) {
@@ -494,5 +496,190 @@ describe("0045 media content guard", () => {
     const guard = code(rollback("0044")).split("$$")[1] ?? "";
     expect(guard).toContain("if to_regprocedure('public.billing_media_member_write_allowed(text, text)') is not null then");
     expect(guard).toContain("raise exception 'rollback 0044 refused: 0045 is still applied");
+  });
+});
+
+/**
+ * TASK 032 (0046): audio provenance + exempt Replace. Restates billing_guard_module_item_audio() and
+ * billing_audio_assert_publishable() (both first defined by 0043 with `create function`) and replace_space() (0042),
+ * each with ONE additive, marked block. Removing exactly the marked block must give back the previous raw text.
+ */
+const MARKED_0046 = /[ \t]*-- >>> TASK 032 \(0046\)[\s\S]*?-- <<< TASK 032 \(0046\)\n/g;
+/** Raw body of the LAST definition of public.<fn> - `create or replace function` OR `create function`. */
+function rawBodyAny(sql: string, fn: string): string {
+  const lower = sql.toLowerCase();
+  const i = Math.max(lower.lastIndexOf(`create or replace function public.${fn}(`), lower.lastIndexOf(`create function public.${fn}(`));
+  expect(i, `${fn} defined`).toBeGreaterThan(-1);
+  const open = sql.indexOf("$$", i);
+  return sql.slice(open + 2, sql.indexOf("$$", open + 2));
+}
+/** Header (signature .. "as") of the LAST definition, whitespace-normalised, lower case. */
+function headerAny(sql: string, fn: string): string {
+  const lower = stripSqlComments(sql).toLowerCase();
+  const i = Math.max(lower.lastIndexOf(`create or replace function public.${fn}(`), lower.lastIndexOf(`create function public.${fn}(`));
+  return lower.slice(lower.indexOf(`public.${fn}(`, i), lower.indexOf("$$", i)).replace(/\s+/g, " ").trim();
+}
+const RESTATED_0046 = [
+  { fn: "billing_guard_module_item_audio", prev: "0043", hint: "AUDIO_UNVERIFIED", blocks: 1 },
+  // Two blocks: `, i.id as item_id` added to the loop's select list, and the provenance check bound to that id.
+  { fn: "billing_audio_assert_publishable", prev: "0043", hint: "AUDIO_UNVERIFIED", blocks: 2 },
+  { fn: "replace_space", prev: "0042", hint: "EXEMPT_REPLACE_REQUIRES_ADMIN", blocks: 1 },
+] as const;
+
+describe("0046 audio provenance and exempt Replace", () => {
+  const m46 = migration("0046").sql;
+  const c46 = () => code(m46);
+
+  for (const { fn, prev, hint, blocks: blockCount } of RESTATED_0046) {
+    it(`${fn}(): 0046's body minus its ${blockCount} marked block(s) is ${prev}'s raw body, byte for byte`, () => {
+      // The previous definition really is the one in ${prev} (nothing between restated it).
+      const between = migrations.filter((m) => num(m.name) > Number(prev) && num(m.name) < 46);
+      for (const m of between) expect(m.sql.toLowerCase(), `${m.name} must not redefine ${fn}`).not.toMatch(new RegExp(`create (or replace )?function public\\.${fn}\\(`));
+      const raw = rawBodyAny(m46, fn);
+      const blocks = [...raw.matchAll(MARKED_0046)];
+      expect(blocks).toHaveLength(blockCount);
+      expect(raw.replace(MARKED_0046, "")).toBe(rawBodyAny(migration(prev).sql, fn));
+      expect(blocks.filter((b) => stripSqlComments(b[0]).includes(`hint = '${hint}'`))).toHaveLength(1);
+    });
+
+    it(`${fn}(): 0046 keeps the signature, language, security mode and search_path of ${prev}`, () => {
+      expect(headerAny(m46, fn)).toBe(headerAny(migration(prev).sql, fn));
+    });
+
+    it(`the 0046 rollback restores ${fn}() exactly as ${prev} defined it`, () => {
+      expect(rawBodyAny(rollback("0046"), fn)).toBe(rawBodyAny(migration(prev).sql, fn));
+      expect(headerAny(rollback("0046"), fn)).toBe(headerAny(migration(prev).sql, fn));
+      expect(rawBodyAny(rollback("0046"), fn)).not.toContain("0046");
+    });
+  }
+
+  it("the trusted-write check sits after the length check and before the library lock; publish check after the per-file length check", () => {
+    const trg = stripSqlComments(rawBodyAny(m46, "billing_guard_module_item_audio"));
+    const at = (s: string, x: string) => s.indexOf(x);
+    expect(at(trg, "billing_audio_verifications")).toBeGreaterThan(at(trg, "v_seconds > v_policy.max_recording_seconds"));
+    expect(at(trg, "billing_audio_verifications")).toBeLessThan(at(trg, "pg_advisory_xact_lock"));
+    // Member / legacy / exempt branches come first and are untouched (the block is in the trusted-writer path).
+    expect(at(trg, "billing_audio_verifications")).toBeGreaterThan(at(trg, "hint = 'AUDIO_SERVER_ONLY'"));
+    expect(at(trg, "billing_audio_verifications")).toBeGreaterThan(at(trg, "if v_policy.mode in ('legacy', 'exempt') then"));
+    const pub = stripSqlComments(rawBodyAny(m46, "billing_audio_assert_publishable"));
+    expect(at(pub, "billing_audio_verifications")).toBeGreaterThan(at(pub, "if v_policy.mode in ('legacy', 'exempt') then"));
+    expect(at(pub, "billing_audio_verifications")).toBeGreaterThan(at(pub, "'A recording is longer than % seconds'"));
+    expect(at(pub, "billing_audio_verifications")).toBeLessThan(at(pub, "v_total := v_total + v_seconds;"));
+    // A match needs the same ITEM, ref AND whole-second length (LOW-1: bound to the item being checked).
+    for (const body of [trg, pub]) {
+      expect(body).toMatch(/v\.audio_ref = \(v_(ref|row\.ref) #>> '\{\}'\)/);
+      expect(body).toContain("v.duration_seconds = v_seconds");
+    }
+    expect(trg).toContain("v.item_id = new.id");
+    expect(pub).toContain("v.item_id = v_row.item_id");
+    expect(pub).toMatch(/as dur\s+, i\.id as item_id\s+from public\.module_items i/);
+  });
+
+  it("finalize: takes the tenant audio lock before touching provenance, and refuses an existing published sibling", () => {
+    const att = stripSqlComments(rawBodyAny(m46, "billing_audio_attach_verified"));
+    const lock = att.indexOf("pg_advisory_xact_lock(hashtextextended('idw.audio_library:' || p_tenant_id::text, 0))");
+    expect(lock).toBeGreaterThan(-1);
+    expect(lock).toBeLessThan(att.indexOf("insert into public.billing_audio_verifications"));
+    expect(att).toMatch(/from storage\.objects o\s+where o\.bucket_id = 'tenant-media'\s+and o\.name = regexp_replace\(v_ref, '\/draft\\\.\(\[a-zA-Z0-9\]\+\)\$', '\/published\.\\1'\)/);
+    expect(att).toContain("hint = 'AUDIO_REUPLOAD'");
+    expect(att.indexOf("hint = 'AUDIO_REUPLOAD'")).toBeLessThan(att.indexOf("insert into public.billing_audio_verifications"));
+    // Re-measuring clears the recorded published-copy fingerprint (it described other bytes).
+    for (const fn of ["billing_audio_attach_verified", "billing_audio_backfill_record"]) {
+      expect(stripSqlComments(rawBodyAny(m46, fn))).toContain("published_size_bytes = null, published_sha256 = null, published_etag = null, published_verified_at = null");
+    }
+  });
+
+  it("backfill: lock first, then the item's own folder is required (flagged otherwise) before anything is stamped", () => {
+    const bf = stripSqlComments(rawBodyAny(m46, "billing_audio_backfill_record"));
+    const folder = bf.indexOf("split_part(p_audio_ref, '/', 3) <> p_item_id::text");
+    expect(folder).toBeGreaterThan(bf.indexOf("pg_advisory_xact_lock"));
+    expect(folder).toBeLessThan(bf.indexOf("insert into public.billing_audio_verifications"));
+    expect(bf).toContain("split_part(p_audio_ref, '/', 1) <> p_tenant_id::text");
+  });
+
+  it("invariant: a subscription row can only become non-exempt on a tenant holding no media (trigger, fail closed)", () => {
+    expect(c46().replace(/\s+/g, " ")).toContain(
+      "create trigger billing_space_subscriptions_fresh_enforcement before insert or update of status, tenant_id on public.space_subscriptions for each row execute function public.billing_guard_subscription_enforcement();"
+    );
+    const g = stripSqlComments(rawBodyAny(m46, "billing_guard_subscription_enforcement"));
+    expect(g).toContain("if new.status = 'exempt' then");
+    expect(g).toContain("old.status <> 'exempt' and old.tenant_id = new.tenant_id");
+    for (const probe of ["jsonb_typeof(i.metadata -> 'audioRef') = 'string'", "from public.published_spaces p", "from storage.objects o"]) expect(g).toContain(probe);
+    expect(g).toContain("hint = 'BILLING_SPACE_HAS_MEDIA'");
+    expect(headerAny(m46, "billing_guard_subscription_enforcement")).toMatch(/security definer set search_path = pg_catalog, pg_temp as$/);
+    const rb = code(rollback("0046"));
+    expect(rb).toContain("drop trigger billing_space_subscriptions_fresh_enforcement on public.space_subscriptions;");
+    expect(rb.indexOf("drop trigger billing_space_subscriptions_fresh_enforcement")).toBeLessThan(rb.indexOf("drop function public.billing_guard_subscription_enforcement();"));
+  });
+
+  it("replace_space(): the exemption refusal runs after the ownership and billing checks and before anything is deleted", () => {
+    const body = extractFunctionBody(m46, "replace_space")!;
+    const guard = body.indexOf("s.status = 'exempt'");
+    expect(guard).toBeGreaterThan(body.indexOf("is_tenant_owner(p_tenant_id)"));
+    expect(guard).toBeGreaterThan(body.indexOf("space_studio_writable(p_tenant_id)"));
+    expect(guard).toBeLessThan(body.indexOf("delete from public.published_spaces"));
+    expect(c46()).toContain("revoke all on function public.replace_space(uuid, text) from public, anon;");
+    expect(c46()).toContain("grant execute on function public.replace_space(uuid, text) to authenticated;");
+  });
+
+  it("restates nothing else: publish_space() stays 0043; only these three functions are replaced", () => {
+    const restated = [...c46().matchAll(/create or replace function public\.(\w+)\(/g)].map((m) => m[1]).sort();
+    expect(restated).toEqual(["billing_audio_assert_publishable", "billing_guard_module_item_audio", "replace_space"]);
+    expect(latestFunctionDefinition(migrations, "publish_space")!.file).toMatch(/^0043_/);
+    expect(c46()).not.toMatch(/\b(drop|alter policy)\b/);
+    // The only ALTER TABLEs enable RLS on the two tables 0046 itself creates; no existing table is altered.
+    expect([...c46().matchAll(/alter table public\.(\w+) ([^;]*);/g)].map((m) => `${m[1]}:${m[2]}`)).toEqual([
+      "billing_audio_verifications:enable row level security",
+      "billing_audio_backfill_findings:enable row level security",
+    ]);
+    expect(c46()).not.toMatch(/\bcreate policy\b/);
+    // The one trigger is 0046's own invariant guard (section H) on space_subscriptions.
+    expect([...c46().matchAll(/\bcreate trigger (\w+)/g)].map((m) => m[1])).toEqual(["billing_space_subscriptions_fresh_enforcement"]);
+  });
+
+  it("the provenance and findings tables are service-role only (RLS on, no policies, no anon/authenticated grant)", () => {
+    for (const t of ["billing_audio_verifications", "billing_audio_backfill_findings"]) {
+      expect(c46()).toContain(`alter table public.${t} enable row level security;`);
+      expect(c46()).toContain(`revoke all on public.${t} from public, anon, authenticated;`);
+      expect(c46()).not.toMatch(new RegExp(`grant [^;]* on public\\.${t} to [^;]*(anon|authenticated)`));
+    }
+    expect(c46()).toMatch(/item_id uuid primary key references public\.module_items\(id\) on delete cascade/);
+    expect(c46()).toMatch(/sha256 text not null check \(sha256 ~ '\^\[0-9a-f\]\{64\}\$'\)/);
+  });
+
+  it("the finalize and backfill functions are SECURITY DEFINER, pinned search_path, executable by service_role only", () => {
+    for (const [fn, sig] of [
+      ["billing_audio_attach_verified", "uuid, uuid, jsonb, bigint, text"],
+      ["billing_audio_backfill_record", "text, uuid, uuid, text, integer, bigint, text, text"],
+    ] as const) {
+      expect(headerAny(m46, fn)).toMatch(/language plpgsql security definer set search_path = pg_catalog, pg_temp as$/);
+      expect(c46()).toContain(`revoke all on function public.${fn}(${sig}) from public, anon, authenticated;`);
+      expect(c46()).toContain(`grant execute on function public.${fn}(${sig}) to service_role;`);
+    }
+    // The finalize write records provenance BEFORE it writes the file fields (the trigger needs it).
+    const att = stripSqlComments(rawBodyAny(m46, "billing_audio_attach_verified"));
+    expect(att.indexOf("insert into public.billing_audio_verifications")).toBeLessThan(att.indexOf("update public.module_items set metadata = p_metadata"));
+    // The backfill never writes module_items or Storage.
+    const bf = stripSqlComments(rawBodyAny(m46, "billing_audio_backfill_record")).toLowerCase();
+    expect(bf).not.toMatch(/update public\.module_items|insert into public\.module_items|storage\./);
+  });
+
+  it("the rollback restores the functions BEFORE dropping the tables they read, and drops what 0046 created", () => {
+    const c = code(rollback("0046"));
+    const lastRestore = Math.max(
+      c.indexOf("create or replace function public.billing_guard_module_item_audio("),
+      c.indexOf("create or replace function public.billing_audio_assert_publishable("),
+      c.indexOf("create or replace function public.replace_space(")
+    );
+    expect(lastRestore).toBeGreaterThan(-1);
+    expect(lastRestore).toBeLessThan(c.indexOf("drop table public.billing_audio_verifications;"));
+    expect(c.indexOf("drop function public.billing_audio_attach_verified(")).toBeLessThan(c.indexOf("drop table public.billing_audio_verifications;"));
+    expect(c).toContain("drop table public.billing_audio_backfill_findings;");
+  });
+
+  it("the 0045 rollback refuses while 0046 is applied (named check, right after the token check)", () => {
+    const guard = code(rollback("0045")).split("$$")[1] ?? "";
+    expect(guard).toMatch(/if to_regclass\('public\.billing_audio_verifications'\) is not null then\s+raise exception 'rollback 0045 refused: 0046 is still applied/);
+    expect(guard.indexOf("idw.rollback_confirm")).toBeLessThan(guard.indexOf("billing_audio_verifications"));
   });
 });

@@ -125,7 +125,7 @@ describe("MP3 (full frame scan)", () => {
   });
 
   it("FORGED: another container behind an .mp3 name is refused (MP4 bytes, ID3 + MP4)", () => {
-    const m4a = mp4({ ticks: 1000, timescale: 1000 });
+    const m4a = mp4({ frames: 100 });
     expect(failure(m4a, "mp3")).toBe("unrecognized");
     expect(failure(cat(id3v2(64), m4a), "mp3")).toBe("unrecognized");
   });
@@ -167,7 +167,7 @@ describe("AAC (ADTS)", () => {
   });
 
   it("an MP4 file named .aac is measured as MP4; ADIF is refused", () => {
-    expect(seconds(mp4({ ticks: 5000, timescale: 1000 }), "aac")).toBe(5);
+    expect(seconds(mp4({ frames: 1000 }), "aac")).toBeCloseTo(64, 6);
     expect(failure(cat(str("ADIF"), zeros(100)), "aac")).toBe("unsupported");
   });
 });
@@ -180,8 +180,14 @@ const box = (type: string, ...parts: (Uint8Array | number[])[]) => {
   return cat(be32(8 + body.length), str(type), body);
 };
 type Mp4Opts = {
-  ticks: number; // total stts ticks
-  timescale: number;
+  frames: number; // AAC frames = MP4 samples (1024 PCM samples each)
+  rate?: number; // sample-entry rate (default 16 kHz)
+  ascRate?: number; // AudioSpecificConfig core rate (default = rate)
+  aot?: number; // audio object type (default 2 = AAC LC); 5 = explicit SBR with a 2x extension rate
+  timescale?: number; // mdhd timescale (default = rate)
+  delta?: number; // stts delta per sample (default 1024 x timescale / rate)
+  entry?: string; // sample-entry type (default mp4a)
+  esds?: boolean; // default true
   mvhd?: number; // movie duration (movie timescale = 1000)
   mdhd?: number;
   stszCount?: number;
@@ -190,16 +196,37 @@ type Mp4Opts = {
   fragmented?: boolean;
   trailing?: Uint8Array;
 };
+const RATE_INDEX: Record<number, number> = { 96000: 0, 88200: 1, 64000: 2, 48000: 3, 44100: 4, 32000: 5, 24000: 6, 22050: 7, 16000: 8, 12000: 9, 11025: 10, 8000: 11, 7350: 12 };
+function bitsToBytes(fields: [number, number][]) {
+  let bits = "";
+  for (const [v, n] of fields) bits += v.toString(2).padStart(n, "0");
+  while (bits.length % 8) bits += "0";
+  return Uint8Array.from(bits.match(/.{8}/g)!.map((x) => parseInt(x, 2)));
+}
+const descriptor = (tag: number, body: Uint8Array) => cat([tag, 0x80, 0x80, 0x80, body.length], body);
 function mp4(o: Mp4Opts) {
+  const rate = o.rate ?? 16000;
+  const ascRate = o.ascRate ?? rate;
+  const aot = o.aot ?? 2;
+  const timescale = o.timescale ?? rate;
+  const delta = o.delta ?? Math.round((1024 * timescale) / rate);
   const movieTs = 1000;
   const mvhd = box("mvhd", [0, 0, 0, 0], be32(0), be32(0), be32(movieTs), be32(o.mvhd ?? 0), zeros(80));
   const tkhd = box("tkhd", [0, 0, 0, 3], be32(0), be32(0), be32(1), be32(0), be32(0), zeros(60));
-  const mdhd = box("mdhd", [0, 0, 0, 0], be32(0), be32(0), be32(o.timescale), be32(o.mdhd ?? 0), zeros(4));
+  const mdhd = box("mdhd", [0, 0, 0, 0], be32(0), be32(0), be32(timescale), be32(o.mdhd ?? 0), zeros(4));
   const hdlr = box("hdlr", [0, 0, 0, 0], be32(0), str(o.handler ?? "soun"), zeros(12), [0]);
-  // One stts entry: `ticks` samples of delta 1.
-  const stts = box("stts", [0, 0, 0, 0], be32(1), be32(o.ticks), be32(1));
-  const stsz = box("stsz", [0, 0, 0, 0], be32(4), be32(o.stszCount ?? o.ticks));
-  const stbl = box("stbl", stts, stsz);
+  const asc =
+    aot === 5
+      ? bitsToBytes([[5, 5], [RATE_INDEX[ascRate], 4], [1, 4], [RATE_INDEX[ascRate * 2], 4], [2, 5]])
+      : bitsToBytes([[aot < 31 ? aot : 31, 5], ...(aot >= 31 ? ([[aot - 32, 6]] as [number, number][]) : []), [RATE_INDEX[ascRate], 4], [1, 4], [0, 3]]);
+  const dcd = descriptor(4, cat([0x40, 0x15], zeros(3), be32(128000), be32(128000), descriptor(5, asc)));
+  const esds = box("esds", [0, 0, 0, 0], descriptor(3, cat([0, 1, 0], dcd, descriptor(6, Uint8Array.from([2])))));
+  const sampleEntry = box(o.entry ?? "mp4a", zeros(6), [0, 1], zeros(8), [0, 1], [0, 16], [0, 0], [0, 0], [(rate >> 8) & 0xff, rate & 0xff, 0, 0], o.esds === false ? new Uint8Array(0) : esds);
+  const stsd = box("stsd", [0, 0, 0, 0], be32(1), sampleEntry);
+  // One stts entry: `frames` samples of `delta` ticks each.
+  const stts = box("stts", [0, 0, 0, 0], be32(1), be32(o.frames), be32(delta));
+  const stsz = box("stsz", [0, 0, 0, 0], be32(4), be32(o.stszCount ?? o.frames));
+  const stbl = box("stbl", stsd, stts, stsz);
   const mdia = box("mdia", mdhd, hdlr, box("minf", stbl));
   const edts = o.elst ? box("edts", box("elst", [0, 0, 0, 0], be32(o.elst.length), ...o.elst.map((d) => cat(be32(d), be32(0), [0, 1, 0, 0])))) : new Uint8Array(0);
   const trak = box("trak", tkhd, edts, mdia);
@@ -208,27 +235,56 @@ function mp4(o: Mp4Opts) {
 }
 
 describe("M4A (ISO-BMFF)", () => {
-  it("sound track length from the sample table: 3600000 ticks at 1 kHz = 3600 s", () => {
-    expect(seconds(mp4({ ticks: 3_600_000, timescale: 1000 }), "m4a")).toBe(3600);
+  it("decoder length: 56,250 AAC frames x 1024 samples at 16 kHz = 3600 s", () => {
+    expect(seconds(mp4({ frames: 56_250 }), "m4a")).toBe(3600);
   });
 
   it("FORGED: a small mvhd/mdhd cannot shorten the sample table", () => {
-    expect(seconds(mp4({ ticks: 3_601_000, timescale: 1000, mvhd: 10, mdhd: 10 }), "m4a")).toBe(3601);
+    expect(seconds(mp4({ frames: 56_266, mvhd: 10, mdhd: 10 }), "m4a")).toBeCloseTo(3601.024, 6);
+  });
+
+  it("FORGED: a 4x mdhd timescale (stts at a quarter of the true length) is measured at the true length", () => {
+    expect(seconds(mp4({ frames: 56_250, timescale: 64_000, delta: 1024 }), "m4a")).toBe(3600);
+  });
+
+  it("FORGED: tiny stts deltas (1 tick per frame) are measured at the true length", () => {
+    expect(seconds(mp4({ frames: 56_266, delta: 1 }), "m4a")).toBeCloseTo(3601.024, 6);
+  });
+
+  it("FORGED: an implausibly huge mdhd timescale is refused", () => {
+    expect(failure(mp4({ frames: 56_250, timescale: 1_000_000_000, delta: 1 }), "m4a")).toBe("malformed");
+  });
+
+  it("FORGED: a sample-entry rate above the AudioSpecificConfig rate cannot shorten the decode (smaller rate wins)", () => {
+    expect(seconds(mp4({ frames: 56_250, rate: 32000, ascRate: 16000, timescale: 32000, delta: 2048 }), "m4a")).toBe(3600);
+  });
+
+  it("HE-AAC (explicit SBR) declared at its 2x output rate is measured at the core rate", () => {
+    expect(seconds(mp4({ frames: 56_250, aot: 5, rate: 32000, ascRate: 16000, timescale: 32000, delta: 2048 }), "m4a")).toBe(3600);
   });
 
   it("FORGED: an edit list that REPEATS the media is counted (2 x 1800 s = 3600 s)", () => {
-    expect(seconds(mp4({ ticks: 1_800_000, timescale: 1000, elst: [1_800_000, 1_800_000] }), "m4a")).toBe(3600);
+    expect(seconds(mp4({ frames: 28_125, elst: [1_800_000, 1_800_000] }), "m4a")).toBe(3600);
   });
 
   it("header durations longer than the samples are honoured (upper bound)", () => {
-    expect(seconds(mp4({ ticks: 1000, timescale: 1000, mvhd: 9000 }), "m4a")).toBe(9);
+    expect(seconds(mp4({ frames: 100, mvhd: 9000 }), "m4a")).toBe(9);
+  });
+
+  it("refuses non-AAC sample entries and object types, a missing esds, and a 0 / absurd rate", () => {
+    expect(failure(mp4({ frames: 100, entry: "alac" }), "m4a")).toBe("unsupported");
+    expect(failure(mp4({ frames: 100, entry: "enca" }), "m4a")).toBe("unsupported");
+    expect(failure(mp4({ frames: 100, aot: 34 }), "m4a")).toBe("unsupported"); // MP3-in-MP4: 1152 samples/frame
+    expect(failure(mp4({ frames: 100, esds: false }), "m4a")).toBe("malformed");
+    expect(failure(mp4({ frames: 100, rate: 0, ascRate: 16000, timescale: 16000 }), "m4a")).toBe("malformed");
+    expect(failure(mp4({ frames: 100, rate: 100, ascRate: 16000, timescale: 16000 }), "m4a")).toBe("malformed");
   });
 
   it("refuses what it cannot measure: fragments, sample-count mismatch, no sound track, trailing junk, not MP4", () => {
-    expect(failure(mp4({ ticks: 1000, timescale: 1000, fragmented: true }), "m4a")).toBe("unsupported");
-    expect(failure(mp4({ ticks: 1000, timescale: 1000, stszCount: 10 }), "m4a")).toBe("malformed");
-    expect(failure(mp4({ ticks: 1000, timescale: 1000, handler: "vide" }), "m4a")).toBe("unrecognized");
-    expect(failure(mp4({ ticks: 1000, timescale: 1000, trailing: new Uint8Array(100).fill(0x55) }), "m4a")).toBe("malformed");
+    expect(failure(mp4({ frames: 100, fragmented: true }), "m4a")).toBe("unsupported");
+    expect(failure(mp4({ frames: 100, stszCount: 10 }), "m4a")).toBe("malformed");
+    expect(failure(mp4({ frames: 100, handler: "vide" }), "m4a")).toBe("unrecognized");
+    expect(failure(mp4({ frames: 100, trailing: new Uint8Array(100).fill(0x55) }), "m4a")).toBe("malformed");
     expect(failure(mp3(100), "m4a")).toBe("unrecognized");
   });
 });
@@ -365,7 +421,8 @@ describe("3600 s passes, 3601 s is refused - measured from real bytes in every c
   const cases: [string, Uint8Array, Uint8Array, string][] = [
     ["wav", wav({ dataBytes: 360_000 }), wav({ dataBytes: 360_100 }), "wav"],
     ["mp3", mp3(50_000), mp3(50_014), "mp3"],
-    ["m4a", mp4({ ticks: 3_600_000, timescale: 1000 }), mp4({ ticks: 3_601_000, timescale: 1000 }), "m4a"],
+    ["m4a", mp4({ frames: 56_250 }), mp4({ frames: 56_266 }), "m4a"],
+    ["m4a (forged 4x timescale)", mp4({ frames: 56_250, timescale: 64_000, delta: 1024 }), mp4({ frames: 56_266, timescale: 64_000, delta: 1024 }), "m4a"],
     ["aac", adts(56_250), adts(56_266), "aac"],
   ];
   for (const [label, at, over, ext] of cases) {

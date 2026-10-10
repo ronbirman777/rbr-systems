@@ -247,12 +247,12 @@ describe("My Spaces - Restore / Replace under billing (TASK 032 B2)", () => {
     });
   });
 
-  it("flag ON: an exempt internal Space behaves like a paying one", async () => {
+  it("flag ON: an exempt internal Space restores like a paying one, but offers no Replace (0046: the exemption must not carry over)", async () => {
     state.mode = "paid";
     state.slots = { slotsUsed: 5, slotsAllowed: 1, slotsAvailable: 0 };
     state.subs = [subRow(ID, { status: "exempt", current_period_end: null })];
     const c = controls(await render([tenant({ status: "archived" })]));
-    expect(c[ID]).toMatchObject({ showRestore: true, showReplace: true, billingLockedNote: null });
+    expect(c[ID]).toMatchObject({ showRestore: true, showReplace: false, billingLockedNote: null });
   });
 
   it("flag ON: a legacy Space's Restore is judged against legacy Spaces only", async () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { copyDraftAudioToPublished, copyDraftToPublished, MediaPublishError } from "./publish";
+import { AUDIO_PUBLISH_CONCURRENCY, copyDraftAudioToPublished, copyDraftToPublished, fingerprintStoredObject, MediaPublishError } from "./publish";
+import { sha256Hex } from "./fingerprint";
 import { makeFakeSupabase } from "./fakeSupabase.test-util";
 
 const T = "tenant-1";
@@ -224,5 +225,142 @@ describe("copyDraftToPublished - Phase 3C create-only image publish", () => {
     expect(f.storageApi.upload).toHaveBeenCalledWith(`${T}/meals/i/published.webp`, expect.anything(), { upsert: true, contentType: "image/webp" });
     expect(f.storageApi.copy).not.toHaveBeenCalled();
     expect(f.files.get(`${T}/meals/i/published.webp`)?.bytes).toBe("new");
+  });
+});
+
+/**
+ * TASK 032 (0046): on the trusted (paid Space, service-role) path the published audio copy must hold exactly the
+ * bytes the server measured at attach (size + sha256 recorded in billing_audio_verifications). This closes the
+ * window in which a member deletes its measured draft and uploads different bytes at the same path.
+ */
+describe("copyDraftAudioToPublished - trusted path re-checks the measured fingerprint (0046)", () => {
+  const TID = "11111111-2222-4333-8444-555555555555";
+  const U1 = "aaaaaaaa-1111-4111-8111-111111111111";
+  const draft = `${TID}/teachAudioFile/item-1/${U1}/draft.mp3`;
+  const published = `${TID}/teachAudioFile/item-1/${U1}/published.mp3`;
+  const fp = (s: string) => ({ sizeBytes: Buffer.byteLength(s), sha256: sha256Hex(new TextEncoder().encode(s)) });
+  const trusted = (s: string | null) => ({ trustedTenantId: TID, audioFingerprint: s === null ? null : fp(s) });
+
+  it("the measured file publishes", async () => {
+    const f = makeFakeSupabase();
+    f.put(draft, "measured-track", undefined, "audio/mpeg");
+    expect(await copyDraftAudioToPublished(f.supabase, draft, trusted("measured-track"))).toBe(published);
+    expect(f.files.get(published)?.bytes).toBe("measured-track");
+  });
+
+  it("no recorded fingerprint (never measured by the server) is refused before anything is copied", async () => {
+    const f = makeFakeSupabase();
+    f.put(draft, "track", undefined, "audio/mpeg");
+    await expect(copyDraftAudioToPublished(f.supabase, draft, trusted(null))).rejects.toThrow(/not been verified by the server; upload it again/);
+    expect(f.storageApi.copy).not.toHaveBeenCalled();
+    expect(f.files.has(published)).toBe(false);
+  });
+
+  it("a draft swapped after measurement (same path, different bytes) is refused and the new copy removed", async () => {
+    const f = makeFakeSupabase();
+    // Measured "short" at attach; the member then deleted the draft and uploaded a long file at the same path.
+    f.put(draft, "an-hour-long-recording", undefined, "audio/mpeg");
+    await expect(copyDraftAudioToPublished(f.supabase, draft, trusted("short"))).rejects.toThrow(/not the file that was measured/);
+    expect(f.files.has(published)).toBe(false);
+    expect(f.files.get(draft)?.bytes).toBe("an-hour-long-recording"); // the draft is left for the owner to replace
+  });
+
+  it("same size, different bytes is still a mismatch (sha256, not size)", async () => {
+    const f = makeFakeSupabase();
+    f.put(draft, "bbbb", undefined, "audio/mpeg");
+    await expect(copyDraftAudioToPublished(f.supabase, draft, trusted("aaaa"))).rejects.toThrow(MediaPublishError);
+    expect(f.files.has(published)).toBe(false);
+  });
+
+  it("an existing published copy that does not match is refused but NEVER removed (the live snapshot may use it)", async () => {
+    const f = makeFakeSupabase();
+    f.put(draft, "other", undefined, "audio/mpeg");
+    f.put(published, "other", undefined, "audio/mpeg");
+    await expect(copyDraftAudioToPublished(f.supabase, draft, trusted("measured"))).rejects.toThrow(/not the file that was measured/);
+    expect(f.files.get(published)?.bytes).toBe("other");
+    expect(f.storageApi.remove).not.toHaveBeenCalled();
+  });
+
+  it("an idempotent retry over a matching published copy succeeds", async () => {
+    const f = makeFakeSupabase();
+    f.put(draft, "measured", undefined, "audio/mpeg");
+    await copyDraftAudioToPublished(f.supabase, draft, trusted("measured"));
+    expect(await copyDraftAudioToPublished(f.supabase, draft, trusted("measured"))).toBe(published);
+    expect(f.storageApi.remove).not.toHaveBeenCalled();
+  });
+
+  it("legacy/exempt (untrusted) copies are unchanged: no fingerprint needed, nothing re-read", async () => {
+    const f = makeFakeSupabase();
+    f.put(draft, "anything", undefined, "audio/mpeg");
+    expect(await copyDraftAudioToPublished(f.supabase, draft)).toBe(published);
+    expect(f.storageApi.download).not.toHaveBeenCalled();
+  });
+
+  it("records the published copy's ETag after hashing it equal, and a later publish of the unchanged copy skips the download", async () => {
+    const f = makeFakeSupabase();
+    f.put(draft, "measured", undefined, "audio/mpeg");
+    const recorded: [string, string][] = [];
+    const onAudioPublishedVerified = (ref: string, etag: string) => void recorded.push([ref, etag]);
+    await copyDraftAudioToPublished(f.supabase, draft, { ...trusted("measured"), onAudioPublishedVerified });
+    expect(recorded).toEqual([[draft, "etag:measured"]]);
+    f.storageApi.download.mockClear();
+    const known = { ...fp("measured"), published: { sizeBytes: Buffer.byteLength("measured"), etag: "etag:measured" } };
+    expect(await copyDraftAudioToPublished(f.supabase, draft, { trustedTenantId: TID, audioFingerprint: known })).toBe(published);
+    expect(f.storageApi.download).not.toHaveBeenCalled();
+  });
+
+  it("a changed (or unknown) ETag on the published copy is re-hashed - and a swapped copy is still refused", async () => {
+    const f = makeFakeSupabase();
+    f.put(draft, "other", undefined, "audio/mpeg");
+    f.put(published, "other", undefined, "audio/mpeg");
+    // Recorded ETag is for the measured bytes; Storage now reports another one.
+    const stale = { ...fp("measured"), published: { sizeBytes: Buffer.byteLength("measured"), etag: "etag:measured" } };
+    await expect(copyDraftAudioToPublished(f.supabase, draft, { trustedTenantId: TID, audioFingerprint: stale })).rejects.toThrow(/not the file that was measured/);
+    expect(f.storageApi.download).toHaveBeenCalled();
+    // ETag forged to match but the size differs from the measurement: re-hashed, refused.
+    const forged = { ...fp("measured"), published: { sizeBytes: Buffer.byteLength("other"), etag: "etag:other" } };
+    await expect(copyDraftAudioToPublished(f.supabase, draft, { trustedTenantId: TID, audioFingerprint: forged })).rejects.toThrow(/not the file that was measured/);
+    // Storage metadata unreadable: re-hashed (fail closed), refused.
+    f.setFailure("info", "boom");
+    await expect(copyDraftAudioToPublished(f.supabase, draft, { trustedTenantId: TID, audioFingerprint: stale })).rejects.toThrow(MediaPublishError);
+    expect(f.files.get(published)?.bytes).toBe("other");
+  });
+
+  it("a freshly created copy is always hashed, even when an ETag was recorded before", async () => {
+    const f = makeFakeSupabase();
+    f.put(draft, "measured", undefined, "audio/mpeg");
+    const known = { ...fp("measured"), published: { sizeBytes: Buffer.byteLength("measured"), etag: "etag:measured" } };
+    await copyDraftAudioToPublished(f.supabase, draft, { trustedTenantId: TID, audioFingerprint: known });
+    expect(f.storageApi.download).toHaveBeenCalledWith(published, {}, { cache: "no-store" });
+  });
+
+  it(`at most AUDIO_PUBLISH_CONCURRENCY (${AUDIO_PUBLISH_CONCURRENCY}) audio copies download at once`, async () => {
+    const f = makeFakeSupabase();
+    const impl = f.storageApi.download.getMockImplementation()!;
+    let active = 0;
+    let peak = 0;
+    f.storageApi.download.mockImplementation(async (...args: Parameters<typeof impl>) => {
+      active += 1;
+      peak = Math.max(peak, active);
+      await new Promise((r) => setTimeout(r, 5));
+      active -= 1;
+      return impl(...args);
+    });
+    const refs = Array.from({ length: 6 }, (_, i) => `${TID}/teachAudioFile/item-${i}/${U1}/draft.mp3`);
+    refs.forEach((r) => f.put(r, "measured", undefined, "audio/mpeg"));
+    const out = await Promise.all(refs.map((r) => copyDraftAudioToPublished(f.supabase, r, trusted("measured"))));
+    expect(out).toHaveLength(6);
+    expect(peak).toBeLessThanOrEqual(AUDIO_PUBLISH_CONCURRENCY);
+    expect(peak).toBeGreaterThan(0);
+  });
+
+  it("fingerprintStoredObject: size + lowercase sha256 hex of the stored bytes", async () => {
+    const f = makeFakeSupabase();
+    f.put(draft, "abc", undefined, "audio/mpeg");
+    expect(await fingerprintStoredObject(f.supabase, draft)).toEqual({
+      sizeBytes: 3,
+      sha256: "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+    });
+    await expect(fingerprintStoredObject(f.supabase, `${draft}.missing`)).rejects.toThrow(MediaPublishError);
   });
 });

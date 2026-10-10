@@ -7,8 +7,9 @@
 -- migration that corrects the defect) is preferred over this rollback.
 --
 -- ORDER: TASK 032 rollbacks run in strict reverse order, one at a time:
---   0045 (this file) -> 0044 -> 0043 -> 0042 -> 0041 -> 0040 -> 0039 -> 0038 -> 0037 -> 0036.
--- This is the first one; nothing must be rolled back before it. It must run
+--   0046 -> 0045 (this file) -> 0044 -> 0043 -> 0042 -> 0041 -> 0040 -> 0039 -> 0038 -> 0037 -> 0036.
+-- The 0046 rollback (audio provenance / exempt Replace) must run first; this
+-- file refuses while public.billing_audio_verifications (0046) exists. It must run
 -- BEFORE the 0043 rollback (the 0045 trigger and Storage predicate call
 -- billing_audio_policy() / billing_audio_assert_publishable()). The 0044
 -- rollback refuses to run while billing_media_member_write_allowed() exists.
@@ -62,6 +63,9 @@ do $$
 begin
   if coalesce(current_setting('idw.rollback_confirm', true), '') <> '0045' then
     raise exception 'ROLLBACK 0045 REFUSED: set idw.rollback_confirm = ''0045'' to confirm';
+  end if;
+  if to_regclass('public.billing_audio_verifications') is not null then
+    raise exception 'ROLLBACK 0045 REFUSED: 0046 is still applied; run the 0046 rollback first';
   end if;
   if exists (select 1 from public.billing_settings where paid_checkout_enabled) then
     raise exception 'ROLLBACK 0045 REFUSED: paid checkout is ON (billing_settings.paid_checkout_enabled)';

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { AUDIO_MIME_BY_EXTENSION } from "./audio";
 import { isCanonicalStoredImage } from "./imageSignature";
+import { sameFingerprint, sha256Hex, type ContentFingerprint } from "./fingerprint";
 import {
   MAX_IMAGE_BYTES,
   MEDIA_BUCKET,
@@ -32,7 +33,49 @@ export class MediaPublishError extends Error {}
  * This is the step that keeps a publish from laundering bytes into a
  * guest-servable `published.*` path.
  */
-export type PublishCopyOptions = { trustedTenantId?: string };
+export type PublishCopyOptions = {
+  trustedTenantId?: string;
+  /**
+   * TASK 032 (0046), audio on the trusted path only: the size + sha256 the
+   * server recorded when it measured this draft (billing_audio_verifications).
+   * Required there - a missing fingerprint means the file was never measured
+   * by the server and is refused.
+   */
+  audioFingerprint?: PublishAudioFingerprint | null;
+  /**
+   * Trusted path: called after the published copy was hashed and found equal
+   * to `audioFingerprint`, with the Storage ETag it had when read, so the next
+   * publish can skip re-hashing an unchanged copy (recordPublishedAudioFingerprint).
+   * Errors are ignored - the only effect is a re-hash next time.
+   */
+  onAudioPublishedVerified?: (draftRef: string, etag: string) => void | Promise<void>;
+};
+
+/**
+ * The measured fingerprint, plus - when an earlier publish already hashed the
+ * published copy and found it equal - that copy's Storage ETag and size.
+ */
+export type PublishAudioFingerprint = ContentFingerprint & { published?: { sizeBytes: number; etag: string } | null };
+
+/**
+ * TASK 032 (0046): at most this many audio publish copies (each may download
+ * and hash a file of up to MAX_AUDIO_BYTES) run at once in this server
+ * process, however many items or concurrent publishes there are.
+ */
+export const AUDIO_PUBLISH_CONCURRENCY = 2;
+let audioSlotsInUse = 0;
+const audioSlotWaiters: (() => void)[] = [];
+async function withAudioSlot<T>(fn: () => Promise<T>): Promise<T> {
+  if (audioSlotsInUse < AUDIO_PUBLISH_CONCURRENCY) audioSlotsInUse += 1;
+  else await new Promise<void>((resolve) => audioSlotWaiters.push(resolve)); // the slot is handed over, count unchanged
+  try {
+    return await fn();
+  } finally {
+    const next = audioSlotWaiters.shift();
+    if (next) next();
+    else audioSlotsInUse -= 1;
+  }
+}
 
 /**
  * Copies one draft photo to its published counterpart - the only place a
@@ -206,6 +249,18 @@ async function assertPublishedImage(supabase: SupabaseClient, draftPath: string,
  * there is no legacy/unversioned fallback - a malformed or unversioned
  * ref throws rather than silently copying nothing.
  *
+ * TASK 032 (0046), trusted (paid Space) path: the published copy - newly
+ * made or already there - is re-read and its size + sha256 must equal the
+ * fingerprint the server recorded when it measured the draft. This closes
+ * the swap window between measurement and publish (a member may delete its
+ * draft and upload different bytes at the same path): a mismatch removes a
+ * copy made by THIS call (never one that already existed - the live snapshot
+ * may reference it) and refuses the publish; the owner uploads the file again.
+ * An EXISTING published copy whose Storage ETag and size equal the ones
+ * recorded when an earlier publish hashed it is not downloaded again; any
+ * other ETag/size (or none) is re-hashed. At most AUDIO_PUBLISH_CONCURRENCY
+ * audio copies run at once.
+ *
  * Returns the published path (null when there is no draft audio).
  */
 export async function copyDraftAudioToPublished(
@@ -218,12 +273,67 @@ export async function copyDraftAudioToPublished(
   if (!parts || parts.kind !== "draft" || !AUDIO_MIME_BY_EXTENSION[parts.ext]) {
     throw new MediaPublishError(`"${draftPath}" is not a versioned draft audio ref.`);
   }
+  const trusted = options.trustedTenantId !== undefined;
   // Trusted (service-role) copy: the tenant check Storage RLS used to make.
-  if (options.trustedTenantId !== undefined && parts.tenantId !== options.trustedTenantId) {
+  if (trusted && parts.tenantId !== options.trustedTenantId) {
     throw new MediaPublishError(`"${draftPath}" does not belong to this Space.`);
+  }
+  const expected = options.audioFingerprint ?? null;
+  if (trusted && !expected) {
+    throw new MediaPublishError(`The recording at "${draftPath}" has not been verified by the server; upload it again.`);
   }
   const publishedPath = publishedMediaPath(draftPath);
   if (!publishedPath) throw new MediaPublishError(`"${draftPath}" is not a draft ref.`);
-  await copyImmutableObject(supabase, draftPath, publishedPath);
-  return publishedPath;
+  return withAudioSlot(async () => {
+    const created = await copyImmutableObject(supabase, draftPath, publishedPath);
+    if (trusted && expected) {
+      await assertPublishedAudioFingerprint(supabase, draftPath, publishedPath, expected, created, options.onAudioPublishedVerified);
+    }
+    return publishedPath;
+  });
+}
+
+/** Size + sha256 of a stored object, read with `{ cache: "no-store" }`. */
+export async function fingerprintStoredObject(supabase: SupabaseClient, path: string): Promise<ContentFingerprint> {
+  const { data, error } = await supabase.storage.from(MEDIA_BUCKET).download(path, {}, { cache: "no-store" });
+  if (error || !data) {
+    throw new MediaPublishError(`Could not read "${path}" to verify it: ${error?.message ?? "no data returned"}`);
+  }
+  const bytes = new Uint8Array(await data.arrayBuffer());
+  return { sizeBytes: bytes.byteLength, sha256: sha256Hex(bytes) };
+}
+
+async function assertPublishedAudioFingerprint(
+  supabase: SupabaseClient,
+  draftPath: string,
+  publishedPath: string,
+  expected: PublishAudioFingerprint,
+  created: boolean,
+  onVerified: PublishCopyOptions["onAudioPublishedVerified"]
+): Promise<void> {
+  // ETag/size read BEFORE hashing: if the object changed in between, the
+  // recorded ETag is the OLD one and the next publish re-hashes (never the
+  // other way round).
+  const { data: info, error: infoError } = await supabase.storage.from(MEDIA_BUCKET).info(publishedPath);
+  const etag = !infoError && info && typeof info.etag === "string" && info.etag ? info.etag : null;
+  const size = !infoError && info && typeof info.size === "number" ? info.size : null;
+  const known = expected.published ?? null;
+  if (!created && known && etag !== null && etag === known.etag && size === known.sizeBytes && size === expected.sizeBytes) {
+    return; // the same published object an earlier publish hashed and found equal
+  }
+  const actual = await fingerprintStoredObject(supabase, publishedPath);
+  if (sameFingerprint(actual, expected)) {
+    if (etag !== null && onVerified) {
+      try {
+        await onVerified(draftPath, etag);
+      } catch {
+        // best-effort: the next publish re-hashes
+      }
+    }
+    return;
+  }
+  if (created) await supabase.storage.from(MEDIA_BUCKET).remove([publishedPath]);
+  throw new MediaPublishError(
+    `The recording at "${publishedPath}" is not the file that was measured when it was uploaded; upload it again.`
+  );
 }

@@ -169,6 +169,8 @@ export const billingHe: { [K in keyof typeof billingEn]: string } = {
   billingLink: "חיוב",
   lifecycleBillingLocked: "יש להסדיר את החיוב של המרחב הזה לפני שחזור או החלפה.",
   lifecycleDeleteActiveSubscription: "למרחב הזה עדיין יש מנוי פעיל, ולכן דבר לא נמחק. יש לבטל את המנוי בעמוד החיוב ולמחוק את המרחב אחרי שהמנוי מסתיים.",
+  // TASK 032 (0046): Replace refused for an internally exempt Space. UNREVIEWED (non-English).
+  lifecycleExemptReplaceRequiresAdmin: "המרחב הזה כלול על ידי InnerDweS, ולכן אי אפשר להחליף אותו. יש לבקש מ-InnerDweS לבטל קודם את ההכללה; דבר לא שונה.",
   lifecycleArchivePaidBody: "העברת „{space}” לארכיון מוציאה אותו משימוש פעיל/ציבורי. האורחים לא יוכלו עוד להגיע אליו. ההעברה לארכיון אינה מבטלת את המנוי שלו.",
   lifecycleReplacePaidBody: "פעולה זו מוחקת את התוכן הקיים של „{space}” – הגרסה שפורסמה, לוח הזמנים ותוכן המודולים – ומתחילה טיוטה חדשה באותו מרחב. אי אפשר לבטל את הפעולה. כדי לאשר, הקלידו את השם הנוכחי של המרחב.",
   lifecycleArchiveButton: "העברה לארכיון",

@@ -28,7 +28,8 @@ import { SUBSCRIPTION_SELECT, toSubscriptionRecord, type SubscriptionRecord, typ
  * changes status.
  */
 export type LifecycleAction = "restore" | "replace";
-export type LifecycleBlock = "billing_locked" | "billing_unreadable" | "slot_limit";
+/** "exempt_replace" - TASK 032 (0046): an internally exempt Space cannot be replaced (an Admin clears the exemption first). */
+export type LifecycleBlock = "billing_locked" | "billing_unreadable" | "slot_limit" | "exempt_replace";
 export type LifecycleDecision =
   | { allowed: true; governedBy: "legacy" | "billing" }
   | { allowed: false; governedBy: "legacy" | "billing" | "unknown"; blockedBy: LifecycleBlock };
@@ -54,6 +55,13 @@ export function decideSpaceLifecycle(input: LifecycleInput): LifecycleDecision {
   if (!isPaidLifecycleMode(input.mode)) return { allowed: true, governedBy: "legacy" };
 
   if (input.subscriptionUnreadable) return { allowed: false, governedBy: "unknown", blockedBy: "billing_unreadable" };
+
+  // TASK 032 (0046): an exemption was granted for this Space's content; Replace
+  // would carry it to new content, so it is refused (expired or not), exactly
+  // like replace_space() (hint EXEMPT_REPLACE_REQUIRES_ADMIN).
+  if (input.action === "replace" && input.subscription?.status === "exempt") {
+    return { allowed: false, governedBy: "billing", blockedBy: "exempt_replace" };
+  }
 
   const decision = deriveSpaceAccess(input.subscription, input.now ?? new Date());
   if (decision.decided) {

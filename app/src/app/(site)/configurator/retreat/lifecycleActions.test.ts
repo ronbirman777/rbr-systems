@@ -770,6 +770,37 @@ describe("lifecycleActions - Task 011", () => {
         expect(mockRevalidatePath).not.toHaveBeenCalled();
       });
 
+      it("0046: an exempt Space is refused before Storage even with the flag OFF", async () => {
+        billing.subs[T] = { tenant_id: T, status: "exempt" };
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        mockRpc.mockResolvedValue({ error: null });
+        const { replaceSpace } = await loadActions();
+        const result = await replaceSpace({ error: null }, formData(confirmed));
+        expect(result).toMatchObject({ exemptReplace: true });
+        expect(result.error).toMatch(/can't be replaced/);
+        expect(mockRpc).not.toHaveBeenCalled();
+        expect(mockStorageList).not.toHaveBeenCalled();
+      });
+
+      it("0046: an unreadable billing row fails closed for Replace before Storage (flag OFF)", async () => {
+        billing.subsError = { message: "boom" };
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        const { replaceSpace } = await loadActions();
+        expect((await replaceSpace({ error: null }, formData(confirmed))).error).toBe("Couldn't replace this Space. Please try again.");
+        expect(mockRpc).not.toHaveBeenCalled();
+        expect(mockStorageList).not.toHaveBeenCalled();
+      });
+
+      it("0046: a DB EXEMPT_REPLACE_REQUIRES_ADMIN refusal (exempted between check and RPC) reads as the localized message", async () => {
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        mockRpc.mockResolvedValue({ error: { hint: "EXEMPT_REPLACE_REQUIRES_ADMIN", message: "raw db text" } });
+        const { replaceSpace } = await loadActions();
+        const result = await replaceSpace({ error: null }, formData(confirmed));
+        expect(result).toMatchObject({ exemptReplace: true });
+        expect(result.error).not.toContain("raw db text");
+        expect(result.success).toBeUndefined();
+      });
+
       it("0042: a DB BILLING_LOCKED refusal of replace reads as the localized billing message", async () => {
         mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
         mockRpc.mockResolvedValue({ error: { hint: "BILLING_LOCKED", message: "raw db text" } });
@@ -839,14 +870,34 @@ describe("lifecycleActions - Task 011", () => {
         expect((await replaceSpace({ error: null }, formData(confirmed))).success).toBe(true);
       });
 
-      it("exempt internal Space (Lena / Return to Balance / QA): allowed, no slot check", async () => {
+      it("exempt internal Space (Lena / Return to Balance / QA): restore allowed, no slot check", async () => {
+        billing.subs[T] = sub(T, { status: "exempt", stripe_subscription_id: null, exempt_reason: "internal demo" });
+        mockRpc.mockResolvedValue({ error: null });
+        const { restoreSpace } = await loadActions();
+        expect((await restoreSpace({ error: null }, formData({ tenantId: T }))).success).toBe(true);
+        expect(mockFromSelect).not.toHaveBeenCalled();
+      });
+
+      it("0046: exempt internal Space: replace is refused (localized) before any RPC or Storage change", async () => {
         billing.subs[T] = sub(T, { status: "exempt", stripe_subscription_id: null, exempt_reason: "internal demo" });
         mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
         mockRpc.mockResolvedValue({ error: null });
-        const { restoreSpace, replaceSpace } = await loadActions();
-        expect((await restoreSpace({ error: null }, formData({ tenantId: T }))).success).toBe(true);
-        expect((await replaceSpace({ error: null }, formData(confirmed))).success).toBe(true);
-        expect(mockFromSelect).not.toHaveBeenCalled();
+        const { replaceSpace } = await loadActions();
+        const result = await replaceSpace({ error: null }, formData(confirmed));
+        expect(result).toMatchObject({ exemptReplace: true, error: "This Space is included by InnerDweS, so it can't be replaced. Ask InnerDweS to end the inclusion first; nothing was changed." });
+        expect(mockRpc).not.toHaveBeenCalled();
+        expect(mockStorageList).not.toHaveBeenCalled();
+        expect(mockStorageRemove).not.toHaveBeenCalled();
+      });
+
+      it("0046: an EXPIRED exemption is still refused (the row would still carry over)", async () => {
+        billing.subs[T] = sub(T, { status: "exempt", stripe_subscription_id: null, exempt_reason: "internal demo", exempt_expires_at: days(3) });
+        mockFromCountSelect.mockResolvedValue({ data: [{ role: "owner" }], error: null });
+        const { replaceSpace } = await loadActions();
+        const result = await replaceSpace({ error: null }, formData({ ...confirmed, locale: "de" }));
+        expect(result.exemptReplace).toBe(true);
+        expect(mockRpc).not.toHaveBeenCalled();
+        expect(mockStorageList).not.toHaveBeenCalled();
       });
 
       it("legacy Space: restore counts only legacy Spaces - a bought Space does not use up the free slot", async () => {

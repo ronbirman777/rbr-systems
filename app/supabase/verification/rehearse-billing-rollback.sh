@@ -1,27 +1,36 @@
 #!/usr/bin/env bash
-# TASK 032: rehearse the 0036-0045 billing rollbacks on THROWAWAY LOCAL
+# TASK 032: rehearse the 0036-0046 billing rollbacks on THROWAWAY LOCAL
 # databases, start to finish, and compare catalog fingerprints.
 #
 #   1. db PRE   = 0001..0035                 -> expected pre-TASK-032 fingerprint
-#      db M42   = 0001..0042, db M43 = 0001..0043, db M44 = 0001..0044
-#      (intermediate references)
-#   2. db FULL  = 0001..0045 + synthetic data -> expected post-0045 fingerprint
+#      db M42   = 0001..0042, db M43 = 0001..0043, db M44 = 0001..0044,
+#      db M45   = 0001..0045 (intermediate references)
+#   2. db FULL  = 0001..0046 + synthetic data -> expected post-0046 fingerprint
 #   3. behaviour on FULL (inside transactions that are rolled back): the 0044
 #      definer-RPC guards refuse a Studio-suspended paid Space with
 #      BILLING_LOCKED and allow active paid, exempt and legacy Spaces; the
 #      0045 media guard (Storage RLS as a real `authenticated` session, and the
 #      published_spaces trigger) refuses member image/published writes and
-#      foreign/audio image refs on a paid Space and leaves legacy/exempt alone.
+#      foreign/audio image refs on a paid Space and leaves legacy/exempt alone;
+#      the 0046 provenance rules (unverified length refused at publish and on
+#      a bare trusted write, verified attach through the finalize RPC, members
+#      can neither read nor forge provenance, the backfill recorder stamps only
+#      matching rows - and only in the item's own folder - and never changes
+#      a duration; a published sibling already in the upload folder is refused
+#      by the finalize RPC; provenance is bound to its item at publish), the
+#      exempt-Replace refusal (paid and legacy Replace unchanged), and the
+#      invariant that a subscription row never becomes non-exempt on a Space
+#      that already holds media.
 #   4. guard checks on FULL: wrong token, paid flag ON, live subscription,
 #      out-of-order (every rollback is tried once BEFORE its turn), and the
 #      data-specific refusals (sending email, payment_confirmation outbox row,
 #      open checkout). Each refusal must leave the fingerprint unchanged.
-#   5. rollbacks 0045 -> 0036 in order with their tokens (0036 also with the
-#      audit-drop token); after 0045 the catalog must equal M44, after 0044
-#      M43, after 0043 M42, at the end it must equal PRE exactly.
+#   5. rollbacks 0046 -> 0036 in order with their tokens (0036 also with the
+#      audit-drop token); after 0046 the catalog must equal M45, after 0045
+#      M44, after 0044 M43, after 0043 M42, at the end it must equal PRE exactly.
 #   6. variant on a clone of FULL: 0036 with the default (audit log KEPT) ->
 #      the only difference from PRE must be the admin_audit_log objects.
-#   7. re-apply 0036..0045 forward on the rolled-back db -> fingerprint must
+#   7. re-apply 0036..0046 forward on the rolled-back db -> fingerprint must
 #      equal FULL exactly.
 #
 # SAFETY. It only ever talks to a LOCAL Postgres:
@@ -45,7 +54,7 @@ C="${DB_CONTAINER:-supabase_db_app}"
 LOCAL_DB_URL="${LOCAL_DB_URL:-postgresql://postgres:postgres@127.0.0.1:54322/postgres}"
 OUT="${OUT:-$(mktemp -d -t rbr_rh)}"
 P="rbr_rh"
-PRE="${P}_pre"; FULL="${P}_full"; RB="${P}_rb"; KEEPAUDIT="${P}_keepaudit"; M42="${P}_m42"; M43="${P}_m43"; M44="${P}_m44"
+PRE="${P}_pre"; FULL="${P}_full"; RB="${P}_rb"; KEEPAUDIT="${P}_keepaudit"; M42="${P}_m42"; M43="${P}_m43"; M44="${P}_m44"; M45="${P}_m45"
 MIG=supabase/migrations
 VER=supabase/verification
 FAILS=0
@@ -148,9 +157,10 @@ expect_ok() { # label db file token [extra]
   local msg; if msg=$(rollback "$2" "$3" "$4" "${5:-}"); then ok "$1"; else bad "$1: $msg"; die "rollback failed; stopping"; fi
   if [ "$2" = "$RB" ]; then local n; n=$(basename "$3" | cut -c1-4); fp "$RB" "after_rb_$n" > /dev/null; fi; }
 
-ls "$MIG" | grep -q '^004[6-9]' && echo "NOTE: a migration beyond 0045 is present in migrations/; this rehearsal deliberately covers 0001..0045 only."
+ls "$MIG" | grep -q '^004[7-9]' && echo "NOTE: a migration beyond 0046 is present in migrations/; this rehearsal deliberately covers 0001..0046 only."
 M_PRE=$(ls "$MIG"/00*.sql | awk -F/ '{print $NF}' | awk '$0 < "0036"' | sed "s|^|$MIG/|")
-M_032=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-5]_*.sql)
+M_032=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-6]_*.sql)
+M_032_TO45=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-5]_*.sql)
 M_032_TO44=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-4]_*.sql)
 M_032_TO42=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-2]_*.sql)
 M_032_TO43=$(ls "$MIG"/003[6-9]_*.sql "$MIG"/004[0-3]_*.sql)
@@ -172,16 +182,18 @@ prep() {
           grant usage on schema public to anon, authenticated, service_role;" > /dev/null 2>&1
 }
 
-say "2/8  PRE = 0001..0035 ; M42 = 0001..0042 ; M43 = 0001..0043 ; M44 = 0001..0044 ; FULL = 0001..0045"
+say "2/8  PRE = 0001..0035 ; M42 = 0001..0042 ; M43 = 0001..0043 ; M44 = 0001..0044 ; M45 = 0001..0045 ; FULL = 0001..0046"
 prep "$PRE";  apply "$PRE"  $M_PRE
 prep "$M42";  apply "$M42"  $M_PRE $M_032_TO42
 prep "$M43";  apply "$M43"  $M_PRE $M_032_TO43
 prep "$M44";  apply "$M44"  $M_PRE $M_032_TO44
+prep "$M45";  apply "$M45"  $M_PRE $M_032_TO45
 prep "$FULL"; apply "$FULL" $M_PRE $M_032
 fp "$PRE" pre > /dev/null
 fp "$M42" m42 > /dev/null
 fp "$M43" m43 > /dev/null
 fp "$M44" m44 > /dev/null
+fp "$M45" m45 > /dev/null
 q "$PRE" "select proname || ' ' || md5(pg_get_functiondef(oid)) from pg_proc where pronamespace = 'public'::regnamespace
           and proname in ($RESTATED) order by 1" \
   | tee "$OUT/pre_restated.txt"
@@ -373,20 +385,125 @@ fp "$FULL" full_after_b45 > /dev/null
 same "0045 behaviour transaction left FULL's catalog unchanged" full full_after_b45
 [ "$(q "$FULL" "select count(*) from storage.objects where bucket_id = 'tenant-media'")" = "0" ] && ok "0045 behaviour transaction rolled back (no storage rows left behind)" || bad "0045 behaviour transaction left storage rows behind"
 
-newdb "$RB" "$FULL"            # the db we roll back (FULL stays as the post-0045 reference)
+# --------------------------------------------------------------------------
+# 3d. 0046 behaviour (one transaction, ROLLED BACK): audio provenance and the
+#     exempt-Replace refusal. Rows "attached before 0046" (browser-reported
+#     length, no provenance) are created with the 0043 trigger disabled INSIDE
+#     the transaction - the state a pre-0046 paid Space is in.
+# --------------------------------------------------------------------------
+say "4c/8 0046 audio provenance + exempt Replace (transaction rolled back)"
+IU=00000000-0000-4000-8000-0000000000cc; I2=00000000-0000-4000-8000-0000000000cd; IB=00000000-0000-4000-8000-0000000000ce; IE=00000000-0000-4000-8000-0000000000cf
+REFU="$B2/teachAudioFile/$IU/$U1/draft.mp3"; REFB="$B2/teachAudioFile/$IB/$U1/draft.mp3"
+REF2="$B2/teachAudioFile/$I2/$U1/draft.mp3"; REF3="$B2/teachAudioFile/$I2/$U2/draft.mp3"
+IX=00000000-0000-4000-8000-0000000000dd; U3=00000000-0000-4000-8000-0000000000de
+REF4="$B2/teachAudioFile/$I2/$U3/draft.mp3"; PUB4="$B2/teachAudioFile/$I2/$U3/published.mp3"
+B46_DO=$(cat <<'SQL'
+do $$
+declare
+  t record; v_hint text; v_state text; n integer; outcome text;
+begin
+  for t in select * from tmp_cases order by ord loop
+    if t.as_role = 'authenticated' then set local role authenticated; end if;
+    begin
+      execute t.stmt;
+      get diagnostics n = row_count;
+      outcome := case when n = 0 then 'noop' else 'allowed' end;
+    exception when others then
+      get stacked diagnostics v_hint = pg_exception_hint, v_state = returned_sqlstate;
+      outcome := case when v_state = '42501' then 'denied' else coalesce(nullif(v_hint, ''), 'error: ' || sqlerrm) end;
+    end;
+    reset role;
+    raise notice 'B46|%|%|%', case when outcome = t.want then 'PASS' else 'FAIL' end, t.label, outcome;
+  end loop;
+end;
+$$;
+SQL
+)
+truthy() { printf "'select 1 / (case when %s then 1 else 0 end)'" "$1"; }
+B46_OUT=$(run_psql "$FULL" -f - 2>&1 <<SQL || true
+begin;
+select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a1","role":"authenticated"}', true);
+insert into public.tenants (id, name, product_type) values ('$B3', 'Rehearsal legacy space', 'retreat');
+update public.space_subscriptions set status = 'active' where id = '00000000-0000-4000-8000-0000000000d2';
+alter table public.module_items disable trigger billing_guard_module_item_audio;
+insert into public.module_items (id, tenant_id, module_key, title, metadata) values
+  ('$IU', '$B2', 'teachAudio', 'pre-0046 browser length', '{"audioRef":"$REFU","durationSeconds":30}'),
+  ('$IB', '$B2', 'teachAudio', 'pre-0046 backfill candidate', '{"audioRef":"$REFB","durationSeconds":20}'),
+  ('$IX', '$B2', 'teachAudio', 'borrows the ref of I2, in another item folder', '{"audioRef":"$REF2","durationSeconds":10}');
+alter table public.module_items enable trigger billing_guard_module_item_audio;
+insert into storage.objects (bucket_id, name) values ('tenant-media', '$B3/brand/hero/draft.webp');
+insert into public.module_items (id, tenant_id, module_key, title, metadata) values ('$I2', '$B2', 'teachAudio', 'new upload', '{}');
+create temp table tmp_cases (ord int, as_role text, label text, stmt text, want text) on commit drop;
+grant select on tmp_cases to authenticated;
+insert into tmp_cases values
+ (1,  'postgres', 'paid: a bare trusted file write without provenance is refused', 'update public.module_items set metadata = ''{"audioRef":"$REF2","durationSeconds":10}''::jsonb where id = ''$I2''', 'AUDIO_UNVERIFIED'),
+ (2,  'postgres', 'paid: the finalize RPC attaches a measured file (provenance + metadata)', 'select public.billing_audio_attach_verified(''$B2'', ''$I2'', ''{"audioRef":"$REF2","durationSeconds":10}''::jsonb, 4096, repeat(''a'', 64))', 'allowed'),
+ (3,  'postgres', 'paid: the finalize RPC over the per-recording maximum is refused', 'select public.billing_audio_attach_verified(''$B2'', ''$I2'', ''{"audioRef":"$REF3","durationSeconds":3601}''::jsonb, 4096, repeat(''d'', 64))', 'AUDIO_LIMIT'),
+ (4,  'postgres', 'paid: ...and its provenance row was rolled back with it', $(truthy "(select audio_ref || duration_seconds from public.billing_audio_verifications where item_id = ''$I2'') = ''${REF2}10''"), 'allowed'),
+ (5,  'postgres', 'paid: the finalize RPC refuses a file outside the item folder', 'select public.billing_audio_attach_verified(''$B2'', ''$I2'', ''{"audioRef":"$REFU","durationSeconds":10}''::jsonb, 4096, repeat(''a'', 64))', 'AUDIO_UNVERIFIED'),
+ (6,  'postgres', 'paid: plant a published object in a new upload folder of I2', 'insert into storage.objects (bucket_id, name) values (''tenant-media'', ''$PUB4'')', 'allowed'),
+ (7,  'postgres', 'paid: the finalize RPC refuses when a published copy already exists in the upload folder', 'select public.billing_audio_attach_verified(''$B2'', ''$I2'', ''{"audioRef":"$REF4","durationSeconds":10}''::jsonb, 4096, repeat(''a'', 64))', 'AUDIO_REUPLOAD'),
+ (8,  'postgres', 'paid: ...and the item keeps its previous verified file', $(truthy "(select metadata->>''audioRef'' from public.module_items where id = ''$I2'') = ''$REF2''"), 'allowed'),
+ (9,  'authenticated', 'paid: a member cannot read provenance', 'select count(*) from public.billing_audio_verifications', 'denied'),
+ (10, 'authenticated', 'paid: a member cannot forge provenance', 'insert into public.billing_audio_verifications (item_id, tenant_id, audio_ref, duration_seconds, size_bytes, sha256, source) values (''$IU'', ''$B2'', ''$REFU'', 30, 1, repeat(''e'', 64), ''server'')', 'denied'),
+ (11, 'authenticated', 'paid: a member cannot change provenance', 'update public.billing_audio_verifications set duration_seconds = 1', 'denied'),
+ (12, 'authenticated', 'paid: a member cannot call the finalize RPC', 'select public.billing_audio_attach_verified(''$B2'', ''$IU'', ''{"audioRef":"$REFU","durationSeconds":30}''::jsonb, 1, repeat(''e'', 64))', 'denied'),
+ (13, 'authenticated', 'paid: a member cannot call the backfill recorder', 'select public.billing_audio_backfill_record(''rehearsal-run-1'', ''$B2'', ''$IU'', ''$REFU'', 30, 1, repeat(''e'', 64), ''ok'')', 'denied'),
+ (14, 'authenticated', 'paid: publish with a browser-length (unverified) file is refused', 'select public.publish_space(''$B2'')', 'AUDIO_UNVERIFIED'),
+ (15, 'authenticated', 'paid: a direct snapshot write while an unverified file is attached is refused', $(snap "$B2" "{\"x\":{\"audioRef\":\"$B2/teachAudioFile/$IU/$U1/published.mp3\"}}"), 'AUDIO_UNVERIFIED'),
+ (16, 'postgres', 'backfill: a matching re-measurement stamps provenance', $(truthy "public.billing_audio_backfill_record(''rehearsal-run-1'', ''$B2'', ''$IB'', ''$REFB'', 20, 4096, repeat(''b'', 64), ''ok'') = ''stamped''"), 'allowed'),
+ (17, 'postgres', 'backfill: a mismatch is flagged, nothing stamped, the stored length kept', $(truthy "public.billing_audio_backfill_record(''rehearsal-run-1'', ''$B2'', ''$IU'', ''$REFU'', 999, 4096, repeat(''c'', 64), ''mismatch'') = ''flagged'' and (select metadata->>''durationSeconds'' from public.module_items where id = ''$IU'') = ''30'' and not exists (select 1 from public.billing_audio_verifications where item_id = ''$IU'')"), 'allowed'),
+ (18, 'postgres', 'backfill: an ok verdict that disagrees with the stored length is still flagged', $(truthy "public.billing_audio_backfill_record(''rehearsal-run-1'', ''$B2'', ''$IU'', ''$REFU'', 999, 4096, repeat(''c'', 64), ''ok'') = ''flagged''"), 'allowed'),
+ (19, 'postgres', 'backfill: a stale read (ref changed since the script read it) is skipped', $(truthy "public.billing_audio_backfill_record(''rehearsal-run-1'', ''$B2'', ''$IU'', ''$REFB'', 30, 4096, repeat(''c'', 64), ''ok'') = ''skipped_changed''"), 'allowed'),
+ (20, 'postgres', 'backfill: a ref outside the own folder of the item is flagged, never stamped', $(truthy "public.billing_audio_backfill_record(''rehearsal-run-1'', ''$B2'', ''$IX'', ''$REF2'', 10, 4096, repeat(''a'', 64), ''ok'') = ''flagged'' and not exists (select 1 from public.billing_audio_verifications where item_id = ''$IX'')"), 'allowed'),
+ (21, 'postgres', 'backfill: every call left one audit row carrying the run id (5)', $(truthy "(select count(*) from public.billing_audio_backfill_findings where run_id = ''rehearsal-run-1'') = 5"), 'allowed'),
+ (22, 'authenticated', 'paid: still refused while the mismatched file is attached', 'select public.publish_space(''$B2'')', 'AUDIO_UNVERIFIED'),
+ (23, 'authenticated', 'paid: a member can detach the unverified file', 'update public.module_items set metadata = metadata || ''{"audioRef":null,"durationSeconds":null}''::jsonb where id = ''$IU''', 'allowed'),
+ (24, 'authenticated', 'paid: a file borrowing the provenance of another item, same ref and length, is still unverified', 'select public.publish_space(''$B2'')', 'AUDIO_UNVERIFIED'),
+ (25, 'authenticated', 'paid: a member can detach the borrowing file', 'update public.module_items set metadata = metadata || ''{"audioRef":null,"durationSeconds":null}''::jsonb where id = ''$IX''', 'allowed'),
+ (26, 'authenticated', 'paid: publish with only server-verified files succeeds', 'select public.publish_space(''$B2'')', 'allowed'),
+ (27, 'authenticated', 'exempt: replace is refused (EXEMPT_REPLACE_REQUIRES_ADMIN)', 'select public.replace_space(''$B1'', ''rehearsal replaced'')', 'EXEMPT_REPLACE_REQUIRES_ADMIN'),
+ (28, 'postgres', 'exempt: nothing was reset by the refused replace', $(truthy "(select name from public.tenants where id = ''$B1'') = ''Rehearsal exempt space''"), 'allowed'),
+ (29, 'authenticated', 'exempt: a member writes a 5 h file directly (unchanged)', 'insert into public.module_items (id, tenant_id, module_key, title, metadata) values (''$IE'', ''$B1'', ''audio'', ''exempt long'', ''{"audioRef":"$B1/audioFile/$IE/$U1/draft.mp3","durationSeconds":18000}''::jsonb)', 'allowed'),
+ (30, 'authenticated', 'exempt: publish is unaffected (unchanged)', 'select public.publish_space(''$B1'')', 'allowed'),
+ (31, 'postgres', 'invariant: an exempt Space holding media cannot be flipped to paid', 'update public.space_subscriptions set status = ''active'' where id = ''00000000-0000-4000-8000-0000000000d1''', 'BILLING_SPACE_HAS_MEDIA'),
+ (32, 'postgres', 'invariant: a paid row cannot be inserted for an existing Space holding media', 'insert into public.space_subscriptions (tenant_id, billing_owner_user_id, billing_customer_id, plan_id, stripe_mode, stripe_subscription_id, status, currency, base_amount_minor) select ''$B3'', ''00000000-0000-4000-8000-0000000000a1'', ''00000000-0000-4000-8000-0000000000c1'', id, ''test'', ''sub_rehearsal3'', ''active'', currency, unit_amount_minor from public.billing_plans order by plan_key limit 1', 'BILLING_SPACE_HAS_MEDIA'),
+ (33, 'authenticated', 'legacy: replace still works (unchanged)', 'select public.replace_space(''$B3'', ''rehearsal legacy replaced'')', 'allowed'),
+ (34, 'authenticated', 'paid: replace still works (unchanged)', 'select public.replace_space(''$B2'', ''rehearsal paid replaced'')', 'allowed'),
+ (35, 'postgres', 'paid: replace removed the Space provenance rows (FK cascade)', $(truthy "not exists (select 1 from public.billing_audio_verifications where tenant_id = ''$B2'')"), 'allowed'),
+ (36, 'postgres', 'invariant: a status change between paid statuses is unaffected', 'update public.space_subscriptions set status = ''past_due'' where id = ''00000000-0000-4000-8000-0000000000d2''', 'allowed');
+$B46_DO
+rollback;
+SQL
+)
+printf '%s\n' "$B46_OUT" | grep -o 'B46|.*' > "$OUT/behaviour_0046.txt" || true
+NB=$(wc -l < "$OUT/behaviour_0046.txt" | tr -d ' ')
+[ "$NB" = "36" ] || { bad "0046 behaviour: expected 36 results, got $NB"; printf '%s\n' "$B46_OUT" | tail -20; }
+while IFS='|' read -r _ verdict label outcome; do
+  [ "$verdict" = "PASS" ] && ok "0046 $label -> $outcome" || bad "0046 $label -> $outcome"
+done < "$OUT/behaviour_0046.txt"
+fp "$FULL" full_after_b46 > /dev/null
+same "0046 behaviour transaction left FULL's catalog unchanged" full full_after_b46
+[ "$(q "$FULL" "select count(*) from public.module_items where tenant_id = '$B2'")" = "0" ] && [ "$(q "$FULL" "select count(*) from public.billing_audio_backfill_findings")" = "0" ] \
+  && ok "0046 behaviour transaction rolled back (no items or findings left behind)" || bad "0046 behaviour transaction left rows behind"
+
+newdb "$RB" "$FULL"            # the db we roll back (FULL stays as the post-0046 reference)
 
 # --------------------------------------------------------------------------
 # 4. Guards refuse when prerequisites fail
 # --------------------------------------------------------------------------
 say "5/8  guard refusals (each must abort and leave the catalog unchanged)"
-expect_refusal "0045 without token"      "$RB" "$(RBF 0045)" ""       "REFUSED: set idw.rollback_confirm"
-expect_refusal "0045 with wrong token"   "$RB" "$(RBF 0045)" "0044"   "REFUSED: set idw.rollback_confirm"
+expect_refusal "0046 without token"      "$RB" "$(RBF 0046)" ""       "REFUSED: set idw.rollback_confirm"
+expect_refusal "0046 with wrong token"   "$RB" "$(RBF 0046)" "0045"   "REFUSED: set idw.rollback_confirm"
 q "$RB" "update public.billing_settings set paid_checkout_enabled = true" > /dev/null
-expect_refusal "0045 with paid flag ON"  "$RB" "$(RBF 0045)" "0045"   "paid checkout is ON"
+expect_refusal "0046 with paid flag ON"  "$RB" "$(RBF 0046)" "0046"   "paid checkout is ON"
 q "$RB" "update public.billing_settings set paid_checkout_enabled = false" > /dev/null
 q "$RB" "update public.space_subscriptions set status = 'active' where id = '00000000-0000-4000-8000-0000000000d2'" > /dev/null
-expect_refusal "0045 with live subscription" "$RB" "$(RBF 0045)" "0045" "live paid subscription"
+expect_refusal "0046 with live subscription" "$RB" "$(RBF 0046)" "0046" "live paid subscription"
 q "$RB" "update public.space_subscriptions set status = 'canceled' where id = '00000000-0000-4000-8000-0000000000d2'" > /dev/null
+expect_refusal "0045 before 0046 (out of order)" "$RB" "$(RBF 0045)" "0045" "0046 is still applied"
+expect_refusal "0045 without token"      "$RB" "$(RBF 0045)" ""       "REFUSED: set idw.rollback_confirm"
+expect_refusal "0045 with wrong token"   "$RB" "$(RBF 0045)" "0044"   "REFUSED: set idw.rollback_confirm"
 expect_refusal "0044 before 0045 (out of order)" "$RB" "$(RBF 0044)" "0044" "0045 is still applied"
 expect_refusal "0044 without token"      "$RB" "$(RBF 0044)" ""       "REFUSED: set idw.rollback_confirm"
 expect_refusal "0044 with wrong token"   "$RB" "$(RBF 0044)" "0043"   "REFUSED: set idw.rollback_confirm"
@@ -396,7 +513,16 @@ expect_refusal "0036 before everything"          "$RB" "$(RBF 0036)" "0036-expor
 # --------------------------------------------------------------------------
 # 5. Rollbacks in order; before each step, try the NEXT-EARLIER file (must refuse)
 # --------------------------------------------------------------------------
-say "6/8  rollbacks 0045 -> 0036"
+say "6/8  rollbacks 0046 -> 0036"
+expect_ok "0046 rollback" "$RB" "$(RBF 0046)" "0046"
+same "after the 0046 rollback the catalog == M45 (0001..0045)" m45 after_rb_0046
+# 0045's own data guards (checked after 0046 is gone: the 0046-applied refusal comes first).
+q "$RB" "update public.billing_settings set paid_checkout_enabled = true" > /dev/null
+expect_refusal "0045 with paid flag ON"  "$RB" "$(RBF 0045)" "0045"   "paid checkout is ON"
+q "$RB" "update public.billing_settings set paid_checkout_enabled = false" > /dev/null
+q "$RB" "update public.space_subscriptions set status = 'active' where id = '00000000-0000-4000-8000-0000000000d2'" > /dev/null
+expect_refusal "0045 with live subscription" "$RB" "$(RBF 0045)" "0045" "live paid subscription"
+q "$RB" "update public.space_subscriptions set status = 'canceled' where id = '00000000-0000-4000-8000-0000000000d2'" > /dev/null
 expect_ok "0045 rollback" "$RB" "$(RBF 0045)" "0045"
 same "after the 0045 rollback the catalog == M44 (0001..0044)" m44 after_rb_0045
 # 0044's own data guards (checked after 0045 is gone: the 0045-applied refusal comes first).
@@ -465,17 +591,17 @@ else bad "audit-kept variant: unexpected difference"; printf '%s\n' "$EXTRA" | h
 # --------------------------------------------------------------------------
 # 7. Restore forward
 # --------------------------------------------------------------------------
-say "8/8  re-apply 0036..0045 on the rolled-back db"
+say "8/8  re-apply 0036..0046 on the rolled-back db"
 apply "$RB" $M_032
 fp "$RB" reapplied > /dev/null
-same "re-applied catalog == FULL (0001..0045)" full reapplied
+same "re-applied catalog == FULL (0001..0046)" full reapplied
 
-if [ "${KEEP:-0}" = "1" ]; then say "kept databases: $PRE $M42 $M43 $M44 $FULL $RB $KEEPAUDIT"
-else for d in "$PRE" "$M42" "$M43" "$M44" "$FULL" "$RB" "$KEEPAUDIT"; do dropdb_ "$d"; done; say "throwaway databases dropped"; fi
+if [ "${KEEP:-0}" = "1" ]; then say "kept databases: $PRE $M42 $M43 $M44 $M45 $FULL $RB $KEEPAUDIT"
+else for d in "$PRE" "$M42" "$M43" "$M44" "$M45" "$FULL" "$RB" "$KEEPAUDIT"; do dropdb_ "$d"; done; say "throwaway databases dropped"; fi
 # "Comparable" = without storage-api-managed storage indexes/triggers, which differ between
 # hosted and local; this is the form to compare with a hosted environment.
 say "expected comparable fingerprints (md5 of sorted lines) per state"
-for f in pre m42 m43 m44 full after_rb_0045 after_rb_0044 after_rb_0043 after_rb_0042 after_rb_0041 after_rb_0040 after_rb_0039 after_rb_0038 after_rb_0037 after_rb_0036 reapplied keepaudit; do
+for f in pre m42 m43 m44 m45 full after_rb_0046 after_rb_0045 after_rb_0044 after_rb_0043 after_rb_0042 after_rb_0041 after_rb_0040 after_rb_0039 after_rb_0038 after_rb_0037 after_rb_0036 reapplied keepaudit; do
   [ -f "$OUT/$f.fp" ] || continue
   grep -vE '^(idx|trg)\|storage\.' "$OUT/$f.fp" > "$OUT/$f.comparable.fp"
   printf '   %-16s %s  %s lines\n' "$f" "$( (md5sum < "$OUT/$f.comparable.fp" 2>/dev/null || md5 -q "$OUT/$f.comparable.fp") | cut -c1-32)" "$(wc -l < "$OUT/$f.comparable.fp" | tr -d ' ')"

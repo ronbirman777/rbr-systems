@@ -40,7 +40,7 @@ import { normalizeSlug, slugFormatError, isReservedSlug } from "@/lib/slug";
 import { getSpaceEntitlement } from "@/lib/entitlements/getSpaceEntitlement";
 import { getSpaceCommercialAvailability } from "@/lib/billing/commercialAccess";
 import { loadAudioQuotaPolicy } from "@/lib/billing/audioQuota.server";
-import { deriveStoredAudioSeconds, writeEnforcedAudioFile } from "@/lib/billing/audioFinalize.server";
+import { loadAudioFingerprints, measureStoredAudio, recordPublishedAudioFingerprint, writeEnforcedAudioFile, type StoredAudioMeasurement } from "@/lib/billing/audioFinalize.server";
 import { audioQuotaMessageKey, audioQuotaMessageValues, checkAudioAttach, checkAudioPublish, enforcedAttachWriteIssue } from "@/lib/billing/audioQuota";
 import { getCustomPagesLimit } from "@/lib/entitlements/customPagesLimit";
 import {
@@ -1636,11 +1636,24 @@ export async function publishSpace(
     return { error: writer.reason === "studioLocked" ? t("needsActiveAccess") : t("couldNotPublishPhotos"), publishedAt: null };
   }
   const copyOptions = writer.trusted ? { trustedTenantId: tenantId } : {};
+  // TASK 032 (0046): on a paid Space each published audio copy is checked
+  // against the fingerprint the server recorded when it measured the draft.
+  const needsFingerprints = writer.trusted && audioDraftRefs.size > 0;
+  const audioFingerprints = needsFingerprints ? await loadAudioFingerprints(tenantId) : null;
+  if (needsFingerprints && !audioFingerprints) return { error: t("couldNotPublishPhotos"), publishedAt: null };
+  const audioCopyOptions = (ref: string) => {
+    if (!writer.trusted) return copyOptions;
+    const audioFingerprint = audioFingerprints?.get(ref) ?? null;
+    // Once the published copy is hashed and equal, its ETag is recorded so a later publish skips the re-hash.
+    const onAudioPublishedVerified = (draftRef: string, etag: string) =>
+      audioFingerprint ? recordPublishedAudioFingerprint(tenantId, draftRef, audioFingerprint, etag) : undefined;
+    return { ...copyOptions, audioFingerprint, onAudioPublishedVerified };
+  };
 
   try {
     await Promise.all([
       ...[...draftRefs].map((ref) => copyDraftToPublished(writer.client, ref, copyOptions)),
-      ...[...audioDraftRefs].map((ref) => copyDraftAudioToPublished(writer.client, ref, copyOptions)),
+      ...[...audioDraftRefs].map((ref) => copyDraftAudioToPublished(writer.client, ref, audioCopyOptions(ref))),
     ]);
   } catch (err) {
     return {
@@ -2160,6 +2173,7 @@ export async function attachFlowAudio(
   const quota = await loadAudioQuotaPolicy(tenantId);
   let otherAudio: { id: string; metadata: Record<string, unknown> | null }[] = [];
   let serverSeconds: number | null = null;
+  let measured: StoredAudioMeasurement | null = null;
   if (quota.mode === "enforced") {
     const { data: audioRows, error: audioError } = await ctx.supabase
       .from("module_items")
@@ -2170,16 +2184,23 @@ export async function attachFlowAudio(
     otherAudio = (audioRows as typeof otherAudio).filter((r) => r.id !== itemId);
     // TASK B4b - the length is measured from the STORED bytes with the
     // service role; the browser-reported `durationSeconds` is ignored here.
-    serverSeconds = await deriveStoredAudioSeconds(ref, parts.ext);
+    // TASK 032 (0046): the same download is fingerprinted (size + sha256) and
+    // recorded with the length as server provenance.
+    measured = await measureStoredAudio(ref, parts.ext);
+    serverSeconds = measured?.seconds ?? null;
   }
   const quotaCheck = checkAudioAttach(quota, { claimedSeconds: durationSeconds, serverSeconds, otherItems: otherAudio });
   if (!quotaCheck.ok) return reject(t(audioQuotaMessageKey(quotaCheck.issue, "attach"), audioQuotaMessageValues(quotaCheck.issue)));
   const duration = quotaCheck.durationSeconds;
 
-  if (ref !== previousRef) {
+  if (ref !== previousRef || quota.mode === "enforced") {
     // A published object already in this upload's folder means this is
     // not a fresh upload; refuse the folder rather than risk replacing
     // what the live snapshot may still reference.
+    // TASK 032 (0046): on a paid Space this holds even for a re-attach of the
+    // SAME ref - the published sibling's bytes were never measured on this
+    // attach, so publish must not adopt it under the new measurement. Refuse
+    // (deleting nothing); the organizer re-uploads into a fresh folder.
     const published = versionedMediaPath("published", { ...parts });
     const { data: publishedExists } = await bucket.exists(published);
     if (publishedExists) return { error: t("audioRefInvalidReupload") };
@@ -2190,7 +2211,9 @@ export async function attachFlowAudio(
     // TASK B4b - on a paid Space the database (0043) refuses a member-session
     // write of the file fields; only this verified service-role write may
     // set them, and the database re-checks the limits on it.
-    const written = await writeEnforcedAudioFile(tenantId, itemId, nextMetadata);
+    const written = measured
+      ? await writeEnforcedAudioFile(tenantId, itemId, nextMetadata, { sizeBytes: measured.sizeBytes, sha256: measured.sha256 })
+      : ({ ok: false, reason: "failed" } as const);
     if (!written.ok) {
       if (ref !== previousRef) await removeDraftObjects(ctx.supabase, tenantId, [ref]);
       const issue = enforcedAttachWriteIssue(written.reason, quota.limits, otherAudio);
