@@ -50,8 +50,10 @@ begin
   -- TASK 032 (0039) adds exactly 3 restrictive 'tenant media: billing allows studio writes (...)' policies;
   -- they are allowed by name and counted separately so any OTHER extra policy still fails this check.
   insert into _r (name, ok) select 'storage.objects has exactly the 4 permissive + 1 restrictive policy (+ the 3 named TASK 032 billing policies when 0039 is applied)',
-    count(*) filter (where polname not like 'tenant media: billing allows studio writes (%)') = 5
+    count(*) filter (where polname not like 'tenant media: billing allows studio writes (%)' and polname not like 'tenant media: paid spaces %') = 5
     and count(*) filter (where polname like 'tenant media: billing allows studio writes (%)') in (0, 3)
+    -- TASK 032 (0045) adds exactly 2 restrictive 'tenant media: paid spaces ...' policies (names truncated at 63 chars).
+    and count(*) filter (where polname like 'tenant media: paid spaces %') in (0, 2)
     from pg_policy where polrelid = 'storage.objects'::regclass;
   insert into _r (name, ok) select 'is_versioned_media_object: immutable, SECURITY INVOKER, pinned search_path, no public execute',
     p.provolatile = 'i' and not p.prosecdef and array_to_string(p.proconfig, ',') = 'search_path=""'

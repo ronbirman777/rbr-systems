@@ -421,9 +421,15 @@ async function main() {
   check("G11 owner sees the studio_suspended reason through the access helper", accSel.data?.[0]?.reason === "studio_suspended", JSON.stringify(accSel));
 
   await admin.from("space_subscriptions").update({ status: "active", payment_failed_at: null }).eq("id", subL);
-  const upA = await owner.storage.from("tenant-media").upload(`${tL}/qa032/allowed.png`, png, { contentType: "image/png" });
-  if (!upA.error) created.storage.push(`${tL}/qa032/allowed.png`);
-  check("G12 after recovery the same owner can upload media again", !upA.error, JSON.stringify(upA.error));
+  // Since 0045, members on a paid Space upload images only through the trusted (service-role) pipeline; the member's
+  // own Storage writes are limited to versioned draft audio. Recovery therefore re-opens exactly that path.
+  const recPath = `${tL}/teachAudio/qa032item/qa032up-${runId}/draft.mp3`;
+  const upA = await owner.storage.from("tenant-media").upload(recPath, png, { contentType: "audio/mpeg" });
+  if (!upA.error) created.storage.push(recPath);
+  check("G12 after recovery the same owner can upload media again (member draft-audio path re-opened)", !upA.error, JSON.stringify(upA.error));
+  const upImg = await owner.storage.from("tenant-media").upload(`${tL}/qa032/direct-image.png`, png, { contentType: "image/png" });
+  if (!upImg.error) created.storage.push(`${tL}/qa032/direct-image.png`);
+  check("G12b after recovery a DIRECT member image upload stays refused on a paid Space (0045: images only via the trusted pipeline)", !!upImg.error, JSON.stringify(upImg.data));
   const pubA = await owner.rpc("publish_space", { p_tenant_id: tL });
   check("G13 after recovery the owner can publish (no content rebuild needed)", !pubA.error, JSON.stringify(pubA.error));
   const { data: pubRow } = await admin.from("published_spaces").select("published_at").eq("tenant_id", tL).maybeSingle();
@@ -1005,7 +1011,7 @@ async function main() {
     };
     const measured = new Uint8Array([0x49, 0x44, 0x33, 4, 0, 0, 0, 0, 0, 0, 0xff, 0xfb, 0x90, 0x64, 1, 2, 3, 4]);
     const swapped = new Uint8Array([0x49, 0x44, 0x33, 4, 0, 0, 0, 0, 0, 0, 0xff, 0xfb, 0x90, 0x64, 9, 9, 9, 9, 9, 9, 9, 9]);
-    const uP = await mkUser("up"); const pc = await userClient(uP);
+    const uP = await mkUser("pv-owner"); const pc = await userClient(uP);
     await setFlag(false);
     const ckPp = await mkCheckout(uP, "teach"); const pPp = await provision(ckPp.id, subJson(uP), "QA032 provenance paid");
     const tPP = pPp.data?.tenant_id; if (tPP) created.tenants.push(tPP);
