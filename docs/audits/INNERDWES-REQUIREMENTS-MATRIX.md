@@ -122,10 +122,10 @@ See `docs/audits/TASK-033-PLAN.md` for the plans. APR ✔ 2026-10-11 for all thr
 
 | ID | Requirement | Status | Cause / notes | Next |
 |---|---|---|---|---|
-| T33-01 | Flow Share Card uses the CURRENT published Space image (with fallback, readable text, correct QR, export preserved) | PLANNED | Investigation in TASK-033-PLAN §1 | After TASK 032/032.5 gates |
-| T33-02 | Teach Share Card checked for the same issue | PLANNED | TASK-033-PLAN §1 | same |
-| T33-03 | tr + it complete across the whole product (seven fully supported locales); not exposed in the Space selector until QA passes | PLANNED (Billing/Admin portion VERIFIED on Staging; BIL-10) | TASK-033-PLAN §2 | same |
-| T33-04 | Flow Retreat Day Navigator (weekday / date / DAY n, a11y, RTL, timezone-aware) | PLANNED | TASK-033-PLAN §3 | same |
+| T33-01 | Flow Share Card uses the CURRENT published Space image (with fallback, readable text, correct QR, export preserved) | **CONFLICTING → PLANNED** | Evidenced: the card uses the published **Hero**, not the Space image (`[tenantId]/page.tsx` L253-258, `retreat-configurator.tsx` L3020). The prop goes stale after an in-session publish; logo, name and colours leak from the draft. This is a defect on Production too. Owner must confirm which photo is "current" (TASK-033-PLAN §1) | After TASK 032/032.5 gates |
+| T33-02 | Teach Share Card checked for the same issue | PLANNED | Not the same defect: the server route reads `published_spaces` with no-store. Minor fixes: version parameter on the image URL, localized CTA | same |
+| T33-03 | tr + it complete across the whole product (seven fully supported locales); not exposed in the Space selector until QA passes | PARTIALLY IMPLEMENTED (billing/admin 700 keys ✔ Staging; common/teach/flow/studio **0 of 1,253** keys) | Gated by `SPACE_SELECTABLE_LOCALES` (tr/it hidden, correct). Font latin-ext, ordinals, Turkish casing and hardcoded literals still to do (TASK-033-PLAN §2) | same |
+| T33-04 | Flow Retreat Day Navigator (weekday / date / DAY n, a11y, RTL, timezone-aware) | PLANNED | Existing strip lacks ARIA, keyboard, Today and DAY n. **Existing bug:** weekday uses the device locale and timezone (`schedule-screen.tsx` L34-40) (TASK-033-PLAN §3) | same |
 
 ### 2.7 Platform areas not yet audited (Part 13 scope)
 
