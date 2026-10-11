@@ -8,6 +8,36 @@ Evidence: read-only code reading; three read-only SELECTs on Production; two pub
 
 **DB / migrations:** none for any of the three. Each section below gives the reason.
 
+
+## LOCKED OWNER DECISIONS (2026-10-11, "EXECUTION AUTHORIZATION" message)
+
+These supersede the open "Owner decisions" at the end of this file. TASK 033 code changes are **not started** (A6). They are approved for later implementation.
+
+| ID | Decision | Implementation consequence |
+|---|---|---|
+| A1 | **Retreat day numbering comes from actual calendar dates in the retreat's configured IANA timezone.** Example: Oct 14–19 2027 → Day 1–6. Never derived from list position. A date with no activities does not cause renumbering | `buildRetreatDays` uses the calendar offset from the **retreat start date**. The UI shows the localized weekday, the exact date and Day n |
+| A2 | Marketing site, public sign-up, log-in and password recovery stay **English only** for every language. After authentication, the Studio and builder may offer the supported interface languages. Teach and Flow Guest Apps support all 7 (en/de/es/fr/he/tr/it) after translation and QA. tr/it are not Space-selectable until complete Guest/Studio translation and QA pass. User content is never auto-translated | Auth and marketing pages are out of scope. Remaining tr/it scope: common, teach, flow and studio (1,253 keys each) |
+| A3 | **Defect confirmed by the owner:** they uploaded a new image and republished, but the Share Card still showed the previous image. The card must reflect the latest **published** image **and** brand state. Source order: published Space image → published Hero → brand gradient. Never mix published images with unpublished branding. After Republish, the new image appears without a manual reload | §1 changes 1–5 are confirmed. Verify against the Studio image fields and the owner's expected result. Checks: draft/published isolation, republish invalidation, same-session freshness, browser cache, export freshness, versioning, published logo/name/colours, QR |
+| A4 | Teach Share Card: keep the working behaviour. Add image-version freshness and translated labels. Use the published Space image when available, with a documented fallback (Space → portrait → hero → gradient, to be confirmed in implementation). Do not introduce the Flow defect | §1 change 7, extended with the Space-image preference |
+| A5 | Day Navigator: Teach calendar visual language, without the Teach image. Timeline stays below. Dates, selected state, timezone, RTL and a11y preserved. **A single-day retreat shows a polished date header, not a navigator** | §3; single-day branch = header |
+| A6 | Approved for TASK 033 later. **No TASK 033 code during the Cloudflare/backup workstream** | — |
+
+### A1 data-model limitation (must be resolved before implementing the navigator)
+
+The current Flow data model **has no retreat start or end date**. Checked 2026-10-11: no start/end/arrival/departure field in `src/lib/modules`, `src/lib/schedule`, the retreat configurator, or the Retreat Profile. The only dates are `schedule[].date` on activities.
+
+Consequences:
+- Day numbering can be anchored only to the **earliest scheduled activity date**. Interior gaps are numbered correctly (calendar offset), but:
+  1. If the real first day has no activities (for example an arrival day with nothing scheduled), every day is off by one.
+  2. Days after the last activity are not shown.
+- The complete range can't be determined, so per A1 this is **reported before implementation**.
+
+**Proposed resolution (needs owner approval at TASK 033 start):**
+- Add optional **retreat start date** and **end date** fields to the Retreat Profile settings JSON (`module_settings`; no SQL migration expected, to be verified).
+- The navigator shows every date from start to end, including dates without activities, with an empty state.
+- Fallback when they are unset: earliest to latest scheduled date, labelled as derived.
+- Teach is unaffected.
+
 ---
 
 ## 1. Time to Flow — Share Card image
@@ -237,7 +267,7 @@ Today the **current published Space image of Return to Balance is itself a thatc
 
 ---
 
-## Owner decisions for TASK 033
+## Owner decisions for TASK 033 (superseded by LOCKED OWNER DECISIONS above, except the native reviewers)
 
 1. Which Return to Balance photo is the expected "current" one: Space image (today, a bungalow/sala) or hero (group on deck)?
 2. Should Teach cards also prefer the Space image?
