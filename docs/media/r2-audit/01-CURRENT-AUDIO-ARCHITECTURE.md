@@ -9,7 +9,7 @@ Path notation: `file:line` is relative to `app/` unless it starts with `docs/` o
 
 ## 0. One-paragraph summary
 
-All audio (Time to Teach `teachAudio`, Time to Flow `audio`) lives in a single private Supabase Storage bucket, `tenant-media`, at versioned keys `{tenant}/{teachAudioFile|audioFile}/{itemId}/{uploadId}/draft.<ext>` and a `published.<ext>` sibling in the same folder. The browser uploads the draft straight to Storage with the member's own session, on a path the server minted. A server action then checks the object through Storage metadata (`info`/`exists`). On a paid (enforced) Space it also downloads the bytes, measures the length (`audioDuration.ts`), takes a sha256 (`fingerprint.ts`), and records provenance (`billing_audio_verifications`, 0046) in the same transaction that writes `module_items.metadata.audioRef/durationSeconds`. Publish copies draft to published inside Storage (`copy`, create-only). On paid Spaces it re-hashes the published copy against the provenance row. `publish_space()` then rewrites `draft.` to `published.` in the snapshot JSON. Guests reach audio only through `/api/media/[...path]`. That route checks that the snapshot is a member and that the Space is available and passes the access code, then answers with a redirect to a Supabase signed URL that lasts 60 s (code-protected) or 180 s (public, with a `public, max-age=60` redirect). Range and seek requests go straight to Supabase Storage. Nothing meters listening. The repo has no backup or DR tooling for media. A Backblaze B2 "recovery snapshot" pipeline from TASK 027 lives in a separate infra repo and is referenced only in the untracked notes under `tasks/`.
+All audio (Time to Teach `teachAudio`, Time to Flow `audio`) lives in a single private Supabase Storage bucket, `tenant-media`, at versioned keys `{tenant}/{teachAudioFile|audioFile}/{itemId}/{uploadId}/draft.<ext>` and a `published.<ext>` sibling in the same folder. The browser uploads the draft straight to Storage with the member's own session, on a path the server minted. A server action then checks the object through Storage metadata (`info`/`exists`). On a paid (enforced) Space it also downloads the bytes, measures the length (`audioDuration.ts`), takes a sha256 (`fingerprint.ts`), and records provenance (`billing_audio_verifications`, 0046) in the same transaction that writes `module_items.metadata.audioRef/durationSeconds`. Publish copies draft to published inside Storage (`copy`, create-only). On paid Spaces it re-hashes the published copy against the provenance row. `publish_space()` then rewrites `draft.` to `published.` in the snapshot JSON. Guests reach audio only through `/api/media/[...path]`. That route checks that the snapshot is a member and that the Space is available and passes the access code, then answers with a redirect to a Supabase signed URL that lasts 60 s (code-protected) or 180 s (public, with a `public, max-age=60` redirect). Range and seek requests go straight to Supabase Storage. Nothing meters listening. The app repo has no backup tooling for media, but **a standing Production Storage → Backblaze B2 sync does exist** in the separate infra repo (corrected 2026-10-11, see §23).
 
 ---
 
@@ -200,9 +200,20 @@ All audio (Time to Teach `teachAudio`, Time to Flow `audio`) lives in a single p
 
 ### 23. Backups
 
-- **There is no backup code, script, workflow or doc for media in this repo.** No `.github/workflows`, and no `backblaze`/`rclone`/`b2` references in tracked files. The only `b2` hits are CSS class names in `landing/index.html` and test UUIDs in `rehearse-billing-rollback.sh`.
-- The untracked local note `tasks/027-closure-and-followups.md:8,17,33` records that a TASK 027 **B2 recovery snapshot pipeline** ran in Production from a separate **infra repo** (`infra main 7f9649b…`, GitHub Actions runs `36965362343` and `36976193030`). It also says B2 and Supabase S3 credentials are still kept as secrets in that repo. That pipeline was built for the legacy-media migration and is not a standing backup.
-- Database: daily physical backups, **PITR off** (`docs/tasks/029/prod-release-gate.json:26-31`, `docs/billing/ROLLBACK-REHEARSAL.md:252,261`). A database restore does not restore Storage objects **[assumption, platform behaviour]**.
+- **CORRECTION (2026-10-11).** The v1 text here said there was no standing media backup. That was wrong: v1 searched only the app repo.
+- The verified state is in `docs/audits/GAP-INVESTIGATION-2026-10-11.md` §B:
+  - The private repo `ronbirman777/innerdwes_backup_infra`, workflow `daily-storage-backup.yml`, rclone-syncs Production `tenant-media` (audio included) to B2 every ~4 h. In practice that is 4–10 h.
+  - It has had 39 successful runs since 2026-09-30. The last was run `38119667145` on 2026-10-11, covering 332 objects, which matches Production's 332 objects / 2 audio.
+  - B2 keeps hidden versions for 14 days.
+- Gaps:
+  - no Object Lock;
+  - deletions propagate;
+  - no checksum verification;
+  - no restore drill;
+  - B2 private/encryption status unverified;
+  - no off-platform DB dump.
+- This app repo itself still contains no backup code: no `.github/workflows`, no rclone/b2 references.
+- Database: daily physical backups (verified read-only 2026-10-11: 7 COMPLETED, latest 2026-10-10T22:06Z), **PITR off** (`docs/tasks/029/prod-release-gate.json:26-31`, `docs/billing/ROLLBACK-REHEARSAL.md:252,261`). A database restore does not restore Storage objects **[assumption, platform behaviour]**.
 
 ### 24. DR docs
 

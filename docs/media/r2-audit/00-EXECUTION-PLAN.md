@@ -1,6 +1,6 @@
 # 00 - Execution plan: audio on Cloudflare R2 (TASK 032.5)
 
-Date 2026-10-10. Branch `feat/032-commercial-platform-foundation` @ `05ab36b`. **This is a plan. No code, migration, resource, DNS record or hosted query exists for any of it.** Migration numbers `0047+` are placeholders, and nothing is written.
+Date 2026-10-10, revised 2026-10-11 (v2 execution pack below). **This is a plan. No code, migration, resource, DNS record or hosted query exists for any of it.** Migration numbers `0047+` are placeholders, and nothing is written.
 
 Inputs:
 - [01 Current architecture](./01-CURRENT-AUDIO-ARCHITECTURE.md)
@@ -14,7 +14,149 @@ Markers: **[ESTIMATE]**, **[UNVERIFIED]**, **[OWNER]** (needs an owner decision 
 
 ---
 
-## Workstreams and dependencies
+## Execution pack v2 (2026-10-11): W0–W6
+
+**This supersedes the WS0–WS11 table below for sequencing and approvals.** The WS sections stay as detailed design references.
+
+The owner approved R2 **in principle** on 2026-10-11. **Implementation is NOT authorised.** Each workstream needs its listed approvals.
+
+| v2 | Covers v1 | Status 2026-10-11 |
+|---|---|---|
+| **W0** Media security gap closure | WS0 | Safe fixes done locally (W0-1, W0-2 report, W0-3). Staging apply needs approval |
+| **W1** Cloudflare infrastructure and POC | WS1, Phase J | POC plan ready (06-POC-PLAN.md). Waiting for POC approval |
+| **W2** Upload and provenance integration | WS2, WS3, WS4 (upload half) | Designed |
+| **W3** Publish and playback integration (+ **W3a** access codes) | WS4 (publish half), WS5, WS6 | Designed. W3a can ship before R2 |
+| **W4** Listening-minute metering | WS7, WS10 (metering alerts), WS11 (later) | Designed (04 §F.7 v2: listening is kept separate from bandwidth) |
+| **W5** Migration, backups and rollback | WS8, WS9 | Designed. Backup gaps found (GAP-INVESTIGATION §B) |
+| **W6** Staging QA and Production readiness | §19–§27 | Designed |
+
+### W0 — Media security gap closure (no R2 dependency)
+- **Dependencies:** none.
+- **Affected files (done):**
+  - `app/src/lib/media/draftRefs.ts`
+  - `app/src/app/(site)/configurator/retreat/actions.ts`
+  - `app/src/app/(site)/configurator/retreat/flowAudioDeletion.test.ts`
+  - `app/supabase/migrations/0047_media_bucket_limits.sql` and its rollback
+  - `app/supabase/verification/orphan-media-report.sql`
+  - `app/src/lib/spaceTypes/publishSpaceRegression.test.ts`
+- **Affected files (planned, owner approval needed):**
+  - Studio usage meter and browser pre-check: `retreat/audio-step.tsx:399`, `teach-studio-sections.tsx:1643`, Studio page props.
+  - Orphan-prevention sweep: post-attach sweep of the item's own folder, objects older than 1 h.
+- **Migration plan:** 0047 forward-only, a single `UPDATE storage.buckets`. The rollback restores NULLs. It is independent of the 0036–0046 billing chain. Apply order: Staging → (Production at the release gate, together with the TASK 032 billing migrations or separately).
+- **Security requirements:**
+  - Size and MIME are enforced by Storage for every writer, including the service role.
+  - Draft cleanup never touches `published.*` or another tenant's paths (`isDraftMediaPathForTenant`).
+- **Tests:**
+  - flowAudioDeletion (4 tests);
+  - migration-chain test;
+  - local Storage API behaviour (415/413/200);
+  - after the Staging apply: hosted real-storage tests plus a member upload of `text/html` → 415.
+- **Acceptance:**
+  - Staging bucket shows the limits;
+  - the Studio Flow/Teach audio and image uploads still work (browser QA);
+  - the orphan report shows 0 after deleting a Flow audio item.
+- **Rollback:** 0047 rollback file; `git revert` for the code.
+- **Owner approvals:**
+  - **AW0-a:** apply 0047 to Staging and deploy the W0 code to Staging.
+  - **AW0-b:** the legacy-Space content-check policy (keep legacy permissive, or add a decoder check for all Spaces).
+  - **AW0-c:** the orphan-sweep retention (D7).
+- **Destructive cleanup:** none needed today (0 orphans on Staging and Production, 2026-10-11). Any future cleanup is approval-gated and run-scoped.
+
+### W1 — Cloudflare infrastructure and POC
+- **Dependencies:** W0; owner approvals A1–A6 (DECISION-GATE v2).
+- **Affected files:** new `infra/media-worker/` (Worker, `wrangler.toml` per environment, tests), and a POC-flagged token mint in `app/src/app/api/media/[...path]/route.ts`.
+- **Migration plan:** none for the POC. Synthetic tenants use existing tables.
+- **Security requirements:** 04 §D rows 1–20; the bucket is private; Staging-only credentials.
+- **Tests:** 06-POC-PLAN.md §3 (48 rows).
+- **Acceptance:** every P-SEC/P-TOK row passes; P-STR passes on all browsers including iOS; P-COST within budget.
+- **Rollback:** POC flag off. Resources are torn down only on approval.
+- **Approvals:** A1–A6.
+
+### W2 — Upload and provenance integration
+- **Dependencies:** a successful POC and owner approval for full implementation.
+- **Affected files:**
+  - `src/lib/media/{audioUpload.ts, path.ts, publish.ts, trustedMedia.server.ts, fingerprint.ts, audioDuration.ts}`
+  - `src/lib/billing/audioFinalize.server.ts`
+  - Flow/Teach attach actions
+  - new `src/lib/media/store/{index.ts, supabaseStore.ts, r2Store.ts, r2Fake.test-util.ts}`
+- **Migration plan:**
+  - `media_objects` index plus `media_store_overrides`;
+  - R2-aware restatements of the two 0046 `storage.objects` checks (04 §D.3);
+  - each with a rollback file and a local rehearsal.
+- **Security requirements:**
+  - presigned PUT pinned to type and length;
+  - server-side measurement from R2;
+  - provenance written in the same transaction as the ref;
+  - members never hold R2 credentials.
+- **Tests:**
+  - the store contract tests run against both implementations;
+  - harness sections M/N/O/P re-run with R2 objects;
+  - P-UPL rows.
+- **Acceptance:** with both stores, the harness passes 242/242 plus the new checks.
+- **Rollback:** the per-object store marker routes back to Supabase. Index tables stay.
+- **Approvals:** full-implementation approval; D7 retention.
+
+### W3 — Publish and playback integration (+ W3a access codes)
+- **Dependencies:** W2. W3a has none beyond W0 and owner scope approval (D4).
+- **Affected files:**
+  - `/api/media` route;
+  - `src/lib/media/cachePolicy.ts`;
+  - `use-audio-player.ts` (re-resolve);
+  - the Studio preview loaders;
+  - Worker epoch endpoint.
+  - W3a: new `src/lib/guestAccess/mediaGrants.ts`, guest code prompt UI, Studio controls, 7-locale strings.
+- **Migration plan:** W3a adds `media_access_codes` plus 4 RPCs (04 §D.1/D.1b), with a rollback.
+- **Security requirements:** short-lived tokens; epoch revocation; every configured code required; one rate budget shared per tenant plus a global ceiling.
+- **Tests:** P-TOK and P-STR rows; the 8-combination code matrix; revocation; cross-tenant.
+- **Acceptance:**
+  - playback works on every browser;
+  - revocation takes ≤ 60 s (R2) or ≤ the signed-URL TTL (Supabase);
+  - codes are enforced on both stores.
+- **Rollback:** a flag returns the redirect to Supabase signed URLs. The W3a migration rollback refuses if any codes exist, unless forced with a token.
+- **Approvals:** D4/D4b (codes); full implementation (R2 playback).
+
+### W4 — Listening-minute metering (observe-only)
+- **Dependencies:** W3.
+- **Affected files:**
+  - Worker `/m` beacon endpoint and Queue consumer;
+  - `use-audio-player.ts` beacon;
+  - `/api/internal/metering/ingest`;
+  - Billing/Admin usage views.
+- **Migration plan:** `media_listen_tokens` (24 h TTL), `media_usage_hourly`, `media_usage_monthly`.
+- **Security requirements:** no IP, UA, listener id or cross-Space id; only the nonce hash is stored, for 24 h; credited seconds are bounded (04 §F.7).
+- **Tests:** P-MET rows; unit tests for the crediting bounds; a privacy schema test (no IP or UA columns).
+- **Acceptance:** ±5% accuracy against ground truth on the browser matrix; bandwidth reported separately.
+- **Rollback:** turn the beacon off. The data stays.
+- **Approvals:** D5 (enforcement policy, which comes later), legal/privacy review. `ENFORCE_LISTENING` stays off.
+
+### W5 — Migration, backups and rollback
+- **Dependencies:** W2, W3, and backup hardening.
+- **Affected files:**
+  - infra repo `innerdwes_backup_infra`: the R2 → B2 workflow;
+  - the existing workflow hardening (`--max-delete`, `rclone check`, alerts);
+  - app migration tooling.
+- **Migration plan:** 05 Phase I (inventory → copy → sha256 verify → per-object cutover → canary order with Lena and Return to Balance last). Supabase copies are retained for D7 days.
+- **Security requirements:**
+  - Object Lock or delayed deletion;
+  - a CI key without delete rights;
+  - an encrypted off-platform `pg_dump`.
+- **Tests:** P-DR rows; a restore drill that measures RTO.
+- **Acceptance:** 100% sha256 parity; restore drill passed; zero playback errors on canary Spaces for 7 days.
+- **Rollback:** a per-object store marker back to Supabase (copies retained).
+- **Approvals:** D3 (B2 settings and key rotation), D7, migration-window approval, and an explicit Production migration approval.
+
+### W6 — Staging QA and Production readiness
+- **Dependencies:** W1–W5.
+- **Scope:**
+  - full Staging regression (harness, journeys, Admin QA, guest QA, 7 locales, 7 viewports);
+  - browser and device matrix;
+  - cost check against 03 v2;
+  - monitoring 70/85/95 (05 §K).
+- **Production gate:** the §27 gates plus a **separate explicit owner approval** for each of: the Production migration, the Production deploy, the Production DNS record, and enabling metering. Production is never touched within the POC.
+
+---
+
+## Workstreams and dependencies (v1 detail; sequencing superseded by v2 above)
 
 Workstreams with no arrow between them are parallel-safe: they touch disjoint files, or only a new file.
 
@@ -66,7 +208,7 @@ flowchart LR
 | 0.1 | `tenant-media` has no `file_size_limit` or `allowed_mime_types` (01 §2, `0006_schedule_screen_and_storage.sql:23`) | Migration **0047**: set `file_size_limit = 104857600` (equal to `MAX_AUDIO_BYTES`, `audio.ts:31`) and `allowed_mime_types` to the audio types in `AUDIO_ALLOWED_TYPES` plus `image/webp`, `image/png`, `image/jpeg`. Images are re-encoded to WebP server-side; check whether legacy png/jpeg uploads still exist before narrowing **[verify]**. Rollback script restores NULLs | Affects member browser uploads only. Existing objects are untouched. Test with the real-stack Storage test (`realStack.0029.integration.test.ts`) |
 | 0.2 | Unattached drafts are never swept (01 §19, §6.2) | Cron step: delete versioned `draft.*` audio objects older than 24 h that no `module_items.metadata.audioRef` references, per tenant, service role, chunked. In R2 also sweep `media_objects.state='pending'` older than 24 h | Must not touch a draft attached between list and delete. Re-check the reference under the per-tenant advisory lock, or skip anything newer than the grace period |
 | 0.3 | Flow item deletion leaks draft audio (`retreat/actions.ts:1451-1482`, `saveModuleItemsGeneric` remove block about `:501-523` selects `id, image_ref` only) | Also select `metadata` and pass `metadata.audioRef` drafts to `removeDraftObjects`, mirroring Teach's `itemDraftRefs` (`teach/actions.ts:382`) | Add tests matching `teach/audioLifecycle.test.ts` |
-| 0.4 | No media DR (01 §23-24) | Supabase Storage to B2 rclone copy of `tenant-media` until R2 is live, then R2 to B2 (WS8). **[OWNER]** verify the TASK 027 infra-repo pipeline and rotate or revoke its Supabase S3 credentials | No app code |
+| 0.4 | ~~No media DR~~ **Corrected 2026-10-11:** a Production Storage → B2 sync exists and is verified (GAP-INVESTIGATION §B). Remaining gaps: immutability, checksums, alerts, restore drill, off-platform DB dump | Harden the infra-repo workflow (W5). **[OWNER]** B2 console checks and key narrowing | No app code |
 | 0.5 | PITR off (01 §23) | **[OWNER]** decide whether to enable PITR on Production (paid add-on; price not verified here) | Shortens the DB RPO from 24 h |
 
 ---
@@ -231,6 +373,9 @@ The library and per-recording limits are unchanged (0043/0046 triggers, `audioQu
 
 ## 14. Metering
 
+> **v2 (2026-10-11):** listening usage and delivered bandwidth are separate metrics. The design has no Durable Object: a beacon goes through the Queue, and bandwidth goes to Analytics Engine. See 04 §F.7, which supersedes the text below where they conflict.
+
+
 04 Phase F, approach 6: Worker byte accounting with per-nonce union dedupe, a DO per tenant, hourly flush to `media_usage_hourly`, and rollup in the billing cron. An optional played-seconds beacon serves as cross-check, and R2 analytics as the monthly cross-check. No identity is stored. **Observe-only** until the V7-style go decision.
 
 ## 15. Cache strategy
@@ -294,18 +439,20 @@ Each cell: play from 0, seek 50% and 90%, pause 12 min then resume (beyond TTL),
 
 05 Phase J: paired Supabase and Worker runs on Staging, with thresholds for TTFB, time to play, seek, rebuffer, long-pause resume, CPU, error rate, revocation latency, metering accuracy, pipeline lag and measured cost. **No paid resource without owner approval.**
 
-## 22. Cost model summary (03; prices VERIFIED, workload ESTIMATE)
+## 22. Cost model summary (03 v2, revised 2026-10-11; prices VERIFIED, workload ESTIMATE)
 
-| Spaces (80k min each) | Supabase uncached | R2 + Worker | B2 |
+The v1 table here, ending in "$74.90 at 2,000 Spaces", is **withdrawn**. It left out the metering infrastructure.
+
+| Spaces | Supabase uncached (Base, 80k min) | R2 Design B, Base | R2 Design B, Low / High |
 |---|---|---|---|
-| 10 | $29 | $5.00 | $0.02 |
-| 100 | $496 | $5.37 | $0.24 |
-| 1,000 | $5,167 | $36.27 | $2.40 |
-| 2,000 | $10,358 | $74.90 | $4.80 |
+| 10 | $32 | $5.00 | $5.00 / $5.42 |
+| 100 | $522 | $7.58 | $5.18 / $53.97 |
+| 1,000 | $5,426 | $110.94 | $10.99 / $695.61 |
+| 2,000 | $10,876 | $239.19 | $17.91 / $1,408.54 |
 
-- At full use, the $5 add-on loses money on Supabase (about $5.19-5.39 of cost) and is viable on R2 (about $0.03).
-- R2 becomes cheaper from about 10 Spaces at planning usage, or about 50 Spaces at low usage.
-- Metering adds DO requests at about $0.15/M after 1M, which is negligible **[ESTIMATE]**.
+- These are estimates for comparison, not forecasts. The POC measures the real request density (P-COST rows).
+- Design A (a Durable Object per beacon, conservative duration) costs about $810 at Base with 2,000 Spaces. Design B (Queues plus Analytics Engine) is recommended.
+- The $5 add-on loses money on Supabase and is viable on R2 (03 v2).
 
 ## 23. Monitoring
 

@@ -37,7 +37,7 @@ A service-role `media_objects` index table, which also holds the per-object stor
 Yes, by design. Keys stay identical, so neither the snapshot nor a republish changes. The 18 steps include a sha256 read-back against provenance, size and duration re-verification, and permission probes. Dual-read with retained Supabase copies means rollback is a one-transaction store flip. The canary runs synthetic Staging, then a synthetic Production Space, then low-traffic Spaces, then Return to Balance, then Lena Teach. The last two go separately, each with 7 days of dual-read. Evidence: [05 Phase I](./05-MIGRATION-BENCHMARK-MONITORING.md).
 
 **9. What is the backup / DR posture, and does it weaken anything?**
-It strengthens it. Today there is no media DR in the repo and PITR is off. The plan is an hourly R2-to-B2 `rclone copy` with:
+It strengthens it. (Corrected 2026-10-11: v1 said "no media DR", which was wrong. A Production Storage → B2 sync runs every 4–10 h, audio included. It lacks immutability, checksums and a restore drill. See GAP-INVESTIGATION §B.) PITR is off. The plan is an hourly R2-to-B2 `rclone copy` with:
 - a read-only token
 - versioning and a 30-day governance-mode Object Lock
 - SSE-B2 encryption and a sha256 manifest
@@ -51,7 +51,7 @@ These items are Workstream 0:
 - the `tenant-media` bucket has no `file_size_limit` or `allowed_mime_types`
 - unattached drafts are never swept
 - deleting a Flow item leaks its draft audio (`retreat/actions.ts:1451-1482`, `saveModuleItemsGeneric`)
-- there is no media DR
+- media DR exists (Storage → B2 sync) but is not immutable and has never been restore-tested (corrected 2026-10-11)
 - PITR is off
 
 Evidence: [00 Workstream 0](./00-EXECUTION-PLAN.md), [01 §6, §19](./01-CURRENT-AUDIO-ARCHITECTURE.md).
@@ -94,3 +94,51 @@ No step requires a production mutation to be planned. What remains open are owne
 - whether Workers Logs capture `CF-Connecting-IP`
 
 Staging and Production object counts were not queried.
+
+
+---
+
+## v2 — POC approval gate (2026-10-11)
+
+**Owner approved in principle (2026-10-11):**
+- R2 as the preferred future audio delivery;
+- a private bucket behind an authenticated Worker;
+- privacy-preserving metering;
+- verification of the existing Backblaze DR;
+- separate library and recording access codes;
+- observe-only metering before enforcement;
+- a controlled Staging POC;
+- no destructive migration without approval.
+
+**This is not implementation authorisation.**
+
+### Changes since v1
+- The cost model was rebuilt (03 v2). The $75 figure is withdrawn. Metering is redesigned (Design B) so it does not depend on Durable Object duration.
+- Metering v2 separates listening usage from delivered bandwidth (04 §F.7).
+- Backups were verified (GAP-INVESTIGATION §B). D3 now means **harden** the existing pipeline, not "verify whether it exists".
+- The access-code design is implementation-ready (04 §D.1b). The recommendation is to ship it before R2 (W3a).
+- The POC plan has a 48-row matrix (06).
+- W0 safe fixes are done locally (GAP-INVESTIGATION §G).
+
+### POC approvals needed (A1–A6)
+| ID | Approval | Notes |
+|---|---|---|
+| A1 | Run the Staging POC (06-POC-PLAN.md) | Staging only, synthetic tenants, budget ≤ $10 |
+| A2 | Owner creates the Cloudflare account and enables Workers Paid ($5/month). Owner creates a Staging-scoped API token. Claude creates the Staging bucket, KV, Queue and Worker with it | Claude does not create accounts. Billable resources need this approval |
+| A3 | POC hostname: `*.workers.dev` (no DNS change, recommended) or a custom subdomain (separate DNS approval) | |
+| A4 | A separate B2 **test** bucket and key for the R2 → B2 restore test (P-DR) | The existing backup bucket and jobs are not touched |
+| A5 | Device access for iOS Safari, Mac Safari and Android Chrome (owner devices or an approved device cloud) | Needed for P-STR-05/06/07 |
+| A6 | Apply W0 (0047 + Flow fix) to Staging and deploy the W0 SHA to Staging before the POC | Staging only |
+
+### Still open from v1
+- D1, D2: covered by A2 and A3 for the POC; Production values come later.
+- D3: B2 hardening and key narrowing.
+- D4/D4b: access-code scope and code format.
+- D5: enforcement policy, later.
+- D6: covered by A1 and A5.
+- D7: retention.
+- D8: PITR.
+- D9: alert channel.
+
+### Verdict v2
+**TASK 032.5 — READY FOR POC APPROVAL.** No R2 implementation without approval.

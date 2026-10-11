@@ -59,6 +59,7 @@ import { copyDraftToPublished, copyDraftAudioToPublished } from "@/lib/media/pub
 import { sniffImage } from "@/lib/media/imageSignature";
 import { resolveMediaWriter, storeDraftImage } from "@/lib/media/trustedMedia.server";
 import { cleanupStalePublishedMedia } from "@/lib/media/publishedCleanup";
+import { rowDraftRefs } from "@/lib/media/draftRefs";
 
 import { localeFromFormData, studioMessages, translate, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 /**
@@ -498,7 +499,7 @@ async function saveModuleItemsGeneric(
   // replaced by a new one.
   const { data: existingRows } = await supabase
     .from("module_items")
-    .select("id, image_ref")
+    .select("id, image_ref, metadata")
     .eq("tenant_id", tenantId)
     .eq("module_key", moduleKey);
   const removedRows = (existingRows ?? []).filter((r) => !incomingIds.has(r.id));
@@ -519,7 +520,7 @@ async function saveModuleItemsGeneric(
     await removeDraftObjects(
       supabase,
       tenantId,
-      removedRows.map((r) => r.image_ref as string | null)
+      removedRows.flatMap((r) => rowDraftRefs(r))
     );
   }
 
@@ -1465,7 +1466,7 @@ export async function deleteModuleItem(
 
   const { data: row } = await supabase
     .from("module_items")
-    .select("image_ref")
+    .select("image_ref, metadata")
     .eq("id", itemId)
     .eq("tenant_id", tenantId)
     .maybeSingle();
@@ -1476,7 +1477,7 @@ export async function deleteModuleItem(
   // Draft object only, and only after the row is gone. The published copy
   // (which the live snapshot may still reference) is removed by the
   // post-publish sweep once a Publish drops this item.
-  await removeDraftObjects(supabase, tenantId, [row?.image_ref as string | null | undefined]);
+  await removeDraftObjects(supabase, tenantId, rowDraftRefs(row));
 
   return { error: null };
 }

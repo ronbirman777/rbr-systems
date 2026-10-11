@@ -86,6 +86,58 @@ RLS on, no policies, REVOKE ALL from anon/authenticated (same posture as space_g
 
 **Tests required:** both layers required, each alone insufficient, a version bump invalidates cookies, one budget across scopes, and a non-member cannot read requirements. The status probe returns the same 404 for "no such recording", "locked" and "wrong tenant".
 
+
+### D.1b Implementation-ready additions (2026-10-11, owner approved the direction; implementation still needs approval)
+
+**Origin of the requirement:** see `docs/audits/GAP-INVESTIGATION-2026-10-11.md` §A. No written approval exists before 2026-10-10. The owner approved the direction on 2026-10-11.
+
+| # | Requirement (Part 7) | Design decision |
+|---|---|---|
+| 1 | Optional library code | `media_access_codes` row with `scope='library'`, `module_key` ∈ {`teachAudio`, `audio`}. No row means no library code |
+| 2 | Optional per-recording code | Row with `scope='recording'` and an `item_id`. It cascades when the item is deleted |
+| 3 | Both required when both are configured | Check order in `/api/media` and the resolve route: Space code (existing), then library, then recording. Every configured layer needs a valid grant at the **current** `version`. Any miss returns the same 404 |
+| 4 | Hashed secret storage | `extensions.crypt(code, gen_salt('bf', 10))`, the same as `space_guest_access`. Codes are never stored in plaintext, never returned, and never written to the audit log. The audit log records only `{scope, item_id, action}` |
+| 5 | Rate limiting | A per-tenant budget **shared** across the Space, library and all recording codes: 8 attempts per 10 min per `(tenant, ip_hmac)`, reusing `check_and_record_guest_attempt`. **New:** a per-tenant global ceiling of 100 failed attempts per hour across all IPs. Past it, the tenant's media codes lock for 15 min. This stops distributed guessing of a 6-digit code (10⁶ space). Owner option: allow 8–12 character alphanumeric codes for audio |
+| 6 | Secure authorization | Verification only in a server action. The service-role RPC `verify_media_access_code` uses `FOR UPDATE` and a constant-time `crypt` compare. The guest never receives requirement metadata from an anonymous RPC |
+| 7 | Scoped access grants | One signed per-tenant **grants cookie**, `idw_mg_{tenant}`: HMAC over `{tenantId, grants:[{s:'lib',m,v},{s:'rec',i,v}], exp}`, capped at 50 grants and ≤ 3.5 KB. It is httpOnly, Secure, SameSite=Lax, host-only and lasts 7 days. Using one cookie per tenant avoids the per-host cookie-count limit (D.1 alternative adopted) |
+| 8 | Revocation | Set, rotate or disable bumps `version`, which invalidates grants immediately on the next resolve. It also bumps the tenant **epoch** (D.2), so outstanding R2 playback tokens die within the KV propagation window (≈60 s). Before R2, the Supabase signed-URL TTL (60–180 s) bounds it |
+| 9 | Tenant isolation | Every grant carries `tenantId`. The RPCs check `item_id` belongs to the tenant (`module_items.tenant_id`). A grant for tenant A never satisfies tenant B. Cross-Space tests are required |
+| 10 | Safe Studio UX | See below |
+
+**Studio UX:**
+- **Where the controls live.**
+  - Library code: Audio library settings ("Require a code for the whole audio library").
+  - Recording code: in each recording's ⋯ menu ("Require a code for this recording").
+  - A badge shows 🔒 Library and/or 🔒 Recording.
+- **Setting a code.** The owner enters it twice, and it is shown masked. After saving, the code is never shown again; the owner can only replace or remove it. Copy explains that guests who already unlocked must re-enter after a change.
+- **Warnings.**
+  - When both codes are set: "Guests will need both codes."
+  - When the Space-wide Guest code is also on: "Guests will need up to three codes."
+- **Studio preview.** It bypasses the codes for members and labels that clearly.
+- **Changes take effect without republishing.** Codes are live state, not snapshot. All 7 locales are needed.
+- **Guest UX.** Titles and durations stay visible with a lock (owner decision D4b, recommended default). Tapping play opens a code prompt for the first locked layer. The error message is the same for a wrong code, a locked tenant, and an unknown recording.
+
+**Ship order recommendation:** ship **before** the R2 migration, as its own workstream (W3a). The check sits in Next.js before a URL or token is minted, so it works with Supabase signed URLs today. R2 then adds epoch revocation. Shipping first also closes the requirement independently of the infrastructure decision. Dependency: W0 (media hygiene), plus owner approval of the scope (D4) and code format.
+
+**Migration:** `0047_media_access_codes` if W0's bucket migration takes another number (renumber at implementation). It needs a rollback file with a guard (refuse if any row exists, unless `force_token` is supplied), following the 0036–0046 pattern.
+
+**Tests:**
+- Unit tests:
+  - the grant cookie (sign/verify, tamper, version mismatch, wrong tenant, 50-grant cap);
+  - the check order: all 8 combinations of Space/library/recording on/off, each with a valid or invalid grant.
+- DB harness:
+  - the RPC grants (anon and authenticated denied);
+  - a non-member cannot set a code;
+  - hashing: there is no plaintext column;
+  - cascade on item delete;
+  - the shared rate budget;
+  - the global ceiling.
+- Browser:
+  - both codes required;
+  - revocation mid-session;
+  - RTL;
+  - phone width.
+
 ## D.2 Playback token
 
 ```
@@ -185,7 +237,7 @@ Staging and Production use **separate buckets, KV namespaces, Worker environment
 
 ## E.5 Recommendation (streaming)
 
-Adopt the **Worker gateway with per-request token validation, a 10-minute token (benchmark 5/10/15), `private, no-store`, no edge caching, and the client re-resolve**. On cost, R2 + Worker is about $5-$75 per month against $29-$10,358 for Supabase uncached across 10-2,000 Spaces at 80,000 min per Space (03, planning scenario). On security it is stronger than today on revocation, Content-Type control and per-range authorization. On performance it should be equal or better, depending on Worker-to-R2 latency (Phase J must show it). On complexity it is moderate: one Worker of about 200-300 lines **[ESTIMATE]** plus KV, and the client change is small. Do **not** adopt presigned GETs for guests: they cannot be revoked, cannot be metered, and do not work on custom domains (02 §D).
+Adopt the **Worker gateway with per-request token validation, a 10-minute token (benchmark 5/10/15), `private, no-store`, no edge caching, and the client re-resolve**. On cost, see 03 v2: at the Base scenario R2 + Worker is about $5-$239 per month against $32-$10,876 for Supabase uncached across 10-2,000 Spaces. Those are estimates, not a forecast. The v1 figure of $75 is withdrawn. On security it is stronger than today on revocation, Content-Type control and per-range authorization. On performance it should be equal or better, depending on Worker-to-R2 latency (Phase J must show it). On complexity it is moderate: one Worker of about 200-300 lines **[ESTIMATE]** plus KV, and the client change is small. Do **not** adopt presigned GETs for guests: they cannot be revoked, cannot be metered, and do not work on custom domains (02 §D).
 
 ---
 
@@ -218,7 +270,7 @@ Scores: 1 is poor, 5 is good. For cost and DB write volume, 5 means cheap or low
 | Privacy | 4. Vendor logs hold IPs | 5 | 4 | **5**. Nonce is per resolve, nothing stored but aggregates | 5 | **5** |
 | Inflatable by a stranger | yes (real egress) | trivially | yes (forged beacons up to the ceiling) | yes, but only with **real downloads**, bounded by the mint ceiling and dedupe | bounded real-time | same as 4 |
 
-## F.3 Recommendation
+## F.3 Recommendation (v1, superseded by F.7 v2 where they conflict)
 
 **Approach 6.** The meter is Worker byte accounting. Each byte range served is attributed to `(tenant, objectKey, hour)`, deduplicated per token nonce, and converted to minutes as `unique_bytes / (size_bytes / duration_seconds)`, with `size_bytes` and `duration_seconds` from `billing_audio_verifications`. Legacy and exempt objects without provenance use `media_objects.size_bytes` and the stored `durationSeconds`, flagged `confidence='client_duration'`. An **optional** client beacon (`playedSeconds`, cumulative per token, LISTENING-METERING-OPTIONS.md V1) feeds a cross-check column only and never adds billed minutes. Approach 1 (R2 analytics) runs as a monthly independent cross-check.
 
@@ -269,3 +321,55 @@ Entitlement is `listening = 100000 + qty * 70000` minutes per month (ENTITLEMENT
 
 - **Organizer-facing usage meter:** the Billing page (`billingPageModel.ts`, `customerView.ts`) shows minutes used, allowance, percentage, a last-updated time (up to 1 h behind) and a note that usage is estimated from audio delivered.
 - **Prerequisites before `ENFORCE_LISTENING=on`:** the LISTENING-METERING-OPTIONS.md V7 checklist adapted to approach 6. That means Staging accuracy within ±5% of scripted ground truth on every browser in the matrix, one month of Production observe-only data with the R2-analytics cross-check divergence explained, legal review, and an explicit owner go decision. **A stranger can push a public Space towards its limit with real downloads.** Enforcement therefore stays reviewable: an Admin can reset suspect usage or grant a manual extension, audited.
+
+
+## F.7 v2 revision (2026-10-11): listening usage and delivered bandwidth are separate metrics
+
+The owner instruction: do not equate bytes delivered with human listening time. v1 (F.3–F.5) converted Worker bytes into minutes. v2 keeps **two metrics**, stored and shown separately.
+
+| Metric | What it measures | Source | Used for |
+|---|---|---|---|
+| **Delivered bandwidth** | Bytes the Worker actually streamed (sum of enqueued chunk lengths, per request) | Worker counting stream → Workers Analytics Engine, one data point per range request: `(tenant, object_key_hash, bytes, status)`. Sampling is acceptable | Cost monitoring, abuse detection, 70/85/95% **cost** alerts (05 §K). **Never** billed as listening minutes |
+| **Listening usage (minutes)** | Seconds of audio that a player actually played | Cookieless client beacon from `use-audio-player.ts`: `{tk, playedSeconds (cumulative per token), seq}`. Sent every 5 min of playback and on pause, end and `pagehide` (`navigator.sendBeacon`) to the Worker `/m`, which forwards to Cloudflare Queues; the consumer batches hourly into Supabase | The entitlement meter (100,000 min/month base, +70,000 per add-on). Observe-only until the owner approves enforcement |
+
+**Credited listening seconds for one token** = `min( max reported playedSeconds,  wall-clock seconds since mint + 60,  unique_bytes_for_token / bytes_per_second(object) + 30 )`.
+- The second bound stops a token from claiming more time than has passed. It defeats a forged huge counter.
+- The third bound stops claiming seconds that were never delivered. It uses the same-token byte union where available. Otherwise it uses the token's object duration.
+- Beacons are verified by the Worker: token HMAC valid, object matches, `exp + 15 min` not passed. A beacon without a valid token is dropped.
+
+### Behaviour evaluation
+
+| Behaviour | Delivered bandwidth | Listening usage (v2) |
+|---|---|---|
+| Seeking | Counts each fetched range (real cost) | Counts only played seconds. Skipped audio is not counted. A backwards seek replays, which counts as listening, as intended |
+| Buffering / read-ahead | Counts buffered bytes | Not counted until played |
+| Partial playback (leave after 3 min of a 40 min track) | Counts what was buffered (may be ~5–10 min) | ~3 min (last beacon on `pagehide`; at worst loses < 5 min if the beacon is lost) |
+| Repeated ranges / network retries | Counted again (real bandwidth) | Not affected (cumulative counter; max per token) |
+| Paused playback | 0 bytes after buffer fills | 0 (counter does not advance) |
+| Concurrent playback (two tabs, two people) | Sum | Sum. Each play has its own token, which is correct: two listeners are two listens |
+| Token sharing (one token URL pasted to many) | All downloads counted | **Under-counts** (one counter per token), bounded by the wall-clock bound. Mitigations: the 10-min token, the mint ceiling, and anomaly detection when bytes ≫ credited listening |
+| Beacon blocked (privacy extension, offline) | Unaffected | Under-counts. Reported as the "bandwidth without listening" gap. Billing errs in the customer's favour |
+| Forged beacons | n/a | Needs a valid token. Capped by the wall-clock bound and the byte bound |
+
+### Privacy
+- The beacon carries the token only. The token holds no identity; its nonce is per playback, not per listener.
+- The consumer keeps `max(playedSeconds)` keyed by `sha256(nonce)` in a transient table `media_listen_tokens`, deleted after 24 h. Only per-tenant, per-recording-hash, per-hour aggregates persist.
+- No IP, UA, cookie, user id or cross-Space identifier is stored. The Worker never reads `CF-Connecting-IP`.
+
+### Pipeline (replaces F.5's Durable Object design)
+```
+player --sendBeacon--> Worker /m  (verify token; drop if invalid)  --Queue.send-->  consumer (batch <=100, <=60 s)
+   consumer: per sha256(nonce) keep max(playedSeconds) in media_listen_tokens (24 h TTL)
+             -> delta credited seconds -> POST /api/internal/metering/ingest (HMAC, idempotency key = batch id)
+             -> rpc media_usage_ingest -> media_usage_hourly(tenant, object_key_hash, hour, listen_seconds, bandwidth_bytes, beacon_count)
+Analytics Engine (bandwidth) --hourly SQL API pull by cron--> same hourly row, column bandwidth_bytes
+```
+- No Durable Object. That avoids 03 Design A's duration cost, the largest R2 cost uncertainty.
+- If the POC shows Queues delivery is unreliable, fall back to direct batched POSTs from the Worker to the ingest route in `waitUntil`, accepting occasional loss (under-count).
+
+### Enforcement
+Unchanged from F.6, but it applies to **listening usage only**. Delivered bandwidth drives cost alerts and abuse review, never guest-facing degradation. `ENFORCE_LISTENING` stays off until:
+1. the POC shows listening accuracy within ±5% of scripted ground truth on the browser matrix (P-MET rows in 00);
+2. one month of observe-only Production data exists;
+3. there has been a legal/privacy review;
+4. the owner approves explicitly.
