@@ -1,0 +1,19 @@
+{
+  "name": "innerdwes-media-worker-poc",
+  "private": true,
+  "version": "0.0.0",
+  "description": "TASK 032.5 controlled Staging POC only: private R2 audio behind an authenticated Worker. Not production code.",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --local --env staging",
+    "deploy:staging": "wrangler deploy --env staging",
+    "test:local": "node test/poc-matrix.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261011.1",
+    "wrangler": "4.149.0"
+  },
+  "allowScripts": {
+    "workerd@1.20261006.1": true
+  }
+}

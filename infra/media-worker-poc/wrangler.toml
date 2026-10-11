@@ -1,0 +1,27 @@
+# TASK 032.5 controlled POC - STAGING ONLY. Owner-approved 2026-10-11.
+# No routes / custom domains: the POC uses the workers.dev address only (no DNS change).
+# Secrets (never committed; set with `wrangler secret put --env staging`):
+#   MEDIA_TOKEN_KEYS     JSON {"<kid>":"<base64url 32 bytes>"}  playback-token HMAC keys
+#   MEDIA_ADMIN_KEY      base64url 32 bytes                     HMAC for the epoch (revocation) endpoint
+name = "innerdwes-media-poc"
+main = "src/index.ts"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+[env.staging]
+name = "innerdwes-media-poc-staging"
+workers_dev = true
+vars = { ALLOWED_ORIGIN = "*", POC = "1" }
+r2_buckets = [ { binding = "BUCKET", bucket_name = "innerdwes-media-poc-staging" } ]
+kv_namespaces = [ { binding = "EPOCHS", id = "REPLACE_WITH_STAGING_KV_ID" } ]
+analytics_engine_datasets = [ { binding = "BW", dataset = "innerdwes_media_poc_bw" }, { binding = "LISTEN", dataset = "innerdwes_media_poc_listen" } ]
+observability = { enabled = true, head_sampling_rate = 1 }
+
+[[env.staging.queues.producers]]
+binding = "LISTEN_Q"
+queue = "innerdwes-media-poc-listen"
+
+[[env.staging.queues.consumers]]
+queue = "innerdwes-media-poc-listen"
+max_batch_size = 100
+max_batch_timeout = 30
