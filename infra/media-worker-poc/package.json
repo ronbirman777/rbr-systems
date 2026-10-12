@@ -5,8 +5,9 @@
   "description": "TASK 032.5 controlled Staging POC only: private R2 audio behind an authenticated Worker. Not production code.",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --local --env staging",
-    "deploy:staging": "wrangler deploy --env staging",
+    "dev": "wrangler dev --local",
+    "verify": "node scripts/guard.mjs config",
+    "deploy": "bash scripts/provision.sh deploy",
     "test:local": "node test/poc-matrix.mjs"
   },
   "devDependencies": {

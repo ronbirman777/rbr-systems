@@ -5,7 +5,7 @@
  * LOCAL evidence only: it is NOT a substitute for the hosted Staging POC rows.
  *
  *   node test/poc-matrix.mjs            (local)
- *   POC_BASE=https://<worker>.workers.dev POC_KEYS_FILE=... node test/poc-matrix.mjs --remote   (hosted Staging, later)
+ *   POC_BASE=https://<worker>.workers.dev POC_KEYS_FILE=... node test/poc-matrix.mjs --remote   (hosted POC Worker innerdwes-media-poc, after owner approval)
  */
 import { spawn, execFileSync } from "node:child_process";
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
@@ -21,11 +21,11 @@ const check = (id, name, ok, detail = "") => { results.push({ id, name, ok: !!ok
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---- keys -----------------------------------------------------------------
-let KEYS, ADMIN, BASE, BUCKET = "innerdwes-media-poc-staging";
+let KEYS, ADMIN, BASE, BUCKET = "innerdwes-media-poc";
 if (REMOTE) {
   const f = process.env.POC_KEYS_FILE; if (!f || !existsSync(f)) throw new Error("POC_KEYS_FILE required for --remote");
   ({ KEYS, ADMIN } = JSON.parse(readFileSync(f, "utf8"))); BASE = process.env.POC_BASE;
-  if (!/^https:\/\/innerdwes-media-poc-staging\.[a-z0-9-]+\.workers\.dev$/.test(BASE ?? "")) throw new Error("REFUSING: POC_BASE must be the staging POC workers.dev host");
+  if (!/^https:\/\/innerdwes-media-poc\.[a-z0-9-]+\.workers\.dev$/.test(BASE ?? "")) throw new Error("REFUSING: POC_BASE must be https://innerdwes-media-poc.<subdomain>.workers.dev");
 } else {
   KEYS = { k1: b64url(randomBytes(32)), k0: b64url(randomBytes(32)) };
   ADMIN = b64url(randomBytes(32));
@@ -51,12 +51,14 @@ const payload = Buffer.alloc(SIZE); for (let i = 0; i < SIZE; i++) payload[i] = 
 const wav = (() => { const d = 8000 * 2 * 2, b = Buffer.alloc(44 + d); b.write("RIFF", 0); b.writeUInt32LE(36 + d, 4); b.write("WAVE", 8); b.write("fmt ", 12); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(8000, 24); b.writeUInt32LE(16000, 28); b.writeUInt16LE(2, 32); b.writeUInt16LE(16, 34); b.write("data", 36); b.writeUInt32LE(d, 40); return b; })();
 
 let dev;
+// Local runs must never reach Cloudflare: strip any credentials/target overrides from the child environment.
+const localEnv = Object.fromEntries(Object.entries(process.env).filter(([k]) => !/^(CLOUDFLARE_|CF_|WRANGLER_ENV)/.test(k)));
 async function startLocal() {
   const dir = mkdtempSync(join(tmpdir(), "poc-"));
-  const put = (k, buf, ct) => { const f = join(dir, randomUUID()); writeFileSync(f, buf); execFileSync("npx", ["wrangler", "r2", "object", "put", `${BUCKET}/${k}`, "--local", "--env", "staging", "--file", f, "--content-type", ct], { cwd: here, stdio: "ignore" }); };
+  const put = (k, buf, ct) => { const f = join(dir, randomUUID()); writeFileSync(f, buf); execFileSync("npx", ["--no-install", "wrangler", "r2", "object", "put", `${BUCKET}/${k}`, "--local", "--file", f, "--content-type", ct], { cwd: here, env: localEnv, stdio: "ignore" }); };
   put(A_PUB, payload, "text/html"); // stored Content-Type deliberately WRONG: the Worker must force audio/mpeg
   put(A_DRAFT, payload, "audio/mpeg"); put(B_PUB, payload, "audio/mpeg"); put(A_HTML, Buffer.from("<script>alert(1)</script>"), "text/html"); put(A_WAV, wav, "audio/wav");
-  dev = spawn("npx", ["wrangler", "dev", "--local", "--env", "staging", "--port", "8799", "--ip", "127.0.0.1"], { cwd: here, stdio: ["ignore", "pipe", "pipe"] });
+  dev = spawn("npx", ["--no-install", "wrangler", "dev", "--local", "--port", "8799", "--ip", "127.0.0.1"], { cwd: here, env: localEnv, stdio: ["ignore", "pipe", "pipe"] });
   let out = ""; dev.stdout.on("data", (d) => (out += d)); dev.stderr.on("data", (d) => (out += d));
   for (let i = 0; i < 60; i++) { await sleep(1000); try { const r = await fetch(`${BASE}/nope`); if (r.status === 404) return; } catch {} }
   throw new Error("wrangler dev did not start:\n" + out.slice(-2000));
