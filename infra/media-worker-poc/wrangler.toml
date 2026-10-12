@@ -15,7 +15,7 @@ preview_urls = false
 vars = { ALLOWED_ORIGIN = "*", POC = "1" }
 
 r2_buckets = [ { binding = "BUCKET", bucket_name = "innerdwes-media-poc" } ]
-kv_namespaces = [ { binding = "EPOCHS", id = "REPLACE_WITH_POC_KV_ID" } ]   # innerdwes-media-poc-epochs (set by provision.sh)
+kv_namespaces = [ { binding = "EPOCHS", id = "9755718a140b42d09506168cee66508f" } ]   # innerdwes-media-poc-epochs (set by provision.sh)
 analytics_engine_datasets = [
   { binding = "BW", dataset = "innerdwes_media_poc_bw" },
   { binding = "LISTEN", dataset = "innerdwes_media_poc_listen" },
