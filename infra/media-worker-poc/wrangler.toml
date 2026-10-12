@@ -12,7 +12,7 @@ main = "src/index.ts"
 compatibility_date = "2026-10-01"
 workers_dev = true
 preview_urls = false
-vars = { ALLOWED_ORIGIN = "*", POC = "1" }
+vars = { ALLOWED_ORIGIN = "*", POC = "1", ACCT_MODE = "seg" }   # ACCT_MODE: "chunk" | "pipe" (delivered-byte accounting, src/index.ts)
 
 r2_buckets = [ { binding = "BUCKET", bucket_name = "innerdwes-media-poc" } ]
 kv_namespaces = [ { binding = "EPOCHS", id = "9755718a140b42d09506168cee66508f" } ]   # innerdwes-media-poc-epochs (set by provision.sh)

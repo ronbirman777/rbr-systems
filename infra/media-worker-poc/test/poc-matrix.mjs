@@ -47,6 +47,8 @@ const TA = randomUUID(), TB = randomUUID();
 const key = (t, kind, ext, folder = "audioFile") => `${t}/${folder}/${randomUUID()}/${randomUUID()}/${kind}.${ext}`;
 const A_PUB = key(TA, "published", "mp3"), A_DRAFT = key(TA, "draft", "mp3"), B_PUB = key(TB, "published", "mp3"), A_HTML = key(TA, "published", "html"), A_WAV = key(TA, "published", "wav", "teachAudioFile");
 const SIZE = 100_000;
+const A_BIG = key(TA, "published", "m4a"), BIG = 20_000_001;   // "seg" segments 2+4+8 MiB then the remainder (covers the 8 MiB cap); odd length
+const big = Buffer.alloc(BIG); for (let i = 0; i < BIG; i++) big[i] = (i * 7 + 3) % 253;
 const payload = Buffer.alloc(SIZE); for (let i = 0; i < SIZE; i++) payload[i] = i % 251;
 const wav = (() => { const d = 8000 * 2 * 2, b = Buffer.alloc(44 + d); b.write("RIFF", 0); b.writeUInt32LE(36 + d, 4); b.write("WAVE", 8); b.write("fmt ", 12); b.writeUInt32LE(16, 16); b.writeUInt16LE(1, 20); b.writeUInt16LE(1, 22); b.writeUInt32LE(8000, 24); b.writeUInt32LE(16000, 28); b.writeUInt16LE(2, 32); b.writeUInt16LE(16, 34); b.write("data", 36); b.writeUInt32LE(d, 40); return b; })();
 
@@ -57,7 +59,7 @@ async function startLocal() {
   const dir = mkdtempSync(join(tmpdir(), "poc-"));
   const put = (k, buf, ct) => { const f = join(dir, randomUUID()); writeFileSync(f, buf); execFileSync("npx", ["--no-install", "wrangler", "r2", "object", "put", `${BUCKET}/${k}`, "--local", "--file", f, "--content-type", ct], { cwd: here, env: localEnv, stdio: "ignore" }); };
   put(A_PUB, payload, "text/html"); // stored Content-Type deliberately WRONG: the Worker must force audio/mpeg
-  put(A_DRAFT, payload, "audio/mpeg"); put(B_PUB, payload, "audio/mpeg"); put(A_HTML, Buffer.from("<script>alert(1)</script>"), "text/html"); put(A_WAV, wav, "audio/wav");
+  put(A_DRAFT, payload, "audio/mpeg"); put(B_PUB, payload, "audio/mpeg"); put(A_HTML, Buffer.from("<script>alert(1)</script>"), "text/html"); put(A_WAV, wav, "audio/wav"); put(A_BIG, big, "audio/mp4");
   dev = spawn("npx", ["--no-install", "wrangler", "dev", "--local", "--port", "8799", "--ip", "127.0.0.1"], { cwd: here, env: localEnv, stdio: ["ignore", "pipe", "pipe"] });
   let out = ""; dev.stdout.on("data", (d) => (out += d)); dev.stderr.on("data", (d) => (out += d));
   for (let i = 0; i < 60; i++) { await sleep(1000); try { const r = await fetch(`${BASE}/nope`); if (r.status === 404) return; } catch {} }
@@ -110,6 +112,14 @@ try {
     [hd.status, inm.status, irOk.status, irBad.status].join(","));
   const wv = await get(A_WAV, mint(A_WAV), { Range: "bytes=0-43" });
   check("P-STR-08", "WAV under teachAudioFile served as audio/wav with a valid RIFF header", wv.status === 206 && wv.headers.get("content-type") === "audio/wav" && Buffer.from(await wv.arrayBuffer()).subarray(0, 4).toString() === "RIFF");
+  const bg = await get(A_BIG, mint(A_BIG)), bgb = Buffer.from(await bg.arrayBuffer());
+  const bx = await get(A_BIG, mint(A_BIG), { Range: "bytes=262000-19000000" }), bxb = Buffer.from(await bx.arrayBuffer());
+  const bt = await get(A_BIG, mint(A_BIG), { Range: "bytes=-300000" }), btb = Buffer.from(await bt.arrayBuffer());
+  check("P-STR-09", "multi-segment body (20,000,001 B: 2+4+8 MiB segments + remainder): full 200 and segment-spanning 206 ranges byte-exact with exact Content-Length",
+    bg.status === 200 && bg.headers.get("content-length") === String(BIG) && bgb.equals(big) &&
+    bx.status === 206 && bx.headers.get("content-range") === `bytes 262000-19000000/${BIG}` && bxb.equals(big.subarray(262000, 19000001)) &&
+    bt.status === 206 && bt.headers.get("content-length") === "300000" && btb.equals(big.subarray(BIG - 300000)),
+    [bg.status, bgb.length, bx.status, bxb.length, bt.status, btb.length].join(","));
   // --- 3.3 token lifecycle ---------------------------------------------------
   const shortTk = mint(A_PUB, { x: now() + 2 });
   const before = (await get(A_PUB, shortTk, { Range: "bytes=0-1" })).status; await sleep(3200);

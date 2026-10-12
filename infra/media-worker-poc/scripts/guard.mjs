@@ -21,6 +21,7 @@ export const EXPECT = Object.freeze({
   queue: "innerdwes-media-poc-listen",
   datasets: { BW: "innerdwes_media_poc_bw", LISTEN: "innerdwes_media_poc_listen" },
   vars: { ALLOWED_ORIGIN: "*", POC: "1" },
+  acctModes: ["seg", "chunk", "pipe"],
   secrets: ["MEDIA_ADMIN_KEY", "MEDIA_TOKEN_KEYS"],
 });
 const here = decodeURIComponent(new URL("..", import.meta.url).pathname);
@@ -46,6 +47,8 @@ export function checkConfig() {
   if (queues.length !== 2 || queues.some((q) => q !== EXPECT.queue)) fail(`wrangler.toml: producer + consumer must both use ${EXPECT.queue}`);
   if (!/binding\s*=\s*"LISTEN_Q"/.test(toml)) fail("wrangler.toml: queue producer binding LISTEN_Q missing");
   if (!/\[observability\]\s*\n\s*enabled\s*=\s*false/.test(toml)) fail("wrangler.toml: [observability] enabled = false required (no invocation logs)");
+  const acct = toml.match(/ACCT_MODE\s*=\s*"([^"]*)"/)?.[1];
+  if (!EXPECT.acctModes.includes(acct)) fail(`wrangler.toml: vars.ACCT_MODE must be one of ${EXPECT.acctModes.join("|")}`);
   return { kvId: kv[0]?.[2] };
 }
 
@@ -102,6 +105,7 @@ export async function checkRemote({ post = false, kvId } = {}) {
       { name: "LISTEN", type: "analytics_engine", dataset: EXPECT.datasets.LISTEN },
       { name: "ALLOWED_ORIGIN", type: "plain_text", text: EXPECT.vars.ALLOWED_ORIGIN },
       { name: "POC", type: "plain_text", text: EXPECT.vars.POC },
+      { name: "ACCT_MODE", type: "plain_text" },
       ...EXPECT.secrets.map((n) => ({ name: n, type: "secret_text" })),
     ];
     const show = b.map((x) => `${x.name}:${x.type}${x.bucket_name ? "->" + x.bucket_name : ""}${x.queue_name ? "->" + x.queue_name : ""}${x.dataset ? "->" + x.dataset : ""}`);
@@ -111,6 +115,7 @@ export async function checkRemote({ post = false, kvId } = {}) {
       if (!w) { fail(`unexpected binding on Worker: ${x.name} (${x.type})`); continue; }
       for (const [k, v] of Object.entries(w)) if (x[k] !== undefined && x[k] !== v) fail(`binding ${x.name}: ${k}=${x[k]} expected ${v}`);
       if (x.type !== w.type) fail(`binding ${x.name}: type ${x.type} expected ${w.type}`);
+      if (x.name === "ACCT_MODE" && !EXPECT.acctModes.includes(x.text)) fail(`binding ACCT_MODE=${x.text} expected one of ${EXPECT.acctModes.join("|")}`);
     }
     if (post) for (const w of want) if (!b.some((x) => x.name === w.name)) fail(`after deploy: binding ${w.name} missing`);
     const obs = settings.result?.observability;

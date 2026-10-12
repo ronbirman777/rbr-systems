@@ -180,18 +180,27 @@ check("H-PRIV-01", "KV holds only epoch:<tenant> and lt:<32-hex hash> (24 h TTL)
 const sql = async (q) => { const r = await cf(`/analytics_engine/sql`, { method: "POST", body: q }); const t = await r.text(); try { return JSON.parse(t); } catch { return { error: t.slice(0, 300) }; } };
 let bw, li;
 for (let i = 0; i < 12; i++) {
-  bw = await sql(`SELECT blob3 AS status, count() AS points, SUM(_sample_interval * double1) AS bytes FROM innerdwes_media_poc_bw WHERE timestamp >= toDateTime('${runStart}') AND blob1 = '${TA}' GROUP BY status FORMAT JSON`);
+  // row-level (NOT sample-weighted) values: each stored row is exactly what the Worker wrote for one response
+  bw = await sql(`SELECT blob3 AS status, blob4 AS outcome, blob5 AS mode, double3 AS exact, double1 AS bytes, double2 AS requested, double4 AS high, _sample_interval AS si FROM innerdwes_media_poc_bw WHERE timestamp >= toDateTime('${runStart}') AND blob1 = '${TA}' FORMAT JSON`);
   li = await sql(`SELECT blob3 AS flag, count() AS points, SUM(_sample_interval * double1) AS seconds FROM innerdwes_media_poc_listen WHERE timestamp >= toDateTime('${runStart}') GROUP BY flag FORMAT JSON`);
   const bwBytes = (bw.data || []).reduce((s, r) => s + Number(r.bytes), 0);
-  if (bwBytes >= received * 0.98 && (li.data || []).length >= 2) break;
+  if ((bw.data || []).some((r) => r.outcome === "aborted") && (bw.data || []).some((r) => r.status === "200" && r.outcome === "complete") && (li.data || []).length >= 2) break;
   await sleep(15000);
 }
 const bwBytes = (bw.data || []).reduce((s, r) => s + Number(r.bytes), 0);
 const liSec = Object.fromEntries((li.data || []).map((r) => [r.flag, Number(r.seconds)]));
-check("H-MET-04", "Analytics Engine BW: Worker-recorded delivered bytes cover what this client received (abort included)", bwBytes >= received * 0.98 && bwBytes <= received + SIZE, `recorded ${bwBytes} B vs received ${received} B (abort read ${abortRecv} B); by status ${JSON.stringify(bw.data ?? bw)}`);
+const rows = bw.data || [], ab = rows.filter((r) => r.outcome === "aborted"), cp = rows.filter((r) => r.outcome === "complete");
+const abLow = ab.reduce((x, r) => x + Number(r.bytes), 0), abHigh = ab.reduce((x, r) => x + Number(r.high), 0), abReq = ab.reduce((x, r) => x + Number(r.requested), 0);
+const highAll = rows.reduce((x, r) => x + Number(r.high), 0), weighted = rows.reduce((x, r) => x + Number(r.si) * Number(r.bytes), 0), sampled = rows.filter((r) => Number(r.si) > 1).length;
+const MODE = rows[0]?.mode, BOUND = { seg: 8388608, chunk: 262144 }[MODE];
+check("H-MET-04", `BW per-response rows (${MODE} mode): every stored complete row exact (low == high == requested); the aborted stream flagged inexact with high - low <= ${BOUND} B and client-received <= high < requested`,
+  rows.length > 0 && BOUND !== undefined && rows.every((r) => r.mode === MODE) && cp.every((r) => Number(r.exact) === 1 && Number(r.bytes) === Number(r.requested) && Number(r.high) === Number(r.requested)) &&
+  ab.length >= 1 && ab.every((r) => Number(r.exact) === 0 && Number(r.high) - Number(r.bytes) <= BOUND) && abortRecv <= abHigh && abHigh < abReq,
+  `aborted: low ${abLow} high ${abHigh} client ${abortRecv} requested ${abReq}; ${rows.length} rows stored`);
+console.log(`INFO  AE totals are ESTIMATES: ${sampled}/${rows.length} rows sampled (_sample_interval > 1); raw low sum ${bwBytes} B, sample-weighted ${weighted} B, high ${highAll} B, client actually received ${received} B`);
 check("H-MET-05", "Analytics Engine LISTEN: 300 s credited ok + capped claim flagged 'capped'", liSec.ok === 300 && liSec.capped >= 55 && liSec.capped <= 200, JSON.stringify(li.data ?? li));
-const schema = await sql(`SELECT blob1, blob2, blob3, blob4, double1, double2, index1 FROM innerdwes_media_poc_bw WHERE timestamp >= toDateTime('${runStart}') LIMIT 50 FORMAT JSON`);
-check("H-PRIV-02", "AE rows carry only tenant id, 32-hex key hash, status - no IP, UA, token or key", (schema.data || []).length > 0 && (schema.data || []).every((r) => r.blob1 === TA && /^[0-9a-f]{32}$/.test(r.blob2) && /^(200|206)$/.test(r.blob3) && !r.blob4 && Number(r.double2 ?? 0) === 0), `${(schema.data || []).length} rows`);
+const schema = await sql(`SELECT blob1, blob2, blob3, blob4, blob5, blob6, blob7, double5, index1 FROM innerdwes_media_poc_bw WHERE timestamp >= toDateTime('${runStart}') LIMIT 100 FORMAT JSON`);
+check("H-PRIV-02", "AE BW rows carry only tenant id, 32-hex key hash, status, outcome, mode - no IP, UA, token or key", (schema.data || []).length > 0 && (schema.data || []).every((r) => r.blob1 === TA && /^[0-9a-f]{32}$/.test(r.blob2) && /^(200|206)$/.test(r.blob3) && /^(complete|aborted|short)$/.test(r.blob4) && /^(seg|chunk|pipe)$/.test(r.blob5) && !r.blob6 && !r.blob7 && Number(r.double5 ?? 0) === 0), `${(schema.data || []).length} rows`);
 writeFileSync(join(OUT, "hosted-metering.json"), JSON.stringify({ runStart, received, abortRecv, listenBytes: lrb.length, bw: bw.data, listen: li.data, kv: { L: lVal, C: cVal } }, null, 2));
 
 const failed = results.filter((r) => r.ok === false).length, local = results.filter((r) => r.ok === null).length;

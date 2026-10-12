@@ -21,6 +21,7 @@ export interface Env {
   MEDIA_ADMIN_KEY: string;
   ALLOWED_ORIGIN: string;
   POC: string;
+  ACCT_MODE?: string; // "seg" (default) | "chunk" | "pipe" - see segmentedBody / chunkedBody / pipedBody
 }
 type ListenMsg = { th: string; t: string; kh: string; s: number; ia: number; at: number };
 
@@ -91,19 +92,84 @@ function parseRange(h: string | null, size: number): Range {
 }
 
 /**
- * Counts delivered bytes without losing Content-Length: a plain TransformStream makes the runtime drop the
- * length header (chunked), which Safari's media stack dislikes, so the counted stream feeds a FixedLengthStream.
+ * Delivered-byte accounting (docs/media/r2-audit/07-POC-ACCOUNTING.md). All modes keep Content-Length by writing
+ * into a FixedLengthStream, and none touches individual bytes in JavaScript.
+ *   "seg" (default): the response is assembled from consecutive R2 range reads, each piped NATIVELY (pipeTo,
+ *            preventClose) into the response. Segments grow 2 -> 4 -> 8 MiB and stay at 8 MiB (each segment costs
+ *            ~0.5 ms CPU, so a full 44 MB file is 7 segments). EXACT on completion. On abort BOUNDED: low = completed
+ *            segments, high = low + the segment in flight (2 MiB in the first 2 MiB, 4 MiB up to 6 MiB, then 8 MiB). Every segment after the first is read with
+ *            onlyIf etagMatches, so a response can never mix two versions of an object (mismatch -> response aborted).
+ *            The next segment's read is started while the current one streams, to avoid a gap.
+ *   "chunk": the R2 body is read natively into 256 KiB blocks (BYOB readAtLeast) and each block is written to
+ *            the response. EXACT on completion. On abort it is BOUNDED: low = bytes of fully accepted blocks,
+ *            high = low + the one block that was in flight (at most 256 KiB, possibly partly sent).
+ *   "pipe":  fully native pipeTo. EXACT on completion; on abort UNKNOWN: low = 0, high = requested length.
+ * "Delivered" means accepted by the Workers runtime for sending, not received by the client: on a disconnect the
+ * client can have received less (network buffering). Cloudflare's own responseBodySize is the account-level check.
  */
-function countingStream(body: ReadableStream, length: number, onDone: (bytes: number) => void): ReadableStream {
-  let bytes = 0, reported = false;
-  const report = () => { if (!reported) { reported = true; onDone(bytes); } };
-  const counter = new TransformStream({
-    transform(chunk, ctl) { bytes += chunk.byteLength; ctl.enqueue(chunk); },
-    flush() { report(); },
-  });
+const ACCT_BLOCK = 256 * 1024;
+type Delivery = { low: number; high: number; outcome: "complete" | "aborted" | "short" }; // exact when low === high
+
+function chunkedBody(body: ReadableStream, length: number): { stream: ReadableStream; done: Promise<Delivery> } {
   const fixed = new FixedLengthStream(length);
-  body.pipeThrough(counter).pipeTo(fixed.writable).catch(report); // client abort: record what was delivered
-  return fixed.readable;
+  const writer = fixed.writable.getWriter();
+  const reader = body.getReader({ mode: "byob" });
+  let accepted = 0, inFlight = 0;
+  const done = (async (): Promise<Delivery> => {
+    try {
+      while (accepted < length) {
+        const want = Math.min(ACCT_BLOCK, length - accepted);
+        const { value, done: end } = await reader.readAtLeast(want, new Uint8Array(want));
+        if (value && value.byteLength) { inFlight = value.byteLength; await writer.write(value); accepted += inFlight; inFlight = 0; }
+        if (end || !value || value.byteLength < want) break;
+      }
+      await writer.close();
+      return { low: accepted, high: accepted, outcome: accepted === length ? "complete" : "short" };
+    } catch {
+      reader.cancel().catch(() => {}); writer.abort().catch(() => {});
+      return { low: accepted, high: accepted + inFlight, outcome: "aborted" };
+    }
+  })();
+  return { stream: fixed.readable, done };
+}
+
+const ACCT_SEG = 2 * 1024 * 1024, ACCT_SEG_MAX = 8 * 1024 * 1024;
+
+function segmentedBody(env: Env, key: string, etag: string, offset: number, length: number, first: R2ObjectBody, firstLen: number): { stream: ReadableStream; done: Promise<Delivery> } {
+  const fixed = new FixedLengthStream(length);
+  let sent = 0, inFlight = firstLen, idx = 1;
+  const read = (at: number) => { const n = Math.min(ACCT_SEG * 2 ** Math.min(idx++, 2), ACCT_SEG_MAX, length - at); return { n, p: n > 0 ? env.BUCKET.get(key, { range: { offset: offset + at, length: n }, onlyIf: { etagMatches: etag } }) : null }; };
+  const done = (async (): Promise<Delivery> => {
+    let body: ReadableStream | null = first.body;
+    let next = read(firstLen);
+    try {
+      for (;;) {
+        await body!.pipeTo(fixed.writable, { preventClose: true });
+        sent += inFlight; inFlight = 0;
+        if (sent >= length || !next.p) break;
+        const o = await next.p;
+        if (!o || !("body" in o)) throw new Error("object changed or vanished mid-response");
+        body = (o as R2ObjectBody).body; inFlight = next.n;
+        next = read(sent + inFlight);
+      }
+      await fixed.writable.close();
+      return { low: sent, high: sent, outcome: "complete" };
+    } catch {
+      next.p?.then((o) => { if (o && "body" in o) (o as R2ObjectBody).body.cancel().catch(() => {}); }).catch(() => {});
+      fixed.writable.abort().catch(() => {});
+      return { low: sent, high: sent + inFlight, outcome: "aborted" };
+    }
+  })();
+  return { stream: fixed.readable, done };
+}
+
+function pipedBody(body: ReadableStream, length: number): { stream: ReadableStream; done: Promise<Delivery> } {
+  const fixed = new FixedLengthStream(length);
+  const done = body.pipeTo(fixed.writable).then(
+    (): Delivery => ({ low: length, high: length, outcome: "complete" }),
+    (): Delivery => ({ low: 0, high: length, outcome: "aborted" }),
+  );
+  return { stream: fixed.readable, done };
 }
 
 async function serveObject(req: Request, env: Env, ctx: ExecutionContext, key: string): Promise<Response> {
@@ -127,20 +193,22 @@ async function serveObject(req: Request, env: Env, ctx: ExecutionContext, key: s
   if (range === "unsatisfiable") return new Response(null, { status: 416, headers: { ...base, "Content-Range": `bytes */${size}` } });
 
   const kh = (await sha256hex(key)).slice(0, 32);
-  const record = (bytes: number, status: number) => {
-    try { env.BW.writeDataPoint({ blobs: [p.t, kh, String(status)], doubles: [bytes], indexes: [p.t] }); } catch { /* observe-only */ }
+  const mode = env.ACCT_MODE === "pipe" || env.ACCT_MODE === "chunk" ? env.ACCT_MODE : "seg";
+  // BW row: blobs [tenant, keyHash, status, outcome, mode], doubles [deliveredLow, requested, exact(1|0), deliveredHigh]
+  const record = (d: Delivery, requested: number, status: number) => {
+    try { env.BW.writeDataPoint({ blobs: [p.t, kh, String(status), d.outcome, mode], doubles: [d.low, requested, d.low === d.high ? 1 : 0, d.high], indexes: [p.t] }); } catch { /* observe-only */ }
   };
   if (req.method === "HEAD") {
     const h = range ? { ...base, "Content-Range": `bytes ${range.offset}-${range.offset + range.length - 1}/${size}`, "Content-Length": String(range.length) } : { ...base, "Content-Length": String(size) };
     return new Response(null, { status: range ? 206 : 200, headers: h });
   }
-  const obj = await env.BUCKET.get(key, range ? { range: { offset: range.offset, length: range.length } } : undefined);
-  if (!obj) return notFound(env);
   const status = range ? 206 : 200;
-  let done!: (n: number) => void;
-  const finished = new Promise<number>((r) => (done = r));
-  ctx.waitUntil(finished.then((n) => record(n, status)));
-  const body = countingStream(obj.body, range ? range.length : size, done);
+  const offset = range ? range.offset : 0, length = range ? range.length : size;
+  const firstLen = mode === "seg" ? Math.min(ACCT_SEG, length) : length;
+  const obj = await env.BUCKET.get(key, (range || mode === "seg") && length > 0 ? { range: { offset, length: firstLen } } : undefined);
+  if (!obj) return notFound(env);
+  const { stream: body, done } = mode === "seg" && length > 0 ? segmentedBody(env, key, head.etag, offset, length, obj, firstLen) : (mode === "pipe" ? pipedBody : chunkedBody)(obj.body, length);
+  ctx.waitUntil(done.then((d) => record(d, length, status)));
   const headers = range
     ? { ...base, "Content-Range": `bytes ${range.offset}-${range.offset + range.length - 1}/${size}`, "Content-Length": String(range.length) }
     : { ...base, "Content-Length": String(size) };
