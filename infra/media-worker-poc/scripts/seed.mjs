@@ -7,7 +7,8 @@
  * Prints player links that carry a 3-hour POC mint-session token scoped to tenant A only (it cannot fetch bytes
  * itself and can only mint <=15-min playback tokens for tenant A's objects).
  *
- *   node scripts/seed.mjs <audio dir from make-test-audio.sh> https://innerdwes-media-poc.<subdomain>.workers.dev
+ *   node scripts/seed.mjs <audio dir from make-test-audio.sh> https://innerdwes-media-poc.<subdomain>.workers.dev [--only=a60m4a,...]
+ * --only restricts the upload (and the printed links) to the listed fixture ids; already-seeded ids are never re-uploaded.
  */
 import { execFileSync } from "node:child_process";
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
@@ -18,7 +19,9 @@ import { EXPECT } from "./guard.mjs";
 
 const [AUDIO, BASE] = process.argv.slice(2);
 if (!AUDIO || !/^https:\/\/innerdwes-media-poc\.[a-z0-9-]+\.workers\.dev$/.test(BASE ?? "")) throw new Error("usage: seed.mjs <audioDir> https://innerdwes-media-poc.<sub>.workers.dev");
-if (process.argv.slice(4).some((a) => a.startsWith("--env") || a.startsWith("--name"))) throw new Error("REFUSING: --env/--name not allowed");
+const extra = process.argv.slice(4);
+if (extra.some((a) => a.startsWith("--env") || a.startsWith("--name"))) throw new Error("REFUSING: --env/--name not allowed");
+const ONLY = extra.find((a) => a.startsWith("--only="))?.slice(7).split(",").filter(Boolean);
 const here = decodeURIComponent(new URL("..", import.meta.url).pathname);
 execFileSync("node", [join(here, "scripts/guard.mjs"), "remote"], { stdio: "inherit" }); // throws (non-zero) on any mismatch
 const cfg = join(homedir(), ".config/innerdwes");
@@ -36,8 +39,9 @@ const plan = {
   aDraft: [fx.TA, "audioFile", "draft", "m4a", "marker-5min.m4a", "audio/mp4"],
   b5m4a: [fx.TB, "audioFile", "published", "m4a", "marker-5min.m4a", "audio/mp4"],
 };
+if (ONLY?.some((id) => !plan[id])) throw new Error(`unknown fixture id in --only (known: ${Object.keys(plan).join(", ")})`);
 for (const [id, [t, folder, kind, ext, file, ct]] of Object.entries(plan)) {
-  if (fx.objects[id]) continue;
+  if (fx.objects[id] || (ONLY && !ONLY.includes(id))) continue;
   const k = key(t, folder, kind, ext);
   execFileSync("npx", ["--no-install", "wrangler", "r2", "object", "put", `${EXPECT.bucket}/${k}`, "--remote", "--file", join(AUDIO, file), "--content-type", ct], { cwd: here, env: childEnv, stdio: ["ignore", "ignore", "inherit"] });
   fx.objects[id] = k;
@@ -49,4 +53,4 @@ const head = `v1.${kid}.${Buffer.from(JSON.stringify({ t: fx.TA, k: "", kd: "pub
 const ps = `${head}.${createHmac("sha256", Buffer.from(KEYS[kid], "base64url")).update(head).digest("base64url")}`;
 console.log("Seeded (synthetic): ", Object.keys(fx.objects).join(", "));
 console.log("\nDevice test links (valid 3 h, tenant A only):");
-for (const id of ["a60m4a", "a5m4a", "a5wav"]) console.log(`  ${id}: ${BASE}/poc/player?ps=${encodeURIComponent(ps)}&k=${encodeURIComponent(fx.objects[id])}`);
+for (const id of ["a60m4a", "a5m4a", "a5wav"].filter((i) => fx.objects[i])) console.log(`  ${id}: ${BASE}/poc/player?ps=${encodeURIComponent(ps)}&k=${encodeURIComponent(fx.objects[id])}`);
