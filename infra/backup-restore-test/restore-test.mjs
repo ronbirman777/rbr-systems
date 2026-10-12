@@ -19,7 +19,7 @@
  * (2,500 Class B/day free; egress free up to 3x stored). --limit keeps a sample run smaller still.
  */
 import { createHash } from "node:crypto";
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, mkdtempSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -42,12 +42,23 @@ const check = (id, name, ok, detail = "") => { report.checks.push({ id, name, ok
 const auth = await (await fetch("https://api.backblazeb2.com/b2api/v3/b2_authorize_account", { headers: { Authorization: "Basic " + Buffer.from(`${env.B2_KEY_ID}:${env.B2_APP_KEY}`).toString("base64") } })).json();
 if (!auth.authorizationToken) throw new Error(`authorize failed: ${auth.code ?? "unknown"}`);
 const api = auth.apiInfo.storageApi;
-const caps = api.capabilities ?? [];
-const WRITE_CAPS = caps.filter((c) => /^(write|delete|share)/i.test(c) || /Keys$/.test(c));
+// v3 (observed 2026-10-12) puts capabilities/bucketId/bucketName/namePrefix directly on storageApi; v4 nests them
+// under storageApi.allowed (buckets[]). Fail closed if the capability list cannot be read, so a changed response
+// shape can never pass as "read-only".
+const allowed = api.allowed ?? { capabilities: api.capabilities, bucketId: api.bucketId, bucketName: api.bucketName, namePrefix: api.namePrefix };
+const caps = allowed.capabilities;
+if (!Array.isArray(caps) || !caps.length) throw new Error("REFUSING: cannot read the key's capabilities from b2_authorize_account");
+const WRITE_CAPS = caps.filter((c) => /^(write|delete|bypass)/i.test(c) || /Keys$/.test(c));
 if (WRITE_CAPS.length) throw new Error(`REFUSING: key holds write/delete capabilities (${WRITE_CAPS.join(",")}). Create a read-only key.`);
 check("F11a", "restore key is read-only", true, caps.join(","));
-const allowedBucket = api.allowed?.buckets?.[0] ?? (api.bucketId ? { id: api.bucketId, name: api.bucketName } : null);
-if (!allowedBucket?.id) throw new Error("key must be restricted to exactly the backup bucket");
+// shareFiles (included in the B2 console "Read Only" preset) can mint download URLs but cannot change or delete data
+if (caps.includes("shareFiles")) check("F11b", "key can mint download authorizations (shareFiles); not used by this script", null);
+const allowedBuckets = allowed.buckets ?? (allowed.bucketId ? [{ id: allowed.bucketId, name: allowed.bucketName }] : []);
+if (allowedBuckets.length !== 1 || !allowedBuckets[0]?.id) throw new Error("key must be restricted to exactly the backup bucket");
+const allowedBucket = allowedBuckets[0];
+const EXPECT_BUCKET = arg("--bucket");
+if (EXPECT_BUCKET && allowedBucket.name !== EXPECT_BUCKET) throw new Error(`REFUSING: key is restricted to bucket "${allowedBucket.name}", expected "${EXPECT_BUCKET}"`);
+check("F11c", "key restricted to exactly one bucket", true, `${allowedBucket.name}${EXPECT_BUCKET ? " (matches --bucket)" : ""}; namePrefix=${allowed.namePrefix ?? "none"}`);
 const call = async (op, body) => { const r = await fetch(`${api.apiUrl}/b2api/v3/${op}`, { method: "POST", headers: { Authorization: auth.authorizationToken }, body: JSON.stringify(body) }); const j = await r.json(); if (!r.ok) throw new Error(`${op}: ${j.code} ${j.message}`); return j; };
 
 // 2. bucket security posture (F11 privacy, F12 encryption, retention / lifecycle / lock)
@@ -79,7 +90,7 @@ for (const f of pick) {
   if (!r.ok) { manifest.push({ name: f.fileName, ok: false, status: r.status }); continue; }
   const buf = Buffer.from(await r.arrayBuffer());
   const rel = f.fileName.slice(PREFIX.length);
-  const dest = join(OUT, rel); mkdirSync(dirname(dest), { recursive: true }); writeFileSync(dest, buf);
+  const dest = join(OUT, rel); mkdirSync(dirname(dest), { recursive: true }); writeFileSync(dest, buf, { flag: "wx" }); // never overwrite
   const sha1 = createHash("sha1").update(buf).digest("hex");
   const b2sha1 = f.contentSha1 && f.contentSha1 !== "none" ? f.contentSha1.replace(/^unverified:/, "") : (f.fileInfo?.large_file_sha1 ?? null);
   manifest.push({ name: rel, size: buf.length, b2Size: f.contentLength, contentType: f.contentType, md5: createHash("md5").update(buf).digest("hex"), sha256: createHash("sha256").update(buf).digest("hex"), sha1, b2sha1, sha1Match: b2sha1 ? b2sha1 === sha1 : null, mtime: f.fileInfo?.src_last_modified_millis ?? null });
@@ -104,13 +115,17 @@ if (SRC) {
   check("F9", "file metadata: content type recorded in B2 matches Production mimetype", dl.every((m) => !src.get(m.name) || !src.get(m.name).mimetype || src.get(m.name).mimetype === m.contentType), "");
 }
 
-// 6. readability (macOS built-ins, no dependencies): afinfo for audio, sips for images
+// 6. readability (macOS built-ins, no dependencies). Header reads (afinfo, sips -g) pass truncated or corrupt files,
+// so every file is fully decoded: afconvert to PCM for audio, sips re-render to BMP for images, into a scratch dir.
 const audio = dl.filter((m) => /\.(mp3|m4a|aac|wav|ogg)$/.test(m.name)), images = dl.filter((m) => /\.(webp|png|jpe?g)$/.test(m.name));
 const readable = (cmd, args) => { try { execFileSync(cmd, args, { stdio: "pipe" }); return true; } catch { return false; } };
-const aOk = audio.filter((m) => readable("afinfo", [join(OUT, m.name)]));
-check("F7", "audio files decode (afinfo)", audio.length ? aOk.length === audio.length : null, `${aOk.length}/${audio.length}`);
-const iOk = images.filter((m) => m.size === 0 || readable("sips", ["-g", "pixelWidth", join(OUT, m.name)]));
-check("F8", "images decode (sips)", images.length ? iOk.length === images.length : null, `${iOk.length}/${images.length}`);
+const TMP = mkdtempSync(join(OUT, "..", "decode-"));
+const aOk = audio.filter((m) => readable("afconvert", ["-f", "WAVE", "-d", "LEI16", join(OUT, m.name), join(TMP, "a.wav")]));
+check("F7", "audio files fully decode (afconvert to PCM)", audio.length ? aOk.length === audio.length : null, `${aOk.length}/${audio.length}`);
+const iBad = images.filter((m) => !readable("sips", ["-s", "format", "bmp", join(OUT, m.name), "--out", join(TMP, "i.bmp")]));
+rmSync(TMP, { recursive: true, force: true });
+const badBlobs = [...new Set(iBad.map((m) => `${m.size}B sha256:${m.sha256.slice(0, 12)}`))];
+check("F8", "images fully decode (sips re-render)", images.length ? iBad.length === 0 : null, `${images.length - iBad.length}/${images.length}${iBad.length ? `; ${iBad.length} undecodable = ${badBlobs.length} distinct blob(s): ${badBlobs.slice(0, 5).join(", ")}` : ""}`);
 
 report.finishedAt = new Date().toISOString();
 report.manifest = manifest.map(({ name, size, sha256, md5, sha1Match }) => ({ name, size, sha256, md5, sha1Match }));
