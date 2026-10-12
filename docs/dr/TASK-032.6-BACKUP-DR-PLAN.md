@@ -1,6 +1,6 @@
 # TASK 032.6 — Backup and disaster-recovery hardening plan
 
-Status: **PLAN ONLY. Stopped at the implementation approval gate.**
+Status: **Workstreams B + C implemented and tested on an isolated, unpushed branch (§13). Stopped at the release approval gate (§15).** Everything else is still plan only.
 
 Nothing in this task changed any of the following:
 - Production;
@@ -89,8 +89,11 @@ GitHub secret and variable **names** were read; their values cannot be read.
 
   All of it is unencrypted at rest. There is no Time Machine destination.
 - The repo is on the Desktop. iCloud Desktop sync is off (`FXICloudDriveDesktop=0`).
-- Restored media is at `<session scratchpad>/b2-restore-run2-20261012-170007/`: 336 files, 16.3 MB, mode 0700, outside the repo.
-- An empty folder from the refused first attempt also exists.
+- **Restored media: deleted 2026-10-12 with owner approval.** Before deletion it was verified that the folder held
+  exactly the 334 restored objects (334/334 against the checksum manifest; sizes and MD5 334/334 against the
+  Production inventory), that no process, code or schedule referenced it, and that the report, inventory, SIZES/MD5
+  list and `SHA256SUMS.txt` were preserved in `~/.config/innerdwes/dr-evidence/2026-10-12-b2-restore/`. The empty
+  folder from the refused first attempt was deleted too. Credentials were not touched.
 - None of it is tracked by git. `git ls-files` contains no credentials, media or restore output; the only `.env*` file is the empty `app/.env.local.example`.
 
 ---
@@ -347,3 +350,211 @@ WS-B and WS-C remove the S1 supply-chain and mass-deletion paths within a day, a
 8. **RPO/RTO targets** in §6.7.
 9. **D-managed yearly drill** (a temporary paid Supabase project), when wanted.
 10. Separate task: clean up the 241 synthetic placeholder images in Production (G12).
+
+---
+
+## 13. Workstreams B + C: implementation status (2026-10-12)
+
+**State: implemented and tested on an isolated branch. NOT released.** Remote `main` and the scheduled job are
+unchanged.
+
+| Item | Value |
+|---|---|
+| Repo / branch | `innerdwes_backup_infra`, branch `task-032.6-backup-hardening` from `main` `7f9649b`. **Local only (not pushed).** |
+| Runbook | `docs/storage-backup-guard.md` in that branch |
+| Guard | `scripts/storage_backup_guard.py`. Fail-closed mirror guard: run lock, saved state, double source listing, deletion and erosion guards, `--max-delete`, `--b2-hard-delete=false`, verification against the plan-time object set |
+| Installer | `.github/actions/install-rclone`: rclone v1.75.2 linux-amd64, SHA-256 `349ac8fb…3702` checked against the GitHub asset digest, the release `SHA256SUMS` and a local hash. The PGP signature of `SHA256SUMS` was not checked. |
+| Workflows | `daily-storage-backup.yml` and the 3 manual workflows: `permissions: {}`, a main-only job gate, the shared writer concurrency group, pinned checkout, install before credentials, env-only remotes, no `rclone config create`. New `backup-guard-tests.yml` (no secrets). |
+| Tests | 38 guard tests (real rclone v1.75.2 on synthetic data; `rclone serve s3` for auth failures and outages; fault injection), 18 static workflow checks, and the existing TASK 027 suites. Full results are in §13.1. |
+
+### 13.1 Test evidence (local, macOS, rclone v1.75.2 osx-arm64 sha `610ab7d4…`)
+
+Every scenario in the TASK 032.6 testing list maps to at least one test:
+
+| Scenario | Test(s) | Outcome asserted |
+|---|---|---|
+| Normal / initial backup | `test_normal_backup_no_changes`, `test_initial_backup`, `test_backup_through_s3_endpoint` | Success; state written |
+| One new / changed / expected deletion | `test_one_new_object`, `test_one_changed_object`, `test_one_expected_deletion` | Success, exact effect |
+| Unexpected mass deletion | `test_unexpected_mass_deletion_blocked_before_sync` | BLOCKED, `sync` never invoked, backup untouched |
+| Large percentage reduction | `test_large_percentage_reduction_over_several_runs_blocked` | Slow erosion of 2 per run is BLOCKED at > 20% |
+| Small dataset deletion | `test_small_dataset_deletion` | 3 of 5 blocked; 1 of 5 allowed |
+| Empty source | `test_empty_source_bucket_blocked`, `test_empty_source_cannot_be_overridden`, `test_bucket_disappeared_blocked` | BLOCKED even with an override |
+| Authentication failure | `test_source_authentication_failure` | FAILED before sync |
+| Partial listing | `test_partial_listing_unreadable_directory`, `test_truncated_listing_output`, `test_listings_that_disagree_fail_closed` | FAILED before sync; a partial listing never becomes deletions |
+| Source / destination outage | `test_source_outage`, `test_destination_outage`, `test_destination_listing_failure_after_lock`, `test_destination_listing_empty_after_previous_backup_blocked` | FAILED / BLOCKED before sync. A dead endpoint fails in about 24 s. |
+| Network interruption / incomplete transfer | `test_network_interruption_during_sync_then_recovery`, `test_incomplete_transfer_skips_deletions_then_recovers` | FAILED; rclone skipped deletions; the next run reports it and recovers |
+| Checksum mismatch | `test_checksum_mismatch_detected`, `test_download_check_of_new_objects_failure`, `test_unexplained_object_in_backup_fails_verification` | FAILED |
+| Concurrent execution | `test_concurrent_run_blocked_by_fresh_lock`, `test_two_simultaneous_runs_at_most_one_syncs` (3 races per run), `test_stale_lock_from_interrupted_run_is_reported_and_recovered` | At most one run syncs |
+| Missing credentials | `test_missing_credentials` | FAILED with **zero** rclone calls |
+| Recovery after a failed run | Interruption and incomplete-transfer tests | Next run succeeds and reports the previous outcome |
+| Live changes during a run | `test_upload_during_run_is_not_a_false_failure`, `test_delete_during_run_is_not_a_false_failure` | No false failure; the change is handled by the next run |
+
+**Defects found and fixed by these tests before release:**
+1. An unreachable endpoint made the guard wait up to an hour per call. Bounded timeouts and retries now fail it in about 24 s.
+2. Post-sync verification raced with live uploads; it now verifies the plan-time object set.
+3. "Changed" compared timestamps as text across backend formats; it now parses them. The first parser dropped
+   fractional seconds with time zones, and `test_parse_time_handles_backend_formats` caught it.
+
+**Final local run (2026-10-12): 263 tests, all OK in 77 s.** That is 38 guard tests, 18 static checks and 207
+existing TASK 027 tests. Infra branch HEAD `c51b26a`.
+
+**Not testable locally:** B2 hide-marker semantics (asserted statically; release gate R3).
+
+### 13.2 GitHub Actions permission and secret-exposure review
+
+| Finding | Status |
+|---|---|
+| `curl \| sudo bash` in 4 workflows | **Fixed on the branch** (pinned, verified, no sudo) |
+| Workflow token permissions | Repo default is `read` and Actions cannot approve PRs (verified). The branch sets `permissions: {}` plus a job-level `contents: read`. |
+| Third-party actions | Only `actions/checkout`, pinned to the full SHA of v4.4.0. The repo setting `sha_pinning_required` is `false`; **recommend enabling it** (owner setting). |
+| Secrets reachable from other branches | **Fixed on the branch** (job `if: github.ref == 'refs/heads/main'`). Old branches `task-027-hosted-integration`, `task-027-migration-gate` and `task-027-recovery-snapshot` still contain the **old** workflows, which can be dispatched with the Production secrets. **Recommend deleting those branches** (owner approval). |
+| Branch protection / rulesets | **Not available**: GitHub Free, private repo (API 403). Mitigations: the single collaborator (`ronbirman777`); a main-only job gate; the static tests. Option: GitHub Pro ($4/month) for protection and required reviews. |
+| Environment-scoped secrets | Environments API reachable, 0 environments. Moving the secrets into an environment `backup-prod` limited to `main` is recommended at release (owner step); availability on Free private repos is to be confirmed in the UI. |
+| Fork PRs | `allow_forking: true`, private repo, 0 forks. Fork PRs never receive secrets; recommend disabling forking. |
+| Obsolete secrets (not rotated or deleted) | `TASK_027_SUPABASE_SECRET_KEY` and `TASK_027_MANIFEST_KEY` (TASK 027 closed). `TASK_027_APPLY_APPROVAL_CODE` is referenced by `task-027-migration-gate.yml` but **does not exist**. |
+| Remaining unavoidable exposure | The Supabase S3 key (full access) and the current B2 key (read-and-write) are still needed by the job until WS-D/WS-J. |
+
+### 13.3 Runtime impact
+
+- **Today:** two source listings plus one destination listing, plus a size check and a download comparison of
+  changed objects. That adds roughly 10–30 s to a run that averages 32 s, for 334 objects (estimate; to be measured
+  at release gate R2).
+- **The lock-settle wait** adds 3 s.
+
+---
+
+## 14. Cloud-only DR architecture and scale
+
+**Principle:** no step depends on the owner's Mac.
+- Backups, verification, restore tests and the watchdog run on GitHub Actions and Cloudflare.
+- Backups are stored on Backblaze B2.
+- Restores run on ephemeral cloud runners.
+- The Mac is only for development, administration and optional emergency access.
+- The 2026-10-12 local restore was a one-off verification, and its copies are deleted.
+
+```
+Supabase Storage ─┐                         ┌─► B2 mirror  innerdwes-production-backup (versions 14 d)
+R2 audio (future) ├─► GitHub Actions jobs ──┤
+Supabase DB ──────┘   (pinned tools,        └─► B2 vault   innerdwes-backup-vault (Object Lock 30 d; DB dumps 35 d / 12 mo)
+                       guard, encrypt)
+       restore drills: ephemeral runner + service containers (synthetic + Production-derived, auto-deleted)
+       watchdog: healthchecks.io dead-man switch  +  Cloudflare cron Worker (content checks)  ─► owner email
+```
+
+### 14.1 Scale
+
+These are assumptions to revisit, not measurements:
+- **Per Space:** 25 images (10 MB) plus 5 h of audio at 96 kbps (216 MB), so about 40 objects and 226 MB.
+- **Change rate:** about 1% of the data per day.
+- **B2:** $6.95/TB-month list price, to verify at purchase; the first 10 GB are free.
+- **Stored total:** mirror plus 14-day versions plus a 30-day vault, about 2.1× the data.
+
+| Spaces | Objects | Data | B2 stored (×2.1) | B2 storage $/mo | Incremental run (4-hourly) | Initial full copy | Full media restore (RTO) |
+|---|---|---|---|---|---|---|---|
+| 100 | 4k | 23 GB | 47 GB | ≈ $0.26 | < 1 min | ~10 min | < 30 min |
+| 500 | 20k | 113 GB | 237 GB | ≈ $1.6 | ~1–2 min | ~40 min | ~1 h |
+| 1,000 | 40k | 226 GB | 475 GB | ≈ $3.2 | ~2–3 min | ~1.5 h | ~2 h |
+| 2,000 | 80k | 452 GB | 950 GB | ≈ $6.5 | ~3–5 min | ~3 h | ~3–4 h |
+| 5,000 | 200k | 1.13 TB | 2.37 TB | ≈ $16 | ~5–10 min | ~6–8 h (**exceeds one job's 6 h**) | ~6–8 h (prioritised: active Spaces first in ~1 h) |
+
+**What changes with scale:**
+- **Runtime:** listings are 1,000 objects per call, so 200k objects means about 600 list calls per run, which is
+  fine. From about 2,000 Spaces, the initial seed and full restores must be **sharded by tenant prefix** (matrix
+  jobs) or use `--max-duration` with resumable runs.
+- **API limits:** B2 Class C (list) calls reach about 2,400/day at 5,000 Spaces, at the free 2,500/day cap. The
+  overage is about $0.004 per 1,000, which is negligible. Supabase S3 listing has no published hard limit; spread
+  shards over time.
+- **Egress:**
+  - incremental reads from Supabase are about 1% of data per day (≈ 340 GB/month at 5,000 Spaces, ≈ $8/month
+    beyond the 250 GB included);
+  - a **weekly full download verification from Supabase is NOT viable at scale** (≈ $400/month at 5,000 Spaces).
+    From 500 Spaces, verification uses stored SHA-256 (recorded at upload) plus a 1% random sample;
+  - with R2 as the source, egress is free, so full verification is possible;
+  - B2 egress is free up to 3× stored.
+- **GitHub Actions minutes** (private repo):
+  - about 400 min/month today, within the Free plan's 2,000;
+  - about 1,500–2,500 min/month at 2,000 Spaces;
+  - about 3,000–4,000 min/month at 5,000 Spaces → GitHub Pro (3,000 min, $4/month) or overage at $0.008/min
+    (≈ $10–30/month).
+- **Encryption:** SSE-B2 at rest on both buckets. DB dumps are `age`-encrypted before upload. Media is not
+  client-side encrypted (same trust level as Supabase/R2). Optional: an rclone `crypt` layer for the vault (key
+  management cost; decide later).
+- **DB/media consistency:**
+  - the nightly DB snapshot is at time T;
+  - the vault retains every media version for at least 30 days, so a restore takes the DB at T plus media
+    versions as of T or later;
+  - reconciliation reports DB rows whose media is missing, never deleting anything automatically.
+
+### 14.2 Monitoring and watchdog
+
+The watchdog must detect a run that **never started**.
+
+| Option | Detects a missing run | Content checks (staleness, counts, deletions, cost) | Cost | Notes |
+|---|---|---|---|---|
+| **healthchecks.io** (dead-man switch) | **Yes, natively** (no ping within period + grace → alert); also start/fail pings and duration | No (only what the job reports) | $0 (free tier: 20 checks) | New third-party account; the ping URL is a low-sensitivity secret |
+| **Cloudflare scheduled Worker** | Yes, by reading the GitHub runs API (fine-grained token, Actions: read) and B2 `_backup-state` (read-only key) | **Yes** | $0 (Workers Free cron) | We own the code; alerts via Cloudflare Email Routing `send_email` or Resend |
+| GitHub default failure email | **No** (only failures of runs that started) | No | $0 | Keep as a baseline |
+| Cronitor / Better Stack heartbeats | Yes | No | Free tiers are limited | Alternatives to healthchecks.io |
+| UptimeRobot heartbeat | Yes | No | Paid feature | — |
+
+**Recommendation:**
+- healthchecks.io for missed and failed runs and duration anomalies;
+- plus a daily Cloudflare cron Worker for content checks:
+  - newest success older than 12 h;
+  - live count below 95% of the 7-day max;
+  - more than max(10, 5%) hide markers in 24 h;
+  - weekly checksum result;
+  - stored bytes over 2× the 7-day median or 5 GB;
+  - DB dump older than 26 h;
+  - key expiry.
+
+Two independent systems, both $0.
+
+### 14.3 Immutable vault (next workstream, WS-E; nothing created)
+
+| Decision | Recommendation | Why |
+|---|---|---|
+| Separate bucket vs. locking the mirror | **Separate bucket** `innerdwes-backup-vault` | Object Lock can't be turned off; the live mirror stays untouched |
+| Mode | **Governance**, 30-day default retention | Admin override (`bypassGovernance`, owner-held key, MFA) remains possible for legal erasure. Move to compliance mode only after 60 days and a privacy-policy review. |
+| Write pattern | Append-only: `rclone copy` (never `sync`), no `--b2-hard-delete` | Overwrites create new versions; locked versions survive |
+| Lifecycle | Previous versions deleted 31 days after they stop being current (after the lock expires); to be verified in E3 | Bounded storage |
+| Credentials | Vault writer: `listBuckets, listFiles, readFiles, writeFiles` only. Vault reader (restore drills): read only. Admin: owner only. | A compromised writer can't delete; a compromised reader can't write |
+| Independent recovery access | A read-only vault key in the owner's password manager plus a sealed copy (second trustee) | Recovery doesn't depend on GitHub or the Mac |
+| Optional | A separate Backblaze account for the vault | Protects against compromise of the main account (owner decision) |
+
+### 14.4 Database backups (WS-G; nothing created)
+
+See §6 for the pipeline. Implementation details:
+- **Role:** `backup_reader` with `pg_read_all_data`, tried on Staging first. A pooled connection is not usable for
+  `pg_export_snapshot`, so the job uses the direct connection.
+- **Key management:**
+  - `age` recipients are the owner's offline key and a CI verify key;
+  - the CI verify key is stored as a secret, used only by the restore-check job, and rotated yearly.
+- **Integrity verification:**
+  - sha256 of the ciphertext and of the plaintext in a manifest;
+  - a nightly restore into an ephemeral `supabase/postgres:17.x` service container;
+  - checks: table counts, fingerprints of `pg_policies`, functions, extensions and grants, RLS flags, migration
+    head, and tenant-isolation probes (as role `authenticated` with two synthetic JWTs: tenant A cannot read
+    tenant B's rows);
+  - media reconciliation against the B2 listing.
+- **Cleanup of Production-derived data:** the decrypted dump and the container exist only on the ephemeral runner
+  and are destroyed with the job. No artifact upload.
+- **RPO/RTO:**
+
+  | | RPO | RTO |
+  |---|---|---|
+  | DB | ≤ 24 h | ≤ 4 h managed, ≤ 8 h independent |
+  | Media | ≤ 6 h (alert at 12 h) | ≤ 2 h up to 1,000 Spaces, sharded/prioritised beyond |
+
+---
+
+## 15. Release gates for Workstreams B + C (owner approval needed)
+
+| Gate | Action | Who |
+|---|---|---|
+| R0 | Approve pushing the branch (CI runs the tests on GitHub with no secrets) | Owner |
+| R1 | Review the PR; CI green | Owner |
+| R2 | Merge to `main`, then immediately a manual **`dry_run: true`** dispatch: the plan shows 0 deletions and counts = Production (334). The dry run writes only `_backup-state/`. | Owner approves the merge (a live change) |
+| R3 | Manual `backup-sync-test` on `__backup_test` confirms hide markers (no hard deletes) | Owner |
+| R4 | First scheduled run; watch 3 consecutive successes; check the job summary | Owner |
+| Rollback | Revert the merge on `main`. Backup data is untouched; the guard only writes under `_backup-state/`. | Owner |
