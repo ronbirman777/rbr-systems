@@ -55,7 +55,12 @@ fi
 grep -q 'REPLACE_WITH_POC_KV_ID' wrangler.toml && { echo "STOP: run 'provision' first (KV id not set)"; exit 1; }
 [ -f "$KEYS_FILE" ] || { echo "STOP: $KEYS_FILE missing (run 'provision')"; exit 1; }
 echo "== deploy -> innerdwes-media-poc (workers.dev only)"
-$W deploy --name innerdwes-media-poc 2>&1 | grep -E "workers\.dev|Uploaded|Deployed|rror|arning" || true
+LOG="$(mktemp)"; trap 'rm -f "$LOG"' EXIT
+if ! $W deploy --name innerdwes-media-poc </dev/null >"$LOG" 2>&1; then
+  sed -E 's/\x1b\[[0-9;]*m//g' "$LOG" | grep -iE "error|code:|enable|warn" | grep -viE "bearer|api_token" || true
+  echo "STOP: deploy failed - secrets NOT uploaded, nothing else changed"; exit 1
+fi
+sed -E 's/\x1b\[[0-9;]*m//g' "$LOG" | grep -iE "workers\.dev|uploaded|deployed|version id|warn" || true
 node -e 'const j=JSON.parse(require("fs").readFileSync(process.argv[1]));process.stdout.write(JSON.stringify(j.KEYS))' "$KEYS_FILE" | $W secret put MEDIA_TOKEN_KEYS --name innerdwes-media-poc >/dev/null
 node -e 'const j=JSON.parse(require("fs").readFileSync(process.argv[1]));process.stdout.write(j.ADMIN)' "$KEYS_FILE" | $W secret put MEDIA_ADMIN_KEY --name innerdwes-media-poc >/dev/null
 echo "== guard (post-deploy, exact bindings)"; node scripts/guard.mjs remote --post
