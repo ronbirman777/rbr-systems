@@ -93,15 +93,18 @@ Created 2026-10-11 (TASK 032 / 032.5, Part 2). Owner of the register: the active
 
 | ID | Requirement | Source / APR | Implementation | Evidence | Status | Gap | Sev | Next |
 |---|---|---|---|---|---|---|---|---|
-| BKP-01 | Daily DB backups | TASK 027 ✔ | Supabase Pro physical backups | `supabase backups list` 2026-10-11: 7 COMPLETED, latest 2026-10-10T22:06Z | VERIFIED (Production) | PITR off (RPO ~24 h) | S2 | D8 |
-| BKP-02 | Storage → B2 every ~4 h | TASK 027 ✔ | `innerdwes_backup_infra/.github/workflows/daily-storage-backup.yml` | 39/39 runs ok; last `38119667145` 2026-10-11T06:55Z, 332 objects | VERIFIED (Production) | Actual gaps up to ~10 h | S3 | External scheduler if needed |
-| BKP-03 | Audio included in backups | 032.5 ✔ | Whole `tenant-media` | B2 332 objects / 2 mp3 = Production 332 / 2 audio (2026-10-11) | VERIFIED | — | — | — |
-| BKP-04 | Prior versions ~14 days | TASK 027 ✔ | B2 lifecycle 14 days after hiding | Preflight runs 2026-10-02 | VERIFIED (as of 2026-10-02) | Re-read | S3 | Owner console check |
-| BKP-05 | Private / encrypted B2 | TASK 027 (historical) | ? | none | UNKNOWN | — | S1 | Owner console check |
-| BKP-06 | Immutability / deletion protection | 032.5 proposal (D3) | ✘ (no Object Lock; CI key can delete) | preflight `file_lock_enabled: false` | MISSING | Deletes propagate | S1 | W5 / D3 |
-| BKP-07 | Restore tested | — | ✘ | none | MISSING | No runbook or drill | S1 | W5 drill |
-| BKP-08 | Off-platform DB copy | — | ✘ | none | MISSING | — | S2 | Owner decision |
-| BKP-09 | Backup failure alerting | — | ✘ | none | MISSING | — | S2 | W5 |
+| BKP-01 | Daily DB backups | TASK 027 ✔ | Supabase Pro physical backups | `supabase backups list` 2026-10-12: 7 COMPLETED, latest 2026-10-11T22:06Z; `pitr_enabled: false` | VERIFIED (Production) | PITR off (recovery point ~24 h) | S2 | 032.6 §6.7 |
+| BKP-02 | Storage → B2 every ~4 h | TASK 027 ✔ | `innerdwes_backup_infra/.github/workflows/daily-storage-backup.yml` (`rclone sync`) | 2026-10-12: last 38/38 runs ok, last 2026-10-12T07:07Z; gaps 3.4–**11.4 h** | VERIFIED (Production) | Gaps up to 11.4 h; unpinned `curl \| sudo bash` rclone install in the job holding the keys (032.6 G1) | S1 | 032.6 WS-B/C |
+| BKP-03 | Audio included in backups | 032.5 ✔ | Whole `tenant-media` (the only Production bucket) | 2026-10-12 restore: Production 334 / B2 334 live, 2 mp3 both decode | VERIFIED | — | — | — |
+| BKP-04 | Prior versions ~14 days | TASK 027 ✔ | B2 lifecycle `daysFromHidingToDeleting: 14` (whole bucket) | Read-only `b2_list_buckets` 2026-10-12; 981 versions / 62 hide markers under tenant-media | VERIFIED (2026-10-12) | A key with `deleteFiles` defeats it | S2 | 032.6 WS-D/E |
+| BKP-05 | Private / encrypted B2 | TASK 027 (historical) | `allPrivate`, default SSE-B2 (AES256), no CORS, no replication | Read-only `b2_list_buckets` 2026-10-12 | VERIFIED (2026-10-12) | — | — | — |
+| BKP-06 | Immutability / deletion protection | 032.5 proposal (D3); 032.6 design | ✘ (no Object Lock as of 2026-10-02; CI key holds `deleteFiles` + lifecycle/encryption write) | Preflight run `36965326687` (2026-10-02): `file_lock_enabled: false`, capabilities; 2026-10-12 read: lock not readable with the RO key | MISSING | Deletes propagate; no `--max-delete` | S1 | 032.6 WS-C/D/E |
+| BKP-07 | Restore tested | 032.5 ✔ (owner 2026-10-12) | `infra/backup-restore-test/restore-test.mjs` (`9a5ca43`) | 2026-10-12: 334/334 restored, MD5 334/334 vs Production, B2 SHA-1 334/334, sizes 334/334, 0 missing/unexpected, 240.6 s; evidence `~/.config/innerdwes/dr-evidence/2026-10-12-b2-restore/` (SHA256SUMS digest `e724b8d5…`) | VERIFIED (media; one drill) | No runbook; DB restore never tested | S1 | 032.6 WS-H |
+| BKP-08 | Off-platform DB copy | — | ✘ | Workflows copy Storage only (2026-10-12) | MISSING | Supabase-only DB recovery | S1 | 032.6 WS-G |
+| BKP-09 | Backup failure alerting | — | ✘ (GitHub default failure email only, delivery unverified) | 2026-10-12 workflow review | MISSING | No missed/stale/count/deletion/checksum/cost alerts | S2 | 032.6 WS-F |
+| BKP-10 | Least-privilege backup credentials | 032.6 design | ✘ CI B2 key = read-and-write preset; Supabase S3 key = full access (cannot be scoped) | Preflight log 2026-10-02; Supabase docs *S3 Authentication* | MISSING | Compromise can delete source and backup | S1 | 032.6 WS-B/D/J |
+| BKP-11 | Restored copies and operator machine secured | 032.6 | FileVault **off**; restored Production media in session scratchpad (0700, untracked) | `fdesetup status`, `git ls-files` 2026-10-12 | PARTIALLY IMPLEMENTED | Unencrypted disk | S2 | 032.6 WS-A |
+| BKP-12 | First (unsafe) restore key revoked | 032.5 | Owner replaced it | Cannot be read without `listKeys` | UNKNOWN | — | S2 | Owner console check (WS-A1) |
 
 ### 2.5 Cloudflare R2 (TASK 032.5; approved in principle 2026-10-11, not implemented)
 
@@ -113,7 +116,7 @@ Created 2026-10-11 (TASK 032 / 032.5, Part 2). Owner of the register: the active
 | R2-04 | Subscription state enforcement at the token | PLANNED | 04 §D row 11 | POC P-TOK-05/06 |
 | R2-05 | R2-aware replacement for the 0046 `storage.objects` checks | PLANNED | 04 §D.3 | W2 |
 | R2-06 | Listening usage kept separate from delivered bandwidth; observe-only | PLANNED | 04 §F.7 | W4 |
-| R2-07 | R2 → B2 DR with immutability | PLANNED | 05 §H; GAP §B | W5 |
+| R2-07 | R2 → B2 DR with immutability | PLANNED | 05 §H; GAP §B; `docs/dr/TASK-032.6-BACKUP-DR-PLAN.md` §8 | 032.6 WS-I |
 | R2-08 | Cost within the modelled envelope | PLANNED | 03 v2 | POC P-COST |
 
 ### 2.6 TASK 033 — product polish (approved 2026-10-11; planning only)
