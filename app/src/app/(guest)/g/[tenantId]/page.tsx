@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { createPublicClient } from "@/lib/supabase/public";
 import { socialSpaceByTenantId } from "@/lib/share/publishedSocialSpace";
 import { spaceMetadata } from "@/lib/share/socialMetadata";
 import type { PublishedSpaceRow } from "@/components/guest/published-space-screen";
 import { renderPublishedSpace } from "@/lib/spaceTypes/guestRenderers";
 import { guestAccessCopy } from "@/lib/spaceTypes/guestAccessCopy";
-import { resolveGuestAccess } from "@/lib/guestAccess/effectiveAccess";
 import { GuestAccessScreen } from "@/components/guest/guest-access-screen";
 import { extractPublishedGuestIdentity } from "@/lib/guestAccess/publishedIdentity";
 
@@ -15,7 +13,8 @@ import { localeFromPublishedModules } from "@/lib/spaceSettings";
  * The genuinely unauthenticated guest route, looked up by tenant id. No
  * cookies, no session, no Supabase auth of any kind - it queries
  * published_spaces only, through the plain anon/publishable client,
- * selecting only the columns it needs (never `select *`). It never
+ * selecting only the columns it needs (never `select *`; since TASK 033
+ * through the shared socialSpaceByTenantId loader). It never
  * touches tenants, tenant_members, brand_configs, schedule_items, or
  * module_items: not "shouldn't", the code simply doesn't reference them,
  * and RLS would block it even if it tried. This is the customer's
@@ -56,27 +55,28 @@ export default async function GuestSpacePage({
   params: Promise<{ tenantId: string }>;
 }) {
   const { tenantId } = await params;
-  const supabase = createPublicClient();
+  // TASK 033: the same React-cached loader the layout and generateMetadata
+  // use, so the published_spaces read and the availability/access chain
+  // run ONCE per request instead of twice (layout + page). It reads the
+  // same published row through the same public client, and resolves access
+  // through the same resolveGuestAccess(); the one difference from the old
+  // inline chain is that an access-check exception fails closed as
+  // "unavailable" (a 404) instead of surfacing as a 500 - exactly what
+  // /s/[slug] has always done.
+  const loaded = await socialSpaceByTenantId(tenantId);
 
-  const { data: space } = await supabase
-    .from("published_spaces")
-    .select("product_type, name, theme, timezone, enabled_modules, modules")
-    .eq("tenant_id", tenantId)
-    .maybeSingle<PublishedSpaceRow & { product_type: string }>();
-
-  if (!space) notFound();
+  if (!loaded) notFound();
+  const space = loaded.row as unknown as PublishedSpaceRow & { product_type: string };
   // Commercial availability, then guest access code - one shared policy
   // (also enforced by /api/media), see resolveGuestAccess.
-  const access = await resolveGuestAccess(tenantId);
-  if (access === "unavailable") notFound();
-  if (access === "code-required") {
+  if (loaded.access === "unavailable") notFound();
+  if (loaded.access === "code-required") {
     const identity = extractPublishedGuestIdentity(space);
     // The gate speaks the Space's own language; a visitor's device locale
     // is never consulted, here or anywhere else in a Guest surface.
     const gateLocale = localeFromPublishedModules(space.modules);
     return <GuestAccessScreen tenantId={tenantId} {...identity} copy={guestAccessCopy(space.product_type, gateLocale)} locale={gateLocale} />;
   }
-
 
   // Space Type Registry: render by the snapshot's own product_type - only
   // AFTER availability and the access code have allowed this request to see

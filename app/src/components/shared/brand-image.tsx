@@ -1,5 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- guest media is served through /api/media, which 307s to a short-lived signed URL; next/image cannot be pointed at it (see the 028D findings). */
-import type { CSSProperties } from "react";
+"use client";
+
+import type { CSSProperties, SyntheticEvent } from "react";
 import { preload } from "react-dom";
 import { focalPointToObjectPosition, type FocalPoint } from "@/lib/media/focalPoint";
 import { mediaSrcSet } from "@/lib/media/cachePolicy";
@@ -24,7 +26,26 @@ import { mediaSrcSet } from "@/lib/media/cachePolicy";
  * must not be lazy, and 028D measured that as the single largest Guest
  * performance problem. `priority` opts an image into eager loading and
  * high fetch priority; everything else stays lazy.
+ *
+ * TASK 033 additions:
+ *   - A `priority` image is marked `data-guest-hero`: it is the screen's LCP
+ *     candidate, which the branded hero-wait overlay and Stage 2 of the
+ *     media prefetcher wait for (lib/guest/heroWait.ts).
+ *   - The Teach fade (`tt-fade-in`) now starts when the image has LOADED,
+ *     not when it mounted: an image still downloading at mount is marked
+ *     `data-fade="wait"` (held transparent, motion-allowed only) and flips
+ *     to `data-fade="in"` on load or error. An image already complete is
+ *     never hidden, and without JavaScript nothing is ever marked, so no
+ *     image can be left invisible.
  */
+function holdUntilLoaded(img: HTMLImageElement | null) {
+  if (img && !img.complete && !img.hasAttribute("data-fade")) img.setAttribute("data-fade", "wait");
+}
+
+function releaseFade(event: SyntheticEvent<HTMLImageElement>) {
+  const img = event.currentTarget;
+  if (img.getAttribute("data-fade") === "wait") img.setAttribute("data-fade", "in");
+}
 export function BrandImage({
   src,
   focal,
@@ -127,6 +148,10 @@ export function BrandImage({
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : undefined}
       decoding={priority ? "sync" : "async"}
+      data-guest-hero={priority ? "" : undefined}
+      ref={holdUntilLoaded}
+      onLoad={releaseFade}
+      onError={releaseFade}
       className={`object-cover tt-fade-in ${className}`}
       style={{ objectPosition: focalPointToObjectPosition(focal), ...style }}
     />

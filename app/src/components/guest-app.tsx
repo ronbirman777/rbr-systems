@@ -217,29 +217,37 @@ const GUEST_TABS: TabDef[] = [
  * because a mismatch would warm the wrong render and cost two
  * downloads instead of one.
  *
- * Deliberately omitted: Schedule, which has no images, and the Explore
- * SUB-screens (Meals, Treatments, Facilities, each item's own photo).
- * Those are two presses deep, so warming them would be speculation on
- * speculation - the kind of "preload the whole media library" the brief
- * rules out.
+ * TASK 033 (plan 4.6) staging:
+ *   Stage 2 - the FIRST image of each other tab (Team's first portrait,
+ *             Explore's first cover), started as soon as the hero is
+ *             decoded, so an early tab press finds its image ready.
+ *   Stage 3 - the rest of those tabs, then the first image of each
+ *             Explore sub-screen (Meals, Treatments, Facilities), started
+ *             only when the page is loaded and idle on a capable connection.
+ * Schedule has no images. Audio is never warmed (see the audio rule).
  */
 export function guestPrefetchItems(props: GuestAppProps, activeTab: TabKey): MediaPrefetchItem[] {
   const { enabledModules } = props;
   const items: MediaPrefetchItem[] = [];
+  /** First of a group is Stage 2, the rest Stage 3. */
+  const pushGroup = (group: MediaPrefetchItem[]) => {
+    group.filter((item) => item.src).forEach((item, i) => items.push({ ...item, stage: i === 0 ? 2 : 3 }));
+  };
 
   if (activeTab !== "facilitators" && enabledModules.includes("facilitators")) {
-    for (const f of props.facilitators) items.push({ src: f.imageUrl, sizes: FLOW_SIZES.frame });
+    pushGroup(props.facilitators.map((f) => ({ src: f.imageUrl, sizes: FLOW_SIZES.frame })));
   }
 
   if (activeTab !== "explore") {
+    const explore: MediaPrefetchItem[] = [];
     for (const [moduleKey, sizes] of Object.entries(EXPLORE_COVER_SIZES)) {
       if (!enabledModules.includes(moduleKey as OptionalModuleKey)) continue;
       const cover = props.moduleCoverImages?.[moduleKey];
-      if (cover?.imageUrl) items.push({ src: cover.imageUrl, sizes });
+      if (cover?.imageUrl) explore.push({ src: cover.imageUrl, sizes });
     }
     if (enabledModules.includes("customPages")) {
       for (const page of props.customPages ?? []) {
-        items.push({ src: page.imageUrl, sizes: EXPLORE_CUSTOM_PAGE_SIZES });
+        explore.push({ src: page.imageUrl, sizes: EXPLORE_CUSTOM_PAGE_SIZES });
       }
     }
     // TASK 029: Readings and Audio borrow a first item's own photo when
@@ -247,14 +255,28 @@ export function guestPrefetchItems(props: GuestAppProps, activeTab: TabKey): Med
     // actually render - warm THAT, not a cover that does not exist.
     if (enabledModules.includes("readings") && !props.moduleCoverImages?.readings?.imageUrl) {
       const fallback = (props.readings ?? []).find((r) => r.imageUrl);
-      if (fallback) items.push({ src: fallback.imageUrl, sizes: EXPLORE_COVER_SIZES.readings });
+      if (fallback) explore.push({ src: fallback.imageUrl, sizes: EXPLORE_COVER_SIZES.readings });
     }
     if (enabledModules.includes("audio") && !props.moduleCoverImages?.audio?.imageUrl) {
       const fallback = playableTracks(props.audio ?? []).find((a) => (a as DisplayFlowTrack).imageUrl) as
         | DisplayFlowTrack
         | undefined;
-      if (fallback) items.push({ src: fallback.imageUrl, sizes: EXPLORE_COVER_SIZES.audio });
+      if (fallback) explore.push({ src: fallback.imageUrl, sizes: EXPLORE_COVER_SIZES.audio });
     }
+    pushGroup(explore);
+  }
+
+  // Stage 3 tail: the first photo inside each Explore sub-screen - one
+  // press past Explore, so only ever background work.
+  const subScreens: [OptionalModuleKey, { imageUrl: string | null }[]][] = [
+    ["meals", props.meals],
+    ["treatments", props.treatments],
+    ["facilities", props.facilities],
+  ];
+  for (const [moduleKey, list] of subScreens) {
+    if (!enabledModules.includes(moduleKey)) continue;
+    const first = list.find((entry) => entry.imageUrl);
+    if (first) items.push({ src: first.imageUrl, sizes: FLOW_SIZES.frame, stage: 3 });
   }
 
   return items;
@@ -303,10 +325,10 @@ export function GuestApp(props: GuestAppProps) {
       <div className="flex-1 min-h-0 overflow-hidden flex flex-col">{current.render(props, setActive)}</div>
       <CreatedWithFooter locale={props.locale ?? DEFAULT_LOCALE} source="flow" />
 
-      {/* Step 4 of the loading ladder - renders nothing, and starts only
-          once this screen has finished loading and the main thread is
-          idle, so it can never delay the hero above. */}
-      <MediaPrefetch items={guestPrefetchItems(props, active)} />
+      {/* Step 4 of the loading ladder - renders nothing; Stage 2 starts
+          once this screen's hero is decoded and Stage 3 once the page is
+          loaded and idle, so it can never delay the hero above. */}
+      <MediaPrefetch items={guestPrefetchItems(props, active)} activeKey={current.key} />
 
       {visibleTabs.length > 1 && (
         <div

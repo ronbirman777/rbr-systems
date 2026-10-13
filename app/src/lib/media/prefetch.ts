@@ -22,13 +22,18 @@ import { mediaSrcSet } from "./cachePolicy";
  *
  * What it will not do:
  *
- *   - Compete with the current screen. It starts only once the page has
- *     loaded and the main thread is idle, and every link carries
- *     fetchpriority=low, so it can never push the LCP image back.
- *   - Stampede. Two in flight at a time, each starting only when the
- *     previous finishes.
- *   - Preload the media library. MEDIA_PREFETCH_CAP is a hard ceiling
- *     on how many images one session will ever warm this way.
+ *   - Compete with the current screen. Since TASK 033 it runs in two
+ *     stages: Stage 2 (the first image of each other tab) starts once
+ *     the current screen's hero is DECODED (lib/guest/heroWait.ts) -
+ *     earlier than the old load+idle, which left an early tab press
+ *     waiting ~2.7s - and Stage 3 (the speculative tail) still waits for
+ *     load and an idle main thread. Every link carries fetchpriority=low,
+ *     so neither can push the LCP image back.
+ *   - Stampede. Two in flight at a time, across both stages, each
+ *     starting only when the previous finishes.
+ *   - Preload the media library. MEDIA_PREFETCH_CAP (Stage 2) and
+ *     MEDIA_PREFETCH_BACKGROUND_CAP (Stage 3) are hard ceilings on how
+ *     many images one session will ever warm this way.
  *   - Spend a metered visitor's data. See mediaPrefetchAllowed.
  *
  * It is purely a cache warmer: it requests URLs the page is already
@@ -42,6 +47,16 @@ export type MediaPrefetchItem = {
   src: string | null | undefined;
   /** The same `sizes` the <img> will carry, or omitted if it carries none. */
   sizes?: string;
+  /**
+   * TASK 033 (plan 4.6) - when it is warmed:
+   *   2 (default, "high")   the first image of each other tab; starts as soon
+   *                         as the current screen's hero is decoded.
+   *   3 ("background")      everything else worth warming (remaining covers,
+   *                         first images of Explore sub-screens, galleries);
+   *                         starts only once the page has loaded and the main
+   *                         thread is idle, and only on a capable connection.
+   */
+  stage?: 2 | 3;
 };
 
 /**
@@ -67,6 +82,8 @@ export type MediaPrefetchItem = {
  * every module enabled, which is also the worst case.
  */
 export const MEDIA_PREFETCH_CAP = 12;
+/** TASK 033: Stage 3 (background) has its own budget of the same size. */
+export const MEDIA_PREFETCH_BACKGROUND_CAP = 12;
 /** In flight at once. Low enough that it cannot saturate a phone link. */
 export const MEDIA_PREFETCH_CONCURRENCY = 2;
 
@@ -97,6 +114,37 @@ export function mediaPrefetchAllowed(signals: {
 }
 
 /**
+ * TASK 033: whether the BACKGROUND stage (3) may run on top of Stage 2.
+ * Stage 3 is the speculative tail - images two presses deep - so it is off
+ * not only where all prefetching is off (mediaPrefetchAllowed) but also on a
+ * 3g connection and on a low-memory device (deviceMemory <= 2 GB), where it
+ * would compete with the screen the visitor is actually using. Absent
+ * signals (Safari) are permission, as above.
+ */
+export function mediaPrefetchBackgroundAllowed(signals: {
+  saveData?: boolean;
+  effectiveType?: string;
+  prefersReducedData?: boolean;
+  deviceMemory?: number;
+}): boolean {
+  if (!mediaPrefetchAllowed(signals)) return false;
+  if (signals.effectiveType === "3g") return false;
+  if (typeof signals.deviceMemory === "number" && signals.deviceMemory <= 2) return false;
+  return true;
+}
+
+/**
+ * Only the stable, authorized /api/media URL is ever warmed - never a signed
+ * Storage URL (those expire, and caching one would outlive its window) and
+ * never anything else. Every Guest prefetch inventory already produces only
+ * these; this makes it a rule rather than a habit. Expiry is then safe: a
+ * warmed 307 older than its cache window simply re-resolves.
+ */
+export function isPrefetchableMediaUrl(src: string): boolean {
+  return src.startsWith("/api/media/");
+}
+
+/**
  * The queue a given set of items produces: resolved, de-duplicated,
  * order preserved, capped.
  *
@@ -107,17 +155,119 @@ export function mediaPrefetchAllowed(signals: {
  * (a teacher's portrait in the header and again on About) must be warmed
  * once.
  */
-export function mediaPrefetchQueue(items: MediaPrefetchItem[], cap = MEDIA_PREFETCH_CAP) {
-  const seen = new Set<string>();
-  const out: { src: string; srcSet?: string; sizes?: string }[] = [];
+export type MediaPrefetchEntry = { src: string; srcSet?: string; sizes?: string };
+
+export function mediaPrefetchQueue(items: MediaPrefetchItem[], cap = MEDIA_PREFETCH_CAP, seen = new Set<string>()) {
+  const out: MediaPrefetchEntry[] = [];
   for (const item of items) {
     const src = item.src;
-    if (!src || seen.has(src)) continue;
+    if (!src || seen.has(src) || !isPrefetchableMediaUrl(src)) continue;
     seen.add(src);
     out.push({ src, srcSet: mediaSrcSet(src, item.sizes), sizes: item.sizes });
     if (out.length >= cap) break;
   }
   return out;
+}
+
+/**
+ * TASK 033: the two staged queues for one set of items - Stage 2 ("high")
+ * and Stage 3 ("background") - each capped by its own budget, de-duplicated
+ * ACROSS both (an image listed in both is warmed once, in the earlier
+ * stage), order preserved within each.
+ */
+export function mediaPrefetchPlan(
+  items: MediaPrefetchItem[],
+  { highCap = MEDIA_PREFETCH_CAP, backgroundCap = MEDIA_PREFETCH_BACKGROUND_CAP } = {}
+): { high: MediaPrefetchEntry[]; background: MediaPrefetchEntry[] } {
+  const seen = new Set<string>();
+  const high = mediaPrefetchQueue(
+    items.filter((i) => (i.stage ?? 2) === 2),
+    highCap,
+    seen
+  );
+  const background = mediaPrefetchQueue(
+    items.filter((i) => i.stage === 3),
+    backgroundCap,
+    seen
+  );
+  return { high, background };
+}
+
+export type MediaPrefetcher = {
+  /** Append entries to the queue (already-seen URLs are skipped). */
+  enqueue: (entries: MediaPrefetchEntry[]) => void;
+  /**
+   * Drop everything queued but NOT yet started and return it; in-flight
+   * warms finish. Used on a tab press, so the destination screen's own
+   * images get the connection first.
+   */
+  dropQueued: () => MediaPrefetchEntry[];
+  /** Stop, and withdraw every warm still outstanding. */
+  cancel: () => void;
+};
+
+/**
+ * One pump for a Guest session: at most `concurrency` warms in flight, each
+ * finishing (load or error) before the next starts, and a URL is never
+ * warmed twice in the same session, whichever stage asked for it.
+ */
+export function createMediaPrefetcher(
+  doc: Document,
+  { concurrency = MEDIA_PREFETCH_CONCURRENCY } = {}
+): MediaPrefetcher {
+  const queue: MediaPrefetchEntry[] = [];
+  const started = new Set<string>();
+  const pending = new Set<HTMLLinkElement>();
+  let cancelled = false;
+
+  const pump = () => {
+    while (!cancelled && pending.size < concurrency && queue.length) {
+      const entry = queue.shift()!;
+      if (started.has(entry.src)) continue;
+      started.add(entry.src);
+      const link = doc.createElement("link");
+      link.rel = "preload";
+      link.as = "image";
+      link.setAttribute("fetchpriority", "low");
+      if (entry.srcSet) {
+        // The canonical responsive-preload form: imagesrcset + imagesizes
+        // and NO href, so the browser runs its own candidate selection and
+        // lands on the same URL the <img> will. Adding href alongside is
+        // what produces a second, unused download.
+        link.setAttribute("imagesrcset", entry.srcSet);
+        if (entry.sizes) link.setAttribute("imagesizes", entry.sizes);
+      } else {
+        link.href = entry.src;
+      }
+      const done = () => {
+        pending.delete(link);
+        pump();
+      };
+      link.addEventListener("load", done, { once: true });
+      link.addEventListener("error", done, { once: true });
+      pending.add(link);
+      doc.head.appendChild(link);
+    }
+  };
+
+  return {
+    enqueue(entries) {
+      if (cancelled) return;
+      for (const entry of entries) {
+        if (!started.has(entry.src) && !queue.some((q) => q.src === entry.src)) queue.push(entry);
+      }
+      pump();
+    },
+    dropQueued() {
+      return queue.splice(0);
+    },
+    cancel() {
+      cancelled = true;
+      queue.length = 0;
+      for (const link of pending) link.remove();
+      pending.clear();
+    },
+  };
 }
 
 /**
@@ -132,43 +282,7 @@ export function prefetchMedia(
 ): () => void {
   const queue = mediaPrefetchQueue(items, cap);
   if (!queue.length) return () => {};
-
-  let next = 0;
-  let cancelled = false;
-  const pending = new Set<HTMLLinkElement>();
-
-  const pump = () => {
-    if (cancelled || next >= queue.length) return;
-    const entry = queue[next++];
-    const link = doc.createElement("link");
-    link.rel = "preload";
-    link.as = "image";
-    link.setAttribute("fetchpriority", "low");
-    if (entry.srcSet) {
-      // The canonical responsive-preload form: imagesrcset + imagesizes
-      // and NO href, so the browser runs its own candidate selection and
-      // lands on the same URL the <img> will. Adding href alongside is
-      // what produces a second, unused download.
-      link.setAttribute("imagesrcset", entry.srcSet);
-      if (entry.sizes) link.setAttribute("imagesizes", entry.sizes);
-    } else {
-      link.href = entry.src;
-    }
-    const done = () => {
-      pending.delete(link);
-      pump();
-    };
-    link.addEventListener("load", done, { once: true });
-    link.addEventListener("error", done, { once: true });
-    pending.add(link);
-    doc.head.appendChild(link);
-  };
-
-  for (let i = 0; i < concurrency; i++) pump();
-
-  return () => {
-    cancelled = true;
-    for (const link of pending) link.remove();
-    pending.clear();
-  };
+  const prefetcher = createMediaPrefetcher(doc, { concurrency });
+  prefetcher.enqueue(queue);
+  return prefetcher.cancel;
 }

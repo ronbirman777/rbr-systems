@@ -1,6 +1,7 @@
 import { parsePublishedTeachSpace, type PublishedTeachRow, type TeachGuestData } from "@/lib/teach/guestData";
 import { checkFlowGuestUrl } from "@/lib/teach/flowLinkServer";
 import { TeachGuestApp } from "./teach-guest-app";
+import { GuestDesktopShell } from "@/components/guest/guest-desktop-shell";
 
 /**
  * A retreat's linked InnerDweS Flow Space is checked AGAIN here, on every
@@ -32,9 +33,11 @@ async function withVerifiedFlowLinks(data: TeachGuestData): Promise<TeachGuestDa
  */
 export async function TeachPublishedSpaceScreen({ space }: { space: PublishedTeachRow }) {
   const data = await withVerifiedFlowLinks(parsePublishedTeachSpace(space));
+  // TASK 033: the same shared desktop Guest shell as Time to Flow - a
+  // centred phone-width column from 640px up, unchanged on a phone.
   return (
-    <div className="flex-1 flex flex-col w-full">
+    <GuestDesktopShell brand={data.brand} locale={data.locale}>
       <TeachGuestApp data={data} />
-    </div>
+    </GuestDesktopShell>
   );
 }

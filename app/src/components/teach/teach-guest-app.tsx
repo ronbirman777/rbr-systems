@@ -26,6 +26,7 @@ import {
 import { TeachIcon, type TeachIconName } from "./teach-icons";
 import { TeachImage } from "./teach-image";
 import { TEACH_SIZES } from "./teach-media-sizes";
+import { GUEST_COLUMN_MAX_WIDTH, columnSizes } from "@/lib/guest/column";
 import { MediaPrefetch } from "@/components/shared/media-prefetch";
 import type { MediaPrefetchItem } from "@/lib/media/prefetch";
 import { TeachClassCard, TeachAvailabilityCard } from "./teach-class-card";
@@ -75,7 +76,8 @@ const TEACH_CSS = `
 @keyframes tt-fade{from{opacity:0}to{opacity:1}}
 .tt-root .tt-reveal{animation:tt-rise .32s ease-out both}
 .tt-root .tt-expand{animation:tt-rise .22s ease-out both}
-.tt-root .tt-fade-in{animation:tt-fade .45s ease-out both}
+.tt-root .tt-fade-in[data-fade="in"]{animation:tt-fade .45s ease-out both}
+@media (prefers-reduced-motion: no-preference){.tt-root .tt-fade-in[data-fade="wait"]{opacity:0}}
 .tt-root .tt-range{accent-color:var(--rbr-primary);height:24px}
 @media (prefers-reduced-motion: reduce){.tt-root .tt-reveal,.tt-root .tt-expand,.tt-root .tt-fade-in{animation:none}}
 `;
@@ -113,11 +115,15 @@ function exploreTitle(data: TeachGuestData, key: "teachReadings" | "teachAudio" 
  * enough for this when they stopped being CSS background-images - see
  * ExploreCard.
  *
- * Deliberately omitted: the About gallery and certificate thumbnails,
- * and the Readings/Audio libraries behind the Explore cards. They are
- * below the fold of a tab nobody has opened, or a second press deep;
- * spending a phone's data on them is what "do not preload the entire
- * media library at startup" rules out.
+ * TASK 033 (plan 4.6) staging:
+ *   Stage 2 - the first image of each other tab: the About portrait, the
+ *             first class thumbnail on the Schedule's opening day, the
+ *             first Explore card. Started once the hero is decoded.
+ *   Stage 3 - the remaining Explore cards (retreats, custom pages), then
+ *             the About gallery. Started on load + idle, capable
+ *             connections only, within its own budget.
+ * Still never warmed: the Readings/Audio libraries behind the Explore
+ * cards, certificate thumbnails, and any audio.
  */
 export function teachPrefetchItems(
   data: TeachGuestData,
@@ -126,32 +132,48 @@ export function teachPrefetchItems(
 ): MediaPrefetchItem[] {
   const items: MediaPrefetchItem[] = [];
 
+  if (tab !== "schedule") {
+    // The class the Schedule opens on: its first day with a class (the
+    // same choice ScheduleScreen makes), first class with a photo.
+    const days = buildScheduleDays(data.classes, data.availability, data.todayIso, 14, data.timezone);
+    const opening = days.find((d) => d.classCount > 0)?.date;
+    const lead = opening ? classesOn(data.classes, opening, data.timezone).find((c) => url(c.imageRef)) : undefined;
+    if (lead) items.push({ src: url(lead.imageRef), sizes: TEACH_SIZES.classCardThumb, stage: 2 });
+  }
+
   if (tab !== "about" && data.settings.teachAbout.showTab) {
     const about = data.settings.teachAbout;
     items.push({
       src: url(about.profile.imageRef) ?? url(data.heroImageRef),
       sizes: ABOUT_PORTRAIT_SIZES,
+      stage: 2,
     });
   }
 
   if (tab !== "explore") {
     const cards = data.settings.teachExplore.cards;
+    const explore: MediaPrefetchItem[] = [];
     for (const key of ["teachReadings", "teachAudio", "teachContact"] as const) {
       if (exploreModuleStatus(data, key) !== "visible") continue;
       // Readings is the `feature` tile (see ExploreScreen), so it has a
       // box of its own and must be warmed at that box's candidate set.
       const sizes = key === "teachReadings" ? EXPLORE_FEATURE_CARD_SIZES : EXPLORE_CARD_SIZES;
-      items.push({ src: url(cards[key]?.imageRef ?? null), sizes });
+      explore.push({ src: url(cards[key]?.imageRef ?? null), sizes });
     }
     if (exploreModuleStatus(data, "teachRetreats") === "visible") {
       const lead = data.retreats.find((r) => url(r.imageRef));
-      if (lead) items.push({ src: url(lead.imageRef), sizes: EXPLORE_CARD_SIZES });
+      if (lead) explore.push({ src: url(lead.imageRef), sizes: EXPLORE_CARD_SIZES });
     }
     if (exploreModuleStatus(data, "customPages") === "visible") {
       for (const page of data.customPages) {
-        items.push({ src: url(page.imageRef), sizes: EXPLORE_CARD_SIZES });
+        explore.push({ src: url(page.imageRef), sizes: EXPLORE_CARD_SIZES });
       }
     }
+    explore.filter((item) => item.src).forEach((item, i) => items.push({ ...item, stage: i === 0 ? 2 : 3 }));
+  }
+
+  if (tab !== "about" && data.settings.teachAbout.showTab) {
+    for (const g of data.gallery) items.push({ src: url(g.imageRef), sizes: TEACH_SIZES.gallery, stage: 3 });
   }
 
   return items;
@@ -249,10 +271,10 @@ export function TeachGuestApp({
       data-testid="teach-guest-app"
     >
       <style>{TEACH_CSS}</style>
-      {/* Step 4 of the loading ladder - renders nothing, and waits for
-          this screen's own load and an idle main thread first, so it can
-          never push the hero back. */}
-      <MediaPrefetch items={teachPrefetchItems(data, tab, url)} />
+      {/* Step 4 of the loading ladder - renders nothing; Stage 2 waits for
+          this screen's hero to decode and Stage 3 for load and an idle
+          main thread, so it can never push the hero back. */}
+      <MediaPrefetch items={teachPrefetchItems(data, tab, url)} activeKey={page ? `${tab}:${page.kind}` : tab} />
       <DesktopTopNav data={data} tabs={tabs} tab={tab} onTab={goTab} url={url} />
       <div ref={scrollRef} className={`relative flex-1 overflow-x-clip ${embedded ? "overflow-y-auto" : ""}`}>
         {style.organicShapes && !page ? <OrganicShapes /> : null}
@@ -352,6 +374,11 @@ function DesktopTopNav({ data, tabs, tab, onTab, url }: { data: TeachGuestData; 
 // Home
 // ---------------------------------------------------------------------------
 
+/** TASK 033: the full-bleed hero spans the Guest column from 640px up, the viewport below. */
+const HERO_FULLBLEED_SIZES = columnSizes(GUEST_COLUMN_MAX_WIDTH, "100vw");
+/** The arch/circle portrait is 230px (arch) or 168px (circle) on the phone layout the column always shows. */
+const HERO_PORTRAIT_SIZES = "230px";
+
 /**
  * Responsive sizes use container queries so the Studio preview frame and a
  * real device agree: base = phone (< 640px, unchanged from the mobile
@@ -411,7 +438,7 @@ function Hero({
   if (fullbleed) {
     return (
       <div className="relative h-[360px] @min-[40rem]:h-[460px] @4xl:h-[560px] overflow-hidden -mt-2 @min-[40rem]:mt-0 @min-[40rem]:mx-6 @4xl:mx-10 @min-[40rem]:rounded-[var(--tt-radius-card)]">
-        <TeachImage priority sizes="100vw" src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className="absolute inset-0 w-full h-full" />
+        <TeachImage priority sizes={HERO_FULLBLEED_SIZES} src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className="absolute inset-0 w-full h-full" />
         <div aria-hidden="true" className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgb(20 30 25 / calc(var(--tt-overlay) * .4)) 0%, rgb(20 30 25 / calc(var(--tt-overlay) + .3)) 100%)" }} />
         <div className="absolute start-6 end-6 bottom-6 @min-[40rem]:start-10 @min-[40rem]:end-10 @min-[40rem]:bottom-10 @4xl:start-14 @4xl:bottom-14 @4xl:max-w-[640px]">{identity(true)}</div>
       </div>
@@ -433,7 +460,7 @@ function Hero({
         };
   return (
     <div className="flex flex-col items-center gap-5 px-6 pt-3 @min-[40rem]:flex-row @min-[40rem]:justify-between @min-[40rem]:gap-10 @min-[40rem]:mx-6 @min-[40rem]:p-10 @min-[40rem]:bg-[var(--tt-surface)] @min-[40rem]:border @min-[40rem]:border-[var(--tt-line)] @min-[40rem]:rounded-[calc(var(--tt-radius-card)+8px)] @4xl:mx-10 @4xl:gap-16 @4xl:px-16 @4xl:py-14">
-      <TeachImage priority sizes="(min-width: 896px) 340px, (min-width: 640px) 250px, 230px" src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className={`shrink-0 @min-[40rem]:order-last ${imgClass}`} style={imgStyle} />
+      <TeachImage priority sizes={HERO_PORTRAIT_SIZES} src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className={`shrink-0 @min-[40rem]:order-last ${imgClass}`} style={imgStyle} />
       <div className="@min-[40rem]:flex-1 @min-[40rem]:min-w-0">{identity(false)}</div>
     </div>
   );
@@ -601,7 +628,15 @@ function HomeScreen({
 // Schedule
 // ---------------------------------------------------------------------------
 
-const MONTHS_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+/**
+ * TASK 033: the agenda's short month label, in the Space's language. It used
+ * to be a hardcoded English array ("Oct" on a German or Hebrew Space). The
+ * date is a calendar date (no instant), so it is formatted in UTC from its
+ * own noon to keep the day/month from shifting across timezones.
+ */
+export function shortMonthLabel(dateIso: string, locale: Locale): string {
+  return new Intl.DateTimeFormat(locale, { month: "short", timeZone: "UTC" }).format(new Date(`${dateIso}T12:00:00Z`));
+}
 
 function ScheduleModeTabs({
   mode,
@@ -702,7 +737,10 @@ function ScheduleScreen({ data, desktop }: { data: TeachGuestData; desktop: bool
         {days.map((d) => {
           const active = d.date === date;
           const count = mode === "classes" ? d.classCount : d.availabilityCount;
-          const wd = shortWeekdayName(new Date(`${d.date}T12:00:00Z`).getUTCDay(), data.locale).toUpperCase();
+          // Uppercased by CSS, not String#toUpperCase(): the root carries the
+          // Space's `lang`, so the browser applies that language's casing
+          // rules (Turkish dotted İ, German ß) - TASK 033.
+          const wd = shortWeekdayName(new Date(`${d.date}T12:00:00Z`).getUTCDay(), data.locale);
           return (
             <button
               key={d.date}
@@ -719,7 +757,7 @@ function ScheduleScreen({ data, desktop }: { data: TeachGuestData; desktop: bool
                 color: active ? "var(--rbr-on-navigation)" : "var(--rbr-text)",
               }}
             >
-              <span className="text-[10px] font-semibold tracking-wider" style={{ opacity: active ? 0.9 : 0.6 }}>
+              <span className="text-[10px] font-semibold tracking-wider uppercase" style={{ opacity: active ? 0.9 : 0.6 }}>
                 {wd}
               </span>
               <span className="text-[19px] @min-[40rem]:text-[21px]" style={{ fontFamily: "var(--tt-font-display)" }}>
@@ -858,14 +896,14 @@ function ScheduleAgenda({
             return (
               <section key={d.date} id={anchor(d.date)} aria-label={formatShortDateLocalized(d.date, data.locale)} className="grid grid-cols-[96px_minmax(0,1fr)] gap-8 scroll-mt-28">
                 <div className="sticky top-24 self-start flex flex-col items-center py-3" style={{ background: d.date === data.todayIso ? "var(--rbr-primary-soft)" : "var(--tt-surface)", border: "1px solid var(--tt-line)", borderRadius: "var(--tt-radius-card)" }}>
-                  <span className="text-[11px] font-semibold tracking-wider" style={{ color: "var(--rbr-text-muted)" }}>
-                    {d.date === data.todayIso ? t("teach", "today") : shortWeekdayName(day.getUTCDay(), data.locale).toUpperCase()}
+                  <span className={`text-[11px] font-semibold tracking-wider ${d.date === data.todayIso ? "" : "uppercase"}`} style={{ color: "var(--rbr-text-muted)" }}>
+                    {d.date === data.todayIso ? t("teach", "today") : shortWeekdayName(day.getUTCDay(), data.locale)}
                   </span>
                   <span className="text-[34px] leading-none my-1" style={{ fontFamily: "var(--tt-font-display)" }}>
                     {day.getUTCDate()}
                   </span>
-                  <span className="text-[11px] font-semibold tracking-wider" style={{ color: "var(--rbr-text-muted)" }}>
-                    {MONTHS_SHORT[day.getUTCMonth()].toUpperCase()}
+                  <span className="text-[11px] font-semibold tracking-wider uppercase" style={{ color: "var(--rbr-text-muted)" }}>
+                    {shortMonthLabel(d.date, data.locale)}
                   </span>
                 </div>
                 <div className="flex flex-col gap-3">
@@ -890,7 +928,8 @@ function ScheduleAgenda({
  * The About portrait's box, named so the prefetcher asks for the same
  * render this screen will (see EXPLORE_CARD_SIZES for why that matters).
  */
-export const ABOUT_PORTRAIT_SIZES = "(min-width: 896px) 210px, 150px";
+// TASK 033: the 210px @4xl portrait is never reached inside the Guest column.
+export const ABOUT_PORTRAIT_SIZES = "150px";
 
 function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | null) => string | null }) {
   const a = data.settings.teachAbout;
@@ -1057,10 +1096,14 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
  * larger render; under-claiming costs sharpness, so the rounding only
  * ever goes one way.
  */
-export const EXPLORE_CARD_SIZES = "(min-width: 896px) 360px, (min-width: 576px) 50vw, 100vw";
+//
+// TASK 033: published Teach renders in the shared desktop Guest column from
+// 640px up (one card per row there), so the @4xl px values are gone and the
+// column width takes their place; below 640px the values are unchanged.
+export const EXPLORE_CARD_SIZES = columnSizes(GUEST_COLUMN_MAX_WIDTH, "(min-width: 576px) 50vw, 100vw");
 
 /** The lead tile: two of three columns, plus the gap between them. */
-export const EXPLORE_FEATURE_CARD_SIZES = "(min-width: 896px) 740px, (min-width: 576px) 50vw, 100vw";
+export const EXPLORE_FEATURE_CARD_SIZES = columnSizes(GUEST_COLUMN_MAX_WIDTH, "(min-width: 576px) 50vw, 100vw");
 
 function ExploreCard({
   title,
