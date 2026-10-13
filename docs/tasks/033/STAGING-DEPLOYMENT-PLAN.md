@@ -1,4 +1,4 @@
-# TASK 033 — Staging deployment plan (prepared, NOT executed)
+# TASK 033 — Staging deployment plan (approved and executed 2026-10-13 — see `STAGING-QA-REPORT.md`)
 
 Gate: no existing authorization covers deploying TASK 033 to Staging (owner instruction 2026-10-13: "If an existing
 authorization covers the specific Staging deployment, proceed; otherwise stop at the deployment gate"). This plan is

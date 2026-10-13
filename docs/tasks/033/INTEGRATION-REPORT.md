@@ -51,4 +51,4 @@ region move, D-PF2 cache window, P2 guest-access RPC and P3 media check (both ne
 
 Integration HEAD after corrections: `e3ed1eb` — vitest 3170 passed / 20 skipped (2 build-manifest checks skip when
 `.next` is older than sources), `tsc` clean, eslint 0 errors (29 warnings = baseline), `next build` OK. Local browser QA
-and before/after performance: `LOCAL-QA-REPORT.md`. Staging deployment: `STAGING-DEPLOYMENT-PLAN.md` (awaiting approval).
+and before/after performance: `LOCAL-QA-REPORT.md`. Staging deployment: `STAGING-DEPLOYMENT-PLAN.md`; deployed 2026-10-13 → `STAGING-QA-REPORT.md`.
