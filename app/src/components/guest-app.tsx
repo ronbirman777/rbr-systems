@@ -165,6 +165,8 @@ const GUEST_TABS: TabDef[] = [
         todayIso={props.todayIso}
         nowTime={props.nowTime}
         locale={props.locale ?? DEFAULT_LOCALE}
+        retreatStartDate={props.retreatProfile?.startDate ?? null}
+        retreatEndDate={props.retreatProfile?.endDate ?? null}
       />
     ),
   },

@@ -1,12 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState, useSyncExternalStore } from "react";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
 import { hasActivityExtras, type PublicScheduleItem } from "@/lib/schedule/types";
 import type { CSSProperties } from "react";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { buildRetreatDays, defaultRetreatDay } from "@/lib/schedule/retreatDays";
+import { dayTabId, RetreatDayHeader, RetreatDayNavigator } from "./guest/retreat-day-navigator";
 export type ScheduleScreenProps = {
   brand: BrandConfig;
   schedule: PublicScheduleItem[];
@@ -14,7 +16,13 @@ export type ScheduleScreenProps = {
   /** "HH:MM" in the Space timezone, for "now" / "up next" context. */
   nowTime: string;
   locale?: Locale;
+  /** TASK 033 P2: the retreat's optional first/last day ("YYYY-MM-DD", Space
+   * timezone). Unset means the range is derived from the activities. */
+  retreatStartDate?: string | null;
+  retreatEndDate?: string | null;
 };
+
+const noopSubscribe = () => () => {};
 
 // Every category chip derives from the organizer's own Primary/Accent -
 // alternating between the two brand-derived soft/foreground pairs for
@@ -31,14 +39,6 @@ const CATEGORY_CHIP_STYLE: Record<string, { background: string; color: string }>
 };
 const DEFAULT_CHIP_STYLE = { background: "color-mix(in srgb, var(--rbr-sand) 50%, transparent)", color: "var(--rbr-dusk)" };
 
-function weekdayLabel(dateIso: string): { weekday: string; day: string } {
-  const d = new Date(`${dateIso}T00:00:00`);
-  return {
-    weekday: d.toLocaleDateString(undefined, { weekday: "short" }),
-    day: d.toLocaleDateString(undefined, { day: "numeric" }),
-  };
-}
-
 /**
  * Visual Fidelity Phase 1 - ported from the approved Figma source's
  * ScheduleScreen: day strip + a genuine connecting timeline rail with a
@@ -51,22 +51,42 @@ function weekdayLabel(dateIso: string): { weekday: string; day: string } {
  * published_spaces.modules.schedule for guests) - there is no second
  * source of schedule truth, only a second way of looking at the same one.
  */
-export function ScheduleScreen({ brand, schedule, todayIso, nowTime, locale = DEFAULT_LOCALE }: ScheduleScreenProps) {
+export function ScheduleScreen({
+  brand,
+  schedule,
+  todayIso,
+  nowTime,
+  locale = DEFAULT_LOCALE,
+  retreatStartDate = null,
+  retreatEndDate = null,
+}: ScheduleScreenProps) {
   const { t } = createTranslator(locale);
   const vars = deriveThemeVars(brand) as CSSProperties;
+  const idPrefix = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const panelId = `${idPrefix}-schedule-panel`;
+  // "Today" markers only after mount, so the server render and the first
+  // client render agree (todayIso itself is already the Space's date).
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
 
-  const dates = useMemo(() => {
-    const unique = Array.from(new Set(schedule.map((i) => i.date))).sort();
-    return unique;
-  }, [schedule]);
+  // TASK 033 P2 (A1): every calendar day of the retreat, numbered by its
+  // offset from the start date - including days with no activities.
+  const days = useMemo(
+    () =>
+      buildRetreatDays({
+        activityDates: schedule.map((i) => i.date),
+        startDate: retreatStartDate,
+        endDate: retreatEndDate,
+        todayIso,
+      }).days,
+    [schedule, retreatStartDate, retreatEndDate, todayIso]
+  );
 
-  const [selectedDate, setSelectedDate] = useState<string>(() => {
-    if (dates.includes(todayIso)) return todayIso;
-    const upcoming = dates.find((d) => d >= todayIso);
-    return upcoming ?? dates[0] ?? todayIso;
-  });
+  const [selectedDate, setSelectedDate] = useState<string>(() => defaultRetreatDay(days, todayIso) ?? todayIso);
 
-  const activeDate = dates.includes(selectedDate) ? selectedDate : (dates[0] ?? todayIso);
+  const activeDate = days.some((d) => d.date === selectedDate)
+    ? selectedDate
+    : (defaultRetreatDay(days, todayIso) ?? todayIso);
+  const activeDay = days.find((d) => d.date === activeDate) ?? null;
 
   const items = useMemo(
     () =>
@@ -90,49 +110,37 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime, locale = DE
         </h1>
       </div>
 
-      {dates.length > 1 && (
-        <div className="px-4 mb-5">
-          <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {dates.map((d) => {
-              const active = d === activeDate;
-              const { weekday, day } = weekdayLabel(d);
-              return (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setSelectedDate(d)}
-                  className="flex-shrink-0 flex flex-col items-center justify-center w-[52px] h-[64px] rounded-2xl transition-all"
-                  style={
-                    active
-                      ? { background: "var(--rbr-navigation)", color: "var(--rbr-on-navigation)", boxShadow: "0 4px 12px rgba(0,0,0,0.12)" }
-                      : { background: "var(--rbr-cream)", color: "var(--rbr-dusk)", border: "1px solid color-mix(in srgb, var(--rbr-sand) 60%, transparent)" }
-                  }
-                >
-                  <span
-                    className="text-[9px] tracking-widest uppercase font-semibold"
-                    style={{
-                      fontFamily: "var(--rbr-font-ui)",
-                      opacity: active ? 0.75 : 1,
-                      color: active ? "var(--rbr-on-navigation)" : "var(--rbr-mist)",
-                    }}
-                  >
-                    {weekday}
-                  </span>
-                  <span className="text-[22px] leading-none mt-0.5 font-light" style={{ fontFamily: "var(--rbr-font-display)" }}>
-                    {day}
-                  </span>
-                  {active && <div className="w-1 h-1 rounded-full mt-1" style={{ background: "var(--rbr-secondary)" }} />}
-                </button>
-              );
-            })}
-          </div>
+      {days.length > 1 && (
+        <div className="mb-5">
+          <RetreatDayNavigator
+            days={days}
+            selected={activeDate}
+            onSelect={setSelectedDate}
+            locale={locale}
+            showToday={mounted}
+            panelId={panelId}
+            idPrefix={idPrefix}
+          />
         </div>
       )}
+      {days.length === 1 && activeDay && <RetreatDayHeader day={activeDay} locale={locale} showToday={mounted} />}
 
-      <div className="px-4 pb-10">
+      <div
+        className="px-4 pb-10"
+        {...(days.length > 1
+          ? { id: panelId, role: "tabpanel", "aria-labelledby": dayTabId(idPrefix, activeDate), tabIndex: 0 }
+          : {})}
+      >
         {items.length === 0 && (
-          <div className="text-xs px-1 py-2" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
-            {t("flow", "nothingScheduledDay")}
+          <div
+            className="mx-1 rounded-2xl px-4 py-5 text-center text-[12px]"
+            style={{
+              fontFamily: "var(--rbr-font-ui)",
+              color: "var(--rbr-mist)",
+              border: "1px dashed color-mix(in srgb, var(--rbr-sand) 70%, transparent)",
+            }}
+          >
+            {days.length > 0 ? t("flow", "noActivitiesThisDay") : t("flow", "nothingScheduledDay")}
           </div>
         )}
         <div className="flex flex-col">
