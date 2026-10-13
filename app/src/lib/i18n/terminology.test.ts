@@ -8,6 +8,8 @@ import { de } from "./dictionaries/de";
 import { es } from "./dictionaries/es";
 import { fr } from "./dictionaries/fr";
 import { he } from "./dictionaries/he";
+import { tr } from "./dictionaries/tr";
+import { it as itDictionary } from "./dictionaries/it";
 
 /**
  * Terminology decisions, pinned.
@@ -215,6 +217,99 @@ describe("terminology decisions", () => {
   });
 });
 
+/**
+ * Turkish and Italian (TASK 033, P5). These wordings are NOT owner- or
+ * native-approved yet - they are the terminology P5 settled on and recorded
+ * in docs/localization/GLOSSARY-tr.md / GLOSSARY-it.md as pending native
+ * review. They are pinned so a partial edit cannot leave one product
+ * speaking two vocabularies; a native reviewer changing a term changes it
+ * here too, deliberately.
+ */
+describe("Turkish and Italian terminology (pending native review)", () => {
+  const values = (locale: "tr" | "it") =>
+    Object.entries(dictionaryOf(locale) as Record<string, Record<string, string>>).flatMap(([ns, strings]) =>
+      Object.entries(strings).map(([key, value]) => [`${ns}.${key}`, value] as const)
+    );
+
+  it("never translates the brand", () => {
+    for (const locale of ["tr", "it"] as const) {
+      for (const [namespace, strings] of Object.entries(en)) {
+        for (const [key, value] of Object.entries(strings)) {
+          if (!(value as string).includes("InnerDweS")) continue;
+          expect(translate(locale, namespace as never, key as never), `${locale} ${namespace}.${key}`).toContain(
+            "InnerDweS"
+          );
+        }
+      }
+    }
+  });
+
+  it("names the Guest App in the language, never as Latin \"Guest App\"", () => {
+    expect(allStrings("tr")).not.toContain("Guest App");
+    expect(allStrings("it")).not.toContain("Guest App");
+    expect(translate("tr", "studio", "openGuestApp")).toBe("Misafir Uygulamasını aç");
+    expect(translate("it", "studio", "openGuestApp")).toBe("Apri l’app per gli ospiti");
+  });
+
+  it("keeps Space and Studio as product nouns", () => {
+    expect(translate("tr", "studio", "mySpaces")).toBe("Space'lerim");
+    expect(translate("it", "studio", "mySpaces")).toBe("I miei Space");
+    expect(translate("tr", "studio", "studioMenu")).toContain("Studio");
+    expect(translate("it", "studio", "studioMenu")).toContain("Studio");
+  });
+
+  it("never attaches a Turkish suffix directly to a placeholder", () => {
+    // Vowel harmony depends on the word that arrives, so "{name}'in" is
+    // wrong for half of all names. Strings are phrased around it instead.
+    const offenders = values("tr").filter(([, v]) => /\}\}?['’]?[a-zçğıöşü]/i.test(v));
+    expect(offenders).toEqual([]);
+  });
+
+  it("never addresses anyone informally in Italian", () => {
+    const offenders = values("it").filter(([, v]) => /\b(tu|tuo|tua|tuoi|tue|ti)\b/i.test(v));
+    expect(offenders).toEqual([]);
+  });
+
+  it("names Facilities after rooms, not equipment (as R1)", () => {
+    expect(translate("tr", "flow", "facilities")).toBe("Mekânlar");
+    expect(translate("tr", "flow", "moduleFacilitiesDesc")).toContain("mekân");
+    expect(translate("it", "flow", "facilities")).toBe("Ambienti");
+    expect(translate("it", "flow", "moduleFacilitiesDesc")).toContain("ambienti");
+  });
+
+  it("uses one word for retreat, readings and facilitators across both products", () => {
+    expect(translate("tr", "teach", "myRetreats")).toBe("İnzivalarım");
+    expect(translate("tr", "flow", "myRetreatFallback")).toBe("İnzivam");
+    expect(translate("it", "teach", "myRetreats")).toBe("I miei ritiri");
+    expect(translate("it", "flow", "myRetreatFallback")).toBe("Il mio ritiro");
+    expect(translate("tr", "teach", "exploreReadings")).toBe("Yazılarım");
+    expect(translate("tr", "flow", "readings")).toBe("Yazılar");
+    expect(translate("it", "teach", "exploreReadings")).toBe("Le mie letture");
+    expect(translate("it", "flow", "readings")).toBe("Letture");
+    expect(translate("tr", "flow", "facilitators")).toBe("Rehberler");
+    expect(translate("it", "flow", "facilitators")).toBe("Guide");
+  });
+
+  it("distinguishes the Italian class timetable from the retreat programme (as R5)", () => {
+    expect(translate("it", "teach", "navSchedule")).toBe("Calendario");
+    expect(translate("it", "flow", "navSchedule")).toBe("Programma");
+  });
+
+  it("needs no separate short Guidelines label", () => {
+    for (const locale of ["tr", "it"] as const) {
+      expect(translate(locale, "flow", "guidelinesShort")).toBe(translate(locale, "flow", "guidelines"));
+    }
+  });
+
+  it("writes the Turkish all-caps Share Card lines with a dotted capital İ", () => {
+    for (const key of ["cardKicker", "cardScanLabel"] as const) {
+      const text = translate("tr", "flow", key);
+      expect(text).toBe(text.toLocaleUpperCase("tr-TR"));
+      expect(text).toContain("İ");
+    }
+  });
+});
+
 const SRC = join(__dirname, "..", "..");
 
 /** Every string a locale ships, flattened, for whole-dictionary guards. */
@@ -223,6 +318,6 @@ function allStrings(locale: string): string {
 }
 
 function dictionaryOf(locale: string): unknown {
-  const dictionaries: Record<string, unknown> = { en, de, es, fr, he };
+  const dictionaries: Record<string, unknown> = { en, de, es, fr, he, tr, it: itDictionary };
   return dictionaries[locale];
 }
