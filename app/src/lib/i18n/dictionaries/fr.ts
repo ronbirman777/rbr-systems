@@ -760,6 +760,25 @@ export const fr: Dictionary = {
 
     // Schedule
     nothingScheduledDay: "Rien n’est prévu ce jour-là.",
+
+    // ---- TASK 033 P2: Retreat Day Navigator and retreat dates ----
+    dayN: "Jour {n}",
+    dayOptionLabel: "{date}, jour {n}",
+    dayOptionLabelToday: "{date}, jour {n}, aujourd’hui",
+    dayOptionDateToday: "{date}, aujourd’hui",
+    chooseDay: "Choisis un jour",
+    noActivitiesThisDay: "Aucune activité n’est prévue ce jour-là.",
+    retreatDatesTitle: "Dates de la retraite",
+    retreatDatesBody: "Le jour 1 est ta date de début. Tes invités voient chaque jour du début à la fin, y compris les jours sans programme. Les dates suivent le fuseau horaire du Space ({timezone}).",
+    retreatStartDate: "Date de début",
+    retreatEndDate: "Date de fin",
+    retreatDatesDerived: "Pas encore de dates : le programme va de ta première à ta dernière activité.",
+    retreatDatesInvalid: "Saisis une date valide.",
+    retreatDatesEndBeforeStart: "La date de fin ne peut pas précéder la date de début.",
+    retreatDatesTooLong: "Une retraite peut durer au maximum {max} jours.",
+    retreatDatesSave: "Enregistrer les dates",
+    retreatDatesClear: "Effacer les dates",
+
     now: "Maintenant",
     sessionMeal: "Repas",
 

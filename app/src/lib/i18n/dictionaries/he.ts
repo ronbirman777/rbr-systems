@@ -747,6 +747,25 @@ export const he: Dictionary = {
 
     // Schedule
     nothingScheduledDay: "אין שום דבר בלוח ליום הזה.",
+
+    // ---- TASK 033 P2: Retreat Day Navigator and retreat dates ----
+    dayN: "יום {n}",
+    dayOptionLabel: "{date}, יום {n}",
+    dayOptionLabelToday: "{date}, יום {n}, היום",
+    dayOptionDateToday: "{date}, היום",
+    chooseDay: "בחרו יום",
+    noActivitiesThisDay: "לא מתוכננות פעילויות ליום הזה.",
+    retreatDatesTitle: "תאריכי הריטריט",
+    retreatDatesBody: "יום 1 הוא תאריך ההתחלה. האורחים רואים כל יום מההתחלה ועד הסוף, גם ימים בלי פעילויות. התאריכים לפי אזור הזמן של המרחב ({timezone}).",
+    retreatStartDate: "תאריך התחלה",
+    retreatEndDate: "תאריך סיום",
+    retreatDatesDerived: "עדיין לא הוגדרו תאריכים: הלוח נמשך מהפעילות הראשונה ועד האחרונה.",
+    retreatDatesInvalid: "הזינו תאריך תקין.",
+    retreatDatesEndBeforeStart: "תאריך הסיום לא יכול להיות לפני תאריך ההתחלה.",
+    retreatDatesTooLong: "ריטריט יכול להימשך עד {max} ימים לכל היותר.",
+    retreatDatesSave: "שמירת התאריכים",
+    retreatDatesClear: "ניקוי התאריכים",
+
     now: "עכשיו",
     sessionMeal: "ארוחה",
 

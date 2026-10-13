@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useRef, useState, type Dispatch, type SetStateAction } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
+import { RetreatDatesPanel } from "./retreat-dates-panel";
 import { useRouter } from "next/navigation";
 import { GuestApp } from "@/components/guest-app";
 import { InnerDweSMark } from "@/components/brand/wordmark";
@@ -487,7 +488,10 @@ function ScheduleEditor({
   schedulePending,
   handleSaveSchedule,
   goToStep,
+  datesPanel,
 }: {
+  /** TASK 033 P2: the retreat start/end dates, shown under the intro. */
+  datesPanel?: ReactNode;
   schedule: EditableScheduleItem[];
   setSchedule: Dispatch<SetStateAction<EditableScheduleItem[]>>;
   updateScheduleItem: (id: string, patch: Partial<EditableScheduleItem>) => void;
@@ -532,6 +536,7 @@ function ScheduleEditor({
     <div className="max-w-2xl">
       <StudioHeading>{t("flow", "stepScheduleTitle")}</StudioHeading>
       <StudioIntro>{t("flow", "stepScheduleBody")}</StudioIntro>
+      {datesPanel}
 
       {dates.length > 0 && (
         <div className="flex gap-2 overflow-x-auto pb-1 mb-6">
@@ -2663,6 +2668,7 @@ export function RetreatConfigurator({
             handleSaveSchedule={handleSaveSchedule}
             locale={spaceLocale}
             goToStep={goToStep}
+            datesPanel={<RetreatDatesPanel tenantId={tenantId} locale={spaceLocale} timezone={timezone} profile={retreatProfile} setProfile={setRetreatProfile} />}
           />
         )}
 

@@ -739,6 +739,25 @@ export const en = {
 
     // Schedule
     nothingScheduledDay: "Nothing scheduled for this day.",
+
+    // ---- TASK 033 P2: Retreat Day Navigator and retreat dates ----
+    dayN: "Day {n}",
+    dayOptionLabel: "{date}, day {n}",
+    dayOptionLabelToday: "{date}, day {n}, today",
+    dayOptionDateToday: "{date}, today",
+    chooseDay: "Choose a day",
+    noActivitiesThisDay: "No activities planned for this day.",
+    retreatDatesTitle: "Retreat dates",
+    retreatDatesBody: "Day 1 is your start date. Guests see every day from start to end, including days with nothing scheduled. Dates follow the Space timezone ({timezone}).",
+    retreatStartDate: "Start date",
+    retreatEndDate: "End date",
+    retreatDatesDerived: "No dates set yet: the schedule runs from your first to your last activity.",
+    retreatDatesInvalid: "Enter a valid date.",
+    retreatDatesEndBeforeStart: "The end date can’t be before the start date.",
+    retreatDatesTooLong: "A retreat can span at most {max} days.",
+    retreatDatesSave: "Save dates",
+    retreatDatesClear: "Clear dates",
+
     now: "Now",
     sessionMeal: "Meal",
 
