@@ -25,6 +25,8 @@ import { de } from "./dictionaries/de";
 import { es } from "./dictionaries/es";
 import { fr } from "./dictionaries/fr";
 import { he } from "./dictionaries/he";
+import { tr } from "./dictionaries/tr";
+import { it as itDictionary } from "./dictionaries/it";
 import { validateAdditionalLinks } from "@/app/(site)/configurator/retreat/featuredValidation";
 import { DIRECTIONAL_ICONS, iconTransform, isDirectionalIcon } from "./direction";
 import { formatLongDateLocalized, formatNumberLocalized, formatShortDateLocalized, formatTimeLocalized, shortWeekdayName } from "./datetime";
@@ -36,8 +38,8 @@ import { SPACE_TYPES } from "@/lib/spaceTypes/registry";
 import { parsePublishedTeachSpace } from "@/lib/teach/guestData";
 import { TeachGuestApp } from "@/components/teach/teach-guest-app";
 
-/** The dictionaries by locale, for the checks that iterate all five. */
-const DICTIONARY_FOR_TEST = { en, de, es, fr, he } as const;
+/** The dictionaries by locale, for the checks that iterate every supported locale. */
+const DICTIONARY_FOR_TEST = { en, de, es, fr, he, tr, it: itDictionary } as const;
 
 describe("supported locales", () => {
   it("the platform registry is the seven locales; a Space can choose only the five fully translated ones (until TASK 033)", () => {
@@ -112,7 +114,9 @@ describe("translation and fallback", () => {
   it("has complete dictionaries for every non-English locale", () => {
     // A missing key would silently fall back to English, which is correct
     // behaviour but hides an untranslated surface - so it is asserted.
-    for (const locale of SPACE_SELECTABLE_LOCALES) {
+    // All seven, including Turkish and Italian (TASK 033), which are complete
+    // even though they are not Space-selectable yet.
+    for (const locale of SUPPORTED_LOCALES) {
       expect(missingKeys(locale), locale).toEqual([]);
     }
   });
@@ -128,7 +132,7 @@ describe("translation and fallback", () => {
     for (const [namespace, strings] of Object.entries(en)) {
       for (const [key, value] of Object.entries(strings)) {
         const expected = placeholders(value as string);
-        for (const locale of SPACE_SELECTABLE_LOCALES) {
+        for (const locale of SUPPORTED_LOCALES) {
           if (locale === "en") continue;
           const got = placeholders(
             (DICTIONARY_FOR_TEST[locale] as Record<string, Record<string, string>>)[namespace][key]

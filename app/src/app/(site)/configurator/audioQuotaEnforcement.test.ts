@@ -115,14 +115,14 @@ describe("Teach attach - per-recording maximum", () => {
     expect(fake.files.has(teachRef())).toBe(false);
   });
 
-  it("the refusal is translated (de/he) and Studio tr/it fall back to English", async () => {
+  it("the refusal is translated (de/he/it)", async () => {
     const { attachTeachAudio } = await teach();
     fake.put(teachRef(), "x", undefined, "audio/mpeg");
     expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(4000), "de")).error).toMatch(/höchstens 60 Minuten/);
     fake.put(teachRef(), "x", undefined, "audio/mpeg");
     expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(4000), "he")).error).toMatch(/עד 60 דקות/);
     fake.put(teachRef(), "x", undefined, "audio/mpeg");
-    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(4000), "it")).error).toMatch(/up to 60 minutes/);
+    expect((await attachTeachAudio(TEACH, ITEM, teachRef(), server(4000), "it")).error).toMatch(/al massimo 60 minuti/);
   });
 
   it("an unknown (null) length is refused on a paid Space", async () => {

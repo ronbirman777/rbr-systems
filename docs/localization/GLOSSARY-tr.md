@@ -69,3 +69,50 @@ Status: UNREVIEWED by a native speaker. Internal tool: formal "siz", terse label
 Suffix rule applied: no suffix is attached to `{placeholders}`; dates use "{time} tarihinden beri", "{time} tarihine kadar"; counts use "{n} dönem sonra". Uppercase badges are written out in Turkish (ETKİN, DEVRE DIŞI) so İ is correct.
 
 Items for native review: kimlik doğrulayıcı vs doğrulayıcı uygulaması; "Denetim kaydı" vs "Denetim günlüğü"; "muaf" wording; "Vadesi geçmiş" for past_due.
+
+## Studio and Guest Apps (tr.ts, TASK 033 P5)
+
+Status: PENDING NATIVE REVIEW. Every `common`, `teach`, `flow` and `studio` key is translated (74 / 505 / 390 / 284 keys);
+`tr` is still NOT in `SPACE_SELECTABLE_LOCALES` (owner decision A2: added only after QA + native review). Register: formal
+"siz" in sentences, plain imperative on buttons ("Kaydet", "Yayınla"); dialog cancel "İptal". Pinned in
+`app/src/lib/i18n/terminology.test.ts` ("Turkish and Italian terminology").
+
+| Concept | Approved (pending review) | Rejected | Rationale |
+|---|---|---|---|
+| Guest App | Misafir Uygulaması (mid-sentence "misafir uygulamanız") | Guest App | Matches billing copy; no Latin "Guest App" anywhere in tr.ts (test-pinned). |
+| Space / Studio | Space, Studio (apostrophe suffixes: Space'lerim, Studio'da) | alan, stüdyo | Product nouns. A real yoga studio/venue is "stüdyo" / "mekân". |
+| Retreat | inziva (İnzivalarım, İnziva Ana Sayfası) | retreat, kamp | As billing glossary; one word in Teach and Flow. |
+| Teacher / class / session | eğitmen / ders / seans; özel seans; birebir | öğretmen | "Yoga eğitmeni" is the market term. |
+| Facilitators | Rehberler (singular rehber); catalog "Rehberler / Eğitmenler" | kolaylaştırıcı | Calque avoided; neutral, ungendered. |
+| Schedule (nav) | Program (Teach and Flow) | Takvim | Fits the 12-character tab bar. |
+| Readings | Yazılar / Yazılarım | Okumalar | A collection of writing, not the act of reading (cf. Hebrew/German R3). |
+| Audio | Ses kayıtları / Ses Kayıtlarım; a track = ses kaydı | Sesler | |
+| Facilities | Mekânlar (eyebrow "Alanlar") | Tesisler, olanaklar | Rooms, not equipment (cf. R1). "Olanaklar" kept for amenities. |
+| Treatments | Terapiler; Treatments & Extras "Terapiler ve Ekstralar" | Bakımlar, tedaviler | "Tedavi" is medical. |
+| Meals | Yemekler | Öğünler | |
+| Guidelines | Kurallar (guidelinesShort identical) | Yönergeler | Shorter and warmer. |
+| FAQ | Sorular / Sıkça Sorulan Sorular | SSS | |
+| Arrival information | Varış bilgileri; Check-in/out "Giriş" / "Çıkış" | Check-in | |
+| Daily Inspiration | Günün İlhamı; quote = söz; Flow reflection = düşünce | alıntı | |
+| Custom Pages / Modules / Identity / Brand | Özel Sayfalar / Modüller / Kimlik / Marka | | |
+| Preview & Publish | Önizle ve Yayınla; Published "Yayında"; Republish "Yeniden yayınla"; Draft "Taslak" | | |
+| Hero / cover image | ana görsel, ana fotoğraf / kapak görseli; focus point "odak noktası" | | |
+| Guest Access / access code | Misafir Erişimi / erişim kodu | | |
+| Share Card | Paylaşım Kartı; canvas lines "İNZİVA YOL ARKADAŞINIZ", "İNZİVA UYGULAMASINI AÇMAK İÇİN TARAYIN" | rehber (clashes with facilitators) | Needs latin-ext glyphs in the canvas fonts (P4 owns fonts). |
+| Space slot | Space hakkı | yuva, slot | |
+| Recurrence | "her hafta Pzt, Çar günleri", "ayın 5. günü", "{date} tarihine kadar", "Tekrar: {summary}" | | Ordinal "5." from `ordinalDayLocalized`. |
+
+Placeholder rule applied everywhere (test-pinned): no suffix touches a `{placeholder}`; label forms are used instead
+("Kimden: {name}", "Rezervasyon: {venue}", "Kaydet: {section}", "{year} yılından beri eğitmen", "{time} saatine kadar").
+
+Items for native review (P5):
+1. Label forms that avoid suffixes: `teach.fromTeacher` "Kimden: {name}", `noteFrom` "Bir not · {name}", `moreFrom` "Daha fazlası: {name}", `common.backTo` "Geri: {label}", `thisWeekWith` "Bu hafta · {name}".
+2. `teach.recurOnDayOfMonth` assembled reads "Her ay ayın 5. günü" (slightly redundant).
+3. `flow.exploreHeading` "{em}" + "İnzivanız"; `facilitatorsHeading` "Rehberlerinizle tanışın"; "Okunacak / Dinlenecek bir şeyler".
+4. Share Card kicker "İNZİVA YOL ARKADAŞINIZ".
+5. `typoEditorial` "Dergi", `spots` "Kontenjan", `eyebrowOptional` "Üst başlık / alt başlık", `fallbackN` "Yedek {index}".
+6. `teaching` / `myTeachingSpace` "Eğitmenlik Alanım" ("alan" vs the product noun Space).
+7. `endsAfter` "Şu kadar tekrardan sonra" next to a number input.
+8. `featuredOnInnerDwes` "InnerDweS'te öne çıkarılma".
+9. MB suffixes "8 MB'tan" / "8 MB'a" (assumes "megabayt").
+10. Localised sample values (`classLocationPlaceholder` "Zeytin Ağacı Stüdyosu · Kadıköy", `classPricePlaceholder` "₺400 · 5 derslik kart ₺1.800").

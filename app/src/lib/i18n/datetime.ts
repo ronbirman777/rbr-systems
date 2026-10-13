@@ -161,12 +161,14 @@ export function formatDayMonthYearLocalized(dateIso: string, locale: Locale): st
 
 /**
  * The day-of-month as it is written in an ordinal position: "5th", "5."
- * (German), and a bare "5" in Hebrew, which has no written ordinal for
- * dates - the carrier phrase supplies the sense instead.
+ * (German and Turkish, both of which mark an ordinal with a trailing
+ * period), and a bare "5" in Hebrew and Italian - Hebrew has no written
+ * ordinal for dates, and Italian writes the day of the month as a
+ * cardinal ("il giorno 5"); the carrier phrase supplies the sense instead.
  */
 export function ordinalDayLocalized(day: number, locale: Locale): string {
-  if (locale === "de") return `${day}.`;
-  if (locale === "he") return String(day);
+  if (locale === "de" || locale === "tr") return `${day}.`;
+  if (locale === "he" || locale === "it") return String(day);
   const mod100 = day % 100;
   const suffix =
     mod100 >= 11 && mod100 <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[day % 10] ?? "th";
@@ -179,9 +181,16 @@ export function ordinalDayLocalized(day: number, locale: Locale): string {
  * Assembled phrases are stored lowercase ("every week"), because most of
  * their uses are mid-sentence ("Repeats every week"). Hebrew has no case,
  * so this is a no-op there, which is why it is safe to apply blindly.
+ *
+ * The case mapping is the LOCALE's, not the host's: Turkish uppercases a
+ * dotted "i" to "İ" ("istanbul" -> "İstanbul"), which a default
+ * toLocaleUpperCase() on an English host would get wrong ("Istanbul").
+ * Without a locale it keeps the previous host-default behaviour.
  */
-export function capitalizeFirst(text: string): string {
-  return text.length === 0 ? text : text[0].toLocaleUpperCase() + text.slice(1);
+export function capitalizeFirst(text: string, locale?: Locale): string {
+  if (text.length === 0) return text;
+  const first = locale ? text[0].toLocaleUpperCase(LOCALE_TAG[locale]) : text[0].toLocaleUpperCase();
+  return first + text.slice(1);
 }
 
 /**
