@@ -23,8 +23,8 @@ import { createTranslator, type Locale } from "@/lib/i18n";
  * (static under reduced motion - the existing globals.css override), on
  * parchment, with "Created with InnerDweS" from the existing attribution
  * key. The phrase and the visually hidden "Loading" come from the Space's
- * own locale (resolved by the layout with one light, indexed read - see
- * app/(guest)/guestDocument.ts). After loading the customer's brand is
+ * own locale (resolved by the layout from the published snapshot it has
+ * already gated - see app/(guest)/guestGate.ts). After loading the customer's brand is
  * primary again: nothing here stays on screen.
  *
  * Static markup, no hooks: usable as a server Suspense fallback and from

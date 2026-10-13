@@ -96,8 +96,10 @@ describe("/g/[tenantId] runs the access chain once per request", () => {
     expect(io.accessCalls).toBe(1);
     const full = io.selects.filter((c) => !c.startsWith("spaceSettings:"));
     expect(full).toHaveLength(1);
-    // Plus exactly one light locale read for the document.
-    expect(io.selects.filter((c) => c.startsWith("spaceSettings:"))).toHaveLength(1);
+    // TASK 033 fix: the layout learns the locale from the same gated
+    // snapshot (access is decided before streaming), so no separate light
+    // locale read remains.
+    expect(io.selects.filter((c) => c.startsWith("spaceSettings:"))).toHaveLength(0);
   });
 
   it("parity: unavailable is still a 404, after the same single chain", async () => {
