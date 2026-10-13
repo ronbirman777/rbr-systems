@@ -480,7 +480,7 @@ export const en = {
     classTimeZoneHint: "The time zone this class happens in.",
     differsFromSpaceTz: "Differs from your Space time zone ({timezone}).",
     classLocationPlaceholder: "Olive Tree Studio · Tel Aviv",
-    classPricePlaceholder: "₪65 · 5-class card ₪280",
+    classPricePlaceholder: "65 · 5-class card 280",
     maxParticipantsLabel: "Max participants",
     registration: "Registration",
     registrationMethod: "Registration method",
@@ -1538,6 +1538,17 @@ export const en = {
     doneLabel: "Done:",
     readability: "Readability",
     imageFormats8mb: "JPG, PNG or WebP up to 8 MB.",
+    // TASK 033 (P3) - retreat-item currency picker and Space default currency.
+    currencySearchPlaceholder: "Search currencies…",
+    currencyNoMatch: "No currencies match “{query}”.",
+    currencyCommonGroup: "Common",
+    currencyAllGroup: "All currencies",
+    currencyUnrecognised: "Unrecognised currency “{value}”, choose one.",
+    currencyNotConverted: "Amounts are not converted: {amount} stays {amount} in the new currency.",
+    currencyRequiredForPrice: "Choose a currency for the price of “{name}”.",
+    spaceCurrencyTitle: "Default currency",
+    spaceCurrencyHint: "Pre-fills the currency of new priced items. Existing items keep their own currency, and amounts are never converted.",
+    spaceCurrencyNotSet: "Not chosen yet - new items use {code}.",
   },
 
   attribution: {

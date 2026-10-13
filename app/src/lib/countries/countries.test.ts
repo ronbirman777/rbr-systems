@@ -141,7 +141,7 @@ describe("country search", () => {
 
 describe("shared Space settings", () => {
   it("defaults to nothing configured, so an existing Space needs no backfill", () => {
-    expect(parseSpaceSettings(undefined)).toEqual({ country: null, locale: null });
+    expect(parseSpaceSettings(undefined)).toEqual({ country: null, locale: null, currency: null });
     expect(parseSpaceSettings({})).toEqual(defaultSpaceSettings());
   });
 
@@ -167,6 +167,6 @@ describe("shared Space settings", () => {
 
   it("keeps country and locale independent, so one never clears the other", () => {
     const parsed = parseSpaceSettings({ country: "DE", locale: "de" });
-    expect(parsed).toEqual({ country: "DE", locale: "de" });
+    expect(parsed).toEqual({ country: "DE", locale: "de", currency: null });
   });
 });

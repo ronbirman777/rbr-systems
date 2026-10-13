@@ -490,7 +490,7 @@ export const he: Dictionary = {
     classTimeZoneHint: "אזור הזמן שבו השיעור מתקיים.",
     differsFromSpaceTz: "שונה מאזור הזמן של המרחב ({timezone}).",
     classLocationPlaceholder: "סטודיו עץ הזית · תל אביב",
-    classPricePlaceholder: "₪65 · כרטיסייה ל-5 שיעורים ₪280",
+    classPricePlaceholder: "65 · כרטיסייה ל-5 שיעורים 280",
     maxParticipantsLabel: "מספר משתתפים מקסימלי",
     registration: "הרשמה",
     registrationMethod: "שיטת ההרשמה",
@@ -1536,6 +1536,17 @@ export const he: Dictionary = {
     doneLabel: "בוצע:",
     readability: "קריאות",
     imageFormats8mb: "JPG, PNG או WebP עד 8MB.",
+    // TASK 033 (P3) - retreat-item currency picker and Space default currency.
+    currencySearchPlaceholder: "חיפוש מטבע…",
+    currencyNoMatch: "לא נמצא מטבע עבור „{query}”.",
+    currencyCommonGroup: "נפוצים",
+    currencyAllGroup: "כל המטבעות",
+    currencyUnrecognised: "מטבע לא מזוהה „{value}”, יש לבחור מטבע.",
+    currencyNotConverted: "הסכומים לא מומרים: {amount} נשאר {amount} במטבע החדש.",
+    currencyRequiredForPrice: "יש לבחור מטבע למחיר של „{name}”.",
+    spaceCurrencyTitle: "מטבע ברירת מחדל",
+    spaceCurrencyHint: "ממולא מראש בפריטים חדשים עם מחיר. פריטים קיימים שומרים על המטבע שלהם, והסכומים אף פעם לא מומרים.",
+    spaceCurrencyNotSet: "עוד לא נבחר – פריטים חדשים משתמשים ב-{code}.",
   },
 
   attribution: {

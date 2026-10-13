@@ -5,7 +5,15 @@ import { ModuleItemPhotoField } from "@/components/module-item-photo-field";
 import { FocalPointPicker } from "@/components/focal-point-picker";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
-import { CHARGE_TYPES, type ChargeType, type EditableTreatment } from "@/lib/modules/treatment";
+import {
+  CHARGE_TYPES,
+  storedTreatmentPricing,
+  treatmentsNeedingCurrency,
+  type ChargeType,
+  type EditableTreatment,
+} from "@/lib/modules/treatment";
+import { CurrencySelect } from "@/components/forms/currency-select";
+import { useSpaceDefaultCurrency } from "@/components/studio/space-currency-card";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, StudioField, StudioHeading, StudioIntro, StudioLabel } from "./studio-ui";
 import { EmptyState } from "@/components/studio/empty-state";
@@ -55,6 +63,14 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
   const [state, setState] = useState<SaveTreatmentsState>(initialState);
   const [pending, setPending] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const spaceCurrency = useSpaceDefaultCurrency(tenantId);
+  /**
+   * TASK 033 (D-CC4): pricing as last loaded/saved, per row. A priced row
+   * that is new or whose price/currency differs from this needs an ISO
+   * code before Save; an untouched legacy row ("BAHT") saves as it is.
+   * The server applies the same rule against the database.
+   */
+  const [savedPricing, setSavedPricing] = useState(() => storedTreatmentPricing(treatments.map((it) => ({ id: it.id, metadata: it }))));
 
   function update(id: string, patch: Partial<EditableTreatment>) {
     onDirty();
@@ -75,6 +91,13 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
   }
 
   async function handleSave(): Promise<boolean> {
+    const needCurrency = treatmentsNeedingCurrency(treatments, savedPricing);
+    if (needCurrency.length > 0) {
+      const first = treatments.find((it) => it.id === needCurrency[0]);
+      setState({ error: t("studio", "currencyRequiredForPrice", { name: first?.name || t("flow", "untitledTreatment") }) });
+      setEditId(needCurrency[0]);
+      return false;
+    }
     const formData = new FormData();
     formData.set("locale", locale);
     formData.set("tenantId", tenantId);
@@ -121,6 +144,8 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
     const result = await enqueueItemsOp(ids, () => saveTreatments(initialState, formData));
     setPending(false);
     setState(result);
+    // What was just saved becomes the new "untouched" baseline (D-CC4).
+    if (!result.error) setSavedPricing(storedTreatmentPricing(treatments.map((it) => ({ id: it.id, metadata: it }))));
     // A failed save must NOT clear the guard - the edits are still
     // only in memory, so the section stays dirty and the Unsaved
     // Changes dialog keeps protecting them.
@@ -133,6 +158,11 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
 
   const editing = editId ? (treatments.find((item) => item.id === editId) ?? null) : null;
   const editIdx = editing ? treatments.indexOf(editing) : -1;
+  const editingSaved = editing ? savedPricing.get(editing.id) : undefined;
+  // "Amounts are not converted" - shown while a priced item's currency differs from what was saved.
+  const showNotConverted = Boolean(
+    editing && editing.price !== null && editingSaved && editingSaved.currency !== null && editingSaved.currency !== (editing.currency ?? null)
+  );
 
   return (
     <div className="max-w-2xl">
@@ -335,20 +365,23 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                     step="any"
                     inputMode="decimal"
                     value={editing.price ?? ""}
-                    onChange={(e) => update(editing.id, { price: e.target.value ? Number(e.target.value) : null })}
+                    onChange={(e) => {
+                      const price = e.target.value ? Number(e.target.value) : null;
+                      // A newly priced item with no currency is pre-filled from the Space default (D-CC3).
+                      update(editing.id, price !== null && !editing.currency ? { price, currency: spaceCurrency } : { price });
+                    }}
                     placeholder={t("flow", "pricePlaceholder")}
                     className={STUDIO_INPUT_CLASS}
                   />
                 </div>
                 <div>
-                  <StudioLabel>{t("flow", "currency")}</StudioLabel>
-                  <input
-                    aria-label={t("flow", "currency")}
-                    value={editing.currency ?? ""}
-                    onChange={(e) => update(editing.id, { currency: e.target.value.toUpperCase() || null })}
-                    placeholder={t("flow", "currencyPlaceholder")}
-                    maxLength={8}
-                    className={STUDIO_INPUT_CLASS}
+                  <CurrencySelect
+                    key={editing.id}
+                    label={t("flow", "currency")}
+                    locale={locale}
+                    value={editing.currency}
+                    onChange={(currency) => update(editing.id, { currency })}
+                    required={editing.price !== null}
                   />
                 </div>
                 <div>
@@ -370,6 +403,11 @@ export function TreatmentsStep({ tenantId, treatments, setTreatments, onBack, on
                   </select>
                 </div>
               </div>
+              {showNotConverted && editing ? (
+                <p role="status" className="text-[12px] px-3 py-2 rounded-lg bg-[#F3EFE7] text-[#6F6C66]">
+                  {t("studio", "currencyNotConverted", { amount: String(editing.price) })}
+                </p>
+              ) : null}
               <div>
                 <StudioLabel>{t("flow", "availability")}</StudioLabel>
                 <input

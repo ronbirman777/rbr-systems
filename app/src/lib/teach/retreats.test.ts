@@ -99,17 +99,22 @@ describe("retreatDateSummary", () => {
 });
 
 describe("formatRetreatPrice: informational text, never a checkout", () => {
-  it("amount + currency code, hydration-safe", () => {
-    expect(formatRetreatPrice({ price: 700, currency: "THB" }, "en")).toBe("700 THB");
-    expect(formatRetreatPrice({ price: 1250.5, currency: "EUR" }, "en")).toBe("1,250.50 EUR");
-    expect(formatRetreatPrice({ price: 0, currency: "EUR" }, "en")).toBe("0 EUR");
+  // TASK 033: routed through lib/currencies formatPrice (guests get it
+  // pre-formatted on the server, so hydration never sees a second ICU).
+  it("ISO currency style with ISO minor units; never rounded", () => {
+    expect(formatRetreatPrice({ price: 700, currency: "THB" }, "en")).toBe("THB\u00a0700.00");
+    expect(formatRetreatPrice({ price: 1250.5, currency: "EUR" }, "en")).toBe("€1,250.50");
+    expect(formatRetreatPrice({ price: 0, currency: "EUR" }, "en")).toBe("€0.00");
+  });
+  it("a legacy non-ISO code prints raw after locale digits", () => {
+    expect(formatRetreatPrice({ price: 700, currency: "BHT" }, "en")).toBe("700 BHT");
   });
   it("no price -> nothing; a price without a currency still shows the amount", () => {
     expect(formatRetreatPrice({ price: null, currency: null }, "en")).toBeNull();
     expect(formatRetreatPrice({ price: 900, currency: null }, "en")).toBe("900");
   });
   it("uses the locale's digits and grouping", () => {
-    expect(formatRetreatPrice({ price: 1250, currency: "EUR" }, "de")).toBe("1.250 EUR");
+    expect(formatRetreatPrice({ price: 1250, currency: "EUR" }, "de")).toBe("1.250,00\u00a0€");
   });
 });
 

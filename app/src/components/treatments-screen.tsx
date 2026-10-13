@@ -11,6 +11,7 @@ import type { CSSProperties } from "react";
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "./flow-media-sizes";
+import { useFormattedPrice } from "@/lib/currencies/useFormattedPrice";
 export type TreatmentsScreenProps = {
   brand: BrandConfig;
   treatments: DisplayTreatment[];
@@ -134,12 +135,12 @@ export function TreatmentsScreen({ brand, treatments, locale = DEFAULT_LOCALE }:
                         className="text-[14px] font-medium tabular-nums"
                         style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text)" }}
                       >
-                        {/* Printed as the organizer typed it. No
-                            Intl.NumberFormat: that needs a real ISO-4217
-                            code, and `currency` here is deliberately
-                            free text (see treatment.ts) so an organizer
-                            in any country can name their own. */}
-                        {[String(t.price), t.currency].filter(Boolean).join(" ")}
+                        {/* TASK 033: formatPrice (lib/currencies/format.ts).
+                            Guests get a string pre-formatted on the server
+                            (`priceLabel`), so hydration never depends on the
+                            browser's ICU; an unrecognised legacy code is
+                            shown raw with locale digits. Never converted. */}
+                        <TreatmentPrice price={t.price} currency={t.currency} locale={locale} serverLabel={t.priceLabel} />
                       </span>
                     )}
                     {t.chargeType && (
@@ -190,4 +191,18 @@ export function TreatmentsScreen({ brand, treatments, locale = DEFAULT_LOCALE }:
       </div>
     </div>
   );
+}
+
+function TreatmentPrice({
+  price,
+  currency,
+  locale,
+  serverLabel,
+}: {
+  price: number | null;
+  currency: string | null;
+  locale: Locale;
+  serverLabel?: string | null;
+}) {
+  return <>{useFormattedPrice(price, currency, locale, serverLabel)}</>;
 }
