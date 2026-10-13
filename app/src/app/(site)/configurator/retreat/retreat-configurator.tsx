@@ -2672,7 +2672,15 @@ export function RetreatConfigurator({
             handleSaveSchedule={handleSaveSchedule}
             locale={spaceLocale}
             goToStep={goToStep}
-            datesPanel={<RetreatDatesPanel tenantId={tenantId} locale={spaceLocale} timezone={timezone} profile={retreatProfile} setProfile={setRetreatProfile} />}
+            datesPanel={
+              <RetreatDatesPanel
+                tenantId={tenantId}
+                timezone={timezone}
+                profile={retreatProfile}
+                setProfile={setRetreatProfile}
+                {...moduleSectionProps.retreatDates}
+              />
+            }
           />
         )}
 

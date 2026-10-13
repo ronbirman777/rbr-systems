@@ -4,18 +4,19 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import type { RetreatProfile } from "@/lib/modules/retreatProfile";
 import { MAX_RETREAT_RANGE_DAYS, RETREAT_DATES_ERROR_KEY, validateRetreatDates } from "@/lib/schedule/retreatDays";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
-import { createTranslator, type Locale } from "@/lib/i18n";
+import { createTranslator } from "@/lib/i18n";
 import { STUDIO_INPUT_CLASS, StudioField, StudioSectionSub } from "./studio-ui";
 import { saveRetreatDates, type SaveRetreatDatesState } from "./actions";
+import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
+import { planRetreatDatesSave, retreatDatesChanged, retreatDatesDraftFrom, type RetreatDatesDraft } from "./retreatDatesDraft";
 
 export type RetreatDatesPanelProps = {
   tenantId: string;
-  locale: Locale;
   /** The Space's IANA timezone - the dates are calendar days in it. */
   timezone: string;
   profile: RetreatProfile;
   setProfile: Dispatch<SetStateAction<RetreatProfile>>;
-};
+} & StudioSectionEditorProps;
 
 /**
  * TASK 033 P2 (A1): the retreat's optional start and end date, shown at
@@ -29,36 +30,76 @@ export type RetreatDatesPanelProps = {
  * Saved on its own (not through the Schedule save), into the
  * retreatProfile settings row; on success the parent's profile state is
  * patched so the preview's Day Navigator updates immediately.
+ *
+ * Unsaved-changes guard (TASK 033 fix 2): wired into the same shared
+ * contract as every Studio module editor (section "retreatDates" in
+ * studioSection.ts). An edit marks the section dirty; only a successful
+ * save clears it; an invalid pair or a server error keeps it dirty, so the
+ * Unsaved Changes dialog (step change, sidebar, back) and the browser
+ * unload warning both protect the edit. The dirty/save decision itself is
+ * the pure planRetreatDatesSave() in retreatDatesDraft.ts.
  */
-export function RetreatDatesPanel({ tenantId, locale, timezone, profile, setProfile }: RetreatDatesPanelProps) {
+export function RetreatDatesPanel({
+  tenantId,
+  timezone,
+  profile,
+  setProfile,
+  onDirty,
+  onSaved,
+  registerSave,
+  locale,
+}: RetreatDatesPanelProps) {
   const { t } = createTranslator(locale);
-  const [startDate, setStartDate] = useState(profile.startDate ?? "");
-  const [endDate, setEndDate] = useState(profile.endDate ?? "");
+  const [draft, setDraft] = useState<RetreatDatesDraft>(() => retreatDatesDraftFrom(profile));
+  /** Mirrors this section's flag in the parent guard: set by an edit,
+   * cleared only by a successful save. */
+  const [touched, setTouched] = useState(false);
   const [pending, setPending] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const { startDate, endDate } = draft;
 
   const invalid = validateRetreatDates(startDate || null, endDate || null);
   const validationMessage = invalid ? t("flow", RETREAT_DATES_ERROR_KEY[invalid], { max: MAX_RETREAT_RANGE_DAYS }) : null;
-  const unchanged = (startDate || null) === (profile.startDate ?? null) && (endDate || null) === (profile.endDate ?? null);
+  const unchanged = !retreatDatesChanged(draft, profile);
   const errorId = `retreat-dates-error-${tenantId}`;
 
-  async function handleSave() {
-    if (invalid) return;
-    const formData = new FormData();
-    formData.set("locale", locale);
-    formData.set("tenantId", tenantId);
-    formData.set("startDate", startDate);
-    formData.set("endDate", endDate);
-    setPending(true);
-    const initial: SaveRetreatDatesState = { error: null, startDate: null, endDate: null };
-    const result = await saveRetreatDates(initial, formData);
-    setPending(false);
-    setServerError(result.error);
-    if (result.error) return;
-    setSavedAt(`${result.startDate ?? ""}|${result.endDate ?? ""}`);
-    setProfile((prev) => ({ ...prev, startDate: result.startDate, endDate: result.endDate }));
+  function edit(patch: Partial<RetreatDatesDraft>) {
+    setDraft((prev) => ({ ...prev, ...patch }));
+    setServerError(null);
+    setTouched(true);
+    onDirty();
   }
+
+  async function handleSave(): Promise<boolean> {
+    const plan = planRetreatDatesSave(draft, profile);
+    // An invalid pair is never sent and never cleans the section - the
+    // message is already on screen and the dialog reports the failure.
+    if (plan.kind === "invalid") return false;
+    let result: SaveRetreatDatesState = { error: null, startDate: startDate || null, endDate: endDate || null };
+    if (plan.kind === "save") {
+      const formData = new FormData();
+      formData.set("locale", locale);
+      formData.set("tenantId", tenantId);
+      formData.set("startDate", startDate);
+      formData.set("endDate", endDate);
+      setPending(true);
+      const initial: SaveRetreatDatesState = { error: null, startDate: null, endDate: null };
+      result = await saveRetreatDates(initial, formData);
+      setPending(false);
+    }
+    setServerError(result.error);
+    if (!result.error) {
+      setTouched(false);
+      setSavedAt(`${result.startDate ?? ""}|${result.endDate ?? ""}`);
+      setProfile((prev) => ({ ...prev, startDate: result.startDate, endDate: result.endDate }));
+    }
+    if (result.error) return false;
+    onSaved();
+    return true;
+  }
+
+  useRegisteredSave(registerSave, handleSave);
 
   const message = validationMessage ?? serverError;
   const justSaved = savedAt === `${startDate}|${endDate}` && unchanged;
@@ -82,10 +123,7 @@ export function RetreatDatesPanel({ tenantId, locale, timezone, profile, setProf
               type="date"
               value={startDate}
               max={endDate || undefined}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setServerError(null);
-              }}
+              onChange={(e) => edit({ startDate: e.target.value })}
               aria-invalid={invalid ? true : undefined}
               aria-describedby={message ? errorId : undefined}
               className={STUDIO_INPUT_CLASS}
@@ -98,10 +136,7 @@ export function RetreatDatesPanel({ tenantId, locale, timezone, profile, setProf
               type="date"
               value={endDate}
               min={startDate || undefined}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setServerError(null);
-              }}
+              onChange={(e) => edit({ endDate: e.target.value })}
               aria-invalid={invalid ? true : undefined}
               aria-describedby={message ? errorId : undefined}
               className={STUDIO_INPUT_CLASS}
@@ -124,7 +159,9 @@ export function RetreatDatesPanel({ tenantId, locale, timezone, profile, setProf
         <button
           type="button"
           onClick={handleSave}
-          disabled={pending || !!invalid || unchanged}
+          // Enabled whenever the section is dirty - also after an edit was
+          // reverted, so the organizer can clear the unsaved state here.
+          disabled={pending || !!invalid || !touched}
           className="rounded-full bg-idw-forest text-idw-parchment text-xs font-semibold uppercase tracking-wide px-5 py-2.5 min-h-11 disabled:opacity-50"
         >
           {pending ? t("common", "savingNow") : t("flow", "retreatDatesSave")}
@@ -132,11 +169,7 @@ export function RetreatDatesPanel({ tenantId, locale, timezone, profile, setProf
         {(startDate || endDate) && (
           <button
             type="button"
-            onClick={() => {
-              setStartDate("");
-              setEndDate("");
-              setServerError(null);
-            }}
+            onClick={() => edit({ startDate: "", endDate: "" })}
             className="text-xs font-semibold uppercase tracking-wide text-idw-forest/60 hover:text-idw-forest min-h-11 px-2"
           >
             {t("flow", "retreatDatesClear")}

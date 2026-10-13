@@ -17,6 +17,11 @@ import type { Locale } from "@/lib/i18n";
  */
 export type StudioModuleSection =
   | "home"
+  // TASK 033 fix 2: the retreat start/end date panel on the Schedule step.
+  // Not a module, but it keeps local edits behind its own Save exactly like
+  // the editors below, so it joins the same contract instead of a parallel
+  // guard.
+  | "retreatDates"
   | "meals"
   | "treatments"
   | "facilities"
@@ -38,6 +43,10 @@ export const STUDIO_MODULE_SECTIONS: readonly StudioModuleSection[] = [
   // Save-and-continue that touches both applies them in the order the
   // organizer saw them.
   "home",
+  // TASK 033: the Schedule step's date panel - Schedule follows Home in the
+  // Studio. Both saves write the retreatProfile row, each preserving the
+  // other's keys, so their relative order is not load-bearing.
+  "retreatDates",
   "meals",
   "treatments",
   "facilities",
