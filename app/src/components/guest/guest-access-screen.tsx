@@ -9,6 +9,8 @@ import { verifyGuestCodeInitialState, type VerifyGuestCodeState } from "@/lib/gu
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "@/components/flow-media-sizes";
+import { GuestDesktopShell } from "./guest-desktop-shell";
+
 export type GuestAccessScreenProps = {
   tenantId: string;
   name: string;
@@ -96,10 +98,17 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
   }
 
   return (
-    <main style={{ ...vars, background: "var(--rbr-parchment-deep)" }} className="flex-1 flex items-center justify-center sm:p-6 p-0">
+    // TASK 033: the same shared desktop shell as the Guest App itself (a
+    // centred phone-width column over the Space's backdrop from 640px; an
+    // inert full-width wrapper on a phone) instead of its own 390x780
+    // device frame. Presentation only: the form, the Server Action, the
+    // cookie flow and the published-safe identity below are unchanged, and
+    // the shell's hero-wait overlay is NOT mounted here.
+    <GuestDesktopShell vars={vars} locale={locale} heroWait={false} as="main" columnStyle={{ background: "var(--rbr-background)" }}>
       <div
-        className="relative flex flex-col overflow-hidden sm:rounded-[44px] w-full sm:w-[390px] sm:h-[780px] h-full"
-        style={{ background: "var(--rbr-background)", boxShadow: "0 40px 100px rgba(45,74,62,0.2), 0 10px 30px rgba(45,74,62,0.1)" }}
+        data-guest-access=""
+        className="relative flex flex-col overflow-hidden w-full flex-1"
+        style={{ background: "var(--rbr-background)" }}
       >
         {/* Identity hero - same treatment as the real Today hero (photo
             or gradient fallback + directional overlay), so this screen
@@ -195,6 +204,6 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
           </p>
         </form>
       </div>
-    </main>
+    </GuestDesktopShell>
   );
 }
