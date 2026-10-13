@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
 import type { DisplayGuideline } from "@/lib/modules/guideline";
-import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { FlowEmptyNote, FlowScreenHeader } from "./flow-screen-chrome";
 
 export type GuidelinesScreenProps = {

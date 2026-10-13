@@ -9,7 +9,7 @@ import type { CSSProperties } from "react";
 import { telUrl } from "@/lib/phone";
 import { whatsappUrl } from "@/lib/share/whatsapp";
 
-import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 export type ArrivalScreenProps = {
   brand: BrandConfig;
   info: ArrivalInfo;

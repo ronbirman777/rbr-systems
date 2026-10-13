@@ -33,6 +33,7 @@ import type { OptionalModuleKey } from "@/lib/modules/catalog";
 import { todayInTimezone, currentTimeInTimezone, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { publicMediaUrl } from "@/lib/media/path";
 import { directionOf } from "@/lib/i18n";
+import { guestMessages } from "@/lib/i18n/guestMessages";
 import { localeFromPublishedModules } from "@/lib/spaceSettings";
 
 /**
@@ -221,6 +222,7 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
           audio={audio}
           moduleCoverImages={moduleCoverImages}
           locale={locale}
+          messages={guestMessages(locale)}
         />
       </div>
     </GuestDesktopShell>

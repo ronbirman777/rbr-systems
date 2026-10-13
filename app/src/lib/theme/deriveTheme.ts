@@ -72,7 +72,13 @@ export function deriveThemeVars(config: BrandConfig): Record<string, string> {
   // "-on-" pattern as --rbr-on-primary.
   const navigation = config.customNavigation ?? primary;
   const navigationSafe = deriveAccessibleForeground(navigation, background);
-  const onNavigation = safeTextColor(navigation);
+  // TASK 033 (QA defect D3): chosen against the colour actually PAINTED as
+  // the surface (--rbr-navigation = navigationSafe), not the raw pick. For a
+  // light custom navigation colour the two differ, and text chosen for the
+  // raw colour measured as low as ~2.2:1 on the darkened surface. Identical
+  // for every preset palette and any already-dark pick (navigationSafe ===
+  // navigation there).
+  const onNavigation = safeTextColor(navigationSafe);
   const text = config.customText ?? primary;
   const textSafe = deriveAccessibleForeground(text, background);
   // The organizer's Text color, specifically re-checked against the
@@ -90,6 +96,17 @@ export function deriveThemeVars(config: BrandConfig): Record<string, string> {
   // full-strength heading/active treatment. Blended toward the existing
   // neutral caption tone, not a fixed gray.
   const textMuted = mixHex(textSafe, GUEST_BASE_PALETTE.mist, 0.55);
+  // TASK 033 (QA defect D3) - the quiet tone for SMALL text that must still
+  // pass WCAG AA (4.5:1): --rbr-text-muted itself is only "quieter", and
+  // drops below 4.5:1 for lighter brand text colours. This starts from the
+  // same muted mix and is darkened (never re-hued) just enough to clear AA
+  // on both surfaces small labels sit on - the app ground and the fixed
+  // cream card/chip surface. Used by the Retreat Day Navigator's weekday and
+  // "DAY n" labels instead of opacity on --rbr-text (which measured 3.94:1).
+  const textSubtle = deriveAccessibleForeground(
+    deriveAccessibleForeground(textMuted, background),
+    GUEST_BASE_PALETTE.cream
+  );
   // --rbr-on-secondary mirrors --rbr-on-primary exactly, for the rarer
   // case of Accent used as a SOLID surface (e.g. an accent-toned Explore
   // tile in the alternating Primary/Accent rhythm - see explore-screen.tsx).
@@ -123,6 +140,7 @@ export function deriveThemeVars(config: BrandConfig): Record<string, string> {
     "--rbr-on-navigation": onNavigation,
     "--rbr-text": textSafe,
     "--rbr-text-muted": textMuted,
+    "--rbr-text-subtle": textSubtle,
     "--rbr-text-on-primary-soft": textOnPrimarySoft,
     "--rbr-background": background,
     // The raised surface (cards, sheets) sits a step off the ground. With

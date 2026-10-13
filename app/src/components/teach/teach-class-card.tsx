@@ -3,7 +3,7 @@
 import { useId } from "react";
 import type { TeachContact, TeachItem } from "@/lib/teach/schemas";
 import { buildRegistrationCta, venueLinks, safeHttpUrl, availabilityCtas } from "@/lib/teach/links";
-import { createTranslator, type Locale } from "@/lib/i18n";
+import { createTranslator, type Locale } from "@/lib/i18n/core";
 import { formatShortDateLocalized } from "@/lib/i18n/datetime";
 import { durationMinutes, describeAvailability } from "@/lib/teach/schedule";
 import { recurrenceSummary, validRule } from "@/lib/teach/recurrenceText";

@@ -29,10 +29,17 @@ import { moduleIntro, type ModuleIntros } from "@/lib/modules/moduleIntro";
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
 import { flowInspirationDayOne, getFlowDailyQuote } from "@/lib/content/dailyQuotes";
 import type { DisplayInspirationItem } from "@/lib/modules/dailyInspiration";
-import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { registerLocaleMessages, type LocaleMessages, createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import type { ImagePosition } from "@/lib/modules/imagePosition";
 
 export type GuestAppProps = {
+  /**
+   * The Space locale's messages, resolved on the server (lib/i18n/guestMessages.ts).
+   * The published route passes them so the Guest bundle carries no
+   * dictionaries but English (TASK 033, QA D5); the Studio preview omits them
+   * (the Studio has every locale registered already).
+   */
+  messages?: LocaleMessages | null;
   tenantName: string;
   brand: BrandConfig;
   /** Not yet reaching Production - requires migration 0014
@@ -300,6 +307,8 @@ export function guestPrefetchItems(props: GuestAppProps, activeTab: TabKey): Med
  * two separate implementations around the same shared screens.
  */
 export function GuestApp(props: GuestAppProps) {
+  // Before anything below (or any child) translates.
+  registerLocaleMessages(props.messages);
   const { enabledModules, brand } = props;
   const vars = deriveThemeVars(brand) as CSSProperties;
   const { t } = createTranslator(props.locale ?? DEFAULT_LOCALE);

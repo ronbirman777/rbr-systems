@@ -1,4 +1,5 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 
 /**
@@ -93,5 +94,46 @@ describe("Guest font preloads", () => {
       expect(read(layout), layout).toContain("guest-fonts");
     }
     expect(read("./document-shell.tsx")).not.toMatch(/from "next\/font/);
+  });
+
+  // QA defect D4 (local QA on 135a736): the declarations above were right,
+  // yet Guest pages still preloaded 7 font files - Turbopack's default CSS
+  // chunking merged the (site) root's @font-face CSS into the chunk every
+  // root loads, and next/font derives preloads from a route's CSS chunks.
+  it("next.config keeps Turbopack's graph CSS chunking (it keeps site-only font CSS out of Guest routes)", () => {
+    const config = readFileSync(new URL("../../next.config.ts", import.meta.url), "utf8");
+    expect(config).toMatch(/cssChunking:\s*"graph"/);
+  });
+});
+
+/**
+ * The build's own answer, when a build newer than the font/chunking sources
+ * is present (`next build` writes .next/server/next-font-manifest.json).
+ * Skipped otherwise, so a missing or stale .next never fails the suite.
+ */
+const APP_DIR = fileURLToPath(new URL("../../", import.meta.url));
+const FONT_MANIFEST = `${APP_DIR}.next/server/next-font-manifest.json`;
+const FONT_SOURCES = ["next.config.ts", "src/app/site-fonts.ts", "src/app/(guest)/guest-fonts.ts", "src/lib/teach/fonts.ts"];
+const freshBuild =
+  existsSync(FONT_MANIFEST) && FONT_SOURCES.every((f) => statSync(`${APP_DIR}${f}`).mtimeMs <= statSync(FONT_MANIFEST).mtimeMs);
+
+describe.skipIf(!freshBuild)("Built font preloads (.next/server/next-font-manifest.json)", () => {
+  const manifest = () => JSON.parse(readFileSync(FONT_MANIFEST, "utf8")) as { app: Record<string, string[]> };
+
+  it("every Guest route preloads at most 3 font files", () => {
+    const guest = Object.entries(manifest().app).filter(([route]) => route.includes("/(guest)/"));
+    expect(guest.length).toBeGreaterThan(0);
+    for (const [route, files] of guest) expect(files.length, route).toBeLessThanOrEqual(3);
+  });
+
+  it("(site) routes keep preloading the site's fonts (Guest preloads are a subset of them)", () => {
+    const app = manifest().app;
+    const site = Object.entries(app).filter(([route]) => route.includes("/(site)/"));
+    const guestFiles = new Set(Object.entries(app).filter(([r]) => r.includes("/(guest)/")).flatMap(([, f]) => f));
+    expect(site.length).toBeGreaterThan(0);
+    for (const [route, files] of site) {
+      expect(files.length, route).toBe(7);
+      for (const f of guestFiles) expect(files, route).toContain(f);
+    }
   });
 });

@@ -1,3 +1,6 @@
+// Every locale registered, as on the server and in the Studio (Guest client
+// modules import the English-only "@/lib/i18n/core"; TASK 033, QA D5).
+import "@/lib/i18n";
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { readFileSync } from "node:fs";

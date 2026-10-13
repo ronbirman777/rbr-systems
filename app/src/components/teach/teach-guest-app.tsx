@@ -2,7 +2,7 @@
 
 import { CreatedWithFooter } from "@/components/guest/created-with-footer";
 import { cardImage } from "@/lib/teach/cardImage";
-import { createTranslator, translate, type Locale } from "@/lib/i18n";
+import { registerLocaleMessages, type LocaleMessages, createTranslator, translate, type Locale } from "@/lib/i18n/core";
 import { formatShortDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime";
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
@@ -183,12 +183,22 @@ export function TeachGuestApp({
   data,
   embedded = false,
   initialTab = "home",
+  messages,
 }: {
+  /**
+   * The Space locale's messages, resolved on the server (lib/i18n/guestMessages.ts).
+   * The published route passes them so the Guest bundle carries no
+   * dictionaries but English (TASK 033, QA D5); the Studio preview omits them
+   * (the Studio has every locale registered already).
+   */
+  messages?: LocaleMessages | null;
   data: TeachGuestData;
   /** Studio preview: fixed-height frame with its own scroll container. */
   embedded?: boolean;
   initialTab?: Tab;
 }) {
+  // Before anything below (or any child) translates.
+  registerLocaleMessages(messages);
   const [selectedTab, setTab] = useState<Tab>(initialTab);
   const [stack, setStack] = useState<Page[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);

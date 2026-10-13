@@ -37,7 +37,7 @@ import {
 } from "./icons";
 import type { CSSProperties, ReactElement } from "react";
 
-import { createTranslator, splitEmphasis, translate, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, splitEmphasis, translate, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "@/components/flow-media-sizes";
 export type ExploreScreenProps = {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type KeyboardEvent } from "react";
-import { createTranslator, directionOf, type Direction, type Locale } from "@/lib/i18n";
+import { createTranslator, directionOf, type Direction, type Locale } from "@/lib/i18n/core";
 import { formatLongDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime";
 import type { RetreatDay } from "@/lib/schedule/retreatDays";
 
@@ -38,6 +38,42 @@ export type RetreatDayNavigatorProps = {
   /** Defaults to the locale's own direction. */
   dir?: Direction;
 };
+
+/**
+ * TASK 033 (QA defect D3) - every text state of a chip uses a SOLID token,
+ * never opacity, so its contrast is exactly the token pair's (asserted for
+ * every palette in retreatDayNavigatorContrast.test.ts):
+ *
+ *   unselected   weekday + "DAY n"  --rbr-text-subtle  on --rbr-cream
+ *                date number        --rbr-text         on --rbr-cream
+ *   out of range (unselected)       same text tokens on --rbr-background,
+ *                                   with a dashed hairline - the "dimmed"
+ *                                   cue is the surface and border, not a
+ *                                   fade of the text
+ *   selected     all text           --rbr-on-navigation on --rbr-navigation
+ *
+ * The old opacity treatment measured 3.94:1 (#758077 on #fdfaf4) for the
+ * default palette and as low as ~2.5:1 for lighter brand colours.
+ */
+export const DAY_CHIP_COLORS = {
+  surface: "var(--rbr-cream)",
+  outOfRangeSurface: "var(--rbr-background)",
+  label: "var(--rbr-text-subtle)",
+  number: "var(--rbr-text)",
+  activeSurface: "var(--rbr-navigation)",
+  activeText: "var(--rbr-on-navigation)",
+} as const;
+
+/**
+ * Font size of the "DAY n" line. 10px (was 8.5px) with light tracking fits
+ * every locale's short label in the 54px inside of the 56px chip (measured
+ * in DM Sans 600: "JOUR 12" 40.6px, "GÜN 12" 35.8px); the longest labels
+ * (Italian "GIORNO 12" and up, 9+ characters) step down to 9px with no
+ * tracking (about 46-52px) instead of overflowing the chip.
+ */
+export function dayLabelTypography(label: string): { fontSize: string; letterSpacing: string } {
+  return label.length >= 9 ? { fontSize: "9px", letterSpacing: "0" } : { fontSize: "10px", letterSpacing: "0.04em" };
+}
 
 /** The weekday of a calendar date, computed in UTC so no device zone can shift it. */
 export function weekdayIndexOf(dateIso: string): number {
@@ -139,6 +175,8 @@ export function RetreatDayNavigator({
       {days.map((day, i) => {
         const active = i === selectedIndex;
         const today = showToday && day.isToday;
+        const dayLabel = day.dayNumber === null ? null : t("flow", "dayN", { n: day.dayNumber });
+        const dimmed = day.outsideRange && !active;
         return (
           <button
             key={day.date}
@@ -156,18 +194,20 @@ export function RetreatDayNavigator({
             data-today={today ? "true" : undefined}
             onClick={() => onSelect(day.date)}
             className="shrink-0 w-[56px] h-[72px] min-w-11 min-h-11 flex flex-col items-center justify-center gap-0.5 rounded-2xl transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            data-outside-range={dimmed ? "true" : undefined}
             style={{
-              background: active ? "var(--rbr-navigation)" : "var(--rbr-cream)",
-              color: active ? "var(--rbr-on-navigation)" : "var(--rbr-text)",
-              border: active ? "1px solid transparent" : "1px solid color-mix(in srgb, var(--rbr-sand) 60%, transparent)",
+              background: active ? DAY_CHIP_COLORS.activeSurface : dimmed ? DAY_CHIP_COLORS.outOfRangeSurface : DAY_CHIP_COLORS.surface,
+              color: active ? DAY_CHIP_COLORS.activeText : DAY_CHIP_COLORS.number,
+              border: active
+                ? "1px solid transparent"
+                : `1px ${dimmed ? "dashed" : "solid"} color-mix(in srgb, var(--rbr-sand) ${dimmed ? 100 : 60}%, transparent)`,
               outlineColor: "var(--rbr-primary)",
-              opacity: day.outsideRange && !active ? 0.75 : 1,
             }}
           >
             <span
               aria-hidden="true"
               className="text-[10px] font-semibold tracking-wider uppercase leading-none"
-              style={{ fontFamily: "var(--rbr-font-ui)", opacity: active ? 0.9 : 0.6 }}
+              style={{ fontFamily: "var(--rbr-font-ui)", color: active ? DAY_CHIP_COLORS.activeText : DAY_CHIP_COLORS.label }}
             >
               {shortWeekdayName(weekdayIndexOf(day.date), locale)}
             </span>
@@ -176,10 +216,14 @@ export function RetreatDayNavigator({
             </span>
             <span
               aria-hidden="true"
-              className="text-[8.5px] font-semibold tracking-[0.12em] uppercase leading-none whitespace-nowrap"
-              style={{ fontFamily: "var(--rbr-font-ui)", opacity: active ? 0.8 : 0.55 }}
+              className="font-semibold uppercase leading-none whitespace-nowrap"
+              style={{
+                fontFamily: "var(--rbr-font-ui)",
+                color: active ? DAY_CHIP_COLORS.activeText : DAY_CHIP_COLORS.label,
+                ...dayLabelTypography(dayLabel ?? ""),
+              }}
             >
-              {day.dayNumber === null ? " " : t("flow", "dayN", { n: day.dayNumber })}
+              {dayLabel ?? " "}
             </span>
             <span
               aria-hidden="true"
@@ -212,7 +256,7 @@ export function RetreatDayHeader({ day, locale, showToday }: { day: RetreatDay; 
           className="shrink-0 w-[56px] h-[64px] flex flex-col items-center justify-center rounded-xl"
           style={{ background: "var(--rbr-navigation)", color: "var(--rbr-on-navigation)" }}
         >
-          <span className="text-[10px] font-semibold tracking-wider uppercase leading-none" style={{ fontFamily: "var(--rbr-font-ui)", opacity: 0.9 }}>
+          <span className="text-[10px] font-semibold tracking-wider uppercase leading-none" style={{ fontFamily: "var(--rbr-font-ui)" }}>
             {shortWeekdayName(weekdayIndexOf(day.date), locale)}
           </span>
           <span className="text-[22px] leading-none mt-1" style={{ fontFamily: "var(--rbr-font-display)" }}>
@@ -223,7 +267,8 @@ export function RetreatDayHeader({ day, locale, showToday }: { day: RetreatDay; 
           {day.dayNumber !== null && (
             <span
               className="text-[10px] font-semibold tracking-[0.16em] uppercase"
-              style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}
+              // Was --rbr-mist (3.06:1 on cream); see DAY_CHIP_COLORS.
+              style={{ fontFamily: "var(--rbr-font-ui)", color: DAY_CHIP_COLORS.label }}
             >
               {t("flow", "dayN", { n: day.dayNumber })}
             </span>

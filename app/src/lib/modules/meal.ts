@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { imagePositionSchema } from "./imagePosition";
 
-import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n/core";
 /**
  * The explicit schema for the "meals" module_key. Reuses module_items'
  * common columns (name->title, description, imageRef, sort_order) plus a

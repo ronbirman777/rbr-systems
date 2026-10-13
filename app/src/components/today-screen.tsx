@@ -5,7 +5,7 @@ import { PinIcon, PersonIcon, ChevronRightIcon } from "./guest/icons";
 import type { DailyQuote } from "@/lib/content/dailyQuotes";
 import type { CSSProperties } from "react";
 
-import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { formatLongDateLocalized } from "@/lib/i18n/datetime";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES, FLOW_LOGO_SIZES } from "./flow-media-sizes";

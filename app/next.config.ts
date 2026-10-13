@@ -31,6 +31,20 @@ const SECURITY_HEADERS = [
 
 const nextConfig: NextConfig = {
   experimental: {
+    // TASK 033 (plan 4.6 P5, QA defect D4) - keep the (site) root's font CSS
+    // out of the Guest routes. next/font preloads every "preloadable" file
+    // referenced by the CSS chunks a route loads (next-font-manifest.json
+    // is derived from those chunks, not from the importing layout). With the
+    // default ("loose") Turbopack CSS chunking, app/site-fonts.ts' small
+    // @font-face CSS was merged into the one CSS chunk shared by every root,
+    // so Guest pages preloaded the site's Geist, Geist Mono and Fraunces
+    // files (7 font preloads instead of the 3 in app/(guest)/guest-fonts.ts).
+    // The graph strategy splits that site-only CSS into its own chunk:
+    // measured on `next build` - Guest routes 7 -> 3 font preloads and the
+    // same 2 CSS requests; every (site) route keeps exactly its 7 preloads,
+    // at the cost of one extra ~14 KB CSS request. Guarded by
+    // app/guestFonts.test.ts.
+    cssChunking: "graph",
     // Next.js 16.3.3's default Server Action body limit is 1MB (confirmed
     // by the exact runtime error a >1MB request produces: "Body exceeded
     // 1 MB limit") - every image upload goes through a Server Action

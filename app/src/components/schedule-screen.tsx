@@ -6,7 +6,7 @@ import type { BrandConfig } from "@/lib/theme/tokens";
 import { hasActivityExtras, type PublicScheduleItem } from "@/lib/schedule/types";
 import type { CSSProperties } from "react";
 
-import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { buildRetreatDays, defaultRetreatDay } from "@/lib/schedule/retreatDays";
 import { dayTabId, RetreatDayHeader, RetreatDayNavigator } from "./guest/retreat-day-navigator";
 export type ScheduleScreenProps = {

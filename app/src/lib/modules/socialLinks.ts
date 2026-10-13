@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n/core";
 /**
  * Shared platform vocabulary for both Stay Connected (Space-level) and
  * Facilitator social links (person-level). A single source of truth so

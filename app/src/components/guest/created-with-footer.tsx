@@ -1,4 +1,4 @@
-import { createTranslator, type Locale } from "@/lib/i18n";
+import { createTranslator, type Locale } from "@/lib/i18n/core";
 
 /** Canonical brand URL. Deliberately a constant: never a Vercel alias or SITE_URL. */
 export const BRAND_URL = "https://innerdwes.com";

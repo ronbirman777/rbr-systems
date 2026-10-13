@@ -6,7 +6,7 @@ import type { DisplayFacility } from "@/lib/modules/facility";
 import { PinIcon, ClockIcon } from "./guest/icons";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { useState, type CSSProperties } from "react";
-import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "./flow-media-sizes";
 export type FacilitiesScreenProps = {

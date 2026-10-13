@@ -4,7 +4,7 @@ import { mealTypeLabel, type DisplayMeal } from "@/lib/modules/meal";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 
-import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "./flow-media-sizes";
 export type MealsScreenProps = {

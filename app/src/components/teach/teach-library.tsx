@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { TeachGuestData } from "@/lib/teach/guestData";
 import type { TeachItem } from "@/lib/teach/schemas";
 import { contactEntries, safeHttpUrl, contactMethodLabel } from "@/lib/teach/links";
-import { createTranslator } from "@/lib/i18n";
+import { createTranslator } from "@/lib/i18n/core";
 import { formatShortDateLocalized } from "@/lib/i18n/datetime";
 import { formatDuration } from "@/lib/modules/duration";
 import { audioNote, itemCategories, readingMinutes, sortByDateDesc } from "@/lib/modules/library";

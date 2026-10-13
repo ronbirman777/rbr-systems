@@ -4,6 +4,9 @@ import { buildGuestSpaceUrl } from "@/lib/guestSpaceUrl";
 import { qrPngBuffer } from "@/lib/share/qr";
 import { parseTeachItems } from "@/lib/teach/schemas";
 import { buildRegistrationCta } from "@/lib/teach/links";
+// Server entry with no root layout: register every locale for lib/teach/links
+// (which imports the English-only "@/lib/i18n/core"; TASK 033, QA D5).
+import "@/lib/i18n";
 
 /**
  * Generates a QR code on demand - nothing is ever stored. Two targets, and

@@ -10,7 +10,7 @@ import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import type { CSSProperties } from "react";
 import { BrandImage } from "@/components/shared/brand-image";
 
-import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { FLOW_SIZES } from "./flow-media-sizes";
 /** Facilitators' own established default - the exact numeric equivalent
  * of the CSS keyword "center top" (50% 0%) this replaces, preserved
