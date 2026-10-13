@@ -44,6 +44,10 @@ import { GuestHeroWait } from "./guest-hero-wait";
  * Teach's bottom tabs and header are `sticky`, which already stays within
  * the column, and Flow's chrome is in normal flow inside a fixed-height box.
  *
+ * The Guest Access code-entry screen sits in the same shell (vars from its
+ * published identity, no hero-wait overlay), so a protected Space's gate and
+ * its Guest App share one desktop frame.
+ *
  * Direction: centring is symmetric and `.guest-column-fixed` uses a
  * centre-anchored transform, so RTL needs nothing extra; `dir`/`lang` stay
  * on the app roots exactly as before.
@@ -56,6 +60,8 @@ export const GUEST_BACKDROP = "color-mix(in srgb, var(--rbr-primary) 10%, var(--
 
 export function GuestDesktopShell({
   brand,
+  vars: givenVars,
+  heroWait = true,
   locale,
   children,
   as: Column = "div",
@@ -63,9 +69,24 @@ export function GuestDesktopShell({
   columnStyle,
   lang,
   dir,
-}: {
-  /** The Space's published brand - only its theme tokens are used, for the backdrop. */
-  brand: Parameters<typeof deriveThemeVars>[0];
+}: (
+  | {
+      /** The Space's published brand - only its theme tokens are used, for the backdrop. */
+      brand: Parameters<typeof deriveThemeVars>[0];
+      vars?: never;
+    }
+  | {
+      brand?: never;
+      /** Theme vars already derived from the published theme (the Guest Access screen's identity). */
+      vars: CSSProperties;
+    }
+) & {
+  /**
+   * Mount the hero-wait loading overlay (default). The Guest Access code
+   * screen passes false: it keeps exactly its pre-TASK-033 behaviour and
+   * mounts nothing beyond its own published-safe identity and form.
+   */
+  heroWait?: boolean;
   /** The Space's locale, for the loading overlay's localized text. */
   locale: Locale;
   children: ReactNode;
@@ -76,7 +97,7 @@ export function GuestDesktopShell({
   lang?: string;
   dir?: "ltr" | "rtl";
 }) {
-  const vars = deriveThemeVars(brand) as CSSProperties;
+  const vars = givenVars ?? (deriveThemeVars(brand) as CSSProperties);
   return (
     <div
       data-guest-shell=""
@@ -84,7 +105,7 @@ export function GuestDesktopShell({
       style={{ ...vars, ["--guest-backdrop" as string]: GUEST_BACKDROP }}
     >
       <Column lang={lang} dir={dir} className={`guest-desktop-shell__column ${columnClassName}`.trim()} style={columnStyle}>
-        <GuestHeroWait locale={locale} />
+        {heroWait && <GuestHeroWait locale={locale} />}
         {children}
       </Column>
     </div>

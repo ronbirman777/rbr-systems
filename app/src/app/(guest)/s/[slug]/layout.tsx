@@ -3,8 +3,9 @@ import { DocumentShell, sharedMetadata, sharedViewport } from "../../../document
 import { directionOf } from "@/lib/i18n";
 import { socialSpaceBySlug } from "@/lib/share/publishedSocialSpace";
 import { GuestLoadingScreen } from "@/components/guest/guest-loading-screen";
+import { localeFromPublishedModules } from "@/lib/spaceSettings";
 import { GUEST_FONT_VARIABLES } from "../../guest-fonts";
-import { guestDocumentBySlug } from "../../guestDocument";
+import { guestGate } from "../../guestGate";
 
 /**
  * Root layout for the slug-addressed Guest App.
@@ -22,22 +23,25 @@ import { guestDocumentBySlug } from "../../guestDocument";
  * what issues the 404 - the document language must never be the thing that
  * decides whether a Space exists.
  *
- * TASK 033 (branded loading, plan 4.5). The layout no longer waits for the
- * whole published payload and access chain before sending a byte:
+ * TASK 033 (branded loading) and the HTTP status contract. Once a Suspense
+ * fallback is flushed the response is committed to 200, and a notFound()
+ * inside the stream can only become a soft not-found (200 + noindex). The
+ * owner requirement is that unknown, unpublished, suspended and
+ * commercially unavailable Spaces keep their real 404. So the layout:
  *
- *   1. It starts that chain (socialSpaceBySlug, React-cached per request -
- *      the page, generateMetadata and this call share ONE execution) without
- *      awaiting it,
- *   2. awaits only a light, indexed read of the locale (guestDocument.ts),
- *   3. and, when a published row exists, streams the page inside a Suspense
- *      boundary whose fallback is the branded GuestLoadingScreen.
+ *   1. awaits the per-request cached loader (socialSpaceBySlug: published
+ *      row + availability/access chain, shared with generateMetadata and the
+ *      page - ONE execution) BEFORE rendering any boundary - as it did
+ *      before TASK 033;
+ *   2. derives the decision with guestGate() and, only for a Space that
+ *      will actually render its Guest App, streams the page inside a
+ *      Suspense boundary whose fallback is the branded GuestLoadingScreen
+ *      (it covers the app's own async render, e.g. Teach's Flow-link checks);
+ *   3. for every denying outcome and for the code-entry screen renders the
+ *      page with NO boundary, so the page's notFound() runs before anything
+ *      is flushed and the response is a real 404.
  *
- * An unknown slug gets no boundary, so the page's notFound() runs before
- * anything is flushed and the response keeps its real 404 status. A
- * published row that turns out unavailable resolves the boundary into the
- * same not-found UI (streamed, so with Next's injected noindex rather than a
- * 404 status) and a code-protected one into the access screen - never a
- * stuck loading screen.
+ * The client hero-wait overlay (GuestHeroWait) still covers image decode.
  */
 export const viewport = sharedViewport;
 export const metadata = sharedMetadata;
@@ -50,14 +54,12 @@ export default async function GuestSlugRootLayout({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  // Start the heavy chain now, in parallel with the light read below; the
-  // page awaits this same promise. The catch only marks this branch
-  // handled - the page still sees (and handles) any rejection itself.
-  socialSpaceBySlug(slug).catch(() => undefined);
-  const { exists, locale } = await guestDocumentBySlug(slug);
+  // Access is decided HERE, before any Suspense boundary exists - see above.
+  const loaded = await socialSpaceBySlug(slug);
+  const locale = localeFromPublishedModules(loaded?.modules ?? null);
   return (
     <DocumentShell lang={locale} dir={directionOf(locale)} fontVariables={GUEST_FONT_VARIABLES}>
-      {exists ? <Suspense fallback={<GuestLoadingScreen locale={locale} />}>{children}</Suspense> : children}
+      {guestGate(loaded) === "app" ? <Suspense fallback={<GuestLoadingScreen locale={locale} />}>{children}</Suspense> : children}
     </DocumentShell>
   );
 }

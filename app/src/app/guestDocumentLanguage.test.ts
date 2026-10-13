@@ -31,55 +31,40 @@ vi.mock("next/font/google", () => {
 vi.mock("server-only", () => ({}));
 
 /*
- * TASK 033: the layout no longer awaits the whole published row to learn
- * the language - it reads only `modules->spaceSettings` (guestDocument.ts)
- * and starts the heavy loader without awaiting it. The fake public client
- * below serves that light read from the same fixture snapshot, so this is
- * still snapshot in, document attributes out.
+ * TASK 033 (fix): the layout awaits the per-request cached loader - the
+ * published row AND the access decision - before rendering anything, so a
+ * denied Space keeps its real 404 (guestStatusGate.test.ts). The language
+ * comes from that same snapshot. The loader is mocked here; `access` and
+ * `row.product_type` feed the gate, which decides the loading boundary.
  */
-const lightReads: { column: string; value: string; select: string }[] = [];
-let snapshot: { modules: unknown } | null = null;
-
-vi.mock("@/lib/supabase/public", () => ({
-  createPublicClient: () => ({
-    from: (table: string) => {
-      if (table !== "published_spaces") throw new Error(`unexpected table ${table}`);
-      return {
-        select: (select: string) => ({
-          eq: (column: string, value: string) => ({
-            maybeSingle: async () => {
-              lightReads.push({ column, value, select });
-              if (!snapshot) return { data: null, error: null };
-              const modules = (snapshot.modules ?? {}) as { spaceSettings?: unknown };
-              return { data: { spaceSettings: modules.spaceSettings ?? null }, error: null };
-            },
-          }),
-        }),
-      };
-    },
-  }),
-}));
-
-const bySlug = vi.fn<(slug: string) => Promise<null>>(async () => null);
-const byTenantId = vi.fn<(id: string) => Promise<null>>(async () => null);
+type Loaded = { modules: unknown; access: "granted" | "code-required" | "unavailable"; row: { product_type: string } };
+let snapshot: Loaded | null = null;
+const bySlug = vi.fn<(slug: string) => Promise<Loaded | null>>(async () => snapshot);
+const byTenantId = vi.fn<(id: string) => Promise<Loaded | null>>(async () => snapshot);
 
 vi.mock("@/lib/share/publishedSocialSpace", () => ({
   socialSpaceBySlug: (slug: string) => bySlug(slug),
   socialSpaceByTenantId: (id: string) => byTenantId(id),
 }));
+vi.mock("@/components/guest/published-space-screen", () => ({ PublishedSpaceScreen: () => null }));
+vi.mock("@/components/teach/teach-published-screen", () => ({ TeachPublishedSpaceScreen: () => null }));
 
 const htmlTag = (markup: string) => /<html[^>]*>/.exec(markup)?.[0] ?? "";
 const attr = (tag: string, name: string) => new RegExp(`\\b${name}="([^"]*)"`).exec(tag)?.[1] ?? null;
 
+function setSnapshot(modules: unknown, access: Loaded["access"] = "granted") {
+  snapshot = modules === undefined ? null : { modules, access, row: { product_type: "retreat" } };
+}
+
 async function renderSlugLayout(modules: unknown) {
-  snapshot = modules === undefined ? null : { modules };
+  setSnapshot(modules);
   const { default: Layout } = await import("./(guest)/s/[slug]/layout");
   const tree = await Layout({ children: null, params: Promise.resolve({ slug: "qa" }) });
   return renderToStaticMarkup(tree);
 }
 
 async function renderTenantLayout(modules: unknown) {
-  snapshot = modules === undefined ? null : { modules };
+  setSnapshot(modules);
   const { default: Layout } = await import("./(guest)/g/[tenantId]/layout");
   const tree = await Layout({ children: null, params: Promise.resolve({ tenantId: "t" }) });
   return renderToStaticMarkup(tree);
@@ -124,13 +109,7 @@ describe("the Guest document declares the published Space's language", () => {
     expect(attr(tag, "lang")).toBe("en");
   });
 
-  it("learns the language from one light read of spaceSettings only, never the whole row", async () => {
-    lightReads.length = 0;
-    await renderSlugLayout({ spaceSettings: { locale: "de" } });
-    expect(lightReads).toEqual([{ column: "slug", value: "qa", select: "spaceSettings:modules->spaceSettings" }]);
-  });
-
-  it("starts the heavy published-row chain in parallel instead of awaiting it", async () => {
+  it("learns the language from the same cached loader the page uses (no extra read)", async () => {
     bySlug.mockClear();
     byTenantId.mockClear();
     await renderSlugLayout({ spaceSettings: { locale: "en" } });
@@ -139,8 +118,17 @@ describe("the Guest document declares the published Space's language", () => {
     expect(byTenantId).toHaveBeenCalledWith("t");
   });
 
-  it("streams a published Space behind the branded loading screen, in the Space's language", async () => {
-    snapshot = { modules: { spaceSettings: { locale: "de" } } };
+  it("a denied Space still declares its own language (as before TASK 033) - without a loading boundary", async () => {
+    setSnapshot({ spaceSettings: { locale: "he" } }, "unavailable");
+    const { default: Layout } = await import("./(guest)/s/[slug]/layout");
+    const child = createElement("i", null, "page");
+    const tree = await Layout({ children: child, params: Promise.resolve({ slug: "qa" }) });
+    expect((tree.props as { children: unknown }).children).toBe(child);
+    expect(attr(htmlTag(renderToStaticMarkup(tree)), "lang")).toBe("he");
+  });
+
+  it("streams a published, granted Space behind the branded loading screen, in the Space's language", async () => {
+    setSnapshot({ spaceSettings: { locale: "de" } });
     const { default: Layout } = await import("./(guest)/s/[slug]/layout");
     const never = new Promise(() => {});
     function StillLoading(): never {
@@ -155,7 +143,7 @@ describe("the Guest document declares the published Space's language", () => {
   });
 
   it("an unknown address gets no loading boundary, so its 404 is decided before anything streams", async () => {
-    snapshot = null;
+    setSnapshot(undefined);
     for (const path of ["./(guest)/s/[slug]/layout", "./(guest)/g/[tenantId]/layout"] as const) {
       const { default: Layout } = await import(path);
       const child = createElement("i", null, "page");
