@@ -12,6 +12,7 @@ import {
   type TeachSettings,
 } from "./schemas";
 import { expandClassesForWindow, guestWindow } from "./recurrence";
+import { formatRetreatPrice } from "./retreats";
 import { DEFAULT_LOCALE, resolveLocale, translate, type Locale } from "@/lib/i18n";
 
 /**
@@ -53,6 +54,12 @@ export type TeachGuestData = {
   retreats: TeachItem<"teachRetreats">[];
   enabledExplore: TeachExploreModule[];
   mediaUrls: Record<string, string>;
+  /**
+   * TASK 033: retreat id -> price pre-formatted on the SERVER for published
+   * guests, so hydration never depends on the browser's ICU. Absent in the
+   * Studio preview, which formats after mount.
+   */
+  retreatPriceLabels?: Record<string, string>;
 };
 
 export type PublishedTeachRow = {
@@ -138,5 +145,10 @@ export function parsePublishedTeachSpace(space: PublishedTeachRow): TeachGuestDa
   for (const ref of [heroImageRef, ...collectTeachMediaRefs({ settings, items: data })]) {
     if (ref) mediaUrls[ref] = publicMediaUrl(ref);
   }
-  return { ...data, mediaUrls };
+  const retreatPriceLabels: Record<string, string> = {};
+  for (const r of data.retreats) {
+    const label = formatRetreatPrice(r.metadata, locale);
+    if (label) retreatPriceLabels[r.id] = label;
+  }
+  return { ...data, mediaUrls, retreatPriceLabels };
 }

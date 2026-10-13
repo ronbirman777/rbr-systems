@@ -18,6 +18,7 @@ import { QrCodeCard } from "@/components/studio/qr-code-card";
 import { ShareCardPanel } from "@/components/studio/share-card-panel";
 import { SpaceCountryCard } from "@/components/studio/space-country-card";
 import { SpaceLanguageCard } from "@/components/studio/space-language-card";
+import { SpaceCurrencyCard } from "@/components/studio/space-currency-card";
 import { BrandContrastFeedback } from "@/components/studio/brand-contrast-feedback";
 import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { ClassWhatsAppQr } from "@/components/studio/class-whatsapp-qr";
@@ -74,6 +75,10 @@ import { CollapsibleItemRow } from "@/components/studio/collapsible-item-row";
 import { createTranslator, translate, type Locale, type TranslationKey } from "@/lib/i18n";
 import { formatShortDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime";
 import { retreatDateSummary, formatRetreatPrice } from "@/lib/teach/retreats";
+import { CurrencySelect } from "@/components/forms/currency-select";
+import { useSpaceDefaultCurrency } from "@/components/studio/space-currency-card";
+import { formatPriceFallback } from "@/lib/currencies/format";
+import { useHasMounted } from "@/lib/currencies/useFormattedPrice";
 import { formatPublishedAtUtc } from "@/lib/studio/status";
 import { PRESET_LABEL } from "@/lib/brand/presetLabels";
 import {
@@ -381,6 +386,7 @@ export function IdentitySection({ api }: Props) {
       <SectionHeader eyebrow={t("teach", "identityEyebrow")} title={t("teach", "sectionIdentity")} intro={t("teach", "identityBody")} />
       <SpaceCountryCard tenantId={api.tenantId} locale={api.locale} />
       <SpaceLanguageCard tenantId={api.tenantId} uiLocale={api.locale} onChange={api.setLocale} />
+      <SpaceCurrencyCard tenantId={api.tenantId} uiLocale={api.locale} />
       <Card title={t("teach", "whoYouAre")} description={t("teach", "whoYouAreBody")}>
         <Grid>
           <TextField label={t("teach", "myName")} value={api.name} onChange={api.setName} maxLength={80} placeholder={t("teach", "myNamePlaceholder")} />
@@ -1915,6 +1921,11 @@ export function RetreatEditor({ api, item, update, index }: { api: StudioApi; it
   const cta = buildRetreatRegistrationCta(reg, item.title || t("teach", "myRetreats"), api.name, api.locale);
   const methods = REGISTRATION_METHODS.filter((k) => k !== "venueLink");
   const orderProblem = Boolean(m.startDate && m.endDate && m.endDate < m.startDate);
+  const spaceCurrency = useSpaceDefaultCurrency(api.tenantId);
+  // TASK 033: the currency this retreat had when the editor opened - a change
+  // on a priced retreat shows "amounts are not converted" (D-CC3).
+  const [openedCurrency] = useState(m.currency);
+  const showNotConverted = m.price !== null && openedCurrency !== null && m.currency !== openedCurrency;
   return (
     <>
       <Toggle checked={m.enabled} onChange={(v) => setM({ enabled: v })} label={t("studio", "visibleToGuests")} />
@@ -1935,9 +1946,14 @@ export function RetreatEditor({ api, item, update, index }: { api: StudioApi; it
         </p>
       ) : null}
       <Grid>
-        <RetreatPriceField key={item.id} locale={api.locale} price={m.price} onChange={(v) => setM({ price: v })} />
-        <TextField label={t("teach", "retreatCurrency")} value={str(m.currency)} onChange={(v) => setM({ currency: v.trim() ? v.trim().toUpperCase().slice(0, 3) : null })} maxLength={3} placeholder={t("teach", "retreatCurrencyPlaceholder")} dir="ltr" />
+        <RetreatPriceField key={item.id} locale={api.locale} price={m.price} onChange={(v) => setM(v !== null && !m.currency ? { price: v, currency: spaceCurrency } : { price: v })} />
+        <CurrencySelect key={`${item.id}-currency`} label={t("teach", "retreatCurrency")} locale={api.locale} value={m.currency} onChange={(code) => setM({ currency: code })} required={m.price !== null} />
       </Grid>
+      {showNotConverted ? (
+        <p role="status" className="text-[12.5px] px-3 py-2 rounded-lg bg-[#F3EFE7] text-[#6F6C66]">
+          {t("studio", "currencyNotConverted", { amount: String(m.price) })}
+        </p>
+      ) : null}
       <div className="flex flex-col gap-4 p-4 rounded-xl border border-[#E2DACD] bg-white">
         <h3 className="text-[16px] text-[#192B21]" style={{ fontFamily: "var(--font-fraunces), serif" }}>
           {t("teach", "registration")}
@@ -1992,6 +2008,9 @@ export function RetreatEditor({ api, item, update, index }: { api: StudioApi; it
 
 export function RetreatsSection({ api }: Props) {
   const { t } = createTranslator(api.locale);
+  // TASK 033: Intl currency output differs between Node and browsers, so the
+  // summary uses the plain fallback until mounted, then formatPrice.
+  const mounted = useHasMounted();
   return (
     <>
       <SectionHeader eyebrow={t("teach", "exploreLibrary")} title={t("teach", "myRetreats")} intro={t("teach", "myRetreatsBody")} />
@@ -2005,7 +2024,7 @@ export function RetreatsSection({ api }: Props) {
           emptyText={t("teach", "noRetreatsYet")}
           summary={(r) => ({
             title: r.title,
-            sub: [r.metadata.location, retreatDateSummary(r.metadata, api.locale), formatRetreatPrice(r.metadata, api.locale), r.metadata.enabled ? null : t("common", "disabled")].filter(Boolean).join(" · "),
+            sub: [r.metadata.location, retreatDateSummary(r.metadata, api.locale), (mounted ? formatRetreatPrice(r.metadata, api.locale) : formatPriceFallback(r.metadata.price, r.metadata.currency, api.locale)), r.metadata.enabled ? null : t("common", "disabled")].filter(Boolean).join(" · "),
             thumb: api.mediaUrl(r.imageRef),
           })}
           editor={(item, update, index) => <RetreatEditor api={api} item={item} update={update} index={index} />}

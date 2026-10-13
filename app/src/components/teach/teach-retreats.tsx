@@ -4,7 +4,8 @@ import type { ReactNode } from "react";
 import type { TeachGuestData } from "@/lib/teach/guestData";
 import type { TeachItem } from "@/lib/teach/schemas";
 import { buildRetreatRegistrationCta, safeHttpUrl } from "@/lib/teach/links";
-import { formatRetreatPrice, retreatDateSummary, retreatPhase, type RetreatPhase } from "@/lib/teach/retreats";
+import { retreatDateSummary, retreatPhase, type RetreatPhase } from "@/lib/teach/retreats";
+import { useFormattedPrice } from "@/lib/currencies/useFormattedPrice";
 import { createTranslator } from "@/lib/i18n";
 import { TeachIcon, type TeachIconName } from "./teach-icons";
 import { TeachImage } from "./teach-image";
@@ -33,6 +34,24 @@ function PhaseChip({ phase, locale }: { phase: RetreatPhase; locale: TeachGuestD
   return null;
 }
 
+/**
+ * TASK 033: the retreat price via the shared formatter. Published guests get
+ * the server-formatted string (hydration-safe); the Studio preview formats
+ * after mount.
+ */
+function useRetreatPrice(data: TeachGuestData, r: TeachItem<"teachRetreats">): string | null {
+  return useFormattedPrice(r.metadata.price, r.metadata.currency, data.locale, data.retreatPriceLabels ? (data.retreatPriceLabels[r.id] ?? null) : undefined);
+}
+
+function RetreatCardPrice({ data, r }: { data: TeachGuestData; r: TeachItem<"teachRetreats"> }) {
+  const price = useRetreatPrice(data, r);
+  return price ? (
+    <span className="text-[13px] font-semibold" style={{ color: "var(--rbr-text)" }} dir="auto">
+      {price}
+    </span>
+  ) : null;
+}
+
 /** "location · dates" - the line under a retreat's name in the list. */
 function summaryLine(data: TeachGuestData, r: TeachItem<"teachRetreats">): string {
   return [retreatDateSummary(r.metadata, data.locale), r.metadata.location].filter(Boolean).join(" · ");
@@ -55,7 +74,6 @@ export function RetreatsScreen({ data, onBack, onOpen, title }: { data: TeachGue
         <ul className="flex flex-col gap-3 @min-[40rem]:grid @min-[40rem]:grid-cols-2 @min-[40rem]:gap-4 @4xl:grid-cols-3 @4xl:gap-5">
           {data.retreats.map((r) => {
             const phase = retreatPhase(r.metadata, data.todayIso);
-            const price = formatRetreatPrice(r.metadata, data.locale);
             const line = summaryLine(data, r);
             return (
               <li key={r.id} className="min-w-0">
@@ -93,11 +111,7 @@ export function RetreatsScreen({ data, onBack, onOpen, title }: { data: TeachGue
                         {r.description}
                       </span>
                     ) : null}
-                    {price ? (
-                      <span className="text-[13px] font-semibold" style={{ color: "var(--rbr-text)" }} dir="auto">
-                        {price}
-                      </span>
-                    ) : null}
+                    <RetreatCardPrice data={data} r={r} />
                   </span>
                 </button>
               </li>
@@ -132,7 +146,7 @@ export function RetreatDetailScreen({ data, item, onBack }: { data: TeachGuestDa
   const m = item.metadata;
   const phase = retreatPhase(m, data.todayIso);
   const dates = retreatDateSummary(m, data.locale);
-  const price = formatRetreatPrice(m, data.locale);
+  const price = useRetreatPrice(data, item);
   const flowUrl = safeHttpUrl(m.flowGuestUrl);
   const registration = buildRetreatRegistrationCta(m.registration, item.title, data.teacherName, data.locale);
   const cover = media(data, item.imageRef);

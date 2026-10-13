@@ -7,6 +7,7 @@ import {
   spaceSettingsSchema,
   type SpaceSettings,
 } from "@/lib/spaceSettings";
+import { isIsoCurrency } from "@/lib/currencies";
 
 /**
  * Read/write for the product-neutral Space Settings row. One action for
@@ -46,6 +47,14 @@ export async function saveSpaceSettings(tenantId: string, patch: unknown): Promi
 
   // Merge onto what is stored so a product saving only `country` cannot
   // clear a `locale` it does not know about yet (and vice versa in CP3).
+  // The read schema turns an unknown currency into null (tolerant read);
+  // at the write boundary an explicit non-ISO value is refused instead of
+  // silently resetting the Space default (TASK 033, D-CC3).
+  const patchCurrency = (patch as { currency?: unknown } | null)?.currency;
+  if (patchCurrency !== undefined && patchCurrency !== null && !isIsoCurrency(patchCurrency)) {
+    return { error: "Unknown currency code" };
+  }
+
   const current = await loadSpaceSettings(tenantId);
   const parsed = spaceSettingsSchema.safeParse({ ...current, ...(patch as Record<string, unknown>) });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Those settings weren't valid." };

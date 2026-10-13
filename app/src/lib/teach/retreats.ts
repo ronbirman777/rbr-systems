@@ -1,6 +1,6 @@
 import type { Locale } from "@/lib/i18n";
-import { formatDateRangeLocalized, formatNumberLocalized } from "@/lib/i18n/datetime";
-import { LOCALE_TAG } from "@/lib/i18n/locales";
+import { formatDateRangeLocalized } from "@/lib/i18n/datetime";
+import { formatPrice } from "@/lib/currencies/format";
 import { isValidIsoDate } from "@/lib/modules/fields";
 import { GUEST_PUBLIC_ORIGIN } from "@/lib/site-url";
 import { isReservedSlug, slugFormatError } from "@/lib/slug";
@@ -40,20 +40,18 @@ export function retreatDateSummary(meta: Pick<RetreatMetadata, "startDate" | "en
 }
 
 /**
- * "700 THB" - the amount in the locale's digits and grouping, then the code.
+ * The retreat price for display - TASK 033 routes it through the shared
+ * retreat-item formatter (lib/currencies/format.ts): ISO codes get the
+ * locale's currency style with CLDR's disambiguated symbol ("THB 700.00",
+ * "€1,250.50"), never rounding a stored value; anything else prints locale
+ * digits plus the raw stored code. Never converted, never billing.
  *
- * Deliberately NOT Intl's currency style: ICU renders "THB" as "THB",
- * "฿" or "฿700.00" depending on the host's version, which breaks hydration
- * and is informational text here anyway (there is no checkout). A code is
- * unambiguous in every language. Whole amounts print without decimals.
+ * ICU output differs between Node and browsers, so guest pages format this
+ * on the server (TeachGuestData.retreatPriceLabels) and the Studio only
+ * after mount.
  */
 export function formatRetreatPrice(meta: Pick<RetreatMetadata, "price" | "currency">, locale: Locale): string | null {
-  if (meta.price === null || meta.price === undefined) return null;
-  const hasFraction = Math.abs(meta.price - Math.round(meta.price)) > 1e-9;
-  const amount = hasFraction
-    ? new Intl.NumberFormat(LOCALE_TAG[locale], { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(meta.price)
-    : formatNumberLocalized(Math.round(meta.price), locale);
-  return meta.currency ? `${amount} ${meta.currency}` : amount;
+  return formatPrice(meta.price, meta.currency, locale);
 }
 
 export type RetreatIssue =

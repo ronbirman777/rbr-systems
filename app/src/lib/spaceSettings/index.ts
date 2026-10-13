@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { isSupportedCountry } from "@/lib/countries";
+import { isoCurrencySchema } from "@/lib/currencies";
 
 import { SPACE_SELECTABLE_LOCALES, resolveLocale, type Locale } from "@/lib/i18n";
 /**
@@ -56,12 +57,21 @@ export const spaceSettingsSchema = z.object({
   country: countryCode.nullable().catch(null).default(null),
   /** Per-Space UI language. Populated in CP3; reserved and parsed now. */
   locale: localeCode.nullable().catch(null).default(null),
+  /**
+   * TASK 033 (D-CC3): the Space's default currency for retreat-item prices
+   * (Flow Treatments & Extras, Teach My Retreats). ISO 4217 only; null means
+   * "never chosen" and resolves to EUR via resolveSpaceCurrency(). It only
+   * PRE-FILLS new priced items - changing it never touches an existing item
+   * and an amount is never converted. Unknown/legacy values read as null.
+   * Not billing: InnerDweS subscription pricing never reads this.
+   */
+  currency: isoCurrencySchema.nullable().catch(null).default(null),
 });
 
 export type SpaceSettings = z.infer<typeof spaceSettingsSchema>;
 
 export function defaultSpaceSettings(): SpaceSettings {
-  return { country: null, locale: null };
+  return { country: null, locale: null, currency: null };
 }
 
 /**

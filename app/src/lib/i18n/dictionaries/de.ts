@@ -477,7 +477,7 @@ export const de: Dictionary = {
     classTimeZoneHint: "Die Zeitzone, in der dieser Kurs stattfindet.",
     differsFromSpaceTz: "Weicht von der Zeitzone deines Space ab ({timezone}).",
     classLocationPlaceholder: "Olive Tree Studio · Tel Aviv",
-    classPricePlaceholder: "65 ₪ · 5er-Karte 280 ₪",
+    classPricePlaceholder: "65 · 5er-Karte 280",
     maxParticipantsLabel: "Max. Teilnehmende",
     registration: "Anmeldung",
     registrationMethod: "Anmeldeweg",
@@ -1504,6 +1504,17 @@ export const de: Dictionary = {
     doneLabel: "Erledigt:",
     readability: "Lesbarkeit",
     imageFormats8mb: "JPG, PNG oder WebP bis 8 MB.",
+    // TASK 033 (P3) - retreat-item currency picker and Space default currency.
+    currencySearchPlaceholder: "Währungen durchsuchen…",
+    currencyNoMatch: "Keine Währung passt zu „{query}“.",
+    currencyCommonGroup: "Häufig",
+    currencyAllGroup: "Alle Währungen",
+    currencyUnrecognised: "Unbekannte Währung „{value}“ – wähle eine aus.",
+    currencyNotConverted: "Beträge werden nicht umgerechnet: {amount} bleibt {amount} in der neuen Währung.",
+    currencyRequiredForPrice: "Wähle eine Währung für den Preis von „{name}“.",
+    spaceCurrencyTitle: "Standardwährung",
+    spaceCurrencyHint: "Wird bei neuen Einträgen mit Preis vorausgefüllt. Bestehende Einträge behalten ihre Währung, und Beträge werden nie umgerechnet.",
+    spaceCurrencyNotSet: "Noch nicht gewählt – neue Einträge verwenden {code}.",
   },
 
   attribution: {

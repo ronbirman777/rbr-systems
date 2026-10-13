@@ -9,7 +9,7 @@ import { brandConfigSchema } from "@/lib/theme/tokens";
 import { publicScheduleItemSchema } from "@/lib/schedule/types";
 import { facilitatorSchema } from "@/lib/modules/facilitator";
 import { mealSchema } from "@/lib/modules/meal";
-import { treatmentSchema } from "@/lib/modules/treatment";
+import { storedTreatmentPricing, treatmentSchema, treatmentsNeedingCurrency } from "@/lib/modules/treatment";
 import { facilitySchema } from "@/lib/modules/facility";
 import { arrivalInfoSchema } from "@/lib/modules/arrival";
 import { faqItemSchema } from "@/lib/modules/faq";
@@ -661,6 +661,19 @@ export async function saveTreatments(
 
   const parsed = parseItemsWithIds(formData, treatmentSchema);
   if ("error" in parsed) return { error: parsed.error };
+
+  // TASK 033 (D-CC4): a new or edited priced row needs an ISO 4217 code;
+  // an untouched legacy row (e.g. "BAHT") still saves exactly as stored.
+  const { data: storedRows } = await supabase
+    .from("module_items")
+    .select("id, metadata")
+    .eq("tenant_id", tenantId)
+    .eq("module_key", "treatments");
+  const needCurrency = treatmentsNeedingCurrency(parsed.data, storedTreatmentPricing(storedRows ?? []));
+  if (needCurrency.length > 0) {
+    const first = parsed.data.find((item) => item.id === needCurrency[0]);
+    return { error: t("currencyRequiredForPrice", { name: first?.name ?? "" }) };
+  }
 
   const rows = parsed.data.map((item, i) => ({
     id: item.id,

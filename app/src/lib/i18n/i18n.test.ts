@@ -396,9 +396,9 @@ describe("locale persistence lives in the shared Space settings", () => {
   });
 
   it("keeps country and locale independent", () => {
-    expect(parseSpaceSettings({ country: "IL", locale: "he" })).toEqual({ country: "IL", locale: "he" });
+    expect(parseSpaceSettings({ country: "IL", locale: "he" })).toEqual({ country: "IL", locale: "he", currency: null });
     // Choosing Hebrew must not require an Israeli country, and vice versa.
-    expect(parseSpaceSettings({ country: "DE", locale: "he" })).toEqual({ country: "DE", locale: "he" });
+    expect(parseSpaceSettings({ country: "DE", locale: "he" })).toEqual({ country: "DE", locale: "he", currency: null });
   });
 });
 

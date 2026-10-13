@@ -492,7 +492,7 @@ export const es: Dictionary = {
     classTimeZoneHint: "La zona horaria en la que ocurre esta clase.",
     differsFromSpaceTz: "Distinta de la zona horaria de tu Espacio ({timezone}).",
     classLocationPlaceholder: "Estudio El Olivo · Madrid",
-    classPricePlaceholder: "15 € · bono de 5 clases 65 €",
+    classPricePlaceholder: "15 · bono de 5 clases 65",
     maxParticipantsLabel: "Máximo de participantes",
     registration: "Inscripción",
     registrationMethod: "Forma de inscripción",
@@ -1505,6 +1505,17 @@ export const es: Dictionary = {
     doneLabel: "Hecho:",
     readability: "Legibilidad",
     imageFormats8mb: "JPG, PNG o WebP de hasta 8 MB.",
+    // TASK 033 (P3) - retreat-item currency picker and Space default currency.
+    currencySearchPlaceholder: "Buscar monedas…",
+    currencyNoMatch: "Ninguna moneda coincide con «{query}».",
+    currencyCommonGroup: "Frecuentes",
+    currencyAllGroup: "Todas las monedas",
+    currencyUnrecognised: "Moneda no reconocida «{value}»: elige una.",
+    currencyNotConverted: "Los importes no se convierten: {amount} sigue siendo {amount} en la nueva moneda.",
+    currencyRequiredForPrice: "Elige una moneda para el precio de «{name}».",
+    spaceCurrencyTitle: "Moneda predeterminada",
+    spaceCurrencyHint: "Se rellena en los nuevos elementos con precio. Los existentes conservan su moneda y los importes nunca se convierten.",
+    spaceCurrencyNotSet: "Aún no elegida: los elementos nuevos usan {code}.",
   },
 
   attribution: {

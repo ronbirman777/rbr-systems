@@ -7,6 +7,7 @@ import { publicScheduleItemSchema } from "@/lib/schedule/types";
 import { facilitatorSchema, type DisplayFacilitator } from "@/lib/modules/facilitator";
 import { mealSchema, type DisplayMeal } from "@/lib/modules/meal";
 import { treatmentSchema, type DisplayTreatment } from "@/lib/modules/treatment";
+import { formatPrice } from "@/lib/currencies/format";
 import { facilitySchema, type DisplayFacility } from "@/lib/modules/facility";
 import { arrivalInfoSchema, EMPTY_ARRIVAL_INFO, type ArrivalInfo } from "@/lib/modules/arrival";
 import { publishedFaqItemSchema, type DisplayFaqItem } from "@/lib/modules/faq";
@@ -78,7 +79,12 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
   const meals: DisplayMeal[] = withImage(mealsParsed.success ? mealsParsed.data : []);
 
   const treatmentsParsed = z.array(treatmentSchema).safeParse(modules.treatments);
-  const treatments: DisplayTreatment[] = withImage(treatmentsParsed.success ? treatmentsParsed.data : []);
+  // TASK 033: prices formatted here, on the server, and passed as strings so
+  // the client never re-formats with a different ICU (hydration-safe).
+  const treatments: DisplayTreatment[] = withImage(treatmentsParsed.success ? treatmentsParsed.data : []).map((item) => ({
+    ...item,
+    priceLabel: formatPrice(item.price, item.currency, locale),
+  }));
 
   const facilitiesParsed = z.array(facilitySchema).safeParse(modules.facilities);
   const facilities: DisplayFacility[] = withImage(facilitiesParsed.success ? facilitiesParsed.data : []);

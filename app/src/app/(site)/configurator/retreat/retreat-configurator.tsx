@@ -40,6 +40,7 @@ import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
 import { PRESET_LABEL, type PresetLabelKey } from "@/lib/brand/presetLabels";
 import { SpaceCountryCard } from "@/components/studio/space-country-card";
 import { SpaceLanguageCard } from "@/components/studio/space-language-card";
+import { SpaceCurrencyCard } from "@/components/studio/space-currency-card";
 import { BrandContrastFeedback } from "@/components/studio/brand-contrast-feedback";
 import { getBrandPresets, matchBrandPreset, presetColorUpdate } from "@/lib/brand/presets";
 import { EmptyState } from "@/components/studio/empty-state";
@@ -2300,6 +2301,7 @@ export function RetreatConfigurator({
           <div className="max-w-xl mt-6 flex flex-col gap-4">
             <SpaceCountryCard tenantId={tenantId} locale={spaceLocale} />
             <SpaceLanguageCard tenantId={tenantId} uiLocale={spaceLocale} onChange={setSpaceLocale} />
+            <SpaceCurrencyCard tenantId={tenantId} uiLocale={spaceLocale} />
           </div>
         ) : null}
 

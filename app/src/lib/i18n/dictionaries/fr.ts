@@ -500,7 +500,7 @@ export const fr: Dictionary = {
     classTimeZoneHint: "Le fuseau horaire dans lequel ce cours a lieu.",
     differsFromSpaceTz: "Différent du fuseau horaire de ton Espace ({timezone}).",
     classLocationPlaceholder: "Studio de l’Olivier · Paris",
-    classPricePlaceholder: "18 € · carte de 5 cours 80 €",
+    classPricePlaceholder: "18 · carte de 5 cours 80",
     maxParticipantsLabel: "Nombre maximum de participants",
     registration: "Inscription",
     registrationMethod: "Mode d’inscription",
@@ -1513,6 +1513,17 @@ export const fr: Dictionary = {
     doneLabel: "Fait :",
     readability: "Lisibilité",
     imageFormats8mb: "JPG, PNG ou WebP jusqu’à 8 Mo.",
+    // TASK 033 (P3) - retreat-item currency picker and Space default currency.
+    currencySearchPlaceholder: "Rechercher une devise…",
+    currencyNoMatch: "Aucune devise ne correspond à « {query} ».",
+    currencyCommonGroup: "Courantes",
+    currencyAllGroup: "Toutes les devises",
+    currencyUnrecognised: "Devise non reconnue « {value} » : choisis-en une.",
+    currencyNotConverted: "Les montants ne sont pas convertis : {amount} reste {amount} dans la nouvelle devise.",
+    currencyRequiredForPrice: "Choisis une devise pour le prix de « {name} ».",
+    spaceCurrencyTitle: "Devise par défaut",
+    spaceCurrencyHint: "Pré-remplit la devise des nouveaux éléments avec un prix. Les éléments existants gardent leur devise, et les montants ne sont jamais convertis.",
+    spaceCurrencyNotSet: "Pas encore choisie : les nouveaux éléments utilisent {code}.",
   },
 
   attribution: {

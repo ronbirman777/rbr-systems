@@ -107,8 +107,13 @@ describe("My Retreats - dates: future, ongoing, past, none", () => {
 describe("My Retreats - price", () => {
   it("shows amount + currency in list and detail; nothing when there is no price", () => {
     const priced = guest([row("a", "Priced", { price: 700, currency: "THB" }), row("b", "Free-form", {})]);
-    expect(list(priced)).toContain("700 THB");
-    expect(detail(priced, "a")).toContain("700 THB");
+    // TASK 033: published guests get the server-formatted price (formatPrice).
+    expect(priced.retreatPriceLabels).toEqual({ a: "THB\u00a0700.00" });
+    expect(list(priced)).toContain("THB\u00a0700.00");
+    expect(detail(priced, "a")).toContain("THB\u00a0700.00");
+    // Without a server label (Studio preview) the pre-mount render is the plain fallback.
+    const preview = { ...priced, retreatPriceLabels: undefined };
+    expect(list(preview)).toContain("700 THB");
     expect(detail(priced, "b")).not.toContain("THB");
   });
   it("never offers a checkout: no payment words or forms anywhere", () => {
