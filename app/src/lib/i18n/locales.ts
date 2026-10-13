@@ -35,13 +35,14 @@ export type Locale = (typeof SUPPORTED_LOCALES)[number];
  *
  * Turkish and Italian are full platform locales as of TASK 032 - account-level
  * surfaces (the Create New Space funnel, Billing, Admin, billing emails) and the
- * Guest "Created with InnerDweS" attribution are complete in all seven. The
- * Teach, Flow and Studio interface strings for tr/it are NOT translated yet
- * (that is TASK 033's localization-quality work), so offering them for a Space
- * today would publish a half-English Guest App. Until TASK 033 they are
- * therefore not selectable for a Space, and the Space-settings schema refuses to
- * store them. This is the single switch: add "tr" and "it" here when TASK 033
- * has translated every Space-facing namespace.
+ * Guest "Created with InnerDweS" attribution are complete in all seven. TASK 033
+ * (P5) translated every Space-facing namespace (common, teach, flow, studio)
+ * for tr/it as well, but those strings are still UNREVIEWED by native speakers.
+ *
+ * RELEASE SWITCH (owner decision A2): "tr" and "it" are added here - and only
+ * here - after Guest/Studio QA and native-speaker review pass. Until then they
+ * are not selectable for a Space and the Space-settings schema refuses to store
+ * them, so no Space can publish an unreviewed Turkish or Italian Guest App.
  */
 export const SPACE_SELECTABLE_LOCALES = ["en", "de", "es", "fr", "he"] as const satisfies readonly Locale[];
 
@@ -164,6 +165,16 @@ export function recommendedLocales(country: string | null | undefined): Locale[]
     case "SN":
     case "CI":
       return ["en", "fr"];
+    // Turkish and Italian (Italy, San Marino, Vatican City). Recommending a
+    // language that is not yet Space-selectable is harmless: the language
+    // card only renders SPACE_SELECTABLE_LOCALES, so the badge appears once
+    // the release switch above adds tr/it.
+    case "TR":
+      return ["en", "tr"];
+    case "IT":
+    case "SM":
+    case "VA":
+      return ["en", "it"];
     default:
       return ["en"];
   }

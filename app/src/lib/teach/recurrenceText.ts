@@ -73,7 +73,7 @@ export function recurrenceSummary(
     text += ` ${translate(locale, "teach", "recurOnDayOfMonth", { day })}`;
   }
   const phrase = withEnd ? `${text} · ${endPhrase(rule, locale)}` : text;
-  return lowercase ? phrase : capitalizeFirst(phrase);
+  return lowercase ? phrase : capitalizeFirst(phrase, locale);
 }
 
 /** Which Studio preset a stored rule maps to (the UI never shows raw RRULE). */
