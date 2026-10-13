@@ -10,6 +10,8 @@ import { QrCodeCard } from "@/components/studio/qr-code-card";
 import { CARD_WIDTH, CARD_HEIGHT, drawShareCard, canvasToPngBlob } from "./shareCard";
 import { GuestAccessPanel } from "./guest-access-panel";
 import type { GuestAccessSettings } from "./guestAccessActions";
+import { selectPublishedCard, type PublishedShareCard } from "@/lib/share/publishedCardImage";
+import { loadPublishedShareCard } from "@/lib/share/publishedCardImageActions";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 export type ShareSpaceStatus = "live" | "draft" | "inactive";
@@ -18,11 +20,13 @@ export type ShareSpaceStepProps = {
   tenantId: string;
   name: string;
   slug: string | null;
-  spaceImageUrl: string | null;
-  logoUrl: string | null;
-  heroImageUrl: string | null;
-  primaryHex: string;
-  secondaryHex: string;
+  /** TASK 033 P1 (A3): the card's name, image, logo, colours and language,
+   * all from the PUBLISHED snapshot as of page load (null before the first
+   * publish). Draft Studio state never reaches the card. */
+  publishedCard: PublishedShareCard | null;
+  /** The Space's CURRENT publish time in this session - it moves on an
+   * in-session Publish/Republish, and the card is re-read when it does. */
+  publishedAt: string | null;
   status: ShareSpaceStatus;
   initialGuestAccessSettings: GuestAccessSettings;
   /** The Space's system language. */
@@ -60,11 +64,8 @@ export function ShareSpaceStep({
   tenantId,
   name,
   slug,
-  spaceImageUrl,
-  logoUrl,
-  heroImageUrl,
-  primaryHex,
-  secondaryHex,
+  publishedCard: initialPublishedCard,
+  publishedAt,
   status,
   initialGuestAccessSettings,
   locale = DEFAULT_LOCALE,
@@ -77,13 +78,45 @@ export function ShareSpaceStep({
   const url = publicSpaceUrl(tenantId, slug);
   const qrSrc = qrImagePath(tenantId);
   const copy = STATUS_COPY[status];
-  const canShareOrSave = status === "live";
 
-  const cardOptions = { name, logoUrl, heroImageUrl, qrUrl: qrSrc, primaryHex, secondaryHex, locale };
+  // TASK 033 P1 (A3): after an in-session Publish/Republish, `publishedAt`
+  // moves past the snapshot the page was rendered with, so the card's
+  // fields are re-read from the new published snapshot - no reload needed.
+  const [refreshedCard, setRefreshedCard] = useState<PublishedShareCard | null>(null);
+  const { card, stale } = selectPublishedCard(initialPublishedCard, refreshedCard, publishedAt);
+  useEffect(() => {
+    if (!stale) return;
+    let cancelled = false;
+    loadPublishedShareCard(tenantId)
+      .then((next) => {
+        if (!cancelled && next) setRefreshedCard(next);
+      })
+      .catch(() => {
+        // Keep the previous published card; a later visit re-reads it.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [stale, tenantId, publishedAt]);
+
+  const cardOptions = card
+    ? {
+        name: card.name,
+        logoUrl: card.logoUrl,
+        publishedCardImageUrl: card.publishedCardImageUrl,
+        qrUrl: qrSrc,
+        primaryHex: card.primaryHex,
+        secondaryHex: card.secondaryHex,
+        locale: card.locale,
+      }
+    : null;
+  const cardPublishedAt = card?.publishedAt ?? null;
+  const canShareOrSave = status === "live" && card !== null;
+  const cardImageUrl = card?.publishedCardImageUrl ?? null;
 
   useEffect(() => {
     const visible = previewRef.current;
-    if (!visible) return;
+    if (!visible || !cardOptions) return;
     let cancelled = false;
 
     // Draws into a private, per-effect-run offscreen canvas rather than
@@ -113,9 +146,10 @@ export function ShareSpaceStep({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, logoUrl, heroImageUrl, primaryHex, secondaryHex, tenantId]);
+  }, [cardPublishedAt, card?.name, card?.logoUrl, cardImageUrl, card?.primaryHex, card?.secondaryHex, card?.locale, tenantId]);
 
   async function renderFullCard(): Promise<Blob> {
+    if (!cardOptions) throw new Error("Nothing published yet");
     const canvas = document.createElement("canvas");
     canvas.width = CARD_WIDTH;
     canvas.height = CARD_HEIGHT;
@@ -157,7 +191,7 @@ export function ShareSpaceStep({
 
       if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
         try {
-          await navigator.share({ files: [file], title: name, text: shareText });
+          await navigator.share({ files: [file], title: card?.name || name, text: shareText });
           return;
         } catch (err) {
           if (err instanceof Error && err.name === "AbortError") return; // organizer cancelled - not an error
@@ -167,7 +201,7 @@ export function ShareSpaceStep({
 
       if (typeof navigator.share === "function") {
         try {
-          await navigator.share({ url, title: name, text: shareText });
+          await navigator.share({ url, title: card?.name || name, text: shareText });
           return;
         } catch (err) {
           if (err instanceof Error && err.name === "AbortError") return;
@@ -194,9 +228,10 @@ export function ShareSpaceStep({
           className="w-16 h-16 rounded-xl overflow-hidden shrink-0"
           style={{ background: GUEST_BASE_PALETTE.parchmentDeep }}
         >
-          {spaceImageUrl && (
+          {cardImageUrl && (
+            // The same published image the Share Card draws (A3) - never the draft Space image.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={spaceImageUrl} alt={name} className="w-full h-full object-cover" />
+            <img src={cardImageUrl} alt={name} className="w-full h-full object-cover" />
           )}
         </div>
         <div className="min-w-0 flex-1">
@@ -221,10 +256,10 @@ export function ShareSpaceStep({
             className="rounded-2xl overflow-hidden shadow-lg relative"
             style={{ width: 300, height: 375, background: GUEST_BASE_PALETTE.parchmentDeep }}
           >
-            <canvas ref={previewRef} style={{ width: 300, height: 375, display: previewReady ? "block" : "none" }} />
-            {!previewReady && (
-              <div className="absolute inset-0 flex items-center justify-center text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
-                {t("studio", "renderingPreview")}
+            <canvas ref={previewRef} style={{ width: 300, height: 375, display: previewReady && card ? "block" : "none" }} />
+            {(!previewReady || !card) && (
+              <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
+                {card ? t("studio", "renderingPreview") : t("studio", "shareCardAfterPublish")}
               </div>
             )}
           </div>

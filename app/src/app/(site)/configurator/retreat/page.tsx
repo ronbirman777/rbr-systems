@@ -90,7 +90,7 @@ export default async function NewRetreatConfiguratorPage() {
         initialModuleCovers={{}}
         initialPublishedAt={null}
         initialIsPubliclyAvailable={false}
-        publishedHeroImageUrl={null}
+        publishedShareCard={null}
         initialGuestAccessSettings={{ mode: "public", hasCode: false, updatedAt: null }}
         initialFeaturedSubmission={{
           status: "not_submitted",

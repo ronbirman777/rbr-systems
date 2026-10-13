@@ -3,6 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { buildGuestSpaceUrl } from "@/lib/guestSpaceUrl";
 import { socialSpaceByTenantId } from "@/lib/share/publishedSocialSpace";
 import { buildShareImage } from "@/lib/share/shareImage";
+import { shareCardCtaLocale, withPublishedSpaceImage } from "@/lib/share/publishedCardImage";
+import { localeFromPublishedModules } from "@/lib/spaceSettings";
+import { translate } from "@/lib/i18n";
 
 /**
  * The downloadable Share Card: the same generated design as the link
@@ -34,11 +37,17 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ten
   const space = await socialSpaceByTenantId(tenant.id);
   if (!space?.identity) return new NextResponse("Not found", { status: 404 });
 
+  // Image order (A4): published Space image -> teacher portrait -> published
+  // Hero -> brand-tinted ground. See withPublishedSpaceImage.
+  const identity = withPublishedSpaceImage(tenant.id, space.modules, space.identity);
+  const locale = shareCardCtaLocale(localeFromPublishedModules(space.modules));
+
   return buildShareImage({
-    identity: space.identity,
+    identity,
     modules: space.modules,
     variant: "card",
     qrUrl: buildGuestSpaceUrl(tenant.id, tenant.slug),
+    cta: translate(locale, "teach", "shareCardCta"),
     // The organizer's own copy of their card is never a public, cacheable
     // asset - it follows their draft slug the moment it changes.
     headers: { "Cache-Control": "private, no-store" },

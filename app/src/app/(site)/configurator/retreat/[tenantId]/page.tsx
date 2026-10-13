@@ -38,9 +38,9 @@ import { socialLinksSchema } from "@/lib/modules/socialLinks";
 import { parseImagePosition, type ImagePosition } from "@/lib/modules/imagePosition";
 import type { OptionalModuleKey } from "@/lib/modules/catalog";
 import { DEFAULT_TIMEZONE } from "@/lib/timezone";
-import { MEDIA_BUCKET, publicMediaUrl } from "@/lib/media/path";
+import { MEDIA_BUCKET } from "@/lib/media/path";
 import { mapBrandRowToInitialProps } from "@/lib/theme/brandRowMapping";
-import { brandMediaSchema } from "@/lib/modules/publishedTheme";
+import { buildPublishedShareCard } from "@/lib/share/publishedCardImage";
 import { isSpacePubliclyAvailable } from "@/lib/entitlements/isSpacePubliclyAvailable";
 import { getGuestAccessSettingsForOwner } from "../guestAccessActions";
 import { getFeaturedSubmissionForOwner } from "../featuredActions";
@@ -200,7 +200,7 @@ export default async function ResumeRetreatConfiguratorPage({
       .eq("module_key", "stayConnected")
       .maybeSingle(),
     supabase.from("module_configs").select("module_key, enabled, image_ref, image_position").eq("tenant_id", tenantId),
-    supabase.from("published_spaces").select("published_at, modules").eq("tenant_id", tenantId).maybeSingle(),
+    supabase.from("published_spaces").select("published_at, name, theme, modules").eq("tenant_id", tenantId).maybeSingle(),
     supabase
       .from("module_settings")
       .select("data")
@@ -248,14 +248,11 @@ export default async function ResumeRetreatConfiguratorPage({
       .order("sort_order"),
   ]);
 
-  // Share Your Space's Share Card needs the PUBLISHED Hero image, not the
-  // draft one - reused verbatim from how the Guest App itself resolves it
-  // (brandMediaSchema + publicMediaUrl, same as published-space-screen.tsx)
-  // so this is exactly what a guest already sees, never a new exposure or
-  // a new Storage copy.
-  const publishedBrandMediaParsed = brandMediaSchema.safeParse(published?.modules && (published.modules as { brand?: unknown }).brand);
-  const publishedHeroImageRef = publishedBrandMediaParsed.success ? (publishedBrandMediaParsed.data.hero?.imageRef ?? null) : null;
-  const publishedHeroImageUrl = publishedHeroImageRef ? publicMediaUrl(publishedHeroImageRef) : null;
+  // TASK 033 P1 (A3): Share Your Space's Share Card is built from the
+  // PUBLISHED snapshot only - published Space image, then published Hero,
+  // then the brand gradient, plus the published name, logo and theme. Never
+  // draft state. See lib/share/publishedCardImage.ts.
+  const publishedShareCard = buildPublishedShareCard(tenant.id, published);
 
   const initialSchedule: EditableScheduleItem[] = (scheduleRows ?? []).map((r) => {
     // TASK 029 (P5D): the per-activity extra details live in the one
@@ -564,7 +561,7 @@ export default async function ResumeRetreatConfiguratorPage({
         initialIsPubliclyAvailable={initialIsPubliclyAvailable}
         initialGuestAccessSettings={initialGuestAccessSettings}
         initialFeaturedSubmission={initialFeaturedSubmission}
-        publishedHeroImageUrl={publishedHeroImageUrl}
+        publishedShareCard={publishedShareCard}
       />
     </main>
   );
