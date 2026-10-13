@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidIsoDate } from "@/lib/schedule/retreatDays";
 
 /**
  * "retreatProfile" module_key - who this retreat IS, said once.
@@ -37,7 +38,45 @@ export const retreatProfileSchema = z.object({
   /** A list, one item per line in the editor. */
   whatToBring: z.array(z.string().min(1)).default([]),
   whatToExpect: z.array(z.string().min(1)).default([]),
+  /**
+   * TASK 033 P2 (A1): the retreat's first and last day, "YYYY-MM-DD" in
+   * the Space's timezone. Optional and absent for every existing Space.
+   *
+   * Stored here because retreatProfile is already published whole by
+   * publish_space() (0033+, unchanged through 0043), so the dates reach
+   * the Guest App with no SQL migration. Written ONLY by
+   * saveRetreatDates(); saveRetreatProfile() preserves whatever is stored.
+   *
+   * Lenient on read (`.catch`): a malformed value is dropped rather than
+   * failing the whole profile, which would blank the Home screen too.
+   */
+  startDate: retreatDateField(),
+  endDate: retreatDateField(),
 });
+
+function retreatDateField() {
+  return z
+    .string()
+    .refine((v) => isValidIsoDate(v))
+    .nullable()
+    .optional()
+    .catch(undefined);
+}
+
+/** The date pair alone, from any stored or published retreatProfile value. */
+export function retreatDatesOf(profile: unknown): RetreatDates {
+  // Its own two-field schema, so a profile whose OTHER fields fail
+  // validation still yields its dates.
+  const parsed = z.object({ startDate: retreatDateField(), endDate: retreatDateField() }).safeParse(
+    profile && typeof profile === "object" ? profile : {}
+  );
+  return {
+    startDate: parsed.success ? (parsed.data.startDate ?? null) : null,
+    endDate: parsed.success ? (parsed.data.endDate ?? null) : null,
+  };
+}
+
+export type RetreatDates = { startDate: string | null; endDate: string | null };
 
 export type RetreatProfile = z.infer<typeof retreatProfileSchema>;
 

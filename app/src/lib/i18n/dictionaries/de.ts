@@ -734,6 +734,25 @@ export const de: Dictionary = {
 
     // Schedule
     nothingScheduledDay: "Für diesen Tag ist nichts geplant.",
+
+    // ---- TASK 033 P2: Retreat Day Navigator and retreat dates ----
+    dayN: "Tag {n}",
+    dayOptionLabel: "{date}, Tag {n}",
+    dayOptionLabelToday: "{date}, Tag {n}, heute",
+    dayOptionDateToday: "{date}, heute",
+    chooseDay: "Tag wählen",
+    noActivitiesThisDay: "Für diesen Tag sind keine Aktivitäten geplant.",
+    retreatDatesTitle: "Retreat-Zeitraum",
+    retreatDatesBody: "Tag 1 ist dein Startdatum. Gäste sehen jeden Tag vom Start bis zum Ende, auch Tage ohne Programm. Die Daten gelten in der Zeitzone des Space ({timezone}).",
+    retreatStartDate: "Startdatum",
+    retreatEndDate: "Enddatum",
+    retreatDatesDerived: "Noch kein Zeitraum festgelegt: Der Zeitplan reicht von deiner ersten bis zu deiner letzten Aktivität.",
+    retreatDatesInvalid: "Gib ein gültiges Datum ein.",
+    retreatDatesEndBeforeStart: "Das Enddatum darf nicht vor dem Startdatum liegen.",
+    retreatDatesTooLong: "Ein Retreat kann höchstens {max} Tage dauern.",
+    retreatDatesSave: "Zeitraum speichern",
+    retreatDatesClear: "Zeitraum zurücksetzen",
+
     now: "Jetzt",
     sessionMeal: "Mahlzeit",
 

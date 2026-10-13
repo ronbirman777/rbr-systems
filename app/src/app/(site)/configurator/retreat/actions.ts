@@ -15,7 +15,8 @@ import { arrivalInfoSchema } from "@/lib/modules/arrival";
 import { faqItemSchema } from "@/lib/modules/faq";
 import { customPageSchema } from "@/lib/modules/customPage";
 import { socialLinksSchema } from "@/lib/modules/socialLinks";
-import { retreatProfileSchema, RETREAT_PROFILE_KEY } from "@/lib/modules/retreatProfile";
+import { retreatDatesOf, retreatProfileSchema, RETREAT_PROFILE_KEY, type RetreatDates } from "@/lib/modules/retreatProfile";
+import { MAX_RETREAT_RANGE_DAYS, RETREAT_DATES_ERROR_KEY, validateRetreatDates } from "@/lib/schedule/retreatDays";
 import { moduleIntrosSchema, pruneModuleIntros, MODULE_INTROS_KEY } from "@/lib/modules/moduleIntro";
 import { guidelineSchema, GUIDELINES_KEY } from "@/lib/modules/guideline";
 import { inspirationItemSchema, DAILY_INSPIRATION_KEY } from "@/lib/modules/dailyInspiration";
@@ -1849,17 +1850,90 @@ export async function saveRetreatProfile(
   const parsed = retreatProfileSchema.safeParse(data);
   if (!parsed.success) return { error: t("someDetailsInvalid") };
 
+  // TASK 033 P2: the retreat dates share this row but are owned by
+  // saveRetreatDates(). Whatever this form sent for them is ignored and
+  // the STORED pair is kept, so a Home save from a stale tab can never
+  // wipe dates set elsewhere.
+  const content = { ...parsed.data };
+  delete content.startDate;
+  delete content.endDate;
+  const stored = await loadStoredRetreatProfile(ctx.supabase, tenantId);
   const { error } = await ctx.supabase.from("module_settings").upsert(
     {
       tenant_id: tenantId,
       module_key: RETREAT_PROFILE_KEY,
-      data: parsed.data,
+      data: withRetreatDates(content, retreatDatesOf(stored)),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "tenant_id,module_key" }
   );
   if (error) return { error: error.message };
   return { error: null };
+}
+
+async function loadStoredRetreatProfile(supabase: SupabaseClient, tenantId: string): Promise<unknown> {
+  const { data } = await supabase
+    .from("module_settings")
+    .select("data")
+    .eq("tenant_id", tenantId)
+    .eq("module_key", RETREAT_PROFILE_KEY)
+    .maybeSingle();
+  return (data as { data?: unknown } | null)?.data ?? null;
+}
+
+/** Unset dates are omitted, not stored as null, so an untouched profile stays exactly as it was. */
+function withRetreatDates<T extends object>(content: T, dates: RetreatDates): T & Partial<RetreatDates> {
+  return {
+    ...content,
+    ...(dates.startDate ? { startDate: dates.startDate } : {}),
+    ...(dates.endDate ? { endDate: dates.endDate } : {}),
+  };
+}
+
+export type SaveRetreatDatesState = RetreatDates & { error: string | null };
+
+/**
+ * TASK 033 P2 (A1): the retreat's optional start and end date.
+ *
+ * Read-merge-write into the existing retreatProfile row - the only
+ * settings key publish_space() already publishes whole for Flow, so no
+ * migration is needed. Only the two date keys change; the Home content in
+ * the same row is carried over untouched (raw, not re-validated, so a row
+ * this action cannot fully parse is never rewritten into a lossy shape).
+ */
+export async function saveRetreatDates(
+  _prevState: SaveRetreatDatesState,
+  formData: FormData
+): Promise<SaveRetreatDatesState> {
+  const locale = localeFromFormData(formData);
+  const t = studioMessages(locale);
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const startDate = String(formData.get("startDate") ?? "").trim() || null;
+  const endDate = String(formData.get("endDate") ?? "").trim() || null;
+  const fail = (error: string): SaveRetreatDatesState => ({ error, startDate, endDate });
+
+  const ctx = await retreatActionContext(tenantId);
+  if (!ctx.ok) return fail(t(ctx.reason));
+
+  const invalid = validateRetreatDates(startDate, endDate);
+  if (invalid) return fail(translate(locale, "flow", RETREAT_DATES_ERROR_KEY[invalid], { max: MAX_RETREAT_RANGE_DAYS }));
+
+  const stored = await loadStoredRetreatProfile(ctx.supabase, tenantId);
+  const base: Record<string, unknown> = stored && typeof stored === "object" && !Array.isArray(stored) ? { ...(stored as Record<string, unknown>) } : {};
+  delete base.startDate;
+  delete base.endDate;
+
+  const { error } = await ctx.supabase.from("module_settings").upsert(
+    {
+      tenant_id: tenantId,
+      module_key: RETREAT_PROFILE_KEY,
+      data: withRetreatDates(base, { startDate, endDate }),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "tenant_id,module_key" }
+  );
+  if (error) return fail(error.message);
+  return { error: null, startDate, endDate };
 }
 
 export type SaveModuleIntrosState = { error: string | null };
