@@ -735,6 +735,24 @@ export const tr: Dictionary = {
 
     // Schedule
     nothingScheduledDay: "Bu gün için planlanmış bir şey yok.",
+
+    // ---- TASK 033 P2: Retreat Day Navigator and retreat dates ----
+    dayN: "Gün {n}",
+    dayOptionLabel: "{date}, gün {n}",
+    dayOptionLabelToday: "{date}, gün {n}, bugün",
+    dayOptionDateToday: "{date}, bugün",
+    chooseDay: "Bir gün seçin",
+    noActivitiesThisDay: "Bu gün için planlanmış etkinlik yok.",
+    retreatDatesTitle: "İnziva tarihleri",
+    retreatDatesBody: "1. gün başlangıç tarihinizdir. Misafirler, programı boş günler dahil başlangıçtan bitişe kadar her günü görür. Tarihler Space saat dilimine göredir (saat dilimi: {timezone}).",
+    retreatStartDate: "Başlangıç tarihi",
+    retreatEndDate: "Bitiş tarihi",
+    retreatDatesDerived: "Henüz tarih belirlenmedi: program ilk etkinliğinizden son etkinliğinize kadar uzanır.",
+    retreatDatesInvalid: "Geçerli bir tarih girin.",
+    retreatDatesEndBeforeStart: "Bitiş tarihi başlangıç tarihinden önce olamaz.",
+    retreatDatesTooLong: "Bir inziva en fazla şu kadar gün sürebilir: {max}.",
+    retreatDatesSave: "Tarihleri kaydet",
+    retreatDatesClear: "Tarihleri temizle",
     now: "Şimdi",
     sessionMeal: "Yemek",
 

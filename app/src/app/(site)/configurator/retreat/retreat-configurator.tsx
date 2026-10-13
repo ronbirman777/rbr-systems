@@ -67,7 +67,8 @@ import { SOCIAL_PLATFORMS, socialPlatformLabel, isLikelyValidUrl, type SocialPla
 import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
 import { todayInTimezone, currentTimeInTimezone, timezoneOptions, timezoneSelectValue, DEFAULT_TIMEZONE } from "@/lib/timezone";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
-import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, DEFAULT_LOCALE, LOCALE_TAG, type Locale } from "@/lib/i18n";
+import { shortWeekdayName } from "@/lib/i18n/datetime";
 import { useSpaceLocale } from "@/lib/studio/useSpaceLocale";
 import { moduleLabel } from "@/lib/modules/catalog";
 import {
@@ -456,11 +457,12 @@ const STUDIO_CATEGORY_CHIP: Record<string, { background: string; color: string }
 };
 const STUDIO_DEFAULT_CHIP = { background: `${GUEST_BASE_PALETTE.sand}80`, color: GUEST_BASE_PALETTE.dusk };
 
-function studioDayStrip(dateIso: string): { weekday: string; day: string } {
-  const d = new Date(`${dateIso}T00:00:00`);
+// TASK 033: Studio locale on a UTC-noon date, so the weekday never follows the device locale or timezone.
+function studioDayStrip(dateIso: string, locale: Locale): { weekday: string; day: string } {
+  const d = new Date(`${dateIso}T12:00:00Z`);
   return {
-    weekday: d.toLocaleDateString(undefined, { weekday: "short" }).toUpperCase(),
-    day: d.toLocaleDateString(undefined, { day: "numeric" }),
+    weekday: shortWeekdayName(d.getUTCDay(), locale).toLocaleUpperCase(LOCALE_TAG[locale]),
+    day: String(d.getUTCDate()),
   };
 }
 
@@ -542,7 +544,7 @@ function ScheduleEditor({
         <div className="flex gap-2 overflow-x-auto pb-1 mb-6">
           {dates.map((date) => {
             const active = currentDate === date;
-            const { weekday, day } = studioDayStrip(date);
+            const { weekday, day } = studioDayStrip(date, locale);
             return (
               <button
                 key={date}
