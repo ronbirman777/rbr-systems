@@ -137,6 +137,9 @@ describe("RetreatDatesPanel (Studio, server-rendered)", () => {
         timezone: "Europe/Berlin",
         profile: { ...EMPTY_RETREAT_PROFILE, startDate, endDate },
         setProfile: () => {},
+        onDirty: () => {},
+        onSaved: () => {},
+        registerSave: () => {},
       })
     );
   }

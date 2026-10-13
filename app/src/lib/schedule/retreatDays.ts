@@ -101,7 +101,21 @@ export function inclusiveDaySpan(startIso: string, endIso: string): number | nul
   return b - a + 1;
 }
 
-export function buildRetreatDays({ activityDates, startDate, endDate, todayIso }: BuildRetreatDaysInput): RetreatDayList {
+type ResolvedRetreatRange = {
+  /** Distinct valid activity epoch days, ascending. */
+  activityDays: number[];
+  /** Epoch day numbered "Day 1" (null when there is nothing to anchor to). */
+  start: number | null;
+  end: number | null;
+  derived: boolean;
+};
+
+/**
+ * The single definition of the retreat's anchor (Day 1) and range, shared
+ * by buildRetreatDays() and retreatDayOne() so the Day Navigator and every
+ * other "Day n" consumer (Daily Inspiration) can never disagree.
+ */
+function resolveRetreatRange({ activityDates, startDate, endDate }: Omit<BuildRetreatDaysInput, "todayIso">): ResolvedRetreatRange {
   const activityDays = Array.from(
     new Set(activityDates.map((d) => isoToEpochDay(d)).filter((n): n is number => n !== null))
   ).sort((a, b) => a - b);
@@ -118,7 +132,26 @@ export function buildRetreatDays({ activityDates, startDate, endDate, todayIso }
 
   if (start === null) start = end !== null && (firstActivity === null || firstActivity > end) ? end : firstActivity;
   if (end === null) end = lastActivity !== null && start !== null && lastActivity >= start ? lastActivity : start;
+  return { activityDays, start, end, derived };
+}
+
+/**
+ * The date the Day Navigator labels "Day 1" ("YYYY-MM-DD"), or null when
+ * there are neither dates nor activities. Same rule as buildRetreatDays():
+ * the retreat start date when set, else derived from the activities (and
+ * the end date when only that is set).
+ */
+export function retreatDayOne(input: Omit<BuildRetreatDaysInput, "todayIso">): string | null {
+  const { start } = resolveRetreatRange(input);
+  return start === null ? null : epochDayToIso(start);
+}
+
+export function buildRetreatDays({ activityDates, startDate, endDate, todayIso }: BuildRetreatDaysInput): RetreatDayList {
+  const { activityDays, start, end, derived } = resolveRetreatRange({ activityDates, startDate, endDate });
   if (start === null || end === null) return { days: [], derived };
+
+  const firstActivity = activityDays[0] ?? null;
+  const lastActivity = activityDays[activityDays.length - 1] ?? null;
 
   const rangeStart = start;
   const rangeEnd = end;

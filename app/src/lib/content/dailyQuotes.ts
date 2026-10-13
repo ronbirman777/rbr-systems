@@ -1,3 +1,5 @@
+import { isValidIsoDate, retreatDayOne } from "@/lib/schedule/retreatDays";
+
 /**
  * The Daily Inspiration quote set. Extracted verbatim from the Wonderland
  * Guest App source (`Wonderland App/index.html`, `DAILY_QUOTES`) at the
@@ -102,6 +104,8 @@ export function getDailyQuoteFrom(
  * those days. Before the first scheduled day (or with no schedule at all)
  * it falls back to day-of-year rotation, which needs no anchor.
  * `anchorIso` must be a YYYY-MM-DD date; anything else is ignored.
+ * Callers pass flowInspirationDayOne() (TASK 033), so "the first scheduled
+ * day" above is the retreat start date whenever the Space has one.
  */
 export function getFlowDailyQuote(
   dateIso: string,
@@ -122,4 +126,39 @@ export function getFlowDailyQuote(
   }
   const item = items[index];
   return { text: item.text.trim(), source: item.label?.trim() ?? "", custom: true };
+}
+
+/**
+ * TASK 033 (fix 3): the date Daily Inspiration treats as Day 1 - the
+ * `anchorIso` for getFlowDailyQuote().
+ *
+ * WITH RETREAT DATES (start and/or end set): exactly the Day Navigator's
+ * Day 1 (retreatDayOne(), the same definition as buildRetreatDays()):
+ * the canonical retreat start date, or - when only an end date is set -
+ * the navigator's derived start. The reflection shown on a day is then
+ * reflection[(Day n - 1) mod count] for the navigator's own Day n:
+ *   - gap days (no activities) still count, so nothing shifts;
+ *   - before the start date the navigator shows no Day n, so the
+ *     reflection rotates by day-of-year (the same fallback as before the
+ *     retreat in a dated-less Space);
+ *   - after the end date the navigator keeps the calendar Day n (Day 7,
+ *     Day 8, ...), so the reflections keep cycling from it.
+ *
+ * WITHOUT RETREAT DATES (legacy): unchanged from before TASK 033 - the
+ * lexicographically smallest raw `schedule[].date`, with no validation, so
+ * every existing Space shows exactly the reflection it showed before.
+ *
+ * All inputs are calendar dates already in the Space timezone; nothing
+ * here reads the device or server clock or zone.
+ */
+export function flowInspirationDayOne(
+  scheduleDates: readonly string[],
+  retreatDates: { startDate?: string | null; endDate?: string | null } | null | undefined
+): string | null {
+  const startDate = retreatDates?.startDate ?? null;
+  const endDate = retreatDates?.endDate ?? null;
+  if (isValidIsoDate(startDate) || isValidIsoDate(endDate)) {
+    return retreatDayOne({ activityDates: scheduleDates, startDate, endDate });
+  }
+  return scheduleDates.reduce<string | null>((min, d) => (min === null || d < min ? d : min), null);
 }

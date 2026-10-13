@@ -22,6 +22,8 @@ const DIR = path.join(process.cwd(), "src/app/(site)/configurator/retreat");
 const EDITOR_FILES: Record<StudioModuleSection, string> = {
   // TASK 029 - four more editors, covered by the same contract.
   home: "home-step.tsx",
+  // TASK 033 fix 2 - the Schedule step's retreat start/end date panel.
+  retreatDates: "retreat-dates-panel.tsx",
   guidelines: "guidelines-step.tsx",
   // TASK 030 W1.5 - custom Flow Daily Inspiration.
   dailyInspiration: "daily-inspiration-step.tsx",
@@ -43,7 +45,7 @@ function editorSource(section: StudioModuleSection): string {
 const configuratorSource = readFileSync(path.join(DIR, "retreat-configurator.tsx"), "utf8");
 
 describe("STUDIO_MODULE_SECTIONS", () => {
-  it("names exactly the twelve module editors the guard must cover", () => {
+  it("names exactly the thirteen section editors the guard must cover", () => {
     expect([...STUDIO_MODULE_SECTIONS].sort()).toEqual(
       [
         "arrival",
@@ -56,6 +58,7 @@ describe("STUDIO_MODULE_SECTIONS", () => {
         "home",
         "meals",
         "readings",
+        "retreatDates",
         "stayConnected",
         "treatments",
       ].sort()
@@ -158,6 +161,14 @@ describe("retreat-configurator wiring", () => {
   it("routes in-Studio navigation through the guard rather than setStep directly", () => {
     expect(configuratorSource).toContain("function attemptNavigate(action: () => void) {");
     expect(configuratorSource).toMatch(/if \(dirty\.isDirtyAnywhere\) \{\s*\n\s*setPendingNavigation/);
+  });
+
+  it("mounts the retreat dates panel inside the Schedule step with the shared section props", () => {
+    const mount = configuratorSource.slice(configuratorSource.indexOf("<RetreatDatesPanel"));
+    const tag = mount.slice(0, mount.indexOf("/>"));
+    expect(tag).toContain("{...moduleSectionProps.retreatDates}");
+    // The panel's locale comes from the shared contract, not a second prop.
+    expect(tag).not.toContain("locale=");
   });
 
   it("no longer claims the module editors are unwired", () => {
