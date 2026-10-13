@@ -187,16 +187,22 @@ body {
 /*
  * TASK 033 (D-LD1) - branded Guest loading (components/guest/guest-loading-screen.tsx).
  *
- *  - Appears only after 200ms (pure CSS), so a load under ~200ms never shows it.
- *  - The hero-wait overlay also hides itself by 1.5s with CSS alone, so it can
- *    never be stuck even if JavaScript never runs; JS reveals it earlier once
- *    the hero is decoded.
- *  - When the streaming fallback has already been on screen, a tiny inline
- *    script in that fallback injects a rule making the overlay start visible,
- *    so it continues the fallback without a 200ms flash of half-loaded content.
- *    The reveal rules below are deliberately more specific than that rule.
- *  - Reduced motion: no fades (durations collapse) and the mark is static via
- *    the existing .idw-loading-breathe override.
+ *  - The streaming fallback appears only after 200ms (pure CSS), so a load
+ *    under ~200ms never shows it.
+ *  - The hero-wait overlay is HIDDEN by default (QA defect D1). It arrives in
+ *    the same HTML as the content it would cover, so with a 200ms appearance
+ *    delay it could only ever fade in over content that was already painted
+ *    (measured: content painted ~650ms, hero decoded ~845ms, overlay visible
+ *    ~850ms-1.3s on 4G). It is shown only as a CONTINUATION of a streaming
+ *    fallback that is already on screen: the fallback's inline script
+ *    (GUEST_LOADING_CONTINUITY_SCRIPT) injects a rule that makes it start
+ *    visible and hide itself by 1.5s (1.3s + 0.2s fade) with CSS alone, and
+ *    a second rule that fades it out the moment the hero (or logo) has loaded
+ *    or failed - before hydration, no JS bundle needed. JS (GuestHeroWait)
+ *    then removes it. The reveal rules below out-rank both injected rules.
+ *  - Reduced motion: no fades (durations collapse, also for the injected
+ *    rules) and the mark is static via the existing .idw-loading-breathe
+ *    override.
  */
 @keyframes idw-guest-loading-in {
   from {
@@ -216,9 +222,9 @@ body {
   animation: idw-guest-loading-in 0.2s ease-out 0.2s both;
 }
 .idw-guest-loading[data-variant="overlay"] {
-  animation:
-    idw-guest-loading-in 0.2s ease-out 0.2s both,
-    idw-guest-loading-out 0.2s ease-in 1.3s forwards;
+  opacity: 0;
+  visibility: hidden;
+  animation: none;
 }
 .idw-guest-loading[data-variant][data-revealed="fade"] {
   animation: idw-guest-loading-out 0.2s ease-in forwards;
@@ -231,7 +237,7 @@ body {
   .idw-guest-loading,
   .idw-guest-loading[data-variant="overlay"],
   .idw-guest-loading[data-variant][data-revealed="fade"] {
-    animation-duration: 1ms;
+    animation-duration: 1ms !important;
   }
 }
 

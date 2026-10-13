@@ -1,5 +1,6 @@
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { createTranslator, type Locale } from "@/lib/i18n";
+import { GUEST_HERO_SELECTOR, GUEST_LOGO_SELECTOR } from "@/lib/guest/heroWait";
 
 /**
  * TASK 033 (plan section 4.5, D-LD1) - the branded Guest loading screen.
@@ -11,13 +12,16 @@ import { createTranslator, type Locale } from "@/lib/i18n";
  *              server. It replaces a blank wait; unknown or denied Spaces
  *              resolve into the existing 404 / access screen, because the
  *              boundary simply swaps in whatever the page renders.
- *   "overlay"  rendered by GuestHeroWait inside the Guest column after the
- *              content has arrived, until the hero image is decoded - hard
- *              capped at 1.5s (by CSS alone, and again by JS).
+ *   "overlay"  rendered by GuestHeroWait inside the Guest column with the
+ *              content. Hidden by default; it becomes visible only to
+ *              continue a streaming fallback that is already on screen,
+ *              until the hero image has loaded - hard capped at 1.5s (by CSS
+ *              alone, and again by JS). It never fades in over content that
+ *              was already painted (QA defect D1).
  *
  * Both are `position: fixed`, over a reserved layout, so they can never
- * shift anything (CLS 0), and both fade in only after 200ms (globals.css,
- * .idw-guest-loading) so a fast load never shows them at all.
+ * shift anything (CLS 0). The fallback fades in only after 200ms
+ * (globals.css, .idw-guest-loading) so a fast load never shows it at all.
  *
  * Visual: the existing InnerDweS mark with its calm idw-loading-breathe
  * (static under reduced motion - the existing globals.css override), on
@@ -35,23 +39,59 @@ export type GuestLoadingVariant = "stream" | "overlay";
 
 /** Id of the streaming fallback; the continuity script looks for it. */
 export const GUEST_LOADING_STREAM_ID = "idw-guest-loading-stream";
-const SHOWN_STYLE_ID = "idw-guest-loading-shown";
+
+/** Ids of the <style> rules the continuity script may inject (once each). */
+export const GUEST_LOADING_SHOWN_STYLE_ID = "idw-guest-loading-shown";
+export const GUEST_LOADING_DONE_STYLE_ID = "idw-guest-loading-done";
 
 /**
- * Continuity, not a timer. 200ms after the streaming fallback is parsed -
- * the moment its CSS makes it visible - if it is STILL in the document
- * (the content has not swapped in yet), a rule is added that lets the
- * overlay start visible. Without it, a slow page would go fallback ->
- * 200ms of half-loaded content -> overlay. A fast page never runs the rule,
- * so its overlay keeps the normal 200ms appearance delay. The overlay's
- * 1.5s cap is unaffected. Runs once; injects a <style> (not an attribute on
- * <html>) so it can never cause a hydration mismatch.
+ * Lets the overlay start visible - only ever injected while the streaming
+ * fallback is still on screen - and hides it by 1.5s with CSS alone. The
+ * `html` prefix out-ranks the default (hidden) overlay rule; the reveal
+ * rules ([data-revealed]) out-rank this one.
+ */
+export const GUEST_LOADING_SHOWN_CSS =
+  'html .idw-guest-loading[data-variant="overlay"]{opacity:1;visibility:visible;animation:idw-guest-loading-out .2s ease-in 1.3s forwards}';
+
+/** The hero (or logo) has loaded or failed: fade out now, before hydration. */
+export const GUEST_LOADING_DONE_CSS =
+  'html .idw-guest-loading[data-variant="overlay"]:not([data-revealed]){animation:idw-guest-loading-out .2s ease-in forwards;pointer-events:none}';
+
+/**
+ * Continuity, not a timer - and the early "hero ready" decision (QA defect
+ * D1). Runs while the HTML is parsed, so it needs no JS bundle and never
+ * waits for hydration:
+ *
+ *   1. Image readiness, decided as early as the browser knows it: capture-
+ *      phase load/error listeners on the document see the first
+ *      img[data-guest-hero] (or, once parsing is done and there is no hero,
+ *      the img[data-guest-logo]) settle - even inside React's hidden
+ *      streaming container - and inject DONE. At DOMContentLoaded, no target
+ *      at all, or a target that is already complete (cached / decoded /
+ *      failed), injects DONE as well. Same targets as lib/guest/heroWait.ts.
+ *   2. 200ms after the fallback is parsed - the moment its CSS makes it
+ *      visible - if it is STILL in the document and the hero is not already
+ *      settled, inject SHOWN, so the overlay continues the visible fallback
+ *      instead of flashing half-loaded content.
+ *
+ * The overlay is hidden by default (globals.css), so a page whose content
+ * arrived before its fallback ever became visible never shows the overlay:
+ * it can never cover content that was already painted. Injects <style>
+ * elements (never attributes on React-owned nodes), so it cannot cause a
+ * hydration mismatch. Each rule is injected at most once.
  */
 export const GUEST_LOADING_CONTINUITY_SCRIPT =
-  `setTimeout(function(){try{if(!document.getElementById("${GUEST_LOADING_STREAM_ID}")||document.getElementById("${SHOWN_STYLE_ID}"))return;` +
-  `var s=document.createElement("style");s.id="${SHOWN_STYLE_ID}";` +
-  `s.textContent='.idw-guest-loading[data-variant="overlay"]{animation:idw-guest-loading-out .2s ease-in 1.3s forwards}';` +
-  `document.head.appendChild(s)}catch(e){}},200)`;
+  `(function(){try{var d=document;` +
+  `function css(id,t){if(d.getElementById(id))return;var s=d.createElement("style");s.id=id;s.textContent=t;d.head.appendChild(s)}` +
+  `function done(){css("${GUEST_LOADING_DONE_STYLE_ID}",'${GUEST_LOADING_DONE_CSS}')}` +
+  `function hero(){return d.querySelector("${GUEST_HERO_SELECTOR}")}` +
+  `function logo(){return d.querySelector("${GUEST_LOGO_SELECTOR}")}` +
+  `function settled(e){var t=e&&e.target;if(!t||t.tagName!=="IMG")return;var h=hero();if(t===h||(!h&&d.readyState!=="loading"&&t===logo()))done()}` +
+  `d.addEventListener("load",settled,true);d.addEventListener("error",settled,true);` +
+  `d.addEventListener("DOMContentLoaded",function(){var i=hero()||logo();if(!i||i.complete)done()});` +
+  `setTimeout(function(){if(!d.getElementById("${GUEST_LOADING_STREAM_ID}")||d.getElementById("${GUEST_LOADING_DONE_STYLE_ID}"))return;` +
+  `css("${GUEST_LOADING_SHOWN_STYLE_ID}",'${GUEST_LOADING_SHOWN_CSS}')},200)` +
+  `}catch(e){}})()`;
 
 export function guestLoadingCopy(locale: Locale): { loading: string; createdWith: string } {
   const { t } = createTranslator(locale);
