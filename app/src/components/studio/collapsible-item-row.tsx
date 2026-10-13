@@ -64,12 +64,12 @@ export function CollapsibleItemRow({
   const { t } = createTranslator(locale);
   return (
     <div className={`rounded-xl border ${open ? "border-[#9A7B4F]/60 bg-[#FBF8F2]" : "border-[#E2DACD] bg-white"}`} data-testid={testId}>
-      <div className="flex items-center gap-3 p-3">
+      <div className="flex items-center gap-2 min-[480px]:gap-3 p-3">
         {thumb !== undefined ? (
           thumb ? (
-            <img src={thumb} alt="" className="w-11 h-11 rounded-lg object-cover shrink-0" />
+            <img src={thumb} alt="" className="hidden min-[480px]:block w-11 h-11 rounded-lg object-cover shrink-0" />
           ) : (
-            <span className="w-11 h-11 rounded-lg bg-[#F1E9DC] shrink-0" aria-hidden="true" />
+            <span className="hidden min-[480px]:block w-11 h-11 rounded-lg bg-[#F1E9DC] shrink-0" aria-hidden="true" />
           )
         ) : null}
         <button type="button" onClick={onToggle} aria-expanded={open} className="flex-1 min-w-0 text-left min-h-11">
@@ -93,7 +93,9 @@ export function CollapsibleItemRow({
             </button>
           </span>
         ) : null}
-        <button type="button" onClick={onToggle} aria-label={open ? t("studio", "collapse") : t("common", "edit")} className="w-11 h-11 flex items-center justify-center rounded-lg text-[#6F6C66] hover:bg-black/5">
+        {/* Below 480 px the thumbnail and this chevron (a duplicate of the
+            title toggle) give way so the title stays readable (Staging QA D3). */}
+        <button type="button" onClick={onToggle} aria-label={open ? t("studio", "collapse") : t("common", "edit")} className="hidden min-[480px]:flex w-11 h-11 items-center justify-center rounded-lg text-[#6F6C66] hover:bg-black/5">
           {open ? "▴" : "▾"}
         </button>
       </div>

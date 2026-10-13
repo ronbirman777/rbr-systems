@@ -39,6 +39,17 @@ const noop = () => {};
 const ROW_ICON_CONTROL =
   "w-11 h-11 flex items-center justify-center rounded-lg text-[#6F6C66] hover:bg-black/5";
 
+/**
+ * Second declared departure (TASK 033 Staging QA D3, 2026-10-13): at 320 px
+ * the thumbnail, arrows and chevron left the title one letter wide. Below
+ * 480 px the gap narrows and the thumbnail and the chevron (a duplicate of
+ * the title toggle) are hidden; at 480 px and wider the row is unchanged.
+ */
+const ROW_GAP = "flex items-center gap-2 min-[480px]:gap-3 p-3";
+const ROW_THUMB = "hidden min-[480px]:block w-11 h-11 rounded-lg";
+const ROW_CHEVRON =
+  "hidden min-[480px]:flex w-11 h-11 items-center justify-center rounded-lg text-[#6F6C66] hover:bg-black/5";
+
 /** app/(site)/configurator/teach/teach-studio-sections.tsx at d3f4bed,
  *  verbatim apart from ROW_ICON_CONTROL above. */
 function preExtractionRow(opts: {
@@ -63,11 +74,11 @@ function preExtractionRow(opts: {
     },
     h(
       "div",
-      { className: "flex items-center gap-3 p-3" },
+      { className: ROW_GAP },
       s.thumb !== undefined
         ? s.thumb
-          ? h("img", { src: s.thumb, alt: "", className: "w-11 h-11 rounded-lg object-cover shrink-0" })
-          : h("span", { className: "w-11 h-11 rounded-lg bg-[#F1E9DC] shrink-0", "aria-hidden": "true" })
+          ? h("img", { src: s.thumb, alt: "", className: `${ROW_THUMB} object-cover shrink-0` })
+          : h("span", { className: `${ROW_THUMB} bg-[#F1E9DC] shrink-0`, "aria-hidden": "true" })
         : null,
       h(
         "button",
@@ -109,7 +120,7 @@ function preExtractionRow(opts: {
           type: "button",
           onClick: noop,
           "aria-label": isOpen ? t("studio", "collapse") : t("common", "edit"),
-          className: ROW_ICON_CONTROL,
+          className: ROW_CHEVRON,
         },
         isOpen ? "▴" : "▾"
       )

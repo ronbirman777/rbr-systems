@@ -209,3 +209,21 @@ describe("guard: schedule-screen never formats dates with the device locale/time
     expect(source).not.toContain("weekdayLabel");
   });
 });
+
+// TASK 033 Staging QA (2026-10-13) D1: two published activities may share date,
+// time and title; keys built from those duplicated and left a stale card on other days.
+describe("ScheduleScreen with identical activities (D1)", () => {
+  it("renders both cards with distinct extras ids", () => {
+    const twin = { ...item("2027-10-15", "09:00", "Untitled"), whatToBring: ["Mat"] };
+    const html = screen({ schedule: [twin, { ...twin }] });
+    const ids = [...html.matchAll(/aria-controls="(extras-[^"]+)"/g)].map((m) => m[1]);
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+  });
+
+  it("does not key cards or extras by time or title", () => {
+    const src = readFileSync(join(__dirname, "..", "schedule-screen.tsx"), "utf8");
+    expect(src).not.toMatch(/key=\{`[^`]*\$\{item\.(startTime|title)\}/);
+    expect(src).not.toMatch(/extras-\$\{item\.date\}-\$\{item\.startTime\}/);
+  });
+});

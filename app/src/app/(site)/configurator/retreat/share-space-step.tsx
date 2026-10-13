@@ -251,12 +251,13 @@ export function ShareSpaceStep({
       <GuestAccessPanel tenantId={tenantId} initialSettings={initialGuestAccessSettings} locale={locale} />
 
       <div className="mt-6 flex flex-col sm:flex-row gap-6 items-start">
-        <div className="shrink-0 mx-auto sm:mx-0">
+        {/* 300 px wide at most, narrower on a 320 px phone (Staging QA D2). */}
+        <div className="shrink-0 w-full max-w-[300px] mx-auto sm:mx-0">
           <div
-            className="rounded-2xl overflow-hidden shadow-lg relative"
-            style={{ width: 300, height: 375, background: GUEST_BASE_PALETTE.parchmentDeep }}
+            className="rounded-2xl overflow-hidden shadow-lg relative w-full"
+            style={{ aspectRatio: "4 / 5", background: GUEST_BASE_PALETTE.parchmentDeep }}
           >
-            <canvas ref={previewRef} style={{ width: 300, height: 375, display: previewReady && card ? "block" : "none" }} />
+            <canvas ref={previewRef} style={{ width: "100%", height: "100%", display: previewReady && card ? "block" : "none" }} />
             {(!previewReady || !card) && (
               <div className="absolute inset-0 flex items-center justify-center px-6 text-center text-[11px]" style={{ color: GUEST_BASE_PALETTE.mist }}>
                 {card ? t("studio", "renderingPreview") : t("studio", "shareCardAfterPublish")}
