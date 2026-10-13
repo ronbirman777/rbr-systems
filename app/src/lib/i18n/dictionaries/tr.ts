@@ -480,7 +480,7 @@ export const tr: Dictionary = {
     classTimeZoneHint: "Bu dersin yapıldığı saat dilimi.",
     differsFromSpaceTz: "Space'inizin saat diliminden farklı ({timezone}).",
     classLocationPlaceholder: "Zeytin Ağacı Stüdyosu · Kadıköy",
-    classPricePlaceholder: "₺400 · 5 derslik kart ₺1.800",
+    classPricePlaceholder: "400 · 5 derslik kart 1.800",
     maxParticipantsLabel: "En fazla katılımcı",
     registration: "Kayıt",
     registrationMethod: "Kayıt yöntemi",
@@ -1508,6 +1508,17 @@ export const tr: Dictionary = {
     doneLabel: "Tamamlanan:",
     readability: "Okunabilirlik",
     imageFormats8mb: "8 MB'a kadar JPG, PNG veya WebP.",
+    // TASK 033 (P3) - retreat-item currency picker and Space default currency.
+    currencySearchPlaceholder: "Para birimi arayın…",
+    currencyNoMatch: "Eşleşen para birimi yok: “{query}”.",
+    currencyCommonGroup: "Sık kullanılanlar",
+    currencyAllGroup: "Tüm para birimleri",
+    currencyUnrecognised: "Tanınmayan para birimi: “{value}”. Lütfen birini seçin.",
+    currencyNotConverted: "Tutarlar dönüştürülmez: {amount} yeni para biriminde de {amount} olarak kalır.",
+    currencyRequiredForPrice: "Fiyat için bir para birimi seçin: “{name}”.",
+    spaceCurrencyTitle: "Varsayılan para birimi",
+    spaceCurrencyHint: "Yeni fiyatlı öğelerin para birimini önceden doldurur. Mevcut öğeler kendi para birimini korur ve tutarlar asla dönüştürülmez.",
+    spaceCurrencyNotSet: "Henüz seçilmedi; yeni öğeler şunu kullanır: {code}.",
   },
 
   attribution: {

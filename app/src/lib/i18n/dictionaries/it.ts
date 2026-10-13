@@ -474,7 +474,7 @@ export const it: Dictionary = {
     classTimeZoneHint: "Il fuso orario in cui si svolge questa lezione.",
     differsFromSpaceTz: "Diverso dal fuso orario dello Space ({timezone}).",
     classLocationPlaceholder: "Studio Ulivo · Roma",
-    classPricePlaceholder: "15 € · carnet 5 lezioni 65 €",
+    classPricePlaceholder: "15 · carnet 5 lezioni 65",
     maxParticipantsLabel: "Partecipanti massimi",
     registration: "Iscrizione",
     registrationMethod: "Modalità di iscrizione",
@@ -1502,6 +1502,17 @@ export const it: Dictionary = {
     doneLabel: "Fatto:",
     readability: "Leggibilità",
     imageFormats8mb: "JPG, PNG o WebP fino a 8 MB.",
+    // TASK 033 (P3) - retreat-item currency picker and Space default currency.
+    currencySearchPlaceholder: "Cerca una valuta…",
+    currencyNoMatch: "Nessuna valuta corrisponde a “{query}”.",
+    currencyCommonGroup: "Più usate",
+    currencyAllGroup: "Tutte le valute",
+    currencyUnrecognised: "Valuta non riconosciuta “{value}”: ne scelga una.",
+    currencyNotConverted: "Gli importi non vengono convertiti: {amount} resta {amount} nella nuova valuta.",
+    currencyRequiredForPrice: "Scelga una valuta per il prezzo di “{name}”.",
+    spaceCurrencyTitle: "Valuta predefinita",
+    spaceCurrencyHint: "Precompila la valuta dei nuovi elementi con prezzo. Gli elementi esistenti mantengono la propria valuta e gli importi non vengono mai convertiti.",
+    spaceCurrencyNotSet: "Non ancora scelta: i nuovi elementi usano {code}.",
   },
 
   attribution: {
