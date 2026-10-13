@@ -116,7 +116,7 @@ POC evidence (`docs/media/r2-audit/07-POC-ACCOUNTING.md`): Worker/bucket `innerd
 | ID | Requirement | Status | Design reference | Next |
 |---|---|---|---|---|
 | R2-01 | Private R2 bucket + authenticated Worker | PLANNED | 04 §D, E | POC A1 |
-| R2-02 | Time-limited playback tokens, renewal, revocation (epoch) | PLANNED | 04 §D.2, E.2 | POC P-TOK |
+| R2-02 | Time-limited playback tokens, renewal, revocation (epoch) | PLANNED — POC defect: same-second revocation bypass; **strict epoch required** (REQ-1); no wildcard CORS, no Worker-side minting, rate limits (REQ-2..4) | 04 §D.2, E.2; `08-PRODUCT-WORKER-REQUIREMENTS.md` | product Worker |
 | R2-03 | Safe range requests (206/416/HEAD/If-Range), Safari/iOS | PLANNED | 04 §E.1, E.3 | POC P-STR |
 | R2-04 | Subscription state enforcement at the token | PLANNED | 04 §D row 11 | POC P-TOK-05/06 |
 | R2-05 | R2-aware replacement for the 0046 `storage.objects` checks | PLANNED | 04 §D.3 | W2 |
