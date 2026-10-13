@@ -2,8 +2,13 @@ import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
+  MEDIA_PREFETCH_BACKGROUND_CAP,
   MEDIA_PREFETCH_CAP,
+  createMediaPrefetcher,
+  isPrefetchableMediaUrl,
   mediaPrefetchAllowed,
+  mediaPrefetchBackgroundAllowed,
+  mediaPrefetchPlan,
   mediaPrefetchQueue,
   prefetchMedia,
 } from "./prefetch";
@@ -182,5 +187,104 @@ describe("prefetchMedia", () => {
     const items = Array.from({ length: 30 }, (_, i) => ({ src: `${SRC}?i=${i}` }));
     prefetchMedia(items, doc, { concurrency: 30 });
     expect(links).toHaveLength(MEDIA_PREFETCH_CAP);
+  });
+});
+
+describe("TASK 033 staged prefetch: rules", () => {
+  it("skips everything on Save-Data, 2g/slow-2g and reduced-data - both stages", () => {
+    for (const signals of [{ saveData: true }, { effectiveType: "2g" }, { effectiveType: "slow-2g" }, { prefersReducedData: true }]) {
+      expect(mediaPrefetchAllowed(signals), JSON.stringify(signals)).toBe(false);
+      expect(mediaPrefetchBackgroundAllowed(signals), JSON.stringify(signals)).toBe(false);
+    }
+  });
+
+  it("keeps Stage 3 (background) off on 3g and on low-memory devices, Stage 2 still on", () => {
+    expect(mediaPrefetchAllowed({ effectiveType: "3g" })).toBe(true);
+    expect(mediaPrefetchBackgroundAllowed({ effectiveType: "3g" })).toBe(false);
+    expect(mediaPrefetchBackgroundAllowed({ deviceMemory: 2 })).toBe(false);
+    expect(mediaPrefetchBackgroundAllowed({ deviceMemory: 1 })).toBe(false);
+    expect(mediaPrefetchBackgroundAllowed({ deviceMemory: 4, effectiveType: "4g" })).toBe(true);
+    // Absent signals (Safari) are permission.
+    expect(mediaPrefetchBackgroundAllowed({})).toBe(true);
+  });
+
+  it("only ever warms the stable /api/media URL - never a signed Storage URL", () => {
+    const signed = "https://x.supabase.co/storage/v1/object/sign/tenant-media/a.webp?token=abc";
+    expect(isPrefetchableMediaUrl(SRC)).toBe(true);
+    expect(isPrefetchableMediaUrl(signed)).toBe(false);
+    expect(mediaPrefetchQueue([{ src: signed }, { src: SRC }]).map((e) => e.src)).toEqual([SRC]);
+  });
+});
+
+describe("TASK 033 staged prefetch: plan", () => {
+  const many = (n: number, stage: 2 | 3, tag: string) =>
+    Array.from({ length: n }, (_, i) => ({ src: `${SRC}?${tag}=${i}`, stage }));
+
+  it("splits by stage (default Stage 2) and applies each stage's own budget", () => {
+    expect(MEDIA_PREFETCH_CAP).toBe(12);
+    expect(MEDIA_PREFETCH_BACKGROUND_CAP).toBe(12);
+    const plan = mediaPrefetchPlan([...many(20, 2, "h"), ...many(20, 3, "b"), { src: `${SRC}?default` }]);
+    expect(plan.high).toHaveLength(12);
+    expect(plan.background).toHaveLength(12);
+    expect(plan.high.every((e) => e.src.includes("?h=") || e.src.endsWith("?default"))).toBe(true);
+    expect(plan.background.every((e) => e.src.includes("?b="))).toBe(true);
+  });
+
+  it("de-duplicates identical URLs across stages - the earlier stage keeps it", () => {
+    const plan = mediaPrefetchPlan([
+      { src: SRC, stage: 3 },
+      { src: SRC, stage: 2 },
+      { src: SRC2, stage: 3 },
+      { src: SRC2, stage: 3 },
+    ]);
+    expect(plan.high.map((e) => e.src)).toEqual([SRC]);
+    expect(plan.background.map((e) => e.src)).toEqual([SRC2]);
+  });
+});
+
+describe("TASK 033 staged prefetch: one session pump", () => {
+  it("never warms the same URL twice, whichever stage asks", () => {
+    const { doc, links } = fakeDocument();
+    const p = createMediaPrefetcher(doc, { concurrency: 5 });
+    p.enqueue([{ src: SRC }]);
+    p.enqueue([{ src: SRC }, { src: SRC2 }]);
+    expect(links.map((l) => l.href)).toEqual([SRC, SRC2]);
+  });
+
+  it("keeps at most two in flight across stages", () => {
+    const { doc, links } = fakeDocument();
+    const p = createMediaPrefetcher(doc);
+    p.enqueue(Array.from({ length: 3 }, (_, i) => ({ src: `${SRC}?h=${i}` })));
+    p.enqueue(Array.from({ length: 3 }, (_, i) => ({ src: `${SRC}?b=${i}` })));
+    expect(links).toHaveLength(2);
+    links[0].fire("load");
+    expect(links).toHaveLength(3);
+  });
+
+  it("on a tab press, drops what has not started (in-flight warms finish) and can re-offer it", () => {
+    const { doc, links, live } = fakeDocument();
+    const p = createMediaPrefetcher(doc);
+    p.enqueue(Array.from({ length: 5 }, (_, i) => ({ src: `${SRC}?i=${i}` })));
+    expect(links).toHaveLength(2);
+    const setAside = p.dropQueued();
+    expect(setAside.map((e) => e.src)).toEqual([`${SRC}?i=2`, `${SRC}?i=3`, `${SRC}?i=4`]);
+    // In flight keep going; nothing new starts when they finish.
+    links[0].fire("load");
+    links[1].fire("load");
+    expect(links).toHaveLength(2);
+    expect(live()).toHaveLength(2);
+    // Re-offered later (MediaPrefetch does this on idle).
+    p.enqueue(setAside);
+    expect(links).toHaveLength(4);
+  });
+
+  it("cancel stops everything and withdraws outstanding links", () => {
+    const { doc, links, live } = fakeDocument();
+    const p = createMediaPrefetcher(doc);
+    p.enqueue(Array.from({ length: 4 }, (_, i) => ({ src: `${SRC}?i=${i}` })));
+    p.cancel();
+    expect(live()).toHaveLength(0);
+    p.enqueue([{ src: SRC2 }]);
+    expect(links).toHaveLength(2);
   });
 });

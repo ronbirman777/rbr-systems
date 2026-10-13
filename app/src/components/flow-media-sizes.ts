@@ -18,9 +18,25 @@
  * merging them would mean one set of breakpoints pretending to describe
  * both.
  */
+import { GUEST_COLUMN_MAX_WIDTH, columnSizes } from "@/lib/guest/column";
+
+/*
+ * TASK 033: from `sm` up Flow no longer sits in a 390px device frame but in
+ * the shared desktop Guest column (lib/guest/column.ts, at most 480px), so
+ * the boxes below are derived from that column. The code-entry screen still
+ * draws its own 390px frame; asking it for a 480px box lands on the same
+ * MEDIA_WIDTHS rung at 1x and 2x, so it fetches nothing extra.
+ */
 export const FLOW_SIZES = {
-  /** Full width of the shell: the viewport on a phone, the frame above `sm`. */
-  frame: "(min-width: 640px) 390px, 100vw",
+  /** Full width of the shell: the viewport on a phone, the column above `sm`. */
+  frame: columnSizes(GUEST_COLUMN_MAX_WIDTH, "100vw"),
   /** Half of it, for the Explore tiles that sit two to a row. */
-  tile: "(min-width: 640px) 195px, 50vw",
+  tile: columnSizes(GUEST_COLUMN_MAX_WIDTH / 2, "50vw"),
 } as const;
+
+/**
+ * The Today header logo: `h-6 w-auto max-w-[88px]`, so never wider than
+ * 88px. Before TASK 033 it had no srcset and downloaded its full original
+ * (512px) for a 24px-tall display.
+ */
+export const FLOW_LOGO_SIZES = "88px";

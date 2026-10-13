@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -225,5 +226,47 @@ describe("what must never be warmed", () => {
     ];
     expect(all.length).toBeGreaterThan(0);
     for (const item of all) expect(item.src).toMatch(/^\/api\/media\//);
+  });
+});
+
+describe("TASK 033: staged warming", () => {
+  it("Flow: the first image of each other tab is Stage 2, the rest and the Explore sub-screens Stage 3", () => {
+    const props = flowProps({
+      facilitators: [
+        { id: "f1", name: "Ana", imageUrl: urlFor("ana") },
+        { id: "f2", name: "Bo", imageUrl: urlFor("bo") },
+      ] as unknown as GuestAppProps["facilitators"],
+      meals: [{ name: "Breakfast", imageUrl: null }, { name: "Lunch", imageUrl: urlFor("lunch") }] as unknown as GuestAppProps["meals"],
+    });
+    const items = guestPrefetchItems(props, "today");
+    const stageOf = (name: string) => items.find((i) => i.src === urlFor(name))?.stage;
+    expect(stageOf("ana")).toBe(2);
+    expect(stageOf("bo")).toBe(3);
+    expect(stageOf("meals")).toBe(2); // first Explore cover
+    expect(stageOf("arrival")).toBe(3);
+    expect(stageOf("lunch")).toBe(3); // first photo inside Meals
+    expect(items.filter((i) => i.stage === 2)).toHaveLength(2);
+  });
+
+  it("Teach: About portrait and the first Explore card are Stage 2, the remaining cards and the gallery Stage 3", () => {
+    const data = teachData();
+    data.gallery = [{ id: "g1", title: "", imageRef: ref("g1"), metadata: {} }] as unknown as TeachGuestData["gallery"];
+    data.mediaUrls[ref("g1")] = urlFor("g1");
+    const resolve = (r: string | null | undefined) => (r ? (data.mediaUrls[r] ?? null) : null);
+    const items = teachPrefetchItems(data, "home", resolve);
+    const stageOf = (name: string) => items.find((i) => i.src === urlFor(name))?.stage;
+    expect(stageOf("portrait")).toBe(2);
+    expect(stageOf("readings")).toBe(2);
+    expect(stageOf("audio")).toBe(3);
+    expect(stageOf("g1")).toBe(3);
+  });
+
+  it("a code-protected Space warms nothing before access: the code screen has no prefetcher", () => {
+    // The Guest App (and with it MediaPrefetch) is rendered only once the
+    // access cookie is accepted - guestRouting.test.ts pins that the page
+    // returns the access screen alone. This pins that the access screen
+    // itself never mounts a prefetcher.
+    const accessScreen = readFileSync(new URL("./guest/guest-access-screen.tsx", import.meta.url), "utf8");
+    expect(accessScreen).not.toMatch(/media-prefetch|MediaPrefetch|prefetchMedia/);
   });
 });

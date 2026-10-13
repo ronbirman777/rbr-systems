@@ -141,6 +141,100 @@ body {
   overflow-wrap: anywhere;
 }
 
+/*
+ * TASK 033 - the shared desktop Guest shell (components/guest/guest-desktop-shell.tsx).
+ * Below 640px both rules are inert wrappers, so phones render exactly as
+ * before. From 640px the published Guest App is a centred column of at most
+ * 480px, full window height, over a calm theme-derived backdrop. The two
+ * numbers are mirrored by GUEST_COLUMN_MIN_VIEWPORT / GUEST_COLUMN_MAX_WIDTH.
+ */
+.guest-desktop-shell {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100dvh;
+}
+.guest-desktop-shell__column {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+}
+@media (min-width: 640px) {
+  .guest-desktop-shell {
+    align-items: center;
+    background: var(--guest-backdrop, var(--idw-parchment));
+  }
+  .guest-desktop-shell__column {
+    max-width: 480px;
+    box-shadow:
+      0 0 0 1px rgb(25 43 33 / 0.06),
+      0 30px 90px -30px rgb(45 74 62 / 0.28);
+  }
+  /* A position:fixed layer that must stay inside the column (the loading
+     overlay). Centre-anchored, so it is direction-agnostic for RTL. */
+  .guest-column-fixed {
+    left: 50%;
+    right: auto;
+    width: min(100%, 480px);
+    transform: translateX(-50%);
+  }
+}
+
+/*
+ * TASK 033 (D-LD1) - branded Guest loading (components/guest/guest-loading-screen.tsx).
+ *
+ *  - Appears only after 200ms (pure CSS), so a load under ~200ms never shows it.
+ *  - The hero-wait overlay also hides itself by 1.5s with CSS alone, so it can
+ *    never be stuck even if JavaScript never runs; JS reveals it earlier once
+ *    the hero is decoded.
+ *  - When the streaming fallback has already been on screen, a tiny inline
+ *    script in that fallback injects a rule making the overlay start visible,
+ *    so it continues the fallback without a 200ms flash of half-loaded content.
+ *    The reveal rules below are deliberately more specific than that rule.
+ *  - Reduced motion: no fades (durations collapse) and the mark is static via
+ *    the existing .idw-loading-breathe override.
+ */
+@keyframes idw-guest-loading-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes idw-guest-loading-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+.idw-guest-loading {
+  animation: idw-guest-loading-in 0.2s ease-out 0.2s both;
+}
+.idw-guest-loading[data-variant="overlay"] {
+  animation:
+    idw-guest-loading-in 0.2s ease-out 0.2s both,
+    idw-guest-loading-out 0.2s ease-in 1.3s forwards;
+}
+.idw-guest-loading[data-variant][data-revealed="fade"] {
+  animation: idw-guest-loading-out 0.2s ease-in forwards;
+  pointer-events: none;
+}
+.idw-guest-loading[data-variant][data-revealed="instant"] {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .idw-guest-loading,
+  .idw-guest-loading[data-variant="overlay"],
+  .idw-guest-loading[data-variant][data-revealed="fade"] {
+    animation-duration: 1ms;
+  }
+}
+
 /* Guest app tab bar: horizontal scroll without a visible scrollbar, so the
    nav keeps working cleanly as the module catalog grows past what fits. */
 .no-scrollbar {

@@ -8,7 +8,8 @@ import type { CSSProperties } from "react";
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { formatLongDateLocalized } from "@/lib/i18n/datetime";
 import { BrandImage } from "@/components/shared/brand-image";
-import { FLOW_SIZES } from "./flow-media-sizes";
+import { FLOW_SIZES, FLOW_LOGO_SIZES } from "./flow-media-sizes";
+import { mediaSrcSet } from "@/lib/media/cachePolicy";
 import { FlowBulletList } from "./guest/flow-screen-chrome";
 export type TodayScreenProps = {
   tenantName: string;
@@ -129,9 +130,22 @@ export function TodayScreen({
         <div className="absolute top-0 left-0 right-0 px-6 pt-3 flex items-center gap-2">
           {logoUrl && (
             /* A small logo with object-contain: BrandImage is a
-               cover/focal-point primitive and would crop it. */
+               cover/focal-point primitive and would crop it. TASK 033: a
+               width-aware srcset (via the shared mediaSrcSet seam) so a
+               24px-tall logo no longer downloads its full 512px original;
+               `data-guest-logo` lets the hero-wait use it when there is no
+               hero photo. */
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt="" loading="eager" fetchPriority="high" className="h-6 w-auto max-w-[88px] object-contain shrink-0" />
+            <img
+              src={logoUrl}
+              srcSet={mediaSrcSet(logoUrl, FLOW_LOGO_SIZES)}
+              sizes={mediaSrcSet(logoUrl, FLOW_LOGO_SIZES) ? FLOW_LOGO_SIZES : undefined}
+              data-guest-logo=""
+              alt=""
+              loading="eager"
+              fetchPriority="high"
+              className="h-6 w-auto max-w-[88px] object-contain shrink-0"
+            />
           )}
           <span className="text-white/60 text-[10px] tracking-[0.22em] font-medium uppercase" style={{ fontFamily: "var(--rbr-font-ui)" }}>
             {tenantName}

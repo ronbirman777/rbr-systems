@@ -1,4 +1,5 @@
 import { DocumentShell, sharedMetadata, sharedViewport } from "../document-shell";
+import { SITE_FONT_VARIABLES } from "../site-fonts";
 
 /**
  * Root layout for everything that is not a published Guest App: the
@@ -17,7 +18,7 @@ export const metadata = sharedMetadata;
 
 export default function SiteRootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <DocumentShell lang="en" dir="ltr">
+    <DocumentShell lang="en" dir="ltr" fontVariables={SITE_FONT_VARIABLES}>
       {children}
     </DocumentShell>
   );

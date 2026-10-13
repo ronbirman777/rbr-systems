@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Fraunces, DM_Serif_Display, DM_Sans } from "next/font/google";
 import type { ReactNode } from "react";
 import { SITE_URL } from "@/lib/site-url";
 import type { Direction, Locale } from "@/lib/i18n";
@@ -34,47 +33,23 @@ import "./globals.css";
  * to be a soft navigation becomes a hard one.
  *
  * Everything below this comment is the former app/layout.tsx verbatim:
- * same fonts, same metadata, same viewport, same body classes.
+ * same metadata, same viewport, same body classes.
+ *
+ * FONTS (TASK 033, P5 "font diet"). The font declarations used to live in
+ * this module, and next/font preloads every font declared in a module that
+ * a root layout imports - so all 11 font files were preloaded on every
+ * Guest page, competing with the hero for early bandwidth. They now live in
+ * one module per root, and each root passes its own CSS variables in:
+ *
+ *   app/site-fonts.ts             (site)  - unchanged: same five families,
+ *                                           same subsets, all preloaded
+ *   app/(guest)/guest-fonts.ts    (guest) - the same five families and
+ *                                           CSS variables, but only the
+ *                                           above-the-fold faces preloaded
+ *
+ * Nothing that imports this module may declare a font, or it would be
+ * preloaded on every route again.
  */
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Editorial serif for the InnerDweS wordmark and deliberately expressive
-// brand moments only (font-brand / font-editorial) - see globals.css.
-// Not applied globally to interface headings; see the brand implementation
-// plan for why.
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  weight: ["300", "500", "600"],
-});
-
-// Time to Flow Visual Fidelity Phase 1 - the Guest App's own two-role
-// typography system (src/lib/theme/tokens.ts's GUEST_FONT_DISPLAY /
-// GUEST_FONT_UI), distinct from InnerDweS's own font-brand/font-editorial
-// above. DM Serif Display only ships weight 400 (normal + italic) on
-// Google Fonts - Figma's source never uses another weight for it either.
-const dmSerifDisplay = DM_Serif_Display({
-  variable: "--font-dm-serif-display",
-  subsets: ["latin"],
-  style: ["normal", "italic"],
-  weight: "400",
-});
-
-const dmSans = DM_Sans({
-  variable: "--font-dm-sans",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
-});
 
 /**
  * `viewportFit: "cover"` is what makes env(safe-area-inset-*) resolve to
@@ -107,8 +82,6 @@ export const sharedMetadata: Metadata = {
   description: "We are giving digital solutions to the wellness world.",
 };
 
-const FONT_VARIABLES = `${geistSans.variable} ${geistMono.variable} ${fraunces.variable} ${dmSerifDisplay.variable} ${dmSans.variable}`;
-
 /**
  * `dir` is written only when it is RTL. An explicit `dir="ltr"` would be
  * correct but redundant on every English, German, Spanish and French
@@ -118,14 +91,17 @@ const FONT_VARIABLES = `${geistSans.variable} ${geistMono.variable} ${fraunces.v
 export function DocumentShell({
   lang,
   dir,
+  fontVariables,
   children,
 }: {
   lang: Locale;
   dir: Direction;
+  /** The root's own font CSS variables (site-fonts.ts or guest-fonts.ts). */
+  fontVariables: string;
   children: ReactNode;
 }) {
   return (
-    <html lang={lang} dir={dir === "rtl" ? "rtl" : undefined} className={`${FONT_VARIABLES} h-full antialiased`}>
+    <html lang={lang} dir={dir === "rtl" ? "rtl" : undefined} className={`${fontVariables} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
