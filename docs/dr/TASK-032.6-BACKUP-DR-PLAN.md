@@ -510,6 +510,8 @@ The watchdog must detect a run that **never started**.
 
 Two independent systems, both $0.
 
+The alert rules, de-duplication, recovery notices and the dashboard view of this watchdog are specified in `docs/admin/ADMIN-OPERATIONS-DASHBOARD-SPEC.md` §7 (matrix ADM-09). The dashboard only displays watchdog state; it is never the alerting path.
+
 ### 14.3 Immutable vault (next workstream, WS-E; nothing created)
 
 | Decision | Recommendation | Why |
