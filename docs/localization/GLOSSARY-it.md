@@ -76,3 +76,46 @@ Status: UNREVIEWED by a native speaker. Internal tool: formal "Lei" in sentences
 Punctuation: guillemets «» for quoted terms; accents and elisions checked (un'app, l'accesso, dell'esenzione, all'eliminazione, uno Space, lo Studio, gli Space).
 
 Items for native review: "registro di controllo" vs "registro di audit"; "(Lei)" label for the current admin in lists; "Scaduto" for past_due.
+
+## Studio and Guest Apps (it.ts, TASK 033 P5)
+
+Status: PENDING NATIVE REVIEW. Every `common`, `teach`, `flow` and `studio` key is translated (74 / 505 / 390 / 284 keys);
+`it` is still NOT in `SPACE_SELECTABLE_LOCALES` (owner decision A2: added only after QA + native review). Register: formal
+"Lei" in sentences addressing the organizer, short imperative on buttons ("Salva", "Pubblica"), neutral/impersonal
+phrasing for guests; never "tu" (test-pinned). Pinned in `app/src/lib/i18n/terminology.test.ts`.
+
+| Concept | Approved (pending review) | Rejected | Rationale |
+|---|---|---|---|
+| Guest App | app per gli ospiti | Guest App | As billing glossary; no Latin "Guest App" in it.ts (test-pinned). |
+| Space / Studio | Space, Studio (lo Space, gli Space, I miei Space, lo Studio) | spazio | Product nouns. "spazio" appears only as an ordinary word ("Il mio spazio di insegnamento"). |
+| Retreat | ritiro (I miei ritiri, Home del ritiro) | retreat | |
+| Teacher / students / class / session | insegnante / allievi / lezione / sessione; sessione privata; individuale | studenti, corso | |
+| Facilitators | Guide (singular guida); catalog "Guide / Insegnanti" | facilitatori | Warmer; native review may prefer "facilitatori". |
+| Schedule (nav) | Teach "Calendario" (class timetable), Flow "Programma" (retreat programme) | Orario | Same distinction as German R5. |
+| Readings / Audio | Letture, Le mie letture / Audio, I miei audio | | |
+| Facilities | Ambienti (eyebrow "Luoghi") | Spazi, Strutture | Rooms, not equipment (R1); "Spazi" would clash with "Space". |
+| Treatments | Trattamenti; "Trattamenti ed extra" | | |
+| Meals / Guidelines / FAQ | Pasti / Regole (guidelinesShort identical) / Domande, Domande frequenti | Linee guida | |
+| Arrival | Informazioni per l’arrivo; Check-in / Check-out kept | | Standard Italian hospitality usage. |
+| Daily Inspiration | Ispirazione del giorno; quote = citazione; reflection = riflessione | | |
+| Custom Pages / Modules / Identity / Brand | Pagine personalizzate / Moduli / Identità / Brand | Marchio | |
+| Preview & Publish | Anteprima e pubblicazione; Pubblicato; Ripubblica; Bozza | | |
+| Hero / cover image | immagine principale, foto principale / immagine di copertina; punto focale | | |
+| Guest Access / access code | Accesso ospiti / codice di accesso | | |
+| Share Card | card di condivisione; canvas lines "IL RITIRO A PORTATA DI MANO", "SCANSIONA PER APRIRE L’APP DEL RITIRO" | biglietto | |
+| Space slot | slot Space | | |
+| Live (published status) | Online; live session badge "Dal vivo" | | |
+| Recurrence | "ogni settimana di lun, mer", "il giorno 5", "Fino al {date}", "Si ripete {summary}" | | `ordinalDayLocalized` returns a bare "5" for it. |
+
+Items for native review (P5):
+1. Lei register in onboarding steps ("Ci racconti il suo ritiro", "Salvi prima l’Identità") - may read stiff.
+2. `flow.exploreHeading` "{em}" + "Il ritiro" (avoids choosing "Il suo/Il tuo ritiro"); `facilitatorsHeading` "Ecco le guide".
+3. "Guide" vs "facilitatori"; "Ambienti" / "Luoghi".
+4. Share Card kicker "IL RITIRO A PORTATA DI MANO" (canvas width to be checked).
+5. `teach.getInTouch` "Mettiamoci in contatto" (long for a button), noun-phrase CTAs "Iscrizione via WhatsApp".
+6. `catBreathworkR` "Respirazione", `catMindfulness` "Consapevolezza" (Italian studios often keep the English).
+7. `unitDays` "giorno/i", `readinessNoRegistration` "{count} lezione/i" plural workarounds.
+8. `listMeOnInnerDwes` "Voglio comparire su InnerDweS".
+9. `common.live` "Online", `flow.live` "Dal vivo", `chargeAdditional` "A pagamento".
+10. Localised examples (`retreatCurrencyPlaceholder` "es. EUR", `classPricePlaceholder` "15 € · carnet 5 lezioni 65 €", `locationLinePlaceholder` "Milano · …").
+11. Intl range output for it zero-pads the second day across months ("14 ott – 03 nov 2026") - ICU behaviour, not a dictionary string.

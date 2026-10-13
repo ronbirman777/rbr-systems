@@ -153,7 +153,7 @@ describe("messages - localized in every Studio locale", () => {
     { code: "recordingTooLong", maxMinutes: 60 },
     { code: "libraryFull", limitMinutes: 240, usedMinutes: 239 },
   ];
-  it("en/de/es/fr/he have their own wording with the numbers interpolated; tr/it fall back to English (Studio until TASK 033)", () => {
+  it("every locale has its own wording with the numbers interpolated (tr/it translated in TASK 033)", () => {
     for (const stage of ["attach", "publish"] as const) {
       for (const issue of issues) {
         const key = audioQuotaMessageKey(issue, stage);
@@ -161,13 +161,12 @@ describe("messages - localized in every Studio locale", () => {
         const en = translate("en", "studio", key, values);
         expect(en).not.toMatch(/[{}]/);
         for (const v of Object.values(values)) expect(en).toContain(String(v));
-        for (const locale of ["de", "es", "fr", "he"] as const) {
+        for (const locale of ["de", "es", "fr", "he", "tr", "it"] as const) {
           const text = translate(locale, "studio", key, values);
           expect(text, `${locale}.${key}`).not.toBe(en);
           expect(text).not.toMatch(/[{}]/);
           for (const v of Object.values(values)) expect(text).toContain(String(v));
         }
-        for (const locale of ["tr", "it"] as const) expect(translate(locale, "studio", key, values)).toBe(en);
       }
     }
   });
