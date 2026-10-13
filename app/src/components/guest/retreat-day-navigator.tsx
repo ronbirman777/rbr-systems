@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type KeyboardEvent } from "react";
-import { createTranslator, directionOf, type Direction, type Locale } from "@/lib/i18n";
+import { createTranslator, directionOf, type Direction, type Locale } from "@/lib/i18n/core";
 import { formatLongDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime";
 import type { RetreatDay } from "@/lib/schedule/retreatDays";
 

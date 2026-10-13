@@ -3,6 +3,10 @@ import type { ReactNode } from "react";
 import { SITE_URL } from "@/lib/site-url";
 import type { Direction, Locale } from "@/lib/i18n";
 import "./globals.css";
+// Every locale registered in the server (RSC) graph of every route under a
+// root layout: shared modules import the English-only "@/lib/i18n/core" so
+// that the Guest client bundle stays small (TASK 033, QA D5).
+import "@/lib/i18n";
 
 /**
  * The one <html>/<body> document, shared by every root layout.

@@ -7,7 +7,7 @@ import type { DisplayFlowReading } from "@/lib/modules/flowLibrary";
 import { itemCategories, readingMinutes, sortByDateDesc } from "@/lib/modules/library";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { safeHttpUrl } from "@/lib/teach/links";
-import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { formatShortDateLocalized } from "@/lib/i18n/datetime";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "@/components/flow-media-sizes";

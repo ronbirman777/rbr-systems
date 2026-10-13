@@ -6,7 +6,7 @@ import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { verifyGuestCode } from "@/lib/guestAccess/verifyAction";
 import { verifyGuestCodeInitialState, type VerifyGuestCodeState } from "@/lib/guestAccess/verifyActionState";
 
-import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { registerLocaleMessages, type LocaleMessages, createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "@/components/flow-media-sizes";
 import { GuestDesktopShell } from "./guest-desktop-shell";
@@ -21,6 +21,13 @@ export type GuestAccessScreenProps = {
   copy: { title: string; openLabel: string; askHint: string };
   /** The Space's system language. */
   locale?: Locale;
+  /**
+   * The Space locale's messages, resolved on the server (lib/i18n/guestMessages.ts).
+   * The published route passes them so the Guest bundle carries no
+   * dictionaries but English (TASK 033, QA D5); the Studio preview omits them
+   * (the Studio has every locale registered already).
+   */
+  messages?: LocaleMessages | null;
 };
 
 const DIGIT_COUNT = 6;
@@ -39,7 +46,8 @@ const DIGIT_COUNT = 6;
  * an attempt count, and this component has no way to display
  * information it was never given.
  */
-export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars, copy, locale = DEFAULT_LOCALE }: GuestAccessScreenProps) {
+export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars, copy, locale = DEFAULT_LOCALE, messages }: GuestAccessScreenProps) {
+  registerLocaleMessages(messages);
   const { t } = createTranslator(locale);
   const router = useRouter();
   const boundAction = verifyGuestCode.bind(null, tenantId);

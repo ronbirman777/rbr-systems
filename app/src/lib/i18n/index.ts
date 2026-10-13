@@ -1,82 +1,23 @@
-import { en, type Dictionary, type Namespace, type PartialDictionary } from "./dictionaries/en";
+import { en, type Namespace, type PartialDictionary } from "./dictionaries/en";
 import { he } from "./dictionaries/he";
 import { de } from "./dictionaries/de";
 import { es } from "./dictionaries/es";
 import { fr } from "./dictionaries/fr";
 import { tr } from "./dictionaries/tr";
 import { it } from "./dictionaries/it";
-import { DEFAULT_LOCALE, directionOf, resolveLocale, type Direction, type Locale } from "./locales";
+import { registerDictionary, registeredDictionary, type Locale } from "./core";
 
-export * from "./locales";
-export type { Dictionary, Namespace };
-
-/**
- * The shared translator.
- *
- * Three properties worth stating, because each is a decision:
- *
- *   TYPED KEYS. `t("teach", "navHome")` is checked against the English
- *   dictionary, so a typo or a key removed from English fails the build
- *   rather than rendering a raw key to a guest.
- *
- *   DETERMINISTIC FALLBACK. A key missing from a non-English locale falls
- *   back to English - never to the key name, never to an empty string. A
- *   partially translated locale degrades to a readable mixed UI instead
- *   of a broken one.
- *
- *   NO RUNTIME TRANSLATION. There is no network call and no machine
- *   translation here, and user-authored content never passes through
- *   this function at all.
- */
-
-const DICTIONARIES: Record<Locale, PartialDictionary> = { en, de, es, fr, he, tr, it };
-
-export type TranslationKey<N extends Namespace> = keyof Dictionary[N];
-
-/** Values interpolated into a string's {placeholders}. */
-export type TranslationValues = Record<string, string | number>;
-
-function interpolate(template: string, values?: TranslationValues): string {
-  if (!values) return template;
-  return template.replace(/\{(\w+)\}/g, (match, name: string) =>
-    name in values ? String(values[name]) : match
-  );
-}
-
-export function translate<N extends Namespace>(
-  locale: Locale,
-  namespace: N,
-  key: TranslationKey<N>,
-  values?: TranslationValues
-): string {
-  const dictionary = DICTIONARIES[locale] ?? en;
-  const localized = dictionary[namespace]?.[key] as string | undefined;
-  // Explicitly fall back through English rather than rendering the key.
-  const source = localized ?? (en[namespace][key] as unknown as string);
-  return interpolate(source, values);
-}
-
-export type Translator = {
-  locale: Locale;
-  dir: Direction;
-  t: <N extends Namespace>(namespace: N, key: TranslationKey<N>, values?: TranslationValues) => string;
-};
+export * from "./core";
 
 /**
- * A bound translator for one locale. Passed down explicitly rather than
- * read from a global, so a Studio preview can render a Space in its own
- * language while the surrounding Studio stays in another.
+ * "@/lib/i18n" - the translator with EVERY locale registered (see the
+ * registry note in core.ts). Server code, the Studio and tests import this
+ * and get exactly the pre-TASK-033 behaviour. Client modules of the
+ * published Guest App import "@/lib/i18n/core" instead (TASK 033, QA defect
+ * D5), so these dictionaries stay out of the Guest bundle.
  */
-export function createTranslator(locale: unknown): Translator {
-  const resolved = resolveLocale(locale);
-  return {
-    locale: resolved,
-    dir: directionOf(resolved),
-    t: (namespace, key, values) => translate(resolved, namespace, key, values),
-  };
-}
-
-export const defaultTranslator = createTranslator(DEFAULT_LOCALE);
+const ALL: Record<Exclude<Locale, "en">, PartialDictionary> = { de, es, fr, he, tr, it };
+for (const [locale, dictionary] of Object.entries(ALL) as [Locale, PartialDictionary][]) registerDictionary(locale, dictionary);
 
 /**
  * Keys present in English but missing from a locale. Used by the test
@@ -84,7 +25,7 @@ export const defaultTranslator = createTranslator(DEFAULT_LOCALE);
  * silent fallback hide an untranslated surface.
  */
 export function missingKeys(locale: Locale): string[] {
-  const dictionary = DICTIONARIES[locale];
+  const dictionary = registeredDictionary(locale) ?? {};
   const missing: string[] = [];
   for (const namespace of Object.keys(en) as Namespace[]) {
     for (const key of Object.keys(en[namespace])) {
@@ -101,7 +42,7 @@ export function missingKeys(locale: Locale): string[] {
  * the suite asserts against a known allowlist rather than a count.
  */
 export function untranslatedKeys(locale: Locale): string[] {
-  const dictionary = DICTIONARIES[locale];
+  const dictionary = registeredDictionary(locale) ?? {};
   const same: string[] = [];
   for (const namespace of Object.keys(en) as Namespace[]) {
     for (const [key, value] of Object.entries(en[namespace])) {
@@ -110,45 +51,4 @@ export function untranslatedKeys(locale: Locale): string[] {
     }
   }
   return same;
-}
-
-/**
- * Splits a heading whose emphasised word must move with the language.
- *
- * "Your {em}" is "{em} שלך" in Hebrew - the emphasis lands before the
- * rest, not after - so the carrier phrase keeps the placeholder and the
- * caller renders [before, emphasis, after] in whatever order it arrives.
- */
-export function splitEmphasis(carrier: string, emphasis: string): [string, string, string] {
-  const i = carrier.indexOf("{em}");
-  if (i < 0) return [carrier, "", ""];
-  return [carrier.slice(0, i), emphasis, carrier.slice(i + 4)];
-}
-
-/**
- * The Space locale a Server Action should answer in.
- *
- * Studio forms post it alongside their payload, which keeps the action
- * signatures (and `useActionState`) unchanged. It is read through
- * `resolveLocale`, so an absent, stale or hand-edited value resolves to
- * English rather than failing - and because it only ever selects which
- * message text to return, it carries no authority. Authorization stays
- * entirely with RLS and the action's own checks.
- */
-export function localeFromFormData(formData: { get(name: string): unknown }): Locale {
-  return resolveLocale(formData.get("locale"));
-}
-
-/**
- * A message function bound to one locale, for Server Actions.
- *
- * Studio actions return `{ error }` strings that the Studio renders
- * directly, and they almost all draw on the shared `studio` namespace.
- * Binding the locale once per action keeps each message site short
- * enough to read: `t("missingSpace")` rather than repeating the locale
- * and namespace on every line.
- */
-export function studioMessages(locale: Locale) {
-  return (key: TranslationKey<"studio">, values?: TranslationValues): string =>
-    translate(locale, "studio", key, values);
 }

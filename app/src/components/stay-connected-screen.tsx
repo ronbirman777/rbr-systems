@@ -5,7 +5,7 @@ import { socialPlatformLabel } from "@/lib/modules/socialLinks";
 import { SocialIcon } from "./guest/social-icon";
 import type { CSSProperties } from "react";
 
-import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 export type StayConnectedScreenProps = {
   brand: BrandConfig;
   stayConnected: StayConnected;

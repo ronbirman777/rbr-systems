@@ -8,7 +8,7 @@ import { audioNote, itemCategories } from "@/lib/modules/library";
 import { formatDuration } from "@/lib/modules/duration";
 import { objectPositionStyle } from "@/lib/modules/imagePosition";
 import { useAudioPlayer } from "@/components/shared/use-audio-player";
-import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "@/components/flow-media-sizes";
 import { FlowBackButton, FlowEmptyNote, FlowScreenHeader } from "./flow-screen-chrome";

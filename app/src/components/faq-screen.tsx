@@ -6,7 +6,7 @@ import type { BrandConfig } from "@/lib/theme/tokens";
 import type { DisplayFaqItem } from "@/lib/modules/faq";
 import type { CSSProperties } from "react";
 
-import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 export type FaqScreenProps = {
   brand: BrandConfig;
   faq: DisplayFaqItem[];

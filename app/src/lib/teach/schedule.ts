@@ -1,6 +1,6 @@
 import type { AvailabilityMetadata, ClassMetadata, TeachItem } from "./schemas";
 
-import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n/core";
 import { longWeekdayName } from "@/lib/i18n/datetime";
 /**
  * Pure date logic for the Teach schedule. Dates are calendar dates

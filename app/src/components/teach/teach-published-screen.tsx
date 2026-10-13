@@ -2,6 +2,7 @@ import { parsePublishedTeachSpace, type PublishedTeachRow, type TeachGuestData }
 import { checkFlowGuestUrl } from "@/lib/teach/flowLinkServer";
 import { TeachGuestApp } from "./teach-guest-app";
 import { GuestDesktopShell } from "@/components/guest/guest-desktop-shell";
+import { guestMessages } from "@/lib/i18n/guestMessages";
 
 /**
  * A retreat's linked InnerDweS Flow Space is checked AGAIN here, on every
@@ -37,7 +38,7 @@ export async function TeachPublishedSpaceScreen({ space }: { space: PublishedTea
   // centred phone-width column from 640px up, unchanged on a phone.
   return (
     <GuestDesktopShell brand={data.brand} locale={data.locale}>
-      <TeachGuestApp data={data} />
+      <TeachGuestApp data={data} messages={guestMessages(data.locale)} />
     </GuestDesktopShell>
   );
 }

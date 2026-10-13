@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/i18n";
 import { waitForGuestHero } from "@/lib/guest/heroWait";
-import { GuestLoadingScreen } from "./guest-loading-screen";
+import { GuestLoadingScreen, type GuestLoadingCopy } from "./guest-loading-screen";
 
 /**
  * TASK 033 (D-LD1) - the client half of the branded loading: an overlay in
@@ -12,11 +12,14 @@ import { GuestLoadingScreen } from "./guest-loading-screen";
  * image error or when there is nothing to wait for. See lib/guest/heroWait.ts.
  *
  * It is server-rendered with the content, so it is already in place before
- * hydration; CSS alone hides it by 1.5s if JavaScript never runs. Once
- * revealed it fades out (or disappears instantly if it never became visible)
- * and is then removed.
+ * hydration - but HIDDEN unless it continues a streaming fallback that was
+ * already visible (QA defect D1; see GUEST_LOADING_CONTINUITY_SCRIPT, which
+ * also fades it out as soon as the hero has loaded, without waiting for
+ * this hydration-time effect). CSS alone hides it by 1.5s if JavaScript
+ * never runs. Once revealed it fades out (or disappears instantly if it was
+ * not visible) and is then removed.
  */
-export function GuestHeroWait({ locale }: { locale: Locale }) {
+export function GuestHeroWait({ locale, copy }: { locale: Locale; copy?: GuestLoadingCopy }) {
   const ref = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState<"fade" | "instant" | null>(null);
   const [gone, setGone] = useState(false);
@@ -42,7 +45,7 @@ export function GuestHeroWait({ locale }: { locale: Locale }) {
   if (gone) return null;
   return (
     <div ref={ref} className="contents">
-      <GuestLoadingScreen locale={locale} variant="overlay" revealed={revealed ?? undefined} />
+      <GuestLoadingScreen locale={locale} copy={copy} variant="overlay" revealed={revealed ?? undefined} />
     </div>
   );
 }

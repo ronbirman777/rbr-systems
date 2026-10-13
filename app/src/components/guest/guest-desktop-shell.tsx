@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { Locale } from "@/lib/i18n";
 import { GuestHeroWait } from "./guest-hero-wait";
+import { guestLoadingCopy } from "./guest-loading-screen";
 
 /**
  * TASK 033 (owner decision "Shell"): the one desktop frame for every
@@ -105,7 +106,10 @@ export function GuestDesktopShell({
       style={{ ...vars, ["--guest-backdrop" as string]: GUEST_BACKDROP }}
     >
       <Column lang={lang} dir={dir} className={`guest-desktop-shell__column ${columnClassName}`.trim()} style={columnStyle}>
-        {heroWait && <GuestHeroWait locale={locale} />}
+        {/* The overlay's text is translated HERE - on the server for the
+            published Guest routes, where every locale is registered - so
+            the client bundle needs no dictionary for it (TASK 033, QA D5). */}
+        {heroWait && <GuestHeroWait locale={locale} copy={guestLoadingCopy(locale)} />}
         {children}
       </Column>
     </div>

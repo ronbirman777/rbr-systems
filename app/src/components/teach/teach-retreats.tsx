@@ -6,7 +6,7 @@ import type { TeachItem } from "@/lib/teach/schemas";
 import { buildRetreatRegistrationCta, safeHttpUrl } from "@/lib/teach/links";
 import { retreatDateSummary, retreatPhase, type RetreatPhase } from "@/lib/teach/retreats";
 import { useFormattedPrice } from "@/lib/currencies/useFormattedPrice";
-import { createTranslator } from "@/lib/i18n";
+import { createTranslator } from "@/lib/i18n/core";
 import { TeachIcon, type TeachIconName } from "./teach-icons";
 import { TeachImage } from "./teach-image";
 import { TEACH_SIZES } from "./teach-media-sizes";

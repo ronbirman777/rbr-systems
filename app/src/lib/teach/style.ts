@@ -2,7 +2,7 @@ import { GUEST_BASE_PALETTE } from "@/lib/theme/tokens";
 import { CANONICAL_BRAND_PRESETS, findBrandPreset, type BrandPreset } from "@/lib/brand/presets";
 import type { TEACH_LEGACY_PRESET_KEYS, TeachStyle } from "./schemas";
 
-import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n/core";
 /**
  * Time to Teach's controlled visual layer. Colours still flow through the
  * shared theme engine (brand_configs.custom_primary/custom_secondary ->

@@ -1,5 +1,5 @@
 import { InnerDweSMark } from "@/components/brand/wordmark";
-import { createTranslator, type Locale } from "@/lib/i18n";
+import { createTranslator, type Locale } from "@/lib/i18n/core";
 import { GUEST_HERO_SELECTOR, GUEST_LOGO_SELECTOR } from "@/lib/guest/heroWait";
 
 /**
@@ -93,7 +93,9 @@ export const GUEST_LOADING_CONTINUITY_SCRIPT =
   `css("${GUEST_LOADING_SHOWN_STYLE_ID}",'${GUEST_LOADING_SHOWN_CSS}')},200)` +
   `}catch(e){}})()`;
 
-export function guestLoadingCopy(locale: Locale): { loading: string; createdWith: string } {
+export type GuestLoadingCopy = { loading: string; createdWith: string };
+
+export function guestLoadingCopy(locale: Locale): GuestLoadingCopy {
   const { t } = createTranslator(locale);
   return {
     loading: t("common", "loading"),
@@ -105,13 +107,20 @@ export function GuestLoadingScreen({
   locale,
   variant = "stream",
   revealed,
+  copy: givenCopy,
 }: {
   locale: Locale;
+  /**
+   * Pre-translated text (TASK 033, QA D5). The overlay is rendered inside
+   * the Guest client bundle, which carries only English; its server parent
+   * (GuestDesktopShell) translates with every locale and passes the result.
+   */
+  copy?: GuestLoadingCopy;
   variant?: GuestLoadingVariant;
   /** Overlay only: set once the hero is ready ("fade" if visible, else "instant"). */
   revealed?: "fade" | "instant";
 }) {
-  const copy = guestLoadingCopy(locale);
+  const copy = givenCopy ?? guestLoadingCopy(locale);
   return (
     <div
       id={variant === "stream" ? GUEST_LOADING_STREAM_ID : undefined}

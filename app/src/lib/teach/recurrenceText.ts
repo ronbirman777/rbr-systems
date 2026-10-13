@@ -1,5 +1,5 @@
 import { isInvalidStored, type ClassMetadata, type OccurrenceException, type Recurrence } from "./schemas";
-import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n/core";
 import {
   capitalizeFirst,
   formatDayMonthYearLocalized,

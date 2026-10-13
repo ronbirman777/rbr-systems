@@ -1,6 +1,6 @@
 import { normalizeWhatsAppNumber, whatsappUrl } from "@/lib/share/whatsapp";
 import { telUrl } from "@/lib/phone";
-import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
+import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n/core";
 import type {
   AvailabilityMetadata,
   ClassMetadata,
