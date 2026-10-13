@@ -156,7 +156,7 @@ export function ScheduleScreen({
             const chip = item.category ? (CATEGORY_CHIP_STYLE[item.category] ?? DEFAULT_CHIP_STYLE) : null;
 
             return (
-              <div dir="auto" key={`${item.date}-${item.startTime}-${item.title}`} className={`flex gap-3 ${isPast ? "opacity-40" : ""}`}>
+              <div dir="auto" key={`${item.date}-${i}`} className={`flex gap-3 ${isPast ? "opacity-40" : ""}`}>
                 <div className="w-11 flex-shrink-0 pt-4 text-right">
                   <span
                     className="text-[11px] font-medium tabular-nums leading-none"
@@ -228,7 +228,7 @@ export function ScheduleScreen({
                           is read by scanning - a permanently expanded
                           list on one card would break that scan. */}
                       {hasActivityExtras(item) && (
-                        <ActivityExtras item={item} isNow={isNow} locale={locale} />
+                        <ActivityExtras item={item} index={i} isNow={isNow} locale={locale} />
                       )}
                     </div>
                     {item.category && chip && (
@@ -269,16 +269,19 @@ export function ScheduleScreen({
  */
 function ActivityExtras({
   item,
+  index,
   isNow,
   locale,
 }: {
   item: PublicScheduleItem;
+  /** Position within the day: published items have no id, and two can share date, time and title. */
+  index: number;
   isNow: boolean;
   locale: Locale;
 }) {
   const { t } = createTranslator(locale);
   const [open, setOpen] = useState(false);
-  const id = `extras-${item.date}-${item.startTime}`.replace(/[^a-zA-Z0-9-]/g, "");
+  const id = `extras-${item.date}-${index}`.replace(/[^a-zA-Z0-9-]/g, "");
   const muted = isNow ? "color-mix(in srgb, var(--rbr-on-primary) 55%, transparent)" : "var(--rbr-mist)";
   const body = isNow ? "color-mix(in srgb, var(--rbr-on-primary) 80%, transparent)" : "var(--rbr-dusk)";
 
