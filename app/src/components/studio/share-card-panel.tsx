@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-img-element */
-import { shareCardDownloadFileName, shareCardImagePath } from "@/lib/studio/publicLink";
+import { shareCardDownloadFileName } from "@/lib/studio/publicLink";
+import { shareCardImageUrl } from "@/lib/share/publishedCardImage";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 /**
@@ -12,20 +13,27 @@ import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
  * The preview <img> and the Download button point at the same organizer-
  * only endpoint; the browser reuses the one response rather than
  * generating the image twice.
+ *
+ * TASK 033 P1 (A4): the URL carries `?v=<publishedAt>`, so a Republish in
+ * the same session mints a new URL and the browser can never keep showing
+ * (or downloading) its in-memory copy of the previous card.
  */
 export function ShareCardPanel({
   tenantId,
   slug,
   published,
+  publishedAt = null,
   locale = DEFAULT_LOCALE,
 }: {
   tenantId: string;
   slug: string | null;
   published: boolean;
+  /** The current publish time - the card image's version. */
+  publishedAt?: string | null;
   locale?: Locale;
 }) {
   const { t } = createTranslator(locale);
-  const src = shareCardImagePath(tenantId);
+  const src = shareCardImageUrl(tenantId, publishedAt);
   return (
     <div className="rounded-2xl border border-[#E2DACD] bg-white p-4 sm:p-5 flex flex-col sm:flex-row gap-5 items-start" data-testid="share-card-panel">
       <div className={`shrink-0 rounded-xl border border-[#E2DACD] overflow-hidden ${published ? "" : "opacity-50"}`}>

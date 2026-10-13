@@ -202,6 +202,8 @@ export const he: Dictionary = {
     trainingCerts: "הכשרה ותעודות",
     galleryPhoto: "תמונה {index} בגלריה",
     teacherFallback: "מורה",
+    // TASK 033 P1 (A4): the Teach Share Card's call to action (was the hardcoded SHARE_CARD_CTA).
+    shareCardCta: "סרקו כדי לגלות שיעורים ולהתחבר",
 
     // Readings and audio
     externalArticle: "מאמר חיצוני",
@@ -817,7 +819,7 @@ export const he: Dictionary = {
     guestAddressBody: "כאן האורחים ימצאו את המרחב שלכם כשיעלה לאוויר. אפשר לשמור אותה עכשיו ולהמשיך לבנות - היא לא תיעלם.",
     reservedSuccessfully: "נשמר בהצלחה.",
     retreatLogo: "הלוגו של הריטריט",
-    spaceImageBody: "מייצגת את המרחב עצמו - מוצגת לכם במרחבים שלי, בנפרד מהתמונה הראשית שהאורחים רואים ב״היום״.",
+    spaceImageBody: "מייצגת את המרחב עצמו - מוצגת לכם במרחבים שלי, ואחרי הפרסום היא התמונה בכרטיס השיתוף. בלעדיה, כרטיס השיתוף משתמש בתמונה הראשית.",
     saveIdentityForLogo: "שמרו קודם את הזהות כדי לפתוח את העלאת הלוגו.",
     saveIdentityForSpaceImage: "שמרו קודם את הזהות כדי לפתוח את העלאת תמונת המרחב.",
     saveIdentityForPhotos: "שמרו קודם את הזהות כדי לפתוח את העלאת התמונות.",

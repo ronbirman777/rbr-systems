@@ -2091,7 +2091,7 @@ export function PublishSection({ api, preview }: Props & { preview: ReactNode })
           shareRole={api.settings.teachProfile.teacherType}
         />
         <QrCodeCard tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} locale={api.locale} />
-        <ShareCardPanel tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} locale={api.locale} />
+        <ShareCardPanel tenantId={api.tenantId} slug={api.slug} published={Boolean(api.publishedAt)} publishedAt={api.publishedAt} locale={api.locale} />
       </Card>
       <DirectoryOptInCard tenantId={api.tenantId} initialListed={api.directoryListed} locale={api.locale} />
       <Card title={t("teach", "draftPreview")} description={t("teach", "draftPreviewBody")}>

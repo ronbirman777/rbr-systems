@@ -192,6 +192,8 @@ export const en = {
     trainingCerts: "Training & certificates",
     galleryPhoto: "Gallery photo {index}",
     teacherFallback: "Teacher",
+    // TASK 033 P1 (A4): the Teach Share Card's call to action (was the hardcoded SHARE_CARD_CTA).
+    shareCardCta: "Scan to explore classes & connect",
 
     // Readings and audio
     externalArticle: "External article",
@@ -809,7 +811,7 @@ export const en = {
     guestAddressBody: "This is where guests will find your Space once it’s live. You can reserve it now and keep building - it won’t go anywhere.",
     reservedSuccessfully: "Reserved successfully.",
     retreatLogo: "Retreat logo",
-    spaceImageBody: "Represents this Space itself - shown to you in My Spaces, separate from the Today Hero photo guests see.",
+    spaceImageBody: "Represents this Space itself - shown to you in My Spaces, and the photo on your Share Card once you publish. Without one, the Share Card uses your Hero photo.",
     saveIdentityForLogo: "Save your Identity first to unlock the logo upload.",
     saveIdentityForSpaceImage: "Save your Identity first to unlock the Space image upload.",
     saveIdentityForPhotos: "Save your Identity first to unlock photo uploads.",

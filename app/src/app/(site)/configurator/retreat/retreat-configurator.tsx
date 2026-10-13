@@ -23,6 +23,7 @@ import { FaqStep } from "./faq-step";
 import { CustomPagesStep } from "./custom-pages-step";
 import { StayConnectedStep } from "./stay-connected-step";
 import { ShareSpaceStep, type ShareSpaceStatus } from "./share-space-step";
+import type { PublishedShareCard } from "@/lib/share/publishedCardImage";
 import type { GuestAccessSettings } from "./guestAccessActions";
 import { FeaturedStep } from "./featured-step";
 import type { FeaturedSubmission } from "./featuredActions";
@@ -129,7 +130,8 @@ export type RetreatConfiguratorProps = {
   initialModuleCovers: Record<string, { imageRef: string | null; imageUrl: string | null; imagePosition: ImagePosition }>;
   initialPublishedAt: string | null;
   initialIsPubliclyAvailable: boolean;
-  publishedHeroImageUrl: string | null;
+  /** TASK 033 P1: the Share Card's fields from the PUBLISHED snapshot only. */
+  publishedShareCard: PublishedShareCard | null;
   initialGuestAccessSettings: GuestAccessSettings;
   initialFeaturedSubmission: FeaturedSubmission;
 };
@@ -1243,7 +1245,7 @@ export function RetreatConfigurator({
   initialModuleCovers,
   initialPublishedAt,
   initialIsPubliclyAvailable,
-  publishedHeroImageUrl,
+  publishedShareCard,
   initialGuestAccessSettings,
   initialFeaturedSubmission,
 }: RetreatConfiguratorProps) {
@@ -3015,12 +3017,9 @@ export function RetreatConfigurator({
             tenantId={tenantId}
             name={name}
             slug={currentSlug}
-            spaceImageUrl={spaceImageUrl}
-            logoUrl={logoUrl}
-            heroImageUrl={publishedHeroImageUrl}
+            publishedCard={publishedShareCard}
+            publishedAt={currentPublishedAt}
             initialGuestAccessSettings={initialGuestAccessSettings}
-            primaryHex={effectivePrimary}
-            secondaryHex={effectiveSecondary}
             status={shareStatus}
           />
         )}

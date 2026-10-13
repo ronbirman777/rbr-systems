@@ -191,6 +191,8 @@ export const de: Dictionary = {
     trainingCerts: "Ausbildung & Zertifikate",
     galleryPhoto: "Galeriefoto {index}",
     teacherFallback: "Lehrkraft",
+    // TASK 033 P1 (A4): the Teach Share Card's call to action (was the hardcoded SHARE_CARD_CTA).
+    shareCardCta: "Scannen, um Kurse zu entdecken und in Kontakt zu bleiben",
 
     // Readings and audio
     externalArticle: "Externer Artikel",
@@ -806,7 +808,7 @@ export const de: Dictionary = {
     guestAddressBody: "Hier finden deine Gäste deinen Space, sobald er live ist. Du kannst sie jetzt reservieren und weiterbauen - sie bleibt dir erhalten.",
     reservedSuccessfully: "Erfolgreich reserviert.",
     retreatLogo: "Retreat-Logo",
-    spaceImageBody: "Steht für den Space selbst - du siehst sie unter Meine Spaces, getrennt vom Titelbild, das deine Gäste auf „Heute“ sehen.",
+    spaceImageBody: "Steht für den Space selbst - du siehst sie unter Meine Spaces, und nach dem Veröffentlichen ist sie das Foto deiner Share-Karte. Ohne Space-Bild nutzt die Share-Karte dein Titelbild.",
     saveIdentityForLogo: "Speichere zuerst die Identität, um den Logo-Upload freizuschalten.",
     saveIdentityForSpaceImage: "Speichere zuerst die Identität, um den Space-Bild-Upload freizuschalten.",
     saveIdentityForPhotos: "Speichere zuerst die Identität, um Foto-Uploads freizuschalten.",

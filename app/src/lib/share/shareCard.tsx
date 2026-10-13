@@ -4,6 +4,7 @@ import type { ReactElement } from "react";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import { focalPointToObjectPosition } from "@/lib/media/focalPoint";
 import { INNERDWES_BRAND } from "@/lib/brand/platform";
+import { translate } from "@/lib/i18n";
 import type { SpaceSocialIdentity } from "./spaceSocial";
 import { OG_SIZE, SHARE_CARD_SIZE, type ShareCardVariant } from "./shareCardSize";
 
@@ -32,7 +33,9 @@ export { OG_SIZE, SHARE_CARD_SIZE, type ShareCardVariant };
  * rather than in a boxed-off SaaS header.
  */
 
-export const SHARE_CARD_CTA = "Scan to explore classes & connect";
+/** English fallback only - callers pass the localized `teach.shareCardCta`
+ * (TASK 033 P1, see /api/share-card). One source: the en dictionary. */
+export const SHARE_CARD_CTA = translate("en", "teach", "shareCardCta");
 
 type Props = {
   identity: SpaceSocialIdentity;

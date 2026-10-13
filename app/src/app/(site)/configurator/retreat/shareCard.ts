@@ -36,13 +36,18 @@ import { DEFAULT_LOCALE, translate, type Locale } from "@/lib/i18n";
 export const CARD_WIDTH = 1080;
 export const CARD_HEIGHT = 1350;
 
+/** name, logoUrl, the image, primaryHex, secondaryHex and locale all come
+ * from ONE published snapshot (buildPublishedShareCard) - never from draft
+ * Studio state, so a card can never mix published and unpublished brand. */
 export type ShareCardOptions = {
   name: string;
   logoUrl: string | null;
-  /** The PUBLISHED Hero image URL (via the public media route, the exact
-   * same one guests already see) - never a draft ref, never a new
-   * Storage copy. Null falls back to a branded Primary-color treatment. */
-  heroImageUrl: string | null;
+  /** TASK 033 P1 (A3): the PUBLISHED card image - the published Space
+   * image, else the published Hero (lib/share/publishedCardImage.ts) - via
+   * the public media route, the exact URL guests already see. Never a
+   * draft ref, never a new Storage copy. Null falls back to the branded
+   * Primary-color gradient. */
+  publishedCardImageUrl: string | null;
   qrUrl: string;
   primaryHex: string;
   secondaryHex: string;
@@ -245,18 +250,18 @@ export async function drawShareCard(canvas: HTMLCanvasElement, options: ShareCar
   ctx.fillStyle = PARCHMENT;
   ctx.fillRect(0, 0, CARD_WIDTH, CARD_HEIGHT);
 
-  // ---- Hero: full-bleed, the dominant visual - the actual published
-  // Hero Photography whenever one exists, exactly like TodayScreen's own
+  // ---- Hero band: full-bleed, the dominant visual - the published card
+  // image (Space image, else Hero; TASK 033 A3) whenever one exists, exactly like TodayScreen's own
   // hero photo (object-cover + a directional dark overlay for legible
   // text), so the card reads as an extension of the real Guest App
   // rather than a generic color card with a small image pasted inside
-  // it. Falls back to a branded Primary-color treatment only when no
-  // Hero image is configured. ----
+  // it. Falls back to a branded Primary-color treatment only when neither
+  // a published Space image nor a published Hero exists. ----
   const heroHeight = 600; // ~44% of CARD_HEIGHT - photography-led but not dominant
   let heroIsPhoto = false;
-  if (options.heroImageUrl) {
+  if (options.publishedCardImageUrl) {
     try {
-      const hero = await loadBitmap(options.heroImageUrl);
+      const hero = await loadBitmap(options.publishedCardImageUrl);
       drawImageCover(ctx, hero, 0, 0, CARD_WIDTH, heroHeight);
       heroIsPhoto = true;
     } catch {
