@@ -123,6 +123,7 @@ export const tr: Dictionary = {
     navHome: "Ana Sayfa",
     navSchedule: "Program",
     navAbout: "Hakkımda",
+    shareCardCta: "Dersleri keşfetmek ve bağlantıda kalmak için tarayın",
     navExplore: "Keşfet",
 
     // Guest home
@@ -801,7 +802,7 @@ export const tr: Dictionary = {
     guestAddressBody: "Space'iniz yayına girdiğinde misafirleriniz onu bu adreste bulacak. Adresi şimdi ayırıp çalışmaya devam edebilirsiniz; adres sizde kalır.",
     reservedSuccessfully: "Adres başarıyla ayrıldı.",
     retreatLogo: "İnziva logosu",
-    spaceImageBody: "Bu Space'in kendisini temsil eder; misafirlerin gördüğü Bugün ana fotoğrafından ayrı olarak size Space'lerim bölümünde gösterilir.",
+    spaceImageBody: "Bu Space'in kendisini temsil eder; size Space'lerim bölümünde gösterilir ve yayınladıktan sonra Paylaşım Kartınızın fotoğrafı olur. Space görseli yoksa Paylaşım Kartı ana fotoğrafınızı kullanır.",
     saveIdentityForLogo: "Logo yükleyebilmek için önce Kimlik bilgilerinizi kaydedin.",
     saveIdentityForSpaceImage: "Space görseli yükleyebilmek için önce Kimlik bilgilerinizi kaydedin.",
     saveIdentityForPhotos: "Fotoğraf yükleyebilmek için önce Kimlik bilgilerinizi kaydedin.",

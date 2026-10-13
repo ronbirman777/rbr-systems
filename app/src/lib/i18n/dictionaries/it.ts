@@ -118,6 +118,7 @@ export const it: Dictionary = {
     navHome: "Home",
     navSchedule: "Calendario",
     navAbout: "Chi sono",
+    shareCardCta: "Scansiona per scoprire le lezioni e restare in contatto",
     navExplore: "Esplora",
 
     // Guest home
@@ -795,7 +796,7 @@ export const it: Dictionary = {
     guestAddressBody: "È l’indirizzo a cui gli ospiti troveranno il suo Space quando sarà online. Può riservarlo ora e continuare a lavorare: resterà suo.",
     reservedSuccessfully: "Riservato correttamente.",
     retreatLogo: "Logo del ritiro",
-    spaceImageBody: "Rappresenta lo Space stesso: la vede in I miei Space, separata dalla foto principale di Oggi che vedono gli ospiti.",
+    spaceImageBody: "Rappresenta lo Space stesso: la vede in I miei Space e, dopo la pubblicazione, è la foto della card di condivisione. Senza questa immagine, la card usa la foto principale.",
     saveIdentityForLogo: "Salvi prima l’Identità per poter caricare il logo.",
     saveIdentityForSpaceImage: "Salvi prima l’Identità per poter caricare l’immagine dello Space.",
     saveIdentityForPhotos: "Salvi prima l’Identità per poter caricare le foto.",
