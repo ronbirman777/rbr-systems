@@ -237,3 +237,128 @@ values) remains.
   billing tiles to read Staging data, and Spaces counts to match Staging SQL (read-only).
 - **Rollback:** redeploy the previous Staging deployment (no schema change to revert). Audit rows written by `view.*`
   stay, because the log is append-only.
+
+---
+
+## 9. Follow-up package (owner-approved 2026-10-14, still local only)
+
+Commit `24f83cd` (code + tests), then the docs commit that adds this section. No push, no deploy, no hosted call, no
+migration file, no Stripe work.
+
+### 9.1 Paid-checkout switch and exemptions: owner only
+
+- The cards moved from Billing → Settings to **`/admin/launch`** ("Launch & exemptions"). The page sits in the
+  owner-only `(console)` group, so a billing_admin gets a **404 at any assurance level**. I first placed it under
+  `/admin/billing/controls`. The browser QA showed that the billing layout would send an AAL1 billing_admin to MFA
+  before the page's 404, so I moved it.
+- Actions `setPaidCheckoutAction`, `setExemptAction` and `clearExemptAction` are `roles: ["owner"]` at the gate. A
+  billing_admin gets `not_admin` before any data read or step-up prompt (role matrix).
+- **billing_admin capabilities that stay unchanged**: Billing Overview (the paid-checkout state is still visible,
+  read-only, without a link); Subscriptions list and detail, incl. "re-sync from Stripe"; Coupons list, detail and new;
+  coupon create, update, enable/disable and sync to Stripe; Payments (incl. reconcile checkout); Audit log; Settings →
+  plan sync to Stripe (step-up) and viewing the Admin user list; their own MFA, including adding a backup authenticator.
+  Admin grant and revoke were already owner-only.
+
+### 9.2 No bulk customer emails
+
+- `listSubscriptions`, `listInvoices`, `getCouponDetail` and `getSubscriptionDetail` no longer resolve emails. They make
+  no Auth user lookup at all, so no email can be in page props or the RSC payload. The "Owner" and "Customer" columns
+  are gone. Subscription detail shows "Owner contact: Space page" to owners, which links to the audited
+  `/admin/spaces/[id]` (`view.space_detail`, 10-minute dedupe).
+- Still shown, because they are **staff** identities, not customers: audit-log authors (`listAudit`) and the Admin user
+  list (`listAdmins`). A source test pins this list to exactly those two functions.
+- **Capability change, as requested:** billing_admin no longer sees any customer email (it had them in three lists and
+  on subscription detail).
+- Tests: the loader test (`noBulkEmails.test.ts`) uses a fake DB whose Auth API *would* return an email; it asserts
+  that none is returned and none is looked up. The source test asserts that no billing page references
+  `ownerEmail`/`userEmail`/`lookupEmails`. The browser check found no fixture email in any billing page's HTML or RSC
+  payload, for either role and both engines. The client-bundle test still passes.
+
+### 9.3 Missing currency is never USD (root fix)
+
+- `computeOverviewMetrics`: a paid subscription with a null or blank currency is excluded from every currency total
+  and counted in `mrrUnknownCurrency`. Its exact count comes from a new spec (`status in (active,trialing) and currency
+  is null`, new `isNull` filter op). The exact-count parity test now crosses every case with currency USD and null.
+  A missing base amount is excluded and counted in `mrr.missingAmount`, never added as 0.
+- Admin `money()`: a missing currency renders "N (minor units, unknown currency)", localized, instead of "$".
+- UI: a Billing Overview "Unknown currency (paid subscriptions)" stat (warn tone when > 0). The owner Overview warning
+  now reads from the billing metrics, with no separate query. Dictionaries: all 7 locales.
+- The integration test's USD delta is now 2500: the null-currency fixture is excluded.
+
+### 9.4 Stale factors (decision and justification)
+
+- `amr` entries contain only `{ method, timestamp }` (auth-js `AMREntry`), with **no factor id**. The gate therefore
+  links the session to a factor by time. A **verified TOTP factor that still exists**, read fresh through the **Auth
+  Admin API (service role)**, must have been created no later than the session's latest TOTP verification (+5 s). If
+  a future `amr` carries `factor_id`, it is matched exactly.
+- **Server actions and step-up: always fresh**, no cache. A lookup failure fails closed: actions return
+  `mfa_required`, step-up returns `step_up_required`.
+- **Page reads: fresh check with a 60 s positive-only cache** per (user, session, TOTP timestamp, server instance).
+  Negative results are never cached.
+  - Why: it is secure but practical. A removed factor stops authorizing reads within 60 s instead of the JWT's ~1 h.
+    The cost is at most one Auth Admin call per admin session per minute per instance.
+  - Not chosen: accepting the 1 h window, which the owner wanted closed; and a per-request check with no cache, which
+    adds an Auth round trip to every navigation for no meaningful gain.
+- The MFA screens treat an unbacked AAL2 session as not AAL2, so a session whose factor was removed lands on
+  verify/enrol instead of looping back to `/admin`.
+- **Backup authenticator:** `/admin/mfa/enroll?add=1` (header link). It needs a fresh step-up, and the enrol actions
+  re-check that on the server whenever a verified factor already exists.
+- Residual risk (documented): with two factors, removing the one that verified the session is not detected while the
+  older one remains.
+- Browser proof on the local stack (fixture factor rows inserted, because TOTP is disabled locally):
+
+  | Factor state | Result |
+  |---|---|
+  | factor present | `/admin/overview` 200 |
+  | removed, within the cache window | still 200 (expected) |
+  | removed, after 62 s | redirect to `/admin/mfa/enroll` |
+  | replaced by a factor newer than the verification | redirect to `/admin/mfa/verify` |
+  | factor older than the verification again | 200 |
+
+### 9.5 Tests and gates (clean throwaway worktree, `npm ci`, at `24f83cd`)
+
+| Gate | Batch 1 (`fd0249b`) | Follow-up (`24f83cd`) |
+|---|---|---|
+| typegen / tsc | pass / 0 errors | pass / 0 errors |
+| eslint | 0 errors, 29 warnings | 0 errors, 29 warnings |
+| vitest, no build | 171 passed / 5 skipped files; 3274 passed / 28 skipped tests | 172 / 5 files; **3374 passed / 28 skipped** |
+| vitest after build | 172 / 4 files; 3277 / 25 | 173 / 4 files; **3377 passed / 25 skipped** |
+| next build | pass | pass |
+| local integration (`spaces.int.test.ts`) | 7/7 | 7/7 |
+
+New or extended tests:
+- The role matrix now has 11 personas, adding factor-removed and factor-replaced. It covers `/admin/launch`, the three
+  newly owner-only actions and backup enrolment: 388 tests in that file.
+- Gate tests for stale factors (6), `factorBacksSession` (6), unknown currency (2 metric + money), and no bulk emails (6).
+
+Browser QA, Chromium + WebKit, 6 personas × 18 URLs = **216/216 pass**:
+- billing_admin on `/admin/launch`: 404 at both AAL1 and AAL2.
+- AAL1 admins (who have a factor row) are sent to `/admin/mfa/verify`.
+- No customer email in any billing HTML or RSC payload.
+- The unknown-currency stat and amount label are present.
+- 17/17 tiles match SQL.
+- One transient WebKit "access control checks" error on an aborted RSC prefetch during fast navigation did not recur
+  on a full re-run (0 console errors). Treated as navigation noise, not reproduced.
+
+Cleanup: all `adm1-*` users, factors, tenants, subscriptions and `admin_users` rows were removed (residue 0/0/0).
+Append-only residue on the **local** audit log: 2 `view.space_detail` rows in total.
+
+### 9.6 Staging: lockout analysis and recovery
+
+See `docs/admin/STAGING-ADMIN-BOOTSTRAP-AND-RECOVERY.md`: facts vs assumptions, the proposed first-owner SQL with a
+manual audit row, enrolment order inside the 15-minute AAL1 window, the `amr` totp check, the ≥ 2-factor
+recommendation, lost-device and sole-owner recovery, and rollback. Staging dependencies for a deploy:
+- an approved first-owner grant (`admin_users` has 0 rows);
+- the owner's TOTP enrolment plus a backup factor;
+- confirmation that Staging sessions carry `amr` totp (A1, and no custom access-token hook);
+- no migration and no env change.
+
+`docs/billing/ADMIN-RECOVERY.md` was updated for the new gate rules.
+
+### 9.7 TASK 033 merge-friendliness
+
+- `fix/033-studio-ux` (base `86404b3`, 48 files) touches the **shared** dictionaries `lib/i18n/dictionaries/{en,de,es,fr,he,it,tr}.ts`,
+  configurator, schedule, guest, auth (log-in/sign-up) and component files.
+- This branch touches only the **admin** dictionaries `admin.*.ts`, Admin/billing-admin code and docs.
+- The intersection of the two file lists is **empty**, so no textual conflict is expected.
+- Both branches append keys only in their own namespace files.
