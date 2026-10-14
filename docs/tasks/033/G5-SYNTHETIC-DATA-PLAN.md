@@ -78,3 +78,34 @@ No credential is created or reset; Claude never logs in as the QA owner.
 
 **Approval line:** "Approve G5: S1–S4 exactly as in `G5-SYNTHETIC-DATA-PLAN.md` on `qa-flow-1h8ve` and
 `qa-teach-staging`, test day D = <date>, performed by the owner, with read-only snapshot checks by Claude."
+
+## 6. Exact affected Staging records (read-only, 2026-10-14 ~07:05 UTC)
+
+Space A = `qa-flow-1h8ve` (`3e6e4978-79a3-4912-98b5-c26d15d30155`), Space B = `qa-teach-staging`
+(`cc51ee9a-9b39-4676-bc39-e20467180488`).
+
+| Step | Record (key) | Current value | During G5 | After cleanup |
+|---|---|---|---|---|
+| S1 | `module_settings` (A, `retreatProfile`) `data` | keys `longDescription, shortDescription, tagline, welcome, whatToBring, whatToExpect` (no dates); `updated_at 2026-10-13T19:20:16Z` | + `startDate`, `endDate` | keys removed → same 6 keys |
+| S2 | `schedule_items` (tenant A) | **4 rows**, all 2026-10-03 09:00: `a4d6f535-…` Untitled, `97c2bdca-…` Untitled, `efc50692-…` QA Sunrise Yoga 09:00–10:30 Shala, `3d7b25ea-…` Untitled | + 6 new rows (ids assigned on save) | the 6 new rows deleted → the 4 rows above |
+| S3 | `space_guest_access` (A) | `mode public`, `code_hash null`, `version 8`, `failed_attempts 5` | code mode, hash set, version 9 | `public`, `null`, version 10 |
+| S3 | `guest_access_ip_attempts` (A) | 2 rows (2026-10-03, 2026-10-13) | wrong-code tries add/update rows | **residual** (declared) |
+| S4 | `module_settings` (B, `spaceSettings`) `data` | `{country: XK, locale: en}` | `locale de` | `locale en` |
+| Publish | `published_spaces` A / B | A `published_at 2026-10-13T19:24:55Z` (schedule 5 items, no dates); B `2026-10-13T18:43:27Z` (locale en) | rewritten per Publish | content = draft at cleanup time |
+| Publish | `tenants` A / B `content_updated_at` | A `2026-10-14T06:58:19Z`; B `2026-10-08T09:25:29Z` | advances | advances (cosmetic) |
+
+Untouched: Space A `spaceSettings {country DE, currency null, locale en}`, Space B guest access (`public`, v3), all
+other modules/items/brand/images, every other tenant, billing/entitlements, Production.
+
+## 7. Finding before G5: unpublished draft change on Space A
+
+At **2026-10-14 06:58:19Z** one draft activity was deleted from Space A: `75cc06b3-e16a-4be3-afac-ab0f031f4eab`
+(2026-10-03 09:00, "Untitled", no end time/location/description; created 2026-10-03). Claude made only read-only
+requests in that period; the time matches the owner's Studio session for the G2a check (cause not verified).
+It is **not published** (Guest App still has 5 activities), so the first G5 Publish would also publish this deletion.
+
+Decision needed (choose one):
+- **(a) Keep the deletion (recommended — it was an empty duplicate "Untitled" item):** the G5 baseline becomes the
+  current state (4 activities); I take the pre-G5 snapshot at the start, and the S1 Publish ships the deletion too.
+- **(b) Undo it first:** you re-add an "Untitled" 09:00 activity on 2026-10-03 in the Studio (it gets a new id), so the
+  draft matches the published Space again; then G5 starts.
