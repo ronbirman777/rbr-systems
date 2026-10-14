@@ -1206,6 +1206,10 @@ export const tr: Dictionary = {
     lookAndFeel: "Görünüm",
     colourPalette: "Renk paleti",
     palettePresets: "Hazır paletler",
+    // TASK 033: Brand editor simplification
+    customizeColours: "Renkleri özelleştir",
+    restoreCustomColours: "Özel renklerimi geri yükle",
+    paletteSelected: "Seçili",
     customColours: "Özel renkler",
     customHex: "Özel hex kodu",
     primaryColour: "Ana renk",

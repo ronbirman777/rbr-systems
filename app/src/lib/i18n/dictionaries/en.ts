@@ -1229,6 +1229,10 @@ export const en = {
     lookAndFeel: "Look & feel",
     colourPalette: "Colour palette",
     palettePresets: "Palette presets",
+    // TASK 033: Brand editor simplification
+    customizeColours: "Customize colors",
+    restoreCustomColours: "Restore my custom colours",
+    paletteSelected: "Selected",
     customColours: "Custom colours",
     customHex: "Custom hex",
     primaryColour: "Primary colour",

@@ -1216,6 +1216,10 @@ export const de: Dictionary = {
     lookAndFeel: "Aussehen & Gefühl",
     colourPalette: "Farbpalette",
     palettePresets: "Farbvorlagen",
+    // TASK 033: Brand editor simplification
+    customizeColours: "Farben anpassen",
+    restoreCustomColours: "Meine eigenen Farben wiederherstellen",
+    paletteSelected: "Ausgewählt",
     customColours: "Eigene Farben",
     customHex: "Eigener Hex-Wert",
     primaryColour: "Primärfarbe",

@@ -246,6 +246,11 @@ Note: Remove now applies on Save (not instantly); unsaved Add/Duplicate/Remove t
    current section -> back at the same spot; choose another section -> it opens at its top. Repeat from the middle
    of Flow Schedule. Hebrew Space: drawer reads right-to-left. Landscape phone (short screen): the menu list scrolls
    inside the panel.
+10. Brand (section 13), Flow and Teach: an existing custom-colour Space opens with "Custom colours" selected and the
+    custom section open; tap each preset card (check mark + border; the preview follows), Save, reopen -> same card
+    selected and "Customize colors" collapsed; open it, change Primary / Accent / Background tint, Save, reopen;
+    pick a preset after custom edits -> "Restore my custom colours" brings them back; Publish -> the Guest App
+    uses the new colours (and not before Publish). Hebrew: cards read right-to-left. Then re-check item 9 on Brand.
 
 ## 12. Mobile Studio menu (queued item 1)
 
@@ -302,3 +307,95 @@ focus return/safe areas/44px close, both Studios wired, Teach no longer in-flow,
 
 Not verified: real iPhone (iOS rubber-banding, the address-bar resize with `dvh`, VoiceOver), and the Flow Audio step
 (no local Space has the Audio module enabled; it uses the same shell and drawer).
+
+## 13. Brand editor simplification (queued item 2)
+
+**What changed (shared, `components/studio/brand-palette-editor.tsx` + `lib/brand/paletteEditor.ts`, used by BOTH the
+Flow Brand step and the Teach Brand section; Flow's chip row `BrandPresetChips` and its 5-picker `ColorPicker` were
+removed, Teach's inline cards + "Fine-tune navigation and text colours" toggle were replaced):**
+- The 8 preset palette cards (verified in `lib/brand/presets.ts`: Soft Sky, Sage Light, Deep Navy, Warm Khaki, Earth
+  Brown, Dusty Rose, Terracotta, Forest; values unchanged) are the primary choice. They use the existing Teach card
+  styling unchanged (preset surface, two 24px dots, name in the preset text colour, 2px forest border when selected).
+  Grid: 2 columns below `sm` (320-430), 3 from `sm`. `role="radiogroup"` / `role="radio"` + `aria-checked`, roving
+  tabindex, arrows/Home/End (mirrored in RTL). The selected state is not colour-only: a check mark plus visually
+  hidden ", Selected".
+- **"Customize colors"** (`aria-expanded`/`aria-controls`, 44px) opens exactly **Primary colour, Accent colour,
+  Background tint** (existing translated labels; new strings `customizeColours`, `restoreCustomColours`,
+  `paletteSelected` in all 7 dictionaries). The fields are the shared `ColorField`: preset swatches, a 44x44 native
+  picker and a 16px hex input. Expand/collapse animates grid rows over 200 ms, has no animation under reduced motion,
+  and the collapsed section is `inert`.
+- Collapsed when a preset (or, in Flow, nothing custom at all) is in use. Open, with a selected "Custom colours" card,
+  when the Space already has custom colours.
+
+**Field mapping (no schema change):**
+
+| UI | Flow (`brand_configs`) | Teach |
+|---|---|---|
+| Primary colour | `custom_primary` | `brand_configs.custom_primary` |
+| Accent colour | `custom_secondary` | `brand_configs.custom_secondary` |
+| Background tint | `custom_surface` | `module_settings.teachStyle.background` |
+| (not shown) navigation | `custom_navigation`: written by a preset, kept as saved on custom edits | `brand_configs.custom_navigation`: same rule (null = follows primary) |
+| (not shown) text | `custom_text`: same rule | `brand_configs.custom_text`: same rule |
+| selected preset | derived: strict five-role match, case-insensitive (`flowPaletteSelection`) | `teachStyle.preset` (a known key = preset; "custom"/missing/legacy key = custom) |
+
+Logo, hero, space image, atmosphere/palette, name and the Teach look-and-feel options are never touched. QA proved
+the hero/logo/atmosphere/name columns are unchanged after every save.
+
+**Preset <-> custom rule (keep-last-custom):** choosing a preset while custom colours are in use remembers those
+custom colours in the editor. "Restore my custom colours" then puts them back (all five Flow roles; Teach colours +
+background), before or after Save, until the page is reloaded. Nothing is auto-saved; every change goes through the
+existing Save draft / Save changes. Publish is untouched. Rendering the editor never writes anything (tested).
+Contrast: the shared `BrandContrastFeedback` and Flow's readability check stay unchanged and grade every role; the
+Guest App still computes `--rbr-on-navigation` / readable foregrounds from the painted colours.
+
+**Removed capability (decision to confirm):** custom navigation/text colours can no longer be edited directly. They
+come from the last preset, or stay as saved (legacy custom values are preserved and keep working). Teach's
+"Fine-tune" toggle used to reset them to null ("follow primary"); that path is gone.
+
+**"Where You Are" (item 3): NOT removed. No such component exists on either Brand page** (Flow Brand and Teach Brand
+text dumped and screenshotted, `qa033/ux/brand/before/`). The only "Where you are" in the code is the Space
+Country card (`components/studio/space-country-card.tsx`, label `studio.whereYouAre`) on the **Identity** step of both
+Studios. It is the only control for `spaceSettings.country`, which suggests the phone country and feeds the
+language recommendation. Removing it would remove a setting, so it is left in place pending the owner's
+confirmation of which component was meant.
+
+**QA (local, `qa033/ux/brand/after/brand-qa.json`): 344/344 checks, Chromium + WebKit x 320/390/430/1440, both
+Studios.** Covered:
+- the existing custom Space opens Custom + section open;
+- exactly 3 fields;
+- 2 columns on phones and 3 on desktop;
+- inputs >= 16px and cards/inputs >= 44px on phones;
+- collapse makes the section `inert`;
+- each of the 8 presets selected and applied, with all five Flow values checked, and the live preview primary
+  following each preset at 1440;
+- clicking presets saves nothing until Save;
+- arrow-key wrap;
+- Save -> exact DB values, other brand fields untouched;
+- reopen -> selected + collapsed;
+- custom edit of all 3 saved, with navigation/text kept;
+- Restore;
+- draft colours invisible to guests until a local Publish, then the Guest App primary equals the published preset
+  (both products, both engines);
+- no horizontal overflow;
+- no console/hydration errors.
+
+RTL (he, both engines): direction rtl, first card on the right, ArrowLeft selects the next card. Menu-from-bottom
+re-check on the new Brand pages: 36/36 inside the viewport, locked, restored, trapped. axe on the whole Brand page:
+`color-contrast` nodes went **down** (Flow 34 -> 25 at 390 and 42 -> 33 at 1440; Teach 36 -> 33 and 46 -> 43), with
+no new rule. The remaining ones inside the editor are the shared `studio-fields` labels/hints (`#8C8A84`,
+pre-existing in Teach), now also used in Flow. Screenshots: `qa033/ux/brand/before/` and `after/` (full page, 3 Flow
++ 2 Teach Spaces x widths x engines, plus `*-guest-after-publish.png` and `*-flowHe-rtl.png`).
+Tests: `lib/brand/paletteEditor.test.ts` (fixtures for:
+- each preset;
+- lower-case values;
+- one role changed;
+- pre-028B null surface;
+- partial custom;
+- all-null/blank legacy;
+- Teach known/custom/missing/null/legacy/non-string keys;
+- custom-section and keep-last-custom rules;
+- radio keyboard incl. RTL).
+`sharedStudioComponents.test.ts` and `teachBrandPresets.test.ts` were rewritten for the shared editor (the chip
+component they tested is gone; the same guarantees are asserted on the new cards and props).
+
+Local fixtures (`qa-flow-brand`, `qa-flow-brand-he`, `qa-teach-brand`) are deleted after QA.

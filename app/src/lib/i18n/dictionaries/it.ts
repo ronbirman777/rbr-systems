@@ -1200,6 +1200,10 @@ export const it: Dictionary = {
     lookAndFeel: "Aspetto",
     colourPalette: "Palette di colori",
     palettePresets: "Palette predefinite",
+    // TASK 033: Brand editor simplification
+    customizeColours: "Personalizza i colori",
+    restoreCustomColours: "Ripristina i miei colori personalizzati",
+    paletteSelected: "Selezionata",
     customColours: "Colori personalizzati",
     customHex: "Esadecimale personalizzato",
     primaryColour: "Colore principale",

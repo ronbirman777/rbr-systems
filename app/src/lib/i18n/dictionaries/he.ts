@@ -1227,6 +1227,10 @@ export const he: Dictionary = {
     lookAndFeel: "מראה ותחושה",
     colourPalette: "לוח הצבעים",
     palettePresets: "לוחות מוכנים",
+    // TASK 033: Brand editor simplification
+    customizeColours: "התאמה אישית של צבעים",
+    restoreCustomColours: "שחזור הצבעים שלי",
+    paletteSelected: "נבחר",
     customColours: "צבעים משלכם",
     customHex: "קוד צבע",
     primaryColour: "צבע ראשי",

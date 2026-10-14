@@ -13,6 +13,7 @@ vi.mock("react", async (orig) => {
 import { getBrandPresets } from "@/lib/brand/presets";
 import { defaultTeachSettings } from "@/lib/teach/schemas";
 import { BrandSection } from "./teach-studio-sections";
+import { BrandPaletteEditor } from "@/components/studio/brand-palette-editor";
 import type { StudioApi } from "./teach-studio";
 
 function makeApi(preset: string, colors = { primary: "#111111", accent: "#222222", navigation: null as string | null, text: null as string | null }) {
@@ -32,42 +33,59 @@ function walk(node: ReactNode, visit: (el: ReactElement<Record<string, unknown>>
   walk(el.props.children as ReactNode, visit);
 }
 
-function radios(api: StudioApi) {
-  const out: { label: string; checked: boolean; click: () => void }[] = [];
+/**
+ * TASK 033: the radio cards now live in the shared BrandPaletteEditor, so
+ * these tests read the props BrandSection hands it (the wiring under test)
+ * and render the whole step for the visible cards.
+ */
+function editorProps(api: StudioApi) {
+  let found: Record<string, unknown> | null = null;
   walk(BrandSection({ api }), (el) => {
-    if (el.type === "button" && el.props.role === "radio") {
-      let label = "";
-      walk(el.props.children as ReactNode, (c) => {
-        if (typeof c.props.children === "string") label = c.props.children as string;
-      });
-      out.push({ label, checked: el.props["aria-checked"] === true, click: el.props.onClick as () => void });
-    }
+    if (el.type === BrandPaletteEditor) found = el.props;
   });
-  return out;
+  if (!found) throw new Error("BrandPaletteEditor not mounted");
+  return found as unknown as {
+    presets: ReturnType<typeof getBrandPresets>;
+    selection: { mode: string; selectedKey: string | null };
+    onApplyPreset: (p: ReturnType<typeof getBrandPresets>[number]) => void;
+    onChange: (role: "primary" | "accent" | "surface", hex: string) => void;
+  };
 }
+const checkedCards = (api: StudioApi) =>
+  [...renderToStaticMarkup(createElement(BrandSection, { api })).matchAll(/aria-checked="true"[^>]*data-preset="([^"]+)"/g)].map((m) => m[1]);
 
 describe("Teach Brand step uses the shared canonical registry", () => {
-  it("shows exactly the 8 canonical presets plus a separate Custom colors option", () => {
+  it("shows exactly the 8 canonical presets, plus the Custom colours card while custom is in use", () => {
     const { api } = makeApi("custom");
-    expect(radios(api).map((r) => r.label)).toEqual([...getBrandPresets("teach").map((p) => p.label), "Custom colors"]);
+    expect(editorProps(api).presets.map((p) => p.label)).toEqual(getBrandPresets("teach").map((p) => p.label));
     const html = renderToStaticMarkup(createElement(BrandSection, { api }));
+    expect([...html.matchAll(/data-preset="([^"]+)"/g)].map((m) => m[1])).toEqual([...getBrandPresets("teach").map((p) => p.key), "custom"]);
     for (const gone of ["Calm", "Mediterranean", "Sunrise", "Sacred", "Deep Forest"]) expect(html).not.toContain(`>${gone}<`);
   });
 
   it("clicking a preset applies its full five-colour model (colours + background tint + preset key)", () => {
     for (const p of getBrandPresets("teach")) {
       const { api, setColors, updateSetting } = makeApi("custom");
-      radios(api).find((r) => r.label === p.label)!.click();
+      editorProps(api).onApplyPreset(p);
       expect(setColors).toHaveBeenCalledWith({ primary: p.primary, accent: p.accent, navigation: p.navigation, text: p.text });
       expect(updateSetting).toHaveBeenCalledWith("teachStyle", { preset: p.key, background: p.surface }, "brand");
     }
   });
 
-  it("marks the saved canonical preset selected, and 'Custom colors' for custom or legacy keys", () => {
-    const sel = (preset: string) => radios(makeApi(preset).api).filter((r) => r.checked).map((r) => r.label);
-    expect(sel("terracotta")).toEqual(["Terracotta"]);
-    expect(sel("custom")).toEqual(["Custom colors"]);
-    expect(sel("earth")).toEqual(["Custom colors"]);
+  it("marks the saved canonical preset selected, and 'Custom colours' for custom or legacy keys", () => {
+    expect(checkedCards(makeApi("terracotta").api)).toEqual(["terracotta"]);
+    expect(checkedCards(makeApi("custom").api)).toEqual(["custom"]);
+    expect(checkedCards(makeApi("earth").api)).toEqual(["custom"]);
+  });
+
+  it("custom edits keep navigation/text as saved and mark the palette custom", () => {
+    const colors = { primary: "#111111", accent: "#222222", navigation: "#333333", text: "#444444" };
+    const { api, setColors, updateSetting } = makeApi("forest", colors);
+    editorProps(api).onChange("primary", "#ABCDEF");
+    expect(setColors).toHaveBeenCalledWith({ ...colors, primary: "#ABCDEF" });
+    expect(updateSetting).toHaveBeenCalledWith("teachStyle", { preset: "custom" }, "brand");
+    editorProps(api).onChange("surface", "#FAFAFA");
+    expect(updateSetting).toHaveBeenCalledWith("teachStyle", { background: "#FAFAFA", preset: "custom" }, "brand");
   });
 
   it("just rendering the step never writes anything (no silent rewrite of a saved Space)", () => {
