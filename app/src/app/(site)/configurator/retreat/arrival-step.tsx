@@ -4,7 +4,9 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import type { ArrivalInfo } from "@/lib/modules/arrival";
 import { EmptyState } from "@/components/studio/empty-state";
 import { STUDIO_INPUT_CLASS, StudioField, StudioLabel, StudioSectionSub, StudioHeading, StudioIntro } from "./studio-ui";
-import { saveArrivalInfo, type SaveArrivalInfoState } from "./actions";
+import { saveArrivalInfo, saveRetreatPreparation, type SaveArrivalInfoState } from "./actions";
+import { listToText, textToList, type RetreatProfile } from "@/lib/modules/retreatProfile";
+import { preparationView } from "@/lib/modules/arrivalPreparation";
 import { useRegisteredSave, type StudioSectionEditorProps } from "./studioSection";
 
 import { createTranslator, type Locale } from "@/lib/i18n";
@@ -16,6 +18,13 @@ export type ArrivalStepProps = {
   tenantId: string;
   info: ArrivalInfo;
   setInfo: Dispatch<SetStateAction<ArrivalInfo>>;
+  /**
+   * TASK 033 item 4: "Preparing for arrival" is edited here again. The
+   * lists stay in the canonical retreatProfile (what the Guest App shows);
+   * the legacy arrivalInfo.whatToBring string is only read, never changed.
+   */
+  profile: RetreatProfile;
+  setProfile: Dispatch<SetStateAction<RetreatProfile>>;
   /** TASK 029 (decision B): takes the organizer to the canonical editor
    * for the two fields this step no longer edits. */
   onOpenHome: () => void;
@@ -126,6 +135,8 @@ export function ArrivalStep({
   tenantId,
   info,
   setInfo,
+  profile,
+  setProfile,
   onOpenHome,
   onBack,
   onContinue,
@@ -143,13 +154,46 @@ export function ArrivalStep({
     setInfo((prev) => ({ ...prev, [key]: value }));
   }
 
+  // "Preparing for arrival". The textareas keep their raw text while the
+  // organizer types (so Enter and blank lines work); the stored value is
+  // the cleaned list. Seeding: an empty canonical list shows the legacy
+  // Arrival text until the organizer edits it (see arrivalPreparation.ts).
+  const view = preparationView(profile, info);
+  const [bringDraft, setBringDraft] = useState<string | null>(null);
+  const [expectDraft, setExpectDraft] = useState<string | null>(null);
+  const [olderDismissed, setOlderDismissed] = useState(false);
+  const bringText = bringDraft ?? listToText(view.bring);
+  const expectText = expectDraft ?? listToText(view.expect);
+  const seededFromLegacy = bringDraft === null && view.bringSource === "legacy";
+
+  function setBring(text: string) {
+    onDirty();
+    setBringDraft(text);
+    setProfile((prev) => ({ ...prev, whatToBring: textToList(text) }));
+  }
+  function setExpect(text: string) {
+    onDirty();
+    setExpectDraft(text);
+    setProfile((prev) => ({ ...prev, whatToExpect: textToList(text) }));
+  }
+
   async function handleSave(): Promise<boolean> {
     const formData = new FormData();
     formData.set("locale", locale);
     formData.set("tenantId", tenantId);
     formData.set("data", JSON.stringify(info));
     setPending(true);
-    const result = await saveArrivalInfo(initialState, formData);
+    let result = await saveArrivalInfo(initialState, formData);
+    if (!result.error) {
+      // What the organizer SEES is what is saved (a seeded legacy list
+      // becomes canonical only through this explicit Save).
+      const prep = new FormData();
+      prep.set("locale", locale);
+      prep.set("tenantId", tenantId);
+      prep.set("whatToBring", JSON.stringify(textToList(bringText)));
+      prep.set("whatToExpect", JSON.stringify(textToList(expectText)));
+      result = await saveRetreatPreparation(initialState, prep);
+    }
     setPending(false);
     setState(result);
     // A failed save must NOT clear the guard - the edits are still
@@ -202,12 +246,71 @@ export function ArrivalStep({
       <div className="space-y-4">
         <Field label={t("flow", "gettingHere")} value={info.transportationInfo} onChange={(v) => set("transportationInfo", v)} textarea rows={3} placeholder={t("flow", "gettingHerePlaceholder")} />
         <Field label={t("flow", "onArrival")} value={info.arrivalInstructions} onChange={(v) => set("arrivalInstructions", v)} textarea placeholder={t("flow", "onArrivalPlaceholder")} />
-        <MovedToHome
-          label={t("flow", "whatToBring")}
-          legacyValue={info.whatToBring}
-          onOpenHome={onOpenHome}
-          locale={locale}
-        />
+        <div data-testid="arrival-what-to-bring">
+          <StudioField label={t("flow", "whatToBring")}>
+            <textarea
+              value={bringText}
+              onChange={(e) => setBring(e.target.value)}
+              placeholder={t("flow", "whatToBringPlaceholder")}
+              rows={4}
+              maxLength={2000}
+              className={`${STUDIO_INPUT_CLASS} resize-none`}
+              dir="auto"
+            />
+          </StudioField>
+          <p className="text-[11px] mt-1.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            {t("flow", "onePerLine")} · {t("flow", "preparationShownOnHome")}
+          </p>
+          {seededFromLegacy ? (
+            <p className="text-[11px] mt-1.5" role="note" style={{ color: GUEST_BASE_PALETTE.dusk }}>
+              {t("flow", "preparationSeededLegacy")}
+            </p>
+          ) : null}
+          {view.olderBring && !olderDismissed ? (
+            <div
+              className="rounded-xl border px-3.5 py-3 mt-3"
+              data-testid="arrival-older-bring"
+              style={{ background: `${GUEST_BASE_PALETTE.sand}1f`, borderColor: `${GUEST_BASE_PALETTE.sand}99` }}
+            >
+              <p className="text-[12px] font-semibold" style={{ color: GUEST_BASE_PALETTE.forest }}>
+                {t("flow", "preparationOlderListTitle")}
+              </p>
+              <p className="text-[12px] leading-relaxed mt-1" style={{ color: GUEST_BASE_PALETTE.dusk }}>
+                {t("flow", "preparationOlderListBody")}
+              </p>
+              <p dir="auto" className="text-[12.5px] mt-2 whitespace-pre-line rounded-lg bg-white/70 px-3 py-2" style={{ color: GUEST_BASE_PALETTE.dusk }}>
+                {listToText(view.olderBring)}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setBring(listToText(view.olderBring ?? []));
+                  setOlderDismissed(true);
+                }}
+                className="mt-2.5 min-h-11 text-[11px] font-semibold uppercase tracking-wide underline"
+                style={{ color: GUEST_BASE_PALETTE.forest }}
+              >
+                {t("flow", "preparationUseOlderList")}
+              </button>
+            </div>
+          ) : null}
+        </div>
+        <div data-testid="arrival-what-to-expect">
+          <StudioField label={t("flow", "whatToExpect")}>
+            <textarea
+              value={expectText}
+              onChange={(e) => setExpect(e.target.value)}
+              placeholder={t("flow", "whatToExpectPlaceholder")}
+              rows={4}
+              maxLength={2000}
+              className={`${STUDIO_INPUT_CLASS} resize-none`}
+              dir="auto"
+            />
+          </StudioField>
+          <p className="text-[11px] mt-1.5" style={{ color: GUEST_BASE_PALETTE.mist }}>
+            {t("flow", "onePerLine")} · {t("flow", "preparationShownOnHome")}
+          </p>
+        </div>
         <Field label={t("flow", "importantNotes")} value={info.importantNotes} onChange={(v) => set("importantNotes", v)} textarea rows={3} placeholder={t("flow", "importantNotesPlaceholder")} />
       </div>
 

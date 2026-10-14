@@ -1085,6 +1085,14 @@ export const en = {
     managedInRetreatHome: "Managed in Retreat Home",
     managedInRetreatHomeBody: "This now lives in Retreat Home, so your guests see one version of it. Your earlier text is kept and still shows until you save the new one.",
     openRetreatHome: "Open Retreat Home",
+    // TASK 033 item 4: Preparing for arrival back in Arrival Info
+    preparationSeededLegacy: "Filled in from an earlier version of this Space. Save to keep it here.",
+    preparationOlderListTitle: "An older “What to bring” list is also saved",
+    preparationOlderListBody: "Guests see the list above. This older list is kept and is not shown to guests.",
+    preparationUseOlderList: "Use the older list",
+    preparationMovedToArrival: "What to bring and What to expect are now edited in Arrival Info. Guests still see them on the Home screen.",
+    openArrivalInfo: "Open Arrival Info",
+    preparationShownOnHome: "Guests see these on the Home screen.",
 
     // ---- TASK 029: Readings ----
     readings: "Readings",

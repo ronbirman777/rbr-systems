@@ -13,6 +13,7 @@ import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/mo
 import { afterScheduleSave, noteScheduleRemoval, schedulePersistenceFrom, scheduleIdsToDelete, type SchedulePersistence } from "@/lib/schedule/scheduleSave";
 import { DEFAULT_SESSION_MINUTES, duplicateScheduleItem, followDuration, startTimePatch, suggestEndTime } from "@/lib/schedule/sessionTimes";
 import { countOutsideRetreatDates } from "@/lib/schedule/retreatDays";
+import { preparationEditedInArrival } from "@/lib/modules/arrivalPreparation";
 import { HomeStep } from "./home-step";
 import { MealsStep } from "./meals-step";
 import { GuidelinesStep } from "./guidelines-step";
@@ -2670,6 +2671,8 @@ export function RetreatConfigurator({
             profile={retreatProfile}
             setProfile={setRetreatProfile}
             arrivalInfo={arrivalInfo}
+            preparationInArrival={preparationEditedInArrival(enabledModules)}
+            onOpenArrival={() => attemptNavigate(() => setStep("arrivalInfo"))}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}
             {...moduleSectionProps.home}
@@ -2716,6 +2719,8 @@ export function RetreatConfigurator({
             tenantId={tenantId}
             info={arrivalInfo}
             setInfo={setArrivalInfo}
+            profile={retreatProfile}
+            setProfile={setRetreatProfile}
             onOpenHome={() => attemptNavigate(() => setStep("home"))}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}

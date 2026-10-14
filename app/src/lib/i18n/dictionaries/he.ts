@@ -1097,6 +1097,14 @@ export const he: Dictionary = {
     managedInRetreatHome: "מנוהל בבית הריטריט",
     managedInRetreatHomeBody: "זה נמצא עכשיו בבית הריטריט, כך שהאורחים רואים גרסה אחת. הטקסט הקודם שלך נשמר וממשיך להופיע עד שתשמרו את החדש.",
     openRetreatHome: "פתיחת בית הריטריט",
+    // TASK 033 item 4: Preparing for arrival back in Arrival Info
+    preparationSeededLegacy: "נלקח מגרסה קודמת של המרחב. יש לשמור כדי להשאיר את זה כאן.",
+    preparationOlderListTitle: "שמורה גם רשימה ישנה יותר של „מה להביא”",
+    preparationOlderListBody: "האורחים רואים את הרשימה שלמעלה. הרשימה הישנה נשמרת ואינה מוצגת לאורחים.",
+    preparationUseOlderList: "שימוש ברשימה הישנה",
+    preparationMovedToArrival: "את „מה להביא” ו„למה לצפות” עורכים עכשיו בפרטי הגעה. האורחים ממשיכים לראות אותם במסך הבית.",
+    openArrivalInfo: "פתיחת פרטי הגעה",
+    preparationShownOnHome: "האורחים רואים את זה במסך הבית.",
 
     // ---- TASK 029: Readings ----
     readings: "קטעי קריאה",

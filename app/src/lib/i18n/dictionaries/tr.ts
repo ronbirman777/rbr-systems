@@ -1075,6 +1075,14 @@ export const tr: Dictionary = {
     managedInRetreatHome: "İnziva Ana Sayfası'nda yönetiliyor",
     managedInRetreatHomeBody: "Bu içerik artık İnziva Ana Sayfası'nda yer alıyor; böylece misafirleriniz tek bir sürümünü görür. Önceki metniniz saklanır ve yenisini kaydedene kadar gösterilmeye devam eder.",
     openRetreatHome: "İnziva Ana Sayfası'nı aç",
+    // TASK 033 item 4: Preparing for arrival back in Arrival Info
+    preparationSeededLegacy: "Bu Space'in önceki bir sürümünden alındı. Burada tutmak için kaydedin.",
+    preparationOlderListTitle: "Daha eski bir “Yanınıza alacaklarınız” listesi de kayıtlı",
+    preparationOlderListBody: "Misafirler yukarıdaki listeyi görür. Bu eski liste saklanır ve misafirlere gösterilmez.",
+    preparationUseOlderList: "Eski listeyi kullan",
+    preparationMovedToArrival: "“Yanınıza alacaklarınız” ve “Sizi neler bekliyor” artık Varış Bilgileri'nde düzenleniyor. Misafirler bunları Ana ekranda görmeye devam eder.",
+    openArrivalInfo: "Varış Bilgileri'ni aç",
+    preparationShownOnHome: "Misafirler bunları Ana ekranda görür.",
 
     // ---- TASK 029: Readings ----
     readings: "Yazılar",

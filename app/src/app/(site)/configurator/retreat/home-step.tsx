@@ -24,6 +24,13 @@ export type HomeStepProps = {
   arrivalInfo: ArrivalInfo;
   onBack: () => void;
   onContinue: () => void;
+  /**
+   * TASK 033 item 4: "Preparing for arrival" (What to bring / What to
+   * expect) is edited in Arrival Info whenever that module is enabled; this
+   * step then shows a pointer instead and its Save keeps the stored lists.
+   */
+  preparationInArrival?: boolean;
+  onOpenArrival?: () => void;
 } & StudioSectionEditorProps;
 
 /**
@@ -56,6 +63,8 @@ export function HomeStep({
   arrivalInfo,
   onBack,
   onContinue,
+  preparationInArrival = false,
+  onOpenArrival,
   onDirty,
   onSaved,
   registerSave,
@@ -81,7 +90,7 @@ export function HomeStep({
   const [touchedBring, setTouchedBring] = useState(false);
   const [touchedWelcome, setTouchedWelcome] = useState(false);
 
-  const showLegacyBring = !touchedBring && profile.whatToBring.length === 0 && legacyBring.length > 0;
+  const showLegacyBring = !preparationInArrival && !touchedBring && profile.whatToBring.length === 0 && legacyBring.length > 0;
   const showLegacyWelcome = !touchedWelcome && !profile.welcome?.trim() && legacyWelcome.length > 0;
 
   const bringText = showLegacyBring ? listToText(legacyBring) : listToText(profile.whatToBring);
@@ -96,6 +105,7 @@ export function HomeStep({
     const formData = new FormData();
     formData.set("locale", locale);
     formData.set("tenantId", tenantId);
+    if (preparationInArrival) formData.set("keepPreparation", "1");
     // A seeded-but-untouched field is saved as what the organizer can
     // see, not as the empty canonical value behind it - otherwise
     // pressing Save would appear to lose the text on screen.
@@ -188,6 +198,27 @@ export function HomeStep({
       </div>
 
       <StudioSectionSub>{t("flow", "preparingForArrival")}</StudioSectionSub>
+      {preparationInArrival ? (
+        <div
+          className="rounded-xl border px-3.5 py-3"
+          data-testid="preparation-moved-to-arrival"
+          style={{ background: `${GUEST_BASE_PALETTE.sand}1f`, borderColor: `${GUEST_BASE_PALETTE.sand}99` }}
+        >
+          <p className="text-[12px] leading-relaxed" style={{ color: GUEST_BASE_PALETTE.forest }}>
+            {t("flow", "preparationMovedToArrival")}
+          </p>
+          {onOpenArrival ? (
+            <button
+              type="button"
+              onClick={onOpenArrival}
+              className="mt-2.5 min-h-11 text-[11px] font-semibold uppercase tracking-wide underline"
+              style={{ color: GUEST_BASE_PALETTE.forest }}
+            >
+              {t("flow", "openArrivalInfo")}
+            </button>
+          ) : null}
+        </div>
+      ) : (
       <div className="space-y-4">
         <div>
           <StudioLabel>{t("flow", "whatToBring")}</StudioLabel>
@@ -222,6 +253,7 @@ export function HomeStep({
           <Hint>{t("flow", "onePerLine")}</Hint>
         </div>
       </div>
+      )}
 
       {state.error && (
         <p className="text-sm text-red-700 mt-4" role="alert">

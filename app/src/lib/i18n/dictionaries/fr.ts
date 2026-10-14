@@ -1101,6 +1101,14 @@ export const fr: Dictionary = {
     managedInRetreatHome: "Géré dans Accueil de la retraite",
     managedInRetreatHomeBody: "Ce contenu vit maintenant dans l’Accueil de la retraite, pour que tes invités n’en voient qu’une seule version. Ton ancien texte est conservé et reste affiché jusqu’à ce que tu enregistres le nouveau.",
     openRetreatHome: "Ouvrir Accueil de la retraite",
+    // TASK 033 item 4: Preparing for arrival back in Arrival Info
+    preparationSeededLegacy: "Repris d’une version précédente de cet Espace. Enregistre pour le garder ici.",
+    preparationOlderListTitle: "Une ancienne liste « Quoi apporter » est aussi enregistrée",
+    preparationOlderListBody: "Tes invités voient la liste ci-dessus. Cette ancienne liste est conservée et n’est pas montrée aux invités.",
+    preparationUseOlderList: "Utiliser l’ancienne liste",
+    preparationMovedToArrival: "« Quoi apporter » et « À quoi s’attendre » se modifient désormais dans Arrivée. Tes invités les voient toujours sur l’écran d’accueil.",
+    openArrivalInfo: "Ouvrir Arrivée",
+    preparationShownOnHome: "Tes invités voient ceci sur l’écran d’accueil.",
 
     // ---- TASK 029: Readings ----
     readings: "Lectures",

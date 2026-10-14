@@ -1086,6 +1086,14 @@ export const de: Dictionary = {
     managedInRetreatHome: "Wird im Retreat-Start verwaltet",
     managedInRetreatHomeBody: "Das liegt jetzt im Retreat-Start, damit deine Gäste nur eine Version sehen. Dein früherer Text bleibt erhalten und wird weiter angezeigt, bis du den neuen speicherst.",
     openRetreatHome: "Retreat-Start öffnen",
+    // TASK 033 item 4: Preparing for arrival back in Arrival Info
+    preparationSeededLegacy: "Aus einer früheren Version dieses Space übernommen. Speichere, um es hier zu behalten.",
+    preparationOlderListTitle: "Es ist auch eine ältere Liste „Was du mitbringst“ gespeichert",
+    preparationOlderListBody: "Gäste sehen die Liste oben. Diese ältere Liste bleibt erhalten und wird Gästen nicht angezeigt.",
+    preparationUseOlderList: "Ältere Liste verwenden",
+    preparationMovedToArrival: "„Was du mitbringst“ und „Was dich erwartet“ bearbeitest du jetzt unter Ankunftsinfos. Gäste sehen beides weiterhin auf dem Startbildschirm.",
+    openArrivalInfo: "Ankunftsinfos öffnen",
+    preparationShownOnHome: "Gäste sehen das auf dem Startbildschirm.",
 
     // ---- TASK 029: Readings ----
     readings: "Texte",
