@@ -241,3 +241,64 @@ no env change, no migration (Staging 0001–0047). Rollback: redeploy `182f47e` 
 7. Compare the Flow strip with the Teach strip (`/s/qa-teach-staging`) on the same iPhone.
 8. S3/S4 (access code, German) as planned after this, then cleanup per `G5-SYNTHETIC-DATA-PLAN.md`.
 Note: Remove now applies on Save (not instantly); unsaved Add/Duplicate/Remove trigger the unsaved-changes guard.
+9. Mobile Studio Menu (section 12): on Flow Brand and Teach Brand, scroll to the very bottom, tap Menu -> the panel
+   is fully on screen; the page behind does not scroll; close with x, a tap on the dim area, and by choosing the
+   current section -> back at the same spot; choose another section -> it opens at its top. Repeat from the middle
+   of Flow Schedule. Hebrew Space: drawer reads right-to-left. Landscape phone (short screen): the menu list scrolls
+   inside the panel.
+
+## 12. Mobile Studio menu (queued item 1)
+
+**Root cause (measured, Chromium + WebKit, `qa033/ux/menu/before/probe.json`):**
+- **Teach Studio:** "Menu" lived in the sticky header, but the menu itself was an IN-FLOW block rendered under that
+  header at the top of the document. Opened from the bottom of Brand it rendered at top **-2441px** (390x844,
+  scrollY 2510), at -3023px (320x568) and at -2225px (430x932): entirely above the viewport. No scroll lock (the page
+  scrolled behind it), no Escape.
+- **Flow configurator:** the drawer was already `position: fixed` with no transformed ancestor (so it was inside the
+  viewport). But its Menu button sat in a non-sticky bar that scrolled away (button top -2051px at the bottom of
+  Brand). There was also no scroll lock, no focus trap, no Escape and no focus return.
+- Not the cause: no ancestor with transform/filter/contain was found around the Flow drawer. The Teach header has
+  `backdrop-blur`, which WOULD re-anchor a fixed child, so the new drawer is portalled out of every shell.
+
+**Change (shared, `components/studio/studio-mobile-drawer.tsx` + `lib/studio/scrollLock.ts`, used by BOTH Studios;
+covers every Flow step and every Teach section because both shells mount one drawer):**
+- Portalled to `<body>`, `fixed inset-0`, `h-dvh` (inset-0 is the no-dvh fallback); the panel is `max-h-dvh` with
+  `env(safe-area-inset-top/bottom/left)` padding, and the list scrolls inside it (`overflow-y-auto overscroll-contain`).
+- Background scroll is locked iOS-safely (`body{position:fixed; top:-scrollY}`, restored with an instant `scrollTo`,
+  smooth scroll-behavior suspended for that jump); the rest of `<body>` is `inert` while open.
+- `role="dialog"` + `aria-modal="true"` + label "Studio menu" (a modal overlay over inert content is a dialog, not a
+  plain `nav` landmark; the nav list inside keeps its own semantics). Escape / x (44x44) / backdrop close it, Tab is
+  trapped, and focus returns to the Menu button (via `aria-controls` when Safari did not focus the button on tap).
+  The Menu button has `aria-expanded` + `aria-controls`; the current item has `aria-current`. There is no animation,
+  so reduced motion is respected by construction.
+- Choosing the open section closes the drawer at the exact scroll position. Choosing another section restores first
+  (`releaseScrollLock()`), then opens the new section at its top (Flow did not scroll to the top before; Teach did).
+- Flow's mobile Menu bar is now `sticky top-0`, so the Menu can be reached from anywhere on a long step.
+- Flow drawer group labels: `/40` -> `/70` opacity (was an axe contrast finding inside the drawer).
+
+**QA (after, `qa033/ux/menu/after/menu.json` + `summary.json`):** 7 pages (Flow Brand, Schedule, Treatments, Publish;
+Teach Brand, About, Publish), each opened from the top, middle and bottom, x 320x568 / 320x740 / 390x844 / 430x932 x
+Chromium + WebKit = **168 openings**:
+
+| check | result |
+|---|---|
+| Menu button on screen when tapped | 168/168 |
+| drawer panel fully inside the viewport (bounding rect) | 168/168 (before: Teach 0/6 from the bottom) |
+| background did not scroll (wheel + `scrollBy`) | 168/168 (before: scrolled 300px) |
+| focus starts on "Close Studio menu"; 25 Tab/Shift+Tab presses stay inside | 168/168 |
+| background inert while open | 168/168 (>= 3 body children inert) |
+| closed by Escape / x / backdrop / current item, exact scroll restored, focus back on Menu, `aria-expanded=false` | 48 / 40 / 40 / 40, all pass |
+| internal scrolling when the list is taller than the panel (320x568, Flow) | 66/66 scrolled |
+| another section from the bottom of Brand -> drawer closed, new section at scrollY 0, body unlocked | 16/16 |
+| horizontal overflow | 0 |
+| desktop 1440 (both Studios, both engines): no Menu button, sidebar shown, screenshots before vs after | pixel-identical |
+| axe, drawer open (390, Chromium) | Flow: 34 -> **0** violations (the page behind is inert); Teach: 37 -> 3 (the 3 are the shared sidebar group labels `#8C8A84`, pre-existing, also on desktop, left unchanged to keep desktop identical) |
+| axe, drawer closed | unchanged before/after (pre-existing page contrast findings only) |
+| console / hydration | none, apart from the WebKit `TypeError: Load failed` noted earlier (pre-existing) |
+
+Tests: `lib/studio/scrollLock.test.ts` (lock/restore exact position + previous styles, idempotent, nested,
+early release, no-DOM; focus-trap wrap), `components/studio/studioMobileDrawer.test.ts` (dialog/portal/inert/Escape/
+focus return/safe areas/44px close, both Studios wired, Teach no longer in-flow, Flow bar sticky).
+
+Not verified: real iPhone (iOS rubber-banding, the address-bar resize with `dvh`, VoiceOver), and the Flow Audio step
+(no local Space has the Audio module enabled; it uses the same shell and drawer).
