@@ -84,7 +84,7 @@ export function ReadingsScreen({ brand, readings, locale = DEFAULT_LOCALE }: Rea
                   src={featured.imageUrl}
                   alt=""
                   className="w-full h-full"
-                  sizes={FLOW_SIZES.frame}
+                  sizes={FLOW_SIZES.readingFeatured}
                   style={{ objectPosition: objectPositionStyle(featured.metadata.imagePosition) }}
                   fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                 />
@@ -140,7 +140,7 @@ export function ReadingsScreen({ brand, readings, locale = DEFAULT_LOCALE }: Rea
                   src={r.imageUrl}
                   alt=""
                   className="w-full h-full"
-                  sizes={FLOW_SIZES.tile}
+                  sizes={FLOW_SIZES.readingRow}
                   style={{ objectPosition: objectPositionStyle(r.metadata.imagePosition) }}
                   fallback="linear-gradient(160deg, var(--rbr-secondary), var(--rbr-secondary-dark))"
                 />
@@ -257,7 +257,7 @@ export function ReadingDetailScreen({
             src={reading.imageUrl}
             alt=""
             className="w-full h-full"
-            sizes={FLOW_SIZES.frame}
+            sizes={FLOW_SIZES.readingCover}
             style={{ objectPosition: objectPositionStyle(reading.metadata.imagePosition) }}
             fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
           />

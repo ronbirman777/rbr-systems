@@ -103,25 +103,25 @@ type Tone = "primary" | "accent";
  * waste CP4 is removing - hence one table, read by both.
  */
 export const EXPLORE_COVER_SIZES: Record<string, string> = {
-  meals: FLOW_SIZES.frame,
-  treatments: FLOW_SIZES.frame,
+  meals: FLOW_SIZES.exploreMeals,
+  treatments: FLOW_SIZES.exploreTreatments,
   // Facilities is an EntryCard like the two above it, but a `compact`
   // one - it shares a row with the tiles, so it has a tile's box.
-  facilities: FLOW_SIZES.tile,
-  arrivalInfo: FLOW_SIZES.tile,
-  faq: FLOW_SIZES.tile,
-  stayConnected: FLOW_SIZES.tile,
+  facilities: FLOW_SIZES.exploreTile,
+  arrivalInfo: FLOW_SIZES.exploreTile,
+  faq: FLOW_SIZES.exploreTile,
+  stayConnected: FLOW_SIZES.exploreTile,
   // TASK 029 - all three render as SolidTiles, so all three get a
   // tile's box. Listed here, not guessed by the prefetcher: the
   // prefetcher and the <img> must agree on the candidate or the visitor
   // downloads two renders of one cover.
-  guidelines: FLOW_SIZES.tile,
-  readings: FLOW_SIZES.tile,
-  audio: FLOW_SIZES.tile,
+  guidelines: FLOW_SIZES.exploreTile,
+  readings: FLOW_SIZES.exploreTile,
+  audio: FLOW_SIZES.exploreTile,
 };
 
 /** Custom pages render as SolidTiles alongside the fixed modules. */
-export const EXPLORE_CUSTOM_PAGE_SIZES = FLOW_SIZES.tile;
+export const EXPLORE_CUSTOM_PAGE_SIZES = FLOW_SIZES.exploreTile;
 
 export function ExploreScreen({
   brand,
@@ -269,6 +269,7 @@ export function ExploreScreen({
             eyebrow={t("flow", "eyebrowMeals")}
             title={t("flow", "meals")}
             heightClass="h-[180px]"
+            sizes={EXPLORE_COVER_SIZES.meals}
             showChevron
           />
         )}
@@ -281,6 +282,7 @@ export function ExploreScreen({
             eyebrow={t("flow", "eyebrowTreatments")}
             title={t("flow", "treatments")}
             heightClass="h-[200px]"
+            sizes={EXPLORE_COVER_SIZES.treatments}
           />
         )}
         {(hasFacilities || hasArrival || hasGuidelines || hasFaq || hasReadings || hasAudio || hasStayConnected || hasCustomPages) && (
@@ -294,6 +296,7 @@ export function ExploreScreen({
                 eyebrow={t("flow", "eyebrowFacilities")}
                 title={t("flow", "facilities")}
                 heightClass="h-[140px]"
+                sizes={EXPLORE_COVER_SIZES.facilities}
                 compact
               />
             )}
@@ -416,6 +419,7 @@ function EntryCard({
   eyebrow,
   title,
   heightClass,
+  sizes,
   compact,
   showChevron,
 }: {
@@ -426,6 +430,8 @@ function EntryCard({
   eyebrow: string;
   title: string;
   heightClass: string;
+  /** The card's height-aware `sizes` (EXPLORE_COVER_SIZES), so the prefetcher and the <img> agree. */
+  sizes: string;
   compact?: boolean;
   showChevron?: boolean;
 }) {
@@ -446,8 +452,10 @@ function EntryCard({
            a row in the grid below, so its box is a tile's, not a
            full-width card's. CP4's browser matrix caught this declaring
            the full width regardless - a 138px tile on a 320px phone was
-           fetching a 960px render where 480 covers it. */
-        sizes={compact ? FLOW_SIZES.tile : FLOW_SIZES.frame}
+           fetching a 960px render where 480 covers it. The caller now
+           passes the card's own height-aware entry (EXPLORE_COVER_SIZES),
+           the same value the prefetcher warms. */
+        sizes={sizes}
         style={{ objectPosition: objectPositionStyle(imagePosition ?? null) }}
         fallback={`linear-gradient(160deg, ${v.color}, ${v.dark})`}
       />
@@ -515,7 +523,7 @@ function SolidTile({
         src={imageUrl}
         alt=""
         className="w-full h-full"
-        sizes={FLOW_SIZES.tile}
+        sizes={FLOW_SIZES.exploreTile}
         style={{ objectPosition: objectPositionStyle(imagePosition ?? null) }}
         fallback={v.color}
       />

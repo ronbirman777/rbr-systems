@@ -107,7 +107,7 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
 
   return (
     // TASK 033: the same shared desktop shell as the Guest App itself (a
-    // centred phone-width column over the Space's backdrop from 640px; an
+    // centred phone-width column over the Space's backdrop from 431px; an
     // inert full-width wrapper on a phone) instead of its own 390x780
     // device frame. Presentation only: the form, the Server Action, the
     // cookie flow and the published-safe identity below are unchanged, and
@@ -128,7 +128,7 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
               rather than as a full-resolution original. */}
           <BrandImage
             priority
-            sizes={FLOW_SIZES.frame}
+            sizes={FLOW_SIZES.accessHero}
             src={heroImageUrl}
             alt=""
             className="w-full h-full"

@@ -31,52 +31,79 @@
  * 640px up - it renders inside the shared desktop Guest column (at most
  * 430px, lib/guest/column.ts), where its container queries always see a
  * phone-width container. So every value is now "the phone value, evaluated
- * at the 430px column" from 640px up, and exactly the previous value below
- * 640px (where nothing changed). The former @40rem/@4xl clauses described a
+ * at the 430px column" once the column is active (from 431px, i.e. any
+ * window wider than a phone), and exactly the previous phone value at or
+ * below 430px (where nothing changed). The former @40rem/@4xl clauses described a
  * layout the published page no longer shows, and over-fetched for it.
  */
-import { GUEST_COLUMN_MAX_WIDTH as COLUMN, columnSizes } from "@/lib/guest/column";
+import { GUEST_COLUMN_MAX_WIDTH as COLUMN } from "@/lib/guest/column";
+import { columnCoverSizes, fixedCoverSizes } from "@/lib/media/coverSizes";
 
+/*
+ * Guest image sharpness: every Teach image is object-fit: cover (BrandImage),
+ * so each entry is HEIGHT-aware (lib/media/coverSizes.ts). A width-only
+ * value made the browser pick a render sized to the box width that cover
+ * then stretched to fill a taller box - the class thumbnail (76x90 fed by a
+ * 16:9 photo) was upscaled about 2x at DPR 2. Each entry names its box;
+ * keep the dimensions in step with the className at the call site. The
+ * phone/column split is unchanged: `columnCoverSizes(columnPx, phoneVw, h)`.
+ */
 export const TEACH_SIZES = {
-  /** Desktop top-nav avatar: `w-9` = 36px, fixed. (Studio preview only now.) */
-  navAvatar: "36px",
+  /** Desktop top-nav avatar: `w-9 h-9` = 36x36, fixed. (Studio preview only now.) */
+  navAvatar: fixedCoverSizes(36, 36),
 
-  /** Home "More from" cards: two up on a phone (45vw), so 45% of the column. */
-  homeMoreCard: columnSizes(Math.round(COLUMN * 0.45), "45vw"),
+  /** Home hero portrait, arch layout: 230x290 (`--tt-portrait: 230px`, height x 290/230). */
+  heroPortraitArch: fixedCoverSizes(230, 290),
 
-  /** About gallery tiles: two up, three from @xl (36rem) - never reached in the column. */
-  gallery: columnSizes(COLUMN / 2, "(min-width: 576px) 33vw, 50vw"),
+  /** Home hero portrait, circle layout: 168x168. */
+  heroPortraitCircle: fixedCoverSizes(168, 168),
 
-  /** About certificate thumbnail: `w-12` = 48px, fixed. */
-  certificate: "48px",
+  /** Home hero, full-bleed layout: full width, `h-[360px]`. */
+  heroFullbleed: columnCoverSizes(COLUMN, 100, 360),
 
-  /** Readings featured card: full width on a phone. */
-  readingFeatured: columnSizes(COLUMN, "100vw"),
+  /** About Me portrait: `w-[150px] h-[150px]`, round. */
+  aboutPortrait: fixedCoverSizes(150, 150),
 
-  /** Readings list row: a 78px thumbnail (the @4xl tile is never reached in the column). */
-  readingRow: "78px",
+  /** Home "More from" cards: two up on a phone (45vw, 45% of the column), `h-[110px]`. */
+  homeMoreCard: columnCoverSizes(Math.round(COLUMN * 0.45), 45, 110),
 
-  /** Reading detail cover: full bleed. */
-  readingCover: columnSizes(COLUMN, "100vw"),
+  /** About gallery tiles: two up; every third tile is `h-[220px]`, the rest `h-[140px]`. */
+  galleryTall: columnCoverSizes(COLUMN / 2, 50, 220),
+  galleryShort: columnCoverSizes(COLUMN / 2, 50, 140),
 
-  /** Audio featured card: full bleed behind its overlay. */
-  audioFeatured: columnSizes(COLUMN, "100vw"),
+  /** About certificate thumbnail: `w-12 h-12` = 48x48, fixed. */
+  certificate: fixedCoverSizes(48, 48),
 
-  /** Audio list row thumbnail: `w-16` = 64px, fixed. */
-  audioRow: "64px",
+  /** Readings featured card: full width, `h-[200px]`. */
+  readingFeatured: columnCoverSizes(COLUMN, 100, 200),
 
-  /** Audio player artwork: capped at 300px. */
-  audioArtwork: columnSizes(300, "min(300px, 100vw)"),
+  /** Readings list row: `w-[78px] h-[78px]` (the @4xl tile is never reached in the column). */
+  readingRow: fixedCoverSizes(78, 78),
 
-  /** Contact and custom-page covers: full bleed. */
-  pageCover: columnSizes(COLUMN, "100vw"),
+  /** Reading detail cover: full bleed, `h-[260px]`. */
+  readingCover: columnCoverSizes(COLUMN, 100, 260),
 
-  /** My Retreats list card: one column on a phone (the two/three-up layouts are never reached in the column). */
-  retreatCard: columnSizes(COLUMN, "100vw"),
+  /** Audio featured card: full bleed behind its overlay, `h-[190px]`. */
+  audioFeatured: columnCoverSizes(COLUMN, 100, 190),
 
-  /** My Retreats detail cover: full bleed. */
-  retreatCover: columnSizes(COLUMN, "100vw"),
+  /** Audio list row thumbnail: `w-16 h-16` = 64x64, fixed. */
+  audioRow: fixedCoverSizes(64, 64),
 
-  /** Class-card thumbnail: `w-[76px]`, fixed. */
-  classCardThumb: "76px",
+  /** Audio player artwork: square, capped at 300px. */
+  audioArtwork: fixedCoverSizes(300, 300),
+
+  /** Contact (`h-[210px]`) and custom-page (`h-[240px]`) covers: full bleed; sized for the taller. */
+  pageCover: columnCoverSizes(COLUMN, 100, 240),
+
+  /** My Retreats list card: one column on a phone, `h-[180px]`. */
+  retreatCard: columnCoverSizes(COLUMN, 100, 180),
+
+  /** My Retreats detail cover: full bleed, `h-[240px]`. */
+  retreatCover: columnCoverSizes(COLUMN, 100, 240),
+
+  /** Class-card thumbnail: `w-[76px] h-[90px]`, fixed. */
+  classCardThumb: fixedCoverSizes(76, 90),
+
+  /** Explore cards: full width in the column; `h-[200px]` (tall/feature) or `h-[170px]`; sized for the taller. */
+  exploreCard: columnCoverSizes(COLUMN, 100, 200),
 } as const;
