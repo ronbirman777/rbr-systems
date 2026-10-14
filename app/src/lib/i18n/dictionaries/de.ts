@@ -1236,6 +1236,7 @@ export const de: Dictionary = {
     customizeColours: "Farben anpassen",
     restoreCustomColours: "Meine eigenen Farben wiederherstellen",
     paletteSelected: "Ausgewählt",
+    advancedColours: "Erweiterte Farben",
     customColours: "Eigene Farben",
     customHex: "Eigener Hex-Wert",
     primaryColour: "Primärfarbe",

@@ -16,8 +16,8 @@ export function isPreviewGateEnabled(): boolean {
 }
 
 /**
- * The one carve-out from the site-wide gate: a PUBLISHED Guest App and the
- * assets it needs to render.
+ * The guest carve-out from the site-wide gate: a PUBLISHED Guest App and the
+ * assets it needs to render. (The only other one is isPublicLegalPath below.)
  *
  * A published Space is a public address a teacher hands to their students
  * and shares in a message - it cannot sit behind an InnerDweS staff
@@ -77,4 +77,27 @@ export const MACHINE_ENDPOINT_PATHS: ReadonlySet<string> = new Set(["/api/billin
 
 export function isMachineEndpointPath(pathname: string): boolean {
   return MACHINE_ENDPOINT_PATHS.has(pathname);
+}
+
+/**
+ * Another carve-out: the public legal documents. Terms, Privacy and the
+ * other policies must be readable by anyone - a visitor deciding whether to
+ * sign up, a guest of a published Space, a rights holder sending a takedown
+ * notice - without an account and without the staff preview password.
+ *
+ * Exactly these paths and nothing else:
+ *   /legal              the index of documents
+ *   /legal/<anything>   one document (unknown slugs 404 in the route itself);
+ *                       a bare "/legal/" is the index with a trailing slash
+ *   /terms, /privacy    the permanent short aliases (308 to /legal/<slug>)
+ *
+ * Static pages only: they read no session, no Space and no database, so the
+ * exemption exposes nothing that is not already meant to be public.
+ * Lookalikes stay gated: /legalese, /legal-notes, /terms-old, /privacy/x.
+ */
+export const PUBLIC_LEGAL_EXACT_PATHS: ReadonlySet<string> = new Set(["/legal", "/terms", "/privacy"]);
+
+export function isPublicLegalPath(pathname: string): boolean {
+  if (pathname.split("/").includes("..")) return false;
+  return PUBLIC_LEGAL_EXACT_PATHS.has(pathname) || pathname.startsWith("/legal/");
 }

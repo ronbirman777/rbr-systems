@@ -120,6 +120,24 @@ describe("both Guest Apps render inside the one shared column", () => {
     expect(out).toContain("--guest-backdrop:color-mix(in srgb, var(--rbr-primary) 10%, var(--rbr-parchment-deep))");
     expect(out).toContain("--rbr-primary:");
   });
+
+  // Ported from main's shell backport (94de158 line), adapted to the RC's
+  // GuestDesktopShell call (locale + no hero-wait overlay on the code screen).
+  it("the access-code screen uses the same shell instead of its own 390px device frame", () => {
+    const src = readFileSync(new URL("./guest-access-screen.tsx", import.meta.url), "utf8");
+    expect(src).toContain('<GuestDesktopShell vars={vars} locale={locale} heroWait={false} as="main"');
+    expect(src).not.toContain("sm:w-[390px]");
+    expect(src).not.toContain("sm:rounded-[44px]");
+  });
+
+  it("Teach's desktop-only layouts switch on the APP's own container, never the window (so the column keeps them phone-sized)", () => {
+    const src = readFileSync(new URL("../teach/teach-guest-app.tsx", import.meta.url), "utf8");
+    expect(src).toMatch(/className=\{`tt-root guest-viewport \$\{TEACH_FONT_VARIABLES\} @container /);
+    expect(src).toContain("ref.current?.clientWidth ?? 0) >= DESKTOP_MIN_WIDTH");
+    expect(src).not.toMatch(/matchMedia|innerWidth/);
+    // no viewport (sm:/md:/lg:) breakpoints in the Teach Guest App - only container queries
+    expect(src).not.toMatch(/["\s](sm|md|lg|xl):[a-z]/);
+  });
 });
 
 describe("the column geometry (globals.css)", () => {

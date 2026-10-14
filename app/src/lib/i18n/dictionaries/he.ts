@@ -1247,6 +1247,7 @@ export const he: Dictionary = {
     customizeColours: "התאמה אישית של צבעים",
     restoreCustomColours: "שחזור הצבעים שלי",
     paletteSelected: "נבחר",
+    advancedColours: "צבעים מתקדמים",
     customColours: "צבעים משלכם",
     customHex: "קוד צבע",
     primaryColour: "צבע ראשי",

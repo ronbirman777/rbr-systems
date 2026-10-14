@@ -86,6 +86,7 @@ import { useHasMounted } from "@/lib/currencies/useFormattedPrice";
 import { formatPublishedAtUtc } from "@/lib/studio/status";
 import {
   Card,
+  ColorField,
   Hint,
   ImageField,
   Label,
@@ -512,6 +513,10 @@ export function BrandSection({ api }: Props) {
   const styleLabel = styleLabels(api.locale);
   const style = api.settings.teachStyle;
   const set = (patch: Partial<typeof style>) => api.updateSetting("teachStyle", patch, "brand");
+  // Backport: the existing "Fine-tune navigation and text colours" toggle
+  // and its two fields are kept as they were (same state, same writes),
+  // now under "Advanced colours" inside "Customize colors".
+  const [advanced, setAdvanced] = useState(Boolean(api.colors.navigation || api.colors.text));
   const presets = getBrandPresets("teach");
   const selection = teachPaletteSelection(style.preset);
   // TASK 033: keep-last-custom (editor state only) - see lib/brand/paletteEditor.ts.
@@ -534,6 +539,7 @@ export function BrandSection({ api }: Props) {
             setLastCustom((prev) => stashOnPresetApply(selection, { colors: api.colors, background: style.background ?? null }, prev));
             const next = presetColorUpdate("teach", p);
             api.setColors({ primary: next.primary, accent: next.accent, navigation: next.navigation, text: next.text });
+            setAdvanced(true);
             set({ preset: p.key, background: next.surface });
           }}
           onChange={(role, hex) => {
@@ -550,6 +556,26 @@ export function BrandSection({ api }: Props) {
                   setLastCustom(null);
                 }
               : undefined
+          }
+          advanced={
+            <>
+              <Toggle checked={advanced} onChange={(v) => {
+                setAdvanced(v);
+                if (!v) api.setColors({ ...api.colors, navigation: null, text: null });
+              }} label={t("teach", "fineTuneColours")} description={t("teach", "fineTuneColoursBody")} />
+              {advanced ? (
+                <Grid>
+                  <ColorField locale={api.locale} label={t("studio", "navigationColour")} value={api.colors.navigation ?? api.colors.primary} onChange={(hex) => {
+                    api.setColors({ ...api.colors, navigation: hex });
+                    set({ preset: "custom" });
+                  }} />
+                  <ColorField locale={api.locale} label={t("studio", "textColour")} value={api.colors.text ?? api.colors.primary} onChange={(hex) => {
+                    api.setColors({ ...api.colors, text: hex });
+                    set({ preset: "custom" });
+                  }} />
+                </Grid>
+              ) : null}
+            </>
           }
         >
           {/* Shared with Flow - the same component grades both products, so

@@ -49,6 +49,8 @@ function editorProps(api: StudioApi) {
     selection: { mode: string; selectedKey: string | null };
     onApplyPreset: (p: ReturnType<typeof getBrandPresets>[number]) => void;
     onChange: (role: "primary" | "accent" | "surface", hex: string) => void;
+    advanced: ReactNode;
+    showSurface?: boolean;
   };
 }
 const checkedCards = (api: StudioApi) =>
@@ -86,6 +88,51 @@ describe("Teach Brand step uses the shared canonical registry", () => {
     expect(updateSetting).toHaveBeenCalledWith("teachStyle", { preset: "custom" }, "brand");
     editorProps(api).onChange("surface", "#FAFAFA");
     expect(updateSetting).toHaveBeenCalledWith("teachStyle", { background: "#FAFAFA", preset: "custom" }, "brand");
+  });
+
+  // release/033-ux-fast backport: the advanced colour controls Teach had
+  // ("Fine-tune navigation and text colours") stay, with the same writes.
+  function advancedControls(api: StudioApi) {
+    const p = editorProps(api);
+    const toggles: Record<string, unknown>[] = [];
+    const fields: Record<string, unknown>[] = [];
+    walk(p.advanced, (el) => {
+      if (typeof el.props.label === "string" && typeof el.props.checked === "boolean") toggles.push(el.props);
+      if (typeof el.props.label === "string" && typeof el.props.value === "string") fields.push(el.props);
+    });
+    return { p, toggles, fields };
+  }
+
+  it("keeps Background tint (teachStyle.background) and the fine-tune toggle under Advanced", () => {
+    const { p, toggles } = advancedControls(makeApi("custom").api);
+    expect(p.showSurface).not.toBe(false);
+    expect(toggles.map((x) => x.label)).toEqual(["Fine-tune navigation and text colours"]);
+    expect(toggles[0].checked).toBe(false);
+  });
+
+  it("advanced navigation/text edits write exactly what they wrote before (colour + preset custom)", () => {
+    const colors = { primary: "#111111", accent: "#222222", navigation: "#333333", text: "#444444" };
+    const { api, setColors, updateSetting } = makeApi("forest", colors);
+    const { toggles, fields } = advancedControls(api);
+    expect(toggles[0].checked).toBe(true);
+    expect(fields.map((f) => [f.label, f.value])).toEqual([
+      ["Navigation colour", "#333333"],
+      ["Text colour", "#444444"],
+    ]);
+    (fields[0].onChange as (h: string) => void)("#ABCDEF");
+    expect(setColors).toHaveBeenLastCalledWith({ ...colors, navigation: "#ABCDEF" });
+    expect(updateSetting).toHaveBeenLastCalledWith("teachStyle", { preset: "custom" }, "brand");
+    (fields[1].onChange as (h: string) => void)("#FEDCBA");
+    expect(setColors).toHaveBeenLastCalledWith({ ...colors, text: "#FEDCBA" });
+    expect(updateSetting).toHaveBeenLastCalledWith("teachStyle", { preset: "custom" }, "brand");
+  });
+
+  it("turning fine-tune off resets navigation/text to follow primary (null), as before", () => {
+    const colors = { primary: "#111111", accent: "#222222", navigation: "#333333", text: "#444444" };
+    const { api, setColors, updateSetting } = makeApi("custom", colors);
+    (advancedControls(api).toggles[0].onChange as (v: boolean) => void)(false);
+    expect(setColors).toHaveBeenCalledWith({ ...colors, navigation: null, text: null });
+    expect(updateSetting).not.toHaveBeenCalled();
   });
 
   it("just rendering the step never writes anything (no silent rewrite of a saved Space)", () => {

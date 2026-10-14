@@ -1222,6 +1222,7 @@ export const tr: Dictionary = {
     customizeColours: "Renkleri özelleştir",
     restoreCustomColours: "Özel renklerimi geri yükle",
     paletteSelected: "Seçili",
+    advancedColours: "Gelişmiş renkler",
     customColours: "Özel renkler",
     customHex: "Özel hex kodu",
     primaryColour: "Ana renk",

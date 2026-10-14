@@ -46,13 +46,19 @@ describe("shared Studio form controls are 16px on phones", () => {
   });
 
   it("the auth and form-primitive inputs follow the same rule", () => {
+    // Every form primitive that renders a text control is covered automatically (a new one cannot slip past
+    // this guard), plus the auth pages. The two primitives present on every branch must be among them.
+    const FORMS = "src/components/forms";
+    const formPrimitives = readdirSync(path.join(ROOT, FORMS))
+      .filter((f) => f.endsWith(".tsx") && !f.includes(".test."))
+      .map((f) => `${FORMS}/${f}`)
+      .filter((rel) => /<(input|select|textarea)\b/.test(readFileSync(path.join(ROOT, rel), "utf8")));
+    expect(formPrimitives).toEqual(expect.arrayContaining([`${FORMS}/country-select.tsx`, `${FORMS}/phone-field.tsx`]));
     for (const rel of [
       "src/app/(site)/(auth)/log-in/page.tsx",
       "src/app/(site)/(auth)/sign-up/page.tsx",
       "src/app/(site)/(auth)/recovery-form.tsx",
-      "src/components/forms/country-select.tsx",
-      "src/components/forms/currency-select.tsx",
-      "src/components/forms/phone-field.tsx",
+      ...formPrimitives,
     ]) {
       const src = readFileSync(path.join(ROOT, rel), "utf8");
       expect(src, rel).toMatch(/text-base sm:text-/);

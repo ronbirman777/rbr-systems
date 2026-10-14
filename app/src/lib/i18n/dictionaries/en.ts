@@ -1245,6 +1245,7 @@ export const en = {
     customizeColours: "Customize colors",
     restoreCustomColours: "Restore my custom colours",
     paletteSelected: "Selected",
+    advancedColours: "Advanced colours",
     customColours: "Custom colours",
     customHex: "Custom hex",
     primaryColour: "Primary colour",

@@ -26,6 +26,7 @@ import { LogoutButton } from "@/components/logout-button";
 import { DeleteSpaceControl } from "@/components/delete-space-control";
 import { DeleteAccountControl } from "@/components/delete-account-control";
 import { lifecycleUiCopy } from "@/lib/billing/lifecycleUiCopy";
+import { getLegalDocument, legalHref } from "@/lib/legal/documents";
 
 type PublishedRow = { published_at: string } | { published_at: string }[] | null;
 
@@ -469,6 +470,18 @@ export default async function MySpacePage() {
           <div className="mt-3">
             <DeleteAccountControl email={user.email ?? ""} spaceCount={(tenants ?? []).length} />
           </div>
+          {/* Links only, read from the legal registry. */}
+          <nav aria-label="Legal" className="mt-6">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-xs">
+              {(["terms", "privacy", "dpa", "billing"] as const).map((id) => (
+                <li key={id}>
+                  <Link href={legalHref(id)} className="text-idw-forest/70 underline underline-offset-2 hover:text-idw-forest">
+                    {getLegalDocument(id).title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
       </div>
     </main>

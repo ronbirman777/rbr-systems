@@ -109,6 +109,45 @@ describe("shared Studio components", () => {
     expect(custom).not.toContain("Text colour");
   });
 
+  // release/033-ux-fast backport: owner requirements for the Brand editor.
+  it("BrandPaletteEditor: showSurface={false} omits the Background tint field (Flow); default keeps it (Teach)", () => {
+    const base = {
+      presets: getBrandPresets("retreat"),
+      selection: { mode: "custom", selectedKey: null } as never,
+      colors: { primary: "#112233", accent: "#445566", surface: "#F5F0E8" },
+      onApplyPreset: () => {},
+      onChange: () => {},
+    };
+    const flow = html(createElement(BrandPaletteEditor, { ...base, showSurface: false }));
+    expect(flow).toContain("Primary colour");
+    expect(flow).toContain("Accent colour");
+    expect(flow).not.toContain("Background tint");
+    expect(html(createElement(BrandPaletteEditor, base))).toContain("Background tint");
+  });
+
+  it("BrandPaletteEditor: the product's advanced controls sit inside Customize colors behind a collapsed 'Advanced colours' disclosure", () => {
+    const out = html(
+      createElement(BrandPaletteEditor, {
+        presets: getBrandPresets("retreat"),
+        selection: { mode: "custom", selectedKey: null } as never,
+        colors: { primary: "#112233", accent: "#445566", surface: "#F5F0E8" },
+        onApplyPreset: () => {},
+        onChange: () => {},
+        advanced: createElement("p", { "data-testid": "adv-probe" }, "Navigation colour"),
+      })
+    );
+    expect(out).toMatch(/aria-expanded="false" aria-controls="[^"]+"[^>]*data-testid="advanced-colours"/);
+    expect(out).toContain("Advanced colours");
+    // reachable (in the DOM) but collapsed until opened
+    expect(out).toMatch(/<div id="[^"]+" hidden="" data-advanced-open="false"[^>]*><p data-testid="adv-probe">Navigation colour<\/p>/);
+    // the disclosure lives inside the Customize colors section
+    const section = out.indexOf('data-open="true"');
+    expect(section).toBeGreaterThan(-1);
+    expect(out.indexOf("advanced-colours")).toBeGreaterThan(section);
+    // without an advanced slot there is no disclosure
+    expect(editor({ mode: "custom", selectedKey: null })).not.toContain("advanced-colours");
+  });
+
   it("BrandPaletteEditor: a legacy default Space selects nothing and keeps the section closed", () => {
     const out = editor({ mode: "default", selectedKey: null });
     expect(out).not.toContain('aria-checked="true"');

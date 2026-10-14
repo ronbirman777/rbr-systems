@@ -44,7 +44,9 @@ import { StudioMobileDrawer } from "@/components/studio/studio-mobile-drawer";
 import { releaseScrollLock } from "@/lib/studio/scrollLock";
 import { saveStatusLabel, previewDraftLabel, previewDraftCaption, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
 import { BrandPaletteEditor } from "@/components/studio/brand-palette-editor";
+import { ColorField } from "@/components/studio/studio-fields";
 import { flowPaletteSelection, stashOnPresetApply } from "@/lib/brand/paletteEditor";
+import { PRESET_LABEL } from "@/lib/brand/presetLabels";
 import { SpaceCountryCard } from "@/components/studio/space-country-card";
 import { SpaceLanguageCard } from "@/components/studio/space-language-card";
 import { SpaceCurrencyCard } from "@/components/studio/space-currency-card";
@@ -263,6 +265,12 @@ const STEP_LABEL_KEYS: Record<
 const TOP_BAR_PUBLISH_FORM_ID = "studio-top-bar-publish";
 
 
+
+/** Preset swatches for one colour role, labelled in the Space's language. */
+function flowSwatchesFor(role: "navigation" | "text", locale: Locale) {
+  const { t } = createTranslator(locale);
+  return getBrandPresets("retreat").map((p) => ({ label: t("studio", PRESET_LABEL[p.key]), hex: p[role] }));
+}
 
 type ModuleDescriptionKey =
   | "moduleScheduleDesc"
@@ -2339,7 +2347,39 @@ export function RetreatConfigurator({
                 presets={getBrandPresets("retreat")}
                 selection={paletteSelection}
                 colors={{ primary: effectivePrimary, accent: effectiveSecondary, surface: effectiveSurface }}
-                hints={{ primary: t("studio", "primaryColourHelp"), accent: t("studio", "accentColourHelp"), surface: t("studio", "backgroundTintHelp") }}
+                hints={{ primary: t("studio", "primaryColourHelp"), accent: t("studio", "accentColourHelp") }}
+                // Backport: the Flow Guest App does not render custom_surface,
+                // so no Background tint control is offered here (a preset
+                // still writes it exactly as before; a saved value is kept).
+                showSurface={false}
+                // Backport: the navigation / text colour pickers Flow already
+                // had stay reachable under "Advanced colours", same writes.
+                advanced={
+                  <>
+                    <ColorField
+                      locale={spaceLocale}
+                      label={t("studio", "navigationColour")}
+                      value={effectiveNavigation}
+                      swatches={flowSwatchesFor("navigation", spaceLocale)}
+                      hint={t("studio", "navigationColourHelpFlow")}
+                      onChange={(hex) => {
+                        setCustomNavigation(hex);
+                        dirty.markDirty("identityAndBrand");
+                      }}
+                    />
+                    <ColorField
+                      locale={spaceLocale}
+                      label={t("studio", "textColour")}
+                      value={effectiveText}
+                      swatches={flowSwatchesFor("text", spaceLocale)}
+                      hint={t("studio", "textColourHelp")}
+                      onChange={(hex) => {
+                        setCustomText(hex);
+                        dirty.markDirty("identityAndBrand");
+                      }}
+                    />
+                  </>
+                }
                 onApplyPreset={(preset) => {
                   setLastCustomColors((prev) =>
                     stashOnPresetApply(
@@ -2359,7 +2399,7 @@ export function RetreatConfigurator({
                 onChange={(role, hex) => {
                   if (role === "primary") setCustomPrimary(hex);
                   else if (role === "accent") setCustomSecondary(hex);
-                  else setCustomSurface(hex);
+                  else if (role === "surface") setCustomSurface(hex);
                   dirty.markDirty("identityAndBrand");
                 }}
                 onRestore={

@@ -25,8 +25,15 @@ export type PaletteRole = "primary" | "accent" | "surface";
  *    colours" card.
  * 3. Applying a preset or editing a colour only reports the change; the
  *    product saves it through its existing Save (no auto-save, never
- *    publish). Navigation and text colours are not edited here: a preset
- *    writes them as before, a custom edit leaves them as saved.
+ *    publish). A preset writes navigation and text colours as before; a
+ *    Primary/Accent/Background edit leaves them as saved.
+ * 4. Backport (release/033-ux-fast): the controls each product already
+ *    offered for navigation and text colours stay reachable inside
+ *    "Customize colors" under an "Advanced colours" disclosure (`advanced`,
+ *    rendered by the product with its existing save semantics), and a
+ *    product whose Guest App does not render a background tint (Flow)
+ *    omits that field (`showSurface={false}`) instead of offering a
+ *    control that silently does nothing.
  *
  * Keep-last-custom: when `onRestore` is given (the parent remembered the
  * custom colours the organizer left by picking a preset), a "Restore my
@@ -42,6 +49,8 @@ export function BrandPaletteEditor({
   hints,
   locale = DEFAULT_LOCALE,
   dir,
+  showSurface = true,
+  advanced,
   children,
 }: {
   presets: readonly BrandPreset[];
@@ -54,12 +63,18 @@ export function BrandPaletteEditor({
   hints?: Partial<Record<PaletteRole, string>>;
   locale?: Locale;
   dir?: "ltr" | "rtl";
+  /** false: omit the Background tint field (a product whose guest app does not render it). */
+  showSurface?: boolean;
+  /** The product's existing navigation/text colour controls, shown under "Advanced colours". */
+  advanced?: ReactNode;
   /** Rendered under the custom section (e.g. the shared contrast feedback). */
   children?: ReactNode;
 }) {
   const { t } = createTranslator(locale);
   const sectionId = useId();
+  const advancedId = useId();
   const [open, setOpen] = useState(() => customSectionStartsOpen(selection));
+  const [advancedOpen, setAdvancedOpen] = useState(false);
   const cardRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const custom = selection.mode === "custom";
   // Radio items: the presets, plus the "Custom colours" card while custom is in use.
@@ -194,16 +209,38 @@ export function BrandPaletteEditor({
               hint={hints?.accent}
               onChange={(hex) => onChange("accent", hex)}
             />
-            <div className="sm:col-span-2">
-              <ColorField
-                locale={locale}
-                label={t("studio", "backgroundTint")}
-                value={colors.surface}
-                swatches={swatches("surface")}
-                hint={hints?.surface}
-                onChange={(hex) => onChange("surface", hex)}
-              />
-            </div>
+            {showSurface ? (
+              <div className="sm:col-span-2">
+                <ColorField
+                  locale={locale}
+                  label={t("studio", "backgroundTint")}
+                  value={colors.surface}
+                  swatches={swatches("surface")}
+                  hint={hints?.surface}
+                  onChange={(hex) => onChange("surface", hex)}
+                />
+              </div>
+            ) : null}
+            {advanced ? (
+              <div className="sm:col-span-2 flex flex-col gap-3">
+                <button
+                  type="button"
+                  aria-expanded={advancedOpen}
+                  aria-controls={advancedId}
+                  onClick={() => setAdvancedOpen((v) => !v)}
+                  data-testid="advanced-colours"
+                  className="self-start min-h-11 inline-flex items-center gap-2 px-1 text-[13px] font-semibold text-[#192B21] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#192B21]"
+                >
+                  {t("studio", "advancedColours")}
+                  <span aria-hidden="true" className={`inline-block transition-transform duration-200 motion-reduce:transition-none ${advancedOpen ? "rotate-180" : ""}`}>
+                    ▾
+                  </span>
+                </button>
+                <div id={advancedId} hidden={!advancedOpen} data-advanced-open={advancedOpen ? "true" : "false"} className="flex flex-col gap-4">
+                  {advanced}
+                </div>
+              </div>
+            ) : null}
             {onRestore ? (
               <button
                 type="button"

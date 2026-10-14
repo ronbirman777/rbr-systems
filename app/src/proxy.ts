@@ -6,6 +6,7 @@ import {
   isPreviewGateEnabled,
   isPublicGuestPath,
   isMachineEndpointPath,
+  isPublicLegalPath,
 } from "@/lib/preview-gate/config";
 import { sha256Hex, timingSafeEqual } from "@/lib/preview-gate/hash";
 import { classifyHostname, PRODUCTION_APEX } from "@/lib/hostname";
@@ -149,6 +150,10 @@ async function checkPreviewGate(
   if (isPublicGuestPath(effectivePathname)) return null;
   // TASK 032: Stripe webhooks and the billing cron authenticate themselves (signature / bearer secret).
   if (isMachineEndpointPath(effectivePathname)) return null;
+  // The public legal documents (Terms, Privacy, ...) must be readable
+  // without an account or the staff password. Exactly /legal, /legal/*,
+  // /terms and /privacy - see isPublicLegalPath for the boundary.
+  if (isPublicLegalPath(effectivePathname)) return null;
   // Task 011A: the previous opengraph-image exemption existed purely so
   // social crawlers could render a link preview for shared marketing
   // links - a marketing convenience, not a technical requirement for the
