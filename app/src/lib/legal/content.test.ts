@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { LEGAL_DOCUMENTS, findLegalDocumentBySlug, type LegalDocumentId } from "./documents";
 import { LEGAL_BODIES } from "./content";
+import { LEGAL_ARCHIVED_BODIES } from "./content/archive";
 import type { LegalBlock, LegalDocumentBody } from "./content/types";
 import { inlineToPlainText, tokenizeInline } from "./inline";
 
@@ -209,6 +210,17 @@ function plain(id: LegalDocumentId): string {
   return allTexts(LEGAL_BODIES[id]).map(inlineToPlainText).join("\n");
 }
 
+function sectionOf(body: LegalDocumentBody, id: string) {
+  const s = body.sections.find((x) => x.id === id);
+  if (!s) throw new Error(`no section ${id}`);
+  return s;
+}
+
+function sectionText(id: LegalDocumentId, sectionId: string): string {
+  const s = sectionOf(LEGAL_BODIES[id], sectionId);
+  return [s.heading, ...s.blocks.flatMap(blockTexts)].map(inlineToPlainText).join("\n");
+}
+
 describe("legal documents cover the Legal Master structure", () => {
   for (const doc of LEGAL_DOCUMENTS) {
     it(`${doc.title} has every required section`, () => {
@@ -311,6 +323,84 @@ describe("approved decisions are stated consistently", () => {
     expect(b).toContain("we cancel any pending suspension and deletion actions and restore the affected Space");
     expect(plain("terms")).toContain("day 14");
     expect(plain("privacy")).toContain("day 14");
+  });
+
+  it("normal cancellation (v1.1): active to period end -> unavailable to guests -> 30 days preserved -> eligible for deletion", () => {
+    const b = sectionText("billing", "after-cancellation");
+    const table = sectionOf(LEGAL_BODIES.billing, "after-cancellation").blocks.find((x) => x.type === "table");
+    expect(table && table.type === "table" ? table.rows.map((r) => r[0]) : []).toEqual([
+      "Until the end of the paid billing period",
+      "When the paid billing period ends",
+      "For 30 days after the end of the paid billing period",
+      "After those 30 days",
+    ]);
+    for (const s of [
+      "The subscription remains active",
+      "the Space becomes unavailable to guests",
+      "You keep access to billing and reactivation for the Space",
+      "The Space content is preserved",
+      "eligible for deletion from our active systems, subject to applicable legal obligations and any notices we are required to give",
+      "before it is deleted, it is restored without data loss",
+      "other Spaces in your Account are not automatically deleted",
+      "separate from the failed-payment process in section 15",
+    ]) expect(b).toContain(s);
+    expect(sectionText("billing", "cancellation")).toContain("remains active until the end of the billing period you have already paid for");
+
+    const t = sectionText("terms", "cancellation");
+    for (const s of [
+      "remains active, and you keep access to the paid features of that Space, until the end of the billing period you have already paid for",
+      "the Space becomes unavailable to guests, and you keep access to billing and reactivation for it",
+      "The Space content is preserved for 30 days after the end of the paid period",
+      "after those 30 days, the Space becomes eligible for deletion, subject to applicable legal obligations and any required notices",
+      "If you reactivate the Space before it is deleted, it is restored without data loss",
+      "your other Spaces are not automatically deleted",
+      "separate from the failed-payment process in section 24",
+    ]) expect(t).toContain(s);
+    expect(sectionText("terms", "retention")).toContain("preserved for 30 days after the end of the paid period and then becomes eligible for deletion");
+    expect(sectionText("terms", "reactivation")).toContain("reactivate the Space by subscribing again before it is deleted, and it is then restored without data loss");
+
+    const pr = sectionText("privacy", "retention");
+    expect(pr).toContain("Content of a Space whose paid subscription you cancelled");
+    expect(pr).toContain("Preserved for 30 days after the end of the paid billing period");
+    expect(pr).toContain("eligible for deletion from active systems, subject to legal obligations and any required notices");
+    expect(sectionText("privacy", "failed-payment-retention")).toContain("separate from the retention that follows a cancellation");
+
+    expect(sectionText("dpa", "deletion-return")).toContain("preserved for 30 days after the end of the paid billing period, so that you can reactivate the Space, and then becomes eligible for deletion");
+  });
+
+  it("normal cancellation: no document still promises open-ended retention, claims automation, or mixes in the failed-payment days", () => {
+    for (const id of ["terms", "privacy", "dpa", "billing"] as const) {
+      const t = plain(id);
+      expect(t, id).not.toContain("remains in your account so that you can reactivate");
+      expect(t, id).not.toMatch(/\bwe (will )?automatically (delete|suspend|restore)/i);
+    }
+    for (const [id, sid] of [["billing", "after-cancellation"], ["terms", "cancellation"]] as const) {
+      expect(sectionText(id, sid), `${id}#${sid}`).not.toMatch(/\bday (7|12|13|14)\b/i);
+    }
+  });
+
+  it("failed payments: the timeline is unchanged from Version 1.0 in every document", () => {
+    const v10 = LEGAL_ARCHIVED_BODIES;
+    const fp = (body: LegalDocumentBody) => sectionOf(body, "failed-payments").blocks.find((x) => x.type === "table");
+    expect(fp(LEGAL_BODIES.billing)).toEqual(fp(v10.billing!["1.0"]));
+    expect(sectionOf(LEGAL_BODIES.billing, "restoration")).toEqual(sectionOf(v10.billing!["1.0"], "restoration"));
+    expect(sectionOf(LEGAL_BODIES.terms, "failed-payments")).toEqual(sectionOf(v10.terms!["1.0"], "failed-payments"));
+    const prOld = sectionOf(v10.privacy!["1.0"], "failed-payment-retention").blocks[0];
+    const prNew = sectionOf(LEGAL_BODIES.privacy, "failed-payment-retention").blocks[0];
+    expect(prOld.type === "p" && prNew.type === "p" && prNew.text.startsWith(prOld.text)).toBe(true);
+    // The billing intro paragraph only gains the "separate from cancellation" sentence.
+    const bOld = sectionOf(v10.billing!["1.0"], "failed-payments").blocks[0];
+    const bNew = sectionOf(LEGAL_BODIES.billing, "failed-payments").blocks[0];
+    expect(bOld.type === "p" && bNew.type === "p" && bNew.text.startsWith(bOld.text)).toBe(true);
+    expect(sectionText("billing", "failed-payments")).toContain("separate from a cancellation you make yourself");
+  });
+
+  it("only Terms, Privacy, DPA and Billing changed between Version 1.0 and 1.1; their section structure is unchanged", () => {
+    for (const id of ["terms", "privacy", "dpa", "billing"] as const) {
+      const old = LEGAL_ARCHIVED_BODIES[id]!["1.0"];
+      expect(headings(LEGAL_BODIES[id]), id).toEqual(headings(old));
+      expect(LEGAL_BODIES[id].intro, id).toEqual(old.intro);
+    }
   });
 
   it("withdrawal: two separate statements, never a blanket waiver", () => {
