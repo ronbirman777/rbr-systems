@@ -9,6 +9,7 @@ import { verifyGuestCodeInitialState, type VerifyGuestCodeState } from "@/lib/gu
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "@/components/flow-media-sizes";
+import { GuestDesktopShell } from "./guest-desktop-shell";
 export type GuestAccessScreenProps = {
   tenantId: string;
   name: string;
@@ -96,11 +97,11 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
   }
 
   return (
-    <main style={{ ...vars, background: "var(--rbr-parchment-deep)" }} className="flex-1 flex items-center justify-center sm:p-6 p-0">
-      <div
-        className="relative flex flex-col overflow-hidden sm:rounded-[44px] w-full sm:w-[390px] sm:h-[780px] h-full"
-        style={{ background: "var(--rbr-background)", boxShadow: "0 40px 100px rgba(45,74,62,0.2), 0 10px 30px rgba(45,74,62,0.1)" }}
-      >
+    // The shared Guest App shell (backport of TASK 033 P4, column 430px):
+    // full width on a phone, the same centred full-height column as the
+    // Guest App itself from 640px up (it was a fixed 390x780 device frame).
+    <GuestDesktopShell vars={vars} as="main">
+      <div className="relative flex flex-col overflow-hidden w-full flex-1" style={{ background: "var(--rbr-background)" }}>
         {/* Identity hero - same treatment as the real Today hero (photo
             or gradient fallback + directional overlay), so this screen
             reads as belonging to the retreat, not as a generic gate. */}
@@ -195,6 +196,6 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
           </p>
         </form>
       </div>
-    </main>
+    </GuestDesktopShell>
   );
 }

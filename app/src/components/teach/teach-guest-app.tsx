@@ -25,6 +25,7 @@ import {
 import { TeachIcon, type TeachIconName } from "./teach-icons";
 import { TeachImage } from "./teach-image";
 import { TEACH_SIZES } from "./teach-media-sizes";
+import { GUEST_COLUMN_MAX_WIDTH, columnSizes } from "@/lib/guest/column";
 import { MediaPrefetch } from "@/components/shared/media-prefetch";
 import type { MediaPrefetchItem } from "@/lib/media/prefetch";
 import { TeachClassCard, TeachAvailabilityCard } from "./teach-class-card";
@@ -350,6 +351,11 @@ function DesktopTopNav({ data, tabs, tab, onTab, url }: { data: TeachGuestData; 
 // Home
 // ---------------------------------------------------------------------------
 
+/** Shell backport: the full-bleed hero spans the Guest column from 640px up, the viewport below. */
+const HERO_FULLBLEED_SIZES = columnSizes(GUEST_COLUMN_MAX_WIDTH, "100vw");
+/** The arch/circle portrait is 230px (arch) or 168px (circle) on the phone layout the column always shows. */
+const HERO_PORTRAIT_SIZES = "230px";
+
 /**
  * Responsive sizes use container queries so the Studio preview frame and a
  * real device agree: base = phone (< 640px, unchanged from the mobile
@@ -409,7 +415,7 @@ function Hero({
   if (fullbleed) {
     return (
       <div className="relative h-[360px] @min-[40rem]:h-[460px] @4xl:h-[560px] overflow-hidden -mt-2 @min-[40rem]:mt-0 @min-[40rem]:mx-6 @4xl:mx-10 @min-[40rem]:rounded-[var(--tt-radius-card)]">
-        <TeachImage priority sizes="100vw" src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className="absolute inset-0 w-full h-full" />
+        <TeachImage priority sizes={HERO_FULLBLEED_SIZES} src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className="absolute inset-0 w-full h-full" />
         <div aria-hidden="true" className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgb(20 30 25 / calc(var(--tt-overlay) * .4)) 0%, rgb(20 30 25 / calc(var(--tt-overlay) + .3)) 100%)" }} />
         <div className="absolute start-6 end-6 bottom-6 @min-[40rem]:start-10 @min-[40rem]:end-10 @min-[40rem]:bottom-10 @4xl:start-14 @4xl:bottom-14 @4xl:max-w-[640px]">{identity(true)}</div>
       </div>
@@ -431,7 +437,7 @@ function Hero({
         };
   return (
     <div className="flex flex-col items-center gap-5 px-6 pt-3 @min-[40rem]:flex-row @min-[40rem]:justify-between @min-[40rem]:gap-10 @min-[40rem]:mx-6 @min-[40rem]:p-10 @min-[40rem]:bg-[var(--tt-surface)] @min-[40rem]:border @min-[40rem]:border-[var(--tt-line)] @min-[40rem]:rounded-[calc(var(--tt-radius-card)+8px)] @4xl:mx-10 @4xl:gap-16 @4xl:px-16 @4xl:py-14">
-      <TeachImage priority sizes="(min-width: 896px) 340px, (min-width: 640px) 250px, 230px" src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className={`shrink-0 @min-[40rem]:order-last ${imgClass}`} style={imgStyle} />
+      <TeachImage priority sizes={HERO_PORTRAIT_SIZES} src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className={`shrink-0 @min-[40rem]:order-last ${imgClass}`} style={imgStyle} />
       <div className="@min-[40rem]:flex-1 @min-[40rem]:min-w-0">{identity(false)}</div>
     </div>
   );
@@ -888,7 +894,8 @@ function ScheduleAgenda({
  * The About portrait's box, named so the prefetcher asks for the same
  * render this screen will (see EXPLORE_CARD_SIZES for why that matters).
  */
-export const ABOUT_PORTRAIT_SIZES = "(min-width: 896px) 210px, 150px";
+// Shell backport: the 210px @4xl portrait is never reached inside the Guest column.
+export const ABOUT_PORTRAIT_SIZES = "150px";
 
 function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | null) => string | null }) {
   const a = data.settings.teachAbout;
@@ -1055,10 +1062,14 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
  * larger render; under-claiming costs sharpness, so the rounding only
  * ever goes one way.
  */
-export const EXPLORE_CARD_SIZES = "(min-width: 896px) 360px, (min-width: 576px) 50vw, 100vw";
+//
+// Shell backport (TASK 033 P4): published Teach renders in the shared Guest
+// column from 640px up (one card per row there), so the @4xl px values are
+// gone and the column width takes their place; below 640px unchanged.
+export const EXPLORE_CARD_SIZES = columnSizes(GUEST_COLUMN_MAX_WIDTH, "(min-width: 576px) 50vw, 100vw");
 
 /** The lead tile: two of three columns, plus the gap between them. */
-export const EXPLORE_FEATURE_CARD_SIZES = "(min-width: 896px) 740px, (min-width: 576px) 50vw, 100vw";
+export const EXPLORE_FEATURE_CARD_SIZES = columnSizes(GUEST_COLUMN_MAX_WIDTH, "(min-width: 576px) 50vw, 100vw");
 
 function ExploreCard({
   title,
