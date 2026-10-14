@@ -224,7 +224,7 @@ session scratchpad `g1/`, `g2/` (0600), `qa033/stg5/`, `qa033/stg6/`.
 | Window | unavailable ≈ 2 min 32 s (limit 15 min) |
 | Bypass revoke | 0 active secrets; revoked header 302; local copy deleted; value in 0 evidence files |
 
-### G2a — Staging site address: DONE, verified
+### G2a — Staging site address: DONE, **fully verified** (Claude automated checks + owner iPhone check)
 
 | Item | Result |
 |---|---|
@@ -235,7 +235,7 @@ session scratchpad `g1/`, `g2/` (0600), `qa033/stg5/`, `qa033/stg6/`.
 | Canonical / `og:url` | `/s/qa-flow-1h8ve`, `/s/qa-teach-staging`, `/g/3e6e4978-…` → `innerdwes-env-staging-…` (alias and deployment URL) |
 | Share Cards | `og:image` → `innerdwes-env-staging-…/s/<slug>/social/<v>`; 200 `image/png`; bytes/sha identical to round 3 (Flow 1,428,997 `8e06245070a272e9`, Teach 1,251,030 `72355afff56122e6`) |
 | Generated links | Teach page's generated Flow guest links (`teach/retreats.ts`): old host → `innerdwes-env-staging-…`; robots `Sitemap:` and every sitemap `<loc>` → new host; old host in HTML 0, in client JS 0 (origin is server-rendered) |
-| QR codes / Studio "Guest App link" | same server constant (`GUEST_PUBLIC_ORIGIN` = SITE_URL on Staging) as canonical; direct Studio check needs the QA login → owner (iPhone I-12, I-15) |
+| QR codes / Studio "Guest App link" | **Owner-verified PASS on a real iPhone (Safari), 2026-10-14:** QA account login PASS; Studio Guest App link PASS; QR code PASS — opens the correct Staging Flow Guest App |
 | Browsers | Chromium + WebKit: 200, `og:image` + canonical on new host, 0 console errors |
 | Unchanged, pre-existing | marketing `/` has no canonical and its file-based `og:image` uses the deployment's own host — same on the previous build `4iqe9trhs` (Next.js/Vercel preview behaviour), not a G2a effect |
 | Bypass revoke | 0 active secrets; revoked header 302; local copy deleted; value in 0 evidence files |
@@ -249,3 +249,9 @@ Staging project `kkqjsspxupyxytddiumf` dashboard → Authentication → URL Conf
 (`https://innerdwes-git-feat-time-to-teach-integration-inner-dwe-s.vercel.app`). No authentication email sent.
 Rollback: delete the added entry. (Dashboard banner at the time: Supabase "investigating a technical issue" — no effect
 observed.)
+
+### After round 4
+
+- G1, G2a, G2b accepted by the owner as completed for Staging only. G2a owner iPhone verification PASS (above).
+- Temporary QA password file in the session scratchpad securely deleted on owner approval (`rm -P`); the QA account and
+  its password are unchanged and held only by the owner.
