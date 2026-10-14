@@ -256,6 +256,14 @@ Note: Remove now applies on Save (not instantly); unsaved Add/Duplicate/Remove t
     "Preparing your retreat…" on the Space's own background, and hands over without flashing. On a fast
     connection no loader appears at all. Tap "Manage Space" in My Spaces: "Opening your Studio…" in the account
     language. With Reduce Motion on, both are static. VoiceOver reads "Loading… Preparing your …" once.
+12. Arrival (section 15), on a Space with Arrival Info enabled:
+    - Arrival Info -> "Preparing for arrival" shows What to bring / What to expect;
+    - Retreat Home shows only a pointer;
+    - edit the lists (Enter makes a new line), Save, Publish -> the guest Home shows the list once and the guest
+      Arrival screen does not repeat it;
+    - a Space with an older list from before TASK 029 shows "Filled in from an earlier version" or the
+      older-list box, and nothing is lost.
+13. Home design: review `docs/tasks/033/FLOW-HOME-DESIGN.md` + the frames. Nothing to test on Staging yet.
 
 ## 12. Mobile Studio menu (queued item 1)
 
@@ -463,3 +471,58 @@ side-by-side `qa033/ux/loading/compare-390.png`; videos `qa033/ux/loading/stream
 `guestMessages.test.ts`'s source guard was widened to accept the product-aware `guestLoadingCopy(locale,
 loadingProduct)` call. Limits: emulation only (no real iPhone/VoiceOver); the WebKit runs could not use CDP network
 throttling, so WebKit slowness was produced by the delay proxy.
+
+## 15. Flow Home & Arrival (queued item 4, as amended)
+
+**Part 1: "Preparing for arrival" back in Arrival Info. Implemented (`18a2aab`). Investigation:**
+- **Studio (before):** What to bring / What to expect were edited only on Retreat Home. They were stored in
+  `module_settings.retreatProfile.whatToBring/whatToExpect` (TASK 029 decision B). Arrival Info showed a read-only
+  "moved to Home" box with the legacy `module_settings.arrivalInfo.whatToBring` string.
+- **Guest:** Today/Home shows `retreatWhatToBring()` (canonical, else legacy) and `retreatProfile.whatToExpect`. The
+  Arrival screen shows neither.
+
+**Rule:**
+- The data model is unchanged: canonical stays `retreatProfile`, and legacy is read only and never deleted.
+- The editors move to Arrival Info whenever that module is enabled; otherwise they stay on Home.
+- Seeding and both-different handling are as described in `lib/modules/arrivalPreparation.ts` (both are shown;
+  nothing is dropped).
+- Saves go through `saveRetreatPreparation`, which merges only the two lists. Home sends `keepPreparation` so it
+  cannot overwrite them.
+- The Guest App is unchanged and shows the content once (Home). Where the Guest shows it is left to the Home design
+  decision.
+- Guidelines is unchanged.
+
+**QA: 266/266** local checks, both engines, 320/390/430/1440:
+- all 6 fixture shapes (only-legacy, only-new, both-equal, both-different, empty, Arrival module off);
+- the Home pointer;
+- no overflow;
+- Enter works;
+- nothing saved before Save;
+- the canonical list written, other fields and the legacy string untouched;
+- the guest unchanged until a local Publish, then the list shown once on Home and not on Arrival;
+- the only-legacy Space shown once.
+
+Evidence: `qa033/ux/home/arrival/`. Finding (pre-existing, not changed): the guest Arrival sections ("On Arrival")
+expand on tap but expose no `aria-expanded`.
+
+**Part 2: optional Home Feature Image. STOPPED; nothing implemented. Migration needed: YES**, proposed and not
+applied: `docs/tasks/033/proposed-migrations/HOME-FEATURE-IMAGE.sql`.
+- `publish_space()` publishes module covers only for a hard-coded key allowlist.
+- No free slot exists: `hero_image_ref` is the Hero, `space_image_ref` is the card/Share image, and every
+  allowlisted cover key is a real module.
+- An image uploaded without the change would never publish, so neither the Studio/data side nor the guest side was
+  built.
+- The proposal only adds `'homeFeature'` to the allowlist (full forward body from the effective 0047 definition +
+  verbatim rollback). The media-guard assumptions it lists are marked as still to be verified.
+
+**Part 3: Home layout redesign. DESIGN ONLY, for owner review: `docs/tasks/033/FLOW-HOME-DESIGN.md`** with frames in
+`qa033/ux/home-design/`.
+- It shows 7 states at 390, plus 3 at 1440, in 2 palettes.
+- It includes the Happening Now visuals per the Dynamic Home decisions O1-O3/O10.
+- Live logic is not implemented; the existing Today Happening now / Up next is unchanged.
+
+Other findings recorded for the owner:
+- **Flow "Background tint" never reaches the Guest App.** Both `published-space-screen.tsx` and the Studio preview
+  build the Flow `brand` object without `customSurface`, so Flow always paints parchment. This is pre-existing and
+  NOT changed: fixing it would recolour every Flow Space that applied a preset since 028B.
+- The Studio's "Where you are" question: see section 13.
