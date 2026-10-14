@@ -252,7 +252,7 @@ function ReplaceDialog({
               value={typedName}
               onChange={(e) => setTypedName(e.target.value)}
               name="confirmName"
-              className="mt-1 w-full rounded-lg border border-idw-forest/20 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-idw-forest/20 px-3 py-2 text-base sm:text-sm"
               autoComplete="off"
             />
           </div>
@@ -267,7 +267,7 @@ function ReplaceDialog({
               onChange={(e) => setNewName(e.target.value)}
               name="newName"
               placeholder={untitledName}
-              className="mt-1 w-full rounded-lg border border-idw-forest/20 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-idw-forest/20 px-3 py-2 text-base sm:text-sm"
             />
           </div>
           {state.error && <p className="text-xs text-red-700">{state.error}</p>}

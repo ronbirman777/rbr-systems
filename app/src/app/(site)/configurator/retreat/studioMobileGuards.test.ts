@@ -79,3 +79,34 @@ describe("Schedule row actions on phones", () => {
     for (const c of ["min-h-11", "min-w-11", "sm:min-h-0", "sm:min-w-0", "sm:text-[11px]"]) expect(t).toContain(c);
   });
 });
+
+/**
+ * RC1 Staging QA: the shared-class guard above missed hand-written controls (the Stay connected platform
+ * <select> was 13px on phones and zoomed iOS Safari on focus; My Spaces confirm inputs and the preview
+ * gate were text-sm). Every text-entry control in the site/Studio sources must be >= 16px below `sm`:
+ * no UNPREFIXED sub-16px size (`text-[13px]`, `text-sm`, `text-xs`) in its className.
+ */
+describe("every text-entry control is at least 16px on phones", () => {
+  const SOURCES = [...files(path.join(ROOT, "src/app/(site)")), ...files(path.join(ROOT, "src/components"))]
+    .filter((f) => !f.includes(".test."))
+    // Paid checkout is out of scope for RC1 (billing off on Staging); its coupon field is tracked separately.
+    .filter((f) => !f.endsWith(path.join("create", "[type]", "checkout-form.tsx")));
+  const offenders: string[] = [];
+  for (const file of SOURCES) {
+    const src = readFileSync(file, "utf8");
+    for (const m of src.matchAll(/<(input|select|textarea)\b/g)) {
+      const rest = src.slice(m.index! + m[0].length, m.index! + m[0].length + 900);
+      // The tag ends at its own "/>" or at a ">" on a new line (an arrow "=>" in a handler is neither).
+      const end = [rest.indexOf("/>"), rest.search(/\n\s*>/)].filter((i) => i >= 0).reduce((a, b) => Math.min(a, b), -1 >>> 0);
+      const tag = end !== -1 >>> 0 ? rest.slice(0, end) : rest.slice(0, 300);
+      if (/type="(checkbox|radio|file|color|range|hidden)"/.test(tag)) continue;
+      const cls = /className=(\{`[^`]*`\}|"[^"]*")/.exec(tag)?.[1];
+      if (!cls) continue;
+      const bad = cls.split(/[\s`{}"]+/).filter((t) => t === "text-sm" || t === "text-xs" || (/^text-\[(\d+(\.\d+)?)px\]$/.test(t) && parseFloat(t.slice(6)) < 16));
+      if (bad.length) offenders.push(`${path.relative(ROOT, file)}:${src.slice(0, m.index).split("\n").length} <${m[1]}> ${bad.join(" ")}`);
+    }
+  }
+  it("has no unprefixed sub-16px font size", () => {
+    expect(offenders).toEqual([]);
+  });
+});

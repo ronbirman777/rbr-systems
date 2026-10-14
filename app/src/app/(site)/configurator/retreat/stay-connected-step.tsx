@@ -88,7 +88,7 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
         {links.map((link, i) => (
           <div
             key={i}
-            className="flex items-center gap-2 sm:gap-3 rounded-2xl p-2.5 sm:p-3.5 border bg-white"
+            className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 rounded-2xl p-2.5 sm:p-3.5 border bg-white"
             style={{ borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
           >
             {/* Reorder controls - fixed-width area, identical every row
@@ -107,9 +107,10 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
               <SocialIcon platform={link.platform} />
             </div>
 
-            {/* Platform selector - fixed-width area, narrower on small
-                viewports so the row's fixed-width controls plus the
-                flexible URL field fit without overflow at 375-430px.
+            {/* Platform selector - fixed-width area from `sm` up. On phones
+                (RC1 QA) it takes the rest of the first line at 16px (no
+                iOS focus zoom) and the URL field wraps onto its own full
+                line below, so nothing overflows at 320px.
                 Written as its own class string rather than appending a
                 width onto STUDIO_INPUT_CLASS - that class bakes in
                 `w-full`, and a second width utility appended after it
@@ -121,7 +122,7 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
               aria-label={t("studio", "socialPlatformN", { index: i + 1 })}
               value={link.platform}
               onChange={(e) => update(i, { platform: e.target.value as SocialLink["platform"] })}
-              className="shrink-0 w-[92px] sm:w-36 bg-white border border-[#D4C5A9]/70 rounded-xl px-2 sm:px-3.5 py-2.5 text-[13px] text-[#2D4A3E] outline-none focus:ring-2 focus:ring-[#2D4A3E]/15 focus:border-[#2D4A3E]/30 transition-all"
+              className="flex-1 min-w-0 sm:flex-none sm:shrink-0 sm:w-36 bg-white border border-[#D4C5A9]/70 rounded-xl px-2 sm:px-3.5 py-2.5 text-base sm:text-[13px] text-[#2D4A3E] outline-none focus:ring-2 focus:ring-[#2D4A3E]/15 focus:border-[#2D4A3E]/30 transition-all"
             >
               {SOCIAL_PLATFORMS.map((p) => (
                 <option key={p} value={p}>
@@ -130,7 +131,8 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
               ))}
             </select>
 
-            {/* URL field - the one genuinely flexible area. `min-w-0`
+            {/* URL field - the one genuinely flexible area (below `sm`: a
+                full-width second line via its own `w-full` + order-last). `min-w-0`
                 overrides the flex item default automatic minimum size
                 (content-based), which is what let a long URL value push
                 the row wider than its container on some rows and not
@@ -142,7 +144,7 @@ export function StayConnectedStep({ tenantId, links, setLinks, onBack, onContinu
               value={link.url}
               onChange={(e) => update(i, { url: e.target.value })}
               placeholder="https://..."
-              className={`${STUDIO_INPUT_CLASS} flex-1 min-w-0`}
+              className={`${STUDIO_INPUT_CLASS} min-w-0 order-last sm:order-none sm:flex-1`}
             />
 
             {/* Remove - fixed-width area; content is constant text, so

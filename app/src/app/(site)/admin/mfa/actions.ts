@@ -62,17 +62,32 @@ export async function completeMfaEnrollmentAction(factorId: string, _prev: Verif
   redirect("/admin");
 }
 
+/**
+ * Verify a code against EACH of the user's verified TOTP factors until one accepts it (an admin may have a backup
+ * authenticator). The code form has no factor picker, and Supabase Auth returns the factors in no stable order (a
+ * factor moves after each challenge), so checking only "the first" one refused a valid code from the other device on
+ * alternate attempts (observed with real TOTP on an isolated local stack). Auth still verifies every code.
+ */
+async function verifyWithAnyFactor(supabase: Awaited<ReturnType<typeof createClient>>, totpCode: string): Promise<"ok" | "invalid" | "no_factor"> {
+  const { data: factors } = await supabase.auth.mfa.listFactors();
+  const verified = (factors?.totp ?? []).filter((f) => f.status === "verified");
+  if (!verified.length) return "no_factor";
+  for (const f of verified) {
+    const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: f.id, code: totpCode });
+    if (!error) return "ok";
+  }
+  return "invalid";
+}
+
 /** Sign-in challenge AND step-up share this: verifying a fresh code refreshes the session's TOTP timestamp. */
 export async function verifyMfaAction(next: string, _prev: VerifyState, fd: FormData): Promise<VerifyState> {
   await requireAdminForMfaPages();
   const parsed = code.safeParse(fd.get("code"));
   if (!parsed.success) return { ok: false, error: "invalid_code" };
   const supabase = await createClient();
-  const { data: factors } = await supabase.auth.mfa.listFactors();
-  const factor = (factors?.totp ?? []).find((f) => f.status === "verified");
-  if (!factor) redirect("/admin/mfa/enroll");
-  const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code: parsed.data });
-  if (error) return { ok: false, error: "invalid_code" };
+  const r = await verifyWithAnyFactor(supabase, parsed.data);
+  if (r === "no_factor") redirect("/admin/mfa/enroll");
+  if (r !== "ok") return { ok: false, error: "invalid_code" };
   redirect(safeInternalRedirectPath(next, "/admin"));
 }
 
@@ -89,10 +104,8 @@ export async function stepUpVerifyAction(_prev: StepUpState, fd: FormData): Prom
   const parsed = code.safeParse(fd.get("code"));
   if (!parsed.success) return { ok: false, error: "invalid_code" };
   const supabase = await createClient();
-  const { data: factors } = await supabase.auth.mfa.listFactors();
-  const factor = (factors?.totp ?? []).find((f) => f.status === "verified");
-  if (!factor) redirect("/admin/mfa/enroll");
-  const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code: parsed.data });
-  if (error) return { ok: false, error: "invalid_code" };
+  const r = await verifyWithAnyFactor(supabase, parsed.data);
+  if (r === "no_factor") redirect("/admin/mfa/enroll");
+  if (r !== "ok") return { ok: false, error: "invalid_code" };
   return { ok: true, at: Date.now() };
 }

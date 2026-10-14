@@ -18,7 +18,8 @@ describe("Admin step-up keeps form state", () => {
     const actions = readFileSync(join(process.cwd(), "src/app/(site)/admin/mfa/actions.ts"), "utf8");
     const body = actions.slice(actions.indexOf("export async function stepUpVerifyAction"));
     expect(body).toContain("requireAdminForMfaPages()");
-    expect(body).toContain("challengeAndVerify");
+    expect(body).toContain("verifyWithAnyFactor(");
+    expect(actions).toMatch(/async function verifyWithAnyFactor[\s\S]*challengeAndVerify/);
     // the only redirect allowed is "no factor -> enrol"; success returns in place
     expect(body.match(/redirect\(/g) ?? []).toHaveLength(1);
     expect(body).toContain('redirect("/admin/mfa/enroll")');
