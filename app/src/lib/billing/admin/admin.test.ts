@@ -9,11 +9,33 @@ describe("MFA claims (amr / aal)", () => {
   const now = new Date("2026-11-01T12:00:00Z");
   const ts = (agoSec: number) => Math.floor(now.getTime() / 1000) - agoSec;
   it("recognises an AAL2 session only", () => {
-    expect(isAal2({ aal: "aal2" })).toBe(true);
+    const totp = [{ method: "password", timestamp: ts(120) }, { method: "totp", timestamp: ts(60) }];
+    expect(isAal2({ aal: "aal2", amr: totp })).toBe(true);
+    expect(isAal2({ aal: "aal1", amr: totp })).toBe(false); // a TOTP entry alone never raises the level
     expect(isAal2({ aal: "aal1" })).toBe(false);
     expect(isAal2({})).toBe(false);
     expect(isAal2(null)).toBe(false);
-    expect(isAal2({ aal: "AAL2" })).toBe(false);
+    expect(isAal2({ aal: "AAL2", amr: totp })).toBe(false);
+  });
+  it("edge cases: aal2 without a TOTP amr entry (other method, malformed, missing) is not Admin MFA", () => {
+    expect(isAal2({ aal: "aal2" })).toBe(false);
+    expect(isAal2({ aal: "aal2", amr: [] })).toBe(false);
+    expect(isAal2({ aal: "aal2", amr: [{ method: "password", timestamp: ts(5) }] })).toBe(false);
+    expect(isAal2({ aal: "aal2", amr: [{ method: "phone", timestamp: ts(5) }] })).toBe(false);
+    expect(isAal2({ aal: "aal2", amr: [{ method: "totp", timestamp: "yesterday" }] })).toBe(false);
+    expect(isAal2({ aal: "aal2", amr: "totp" })).toBe(false);
+  });
+  it("session refresh: a refreshed token keeps the ORIGINAL TOTP time, so step-up ages from the real verification", () => {
+    // After a refresh Supabase re-issues the JWT with the same amr entries: the TOTP timestamp does not move.
+    const refreshed = { aal: "aal2", amr: [{ method: "totp", timestamp: ts(3600) }], iat: Math.floor(now.getTime() / 1000) - 5 };
+    expect(isAal2(refreshed)).toBe(true); // still an AAL2 session for reading pages
+    expect(hasRecentMfa(refreshed, now, 600)).toBe(false); // but not "recent" for a dangerous action
+  });
+  it("step-up boundaries: clock skew up to 60 s in the future is tolerated, more is not", () => {
+    expect(hasRecentMfa({ amr: [{ method: "totp", timestamp: ts(-60) }] }, now, 600)).toBe(true);
+    expect(hasRecentMfa({ amr: [{ method: "totp", timestamp: ts(-61) }] }, now, 600)).toBe(false);
+    expect(hasRecentMfa({ amr: [{ method: "totp", timestamp: Number.NaN }] }, now, 600)).toBe(false);
+    expect(hasRecentMfa({ amr: [{ method: "totp", timestamp: Number.POSITIVE_INFINITY }] }, now, 600)).toBe(false);
   });
   it("finds the most recent TOTP verification and ignores other methods", () => {
     expect(latestTotpTimestamp({ amr: [{ method: "password", timestamp: ts(5) }, { method: "totp", timestamp: ts(900) }, { method: "totp", timestamp: ts(60) }] })).toBe(ts(60));

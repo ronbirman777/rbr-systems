@@ -36,7 +36,7 @@ export type OverviewData = {
 
 type CountQuery = ReturnType<ReturnType<SupabaseClient["from"]>["select"]>;
 
-function applyCountFilters(q: CountQuery, filters: CountFilter[]): CountQuery {
+export function applyCountFilters(q: CountQuery, filters: CountFilter[]): CountQuery {
   for (const f of filters) {
     switch (f.op) {
       case "eq": q = q.eq(f.col, f.value); break;
@@ -55,7 +55,10 @@ async function exactCount(q: PromiseLike<{ count: number | null; error: { messag
   const { count, error } = await q;
   // Fail visibly: a failed count must never render as a confident 0.
   if (error) throw new Error(`overview count ${what} failed: ${error.message}`);
-  return count ?? 0;
+  // A HEAD count against a table PostgREST does not know (e.g. an environment without the billing migrations) answers
+  // 204 with NO count and NO error. That is "unknown", not 0.
+  if (typeof count !== "number") throw new Error(`overview count ${what} returned no count`);
+  return count;
 }
 
 export async function loadOverview(db: SupabaseClient, now: Date = new Date()): Promise<OverviewData> {

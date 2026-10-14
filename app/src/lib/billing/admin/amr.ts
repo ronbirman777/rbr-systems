@@ -9,8 +9,14 @@ export type AuthClaimsLike = {
   amr?: unknown;
 };
 
+/**
+ * AAL2 for Admin = the verified JWT says `aal2` AND its `amr` records a TOTP verification. Admin MFA is TOTP only
+ * (step-up reads the TOTP timestamp), so an aal2 session reached by any other method, or a malformed claim set
+ * without the amr entry, is not accepted as Admin MFA and is sent to the code prompt instead (fail closed).
+ * The values are read only from the signature-verified JWT (getClaims), never from client-writable metadata.
+ */
 export function isAal2(claims: AuthClaimsLike | null | undefined): boolean {
-  return claims?.aal === "aal2";
+  return claims?.aal === "aal2" && latestTotpTimestamp(claims) != null;
 }
 
 /** Unix-seconds timestamp of the most recent TOTP verification in this session, or null. */

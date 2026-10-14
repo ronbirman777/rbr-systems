@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { AdminAuthError, requireAdminAction, type AdminContext } from "@/lib/billing/admin/auth";
+import { AdminAuthError, OWNER_ONLY, requireAdminAction, type AdminContext, type AdminRole } from "@/lib/billing/admin/auth";
 import { couponFormToRaw, draftOfRaw } from "@/lib/billing/admin/forms";
 import { requiresStepUp, type AdminAction } from "@/lib/billing/admin/policy";
 import {
@@ -22,9 +22,19 @@ import { createAdminClient } from "@/lib/supabase/admin";
  */
 export type AdminActionResult = OpResult<unknown> | { ok: false; error: "unauthenticated" | "not_admin" | "mfa_required" | "step_up_required" };
 
+/**
+ * Role restrictions per action. Omitted = any active admin (today's behaviour). Admin membership changes are owner-only
+ * at the gate as well as in the service (adminGrantAdmin/adminRevokeAdmin), so a billing_admin is refused before any
+ * step-up prompt or lookup runs. A role refusal is reported exactly like "not an admin".
+ */
+const ACTION_ROLES: Partial<Record<AdminAction, readonly AdminRole[]>> = {
+  "admin.grant": OWNER_ONLY,
+  "admin.revoke": OWNER_ONLY,
+};
+
 async function authorise(action: AdminAction, ctx: { draft?: ReturnType<typeof draftOfRaw>; couponHasRedemptions?: boolean } = {}): Promise<{ ok: true; admin: AdminContext } | Extract<AdminActionResult, { ok: false }>> {
   try {
-    return { ok: true, admin: await requireAdminAction({ recentMfa: requiresStepUp(action, ctx) }) };
+    return { ok: true, admin: await requireAdminAction({ recentMfa: requiresStepUp(action, ctx), roles: ACTION_ROLES[action] }) };
   } catch (e) {
     if (!(e instanceof AdminAuthError)) throw e;
     if (e.denial === "step_up_required") return { ok: false, error: "step_up_required" };
@@ -49,9 +59,14 @@ export async function createCouponAction(_prev: AdminActionResult | null, fd: Fo
 
 export async function updateCouponAction(couponId: string, _prev: AdminActionResult | null, fd: FormData): Promise<AdminActionResult> {
   if (!uuid.safeParse(couponId).success) return { ok: false, error: "invalid" };
+  // Gate FIRST (session + admin_users + AAL2), so an unauthenticated caller of this public action endpoint never
+  // triggers a service-role read. Only then is the redemption count read to decide whether a step-up is needed.
+  const base = await authorise("coupon.update");
+  if (!base.ok) return base;
   const db = createAdminClient();
-  const { count } = await db.from("coupon_redemptions").select("*", { count: "exact", head: true }).eq("coupon_id", couponId).in("status", ["reserved", "redeemed", "completed", "canceled"]);
-  const a = await authorise("coupon.update", { couponHasRedemptions: (count ?? 0) > 0 });
+  const { count, error: countErr } = await db.from("coupon_redemptions").select("*", { count: "exact", head: true }).eq("coupon_id", couponId).in("status", ["reserved", "redeemed", "completed", "canceled"]);
+  // Fail closed: if the count cannot be read, treat the coupon as used (step-up required, financial terms locked by the service).
+  const a = await authorise("coupon.update", { couponHasRedemptions: countErr != null || count == null || count > 0 });
   if (!a.ok) return a;
   return done(await adminUpdateCoupon(a.admin, db, deps(), couponId, couponFormToRaw(fd)));
 }
