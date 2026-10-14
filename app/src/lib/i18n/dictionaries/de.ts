@@ -41,6 +41,14 @@ export const de: Dictionary = {
     search: "Suchen",
 
     loading: "Wird geladen…",
+
+    // TASK 033: branded loading messages
+
+    preparingRetreat: "Dein Retreat wird vorbereitet …",
+
+    preparingClasses: "Deine Kurse werden vorbereitet …",
+
+    openingStudio: "Dein Studio wird geöffnet …",
     error: "Etwas ist schiefgelaufen.",
     required: "Erforderlich",
     optional: "Optional",
@@ -1078,6 +1086,14 @@ export const de: Dictionary = {
     managedInRetreatHome: "Wird im Retreat-Start verwaltet",
     managedInRetreatHomeBody: "Das liegt jetzt im Retreat-Start, damit deine Gäste nur eine Version sehen. Dein früherer Text bleibt erhalten und wird weiter angezeigt, bis du den neuen speicherst.",
     openRetreatHome: "Retreat-Start öffnen",
+    // TASK 033 item 4: Preparing for arrival back in Arrival Info
+    preparationSeededLegacy: "Aus einer früheren Version dieses Space übernommen. Speichere, um es hier zu behalten.",
+    preparationOlderListTitle: "Es ist auch eine ältere Liste „Was du mitbringst“ gespeichert",
+    preparationOlderListBody: "Gäste sehen die Liste oben. Diese ältere Liste bleibt erhalten und wird Gästen nicht angezeigt.",
+    preparationUseOlderList: "Ältere Liste verwenden",
+    preparationMovedToArrival: "„Was du mitbringst“ und „Was dich erwartet“ bearbeitest du jetzt unter Ankunftsinfos. Gäste sehen beides weiterhin auf dem Startbildschirm.",
+    openArrivalInfo: "Ankunftsinfos öffnen",
+    preparationShownOnHome: "Gäste sehen das auf dem Startbildschirm.",
 
     // ---- TASK 029: Readings ----
     readings: "Texte",
@@ -1216,6 +1232,10 @@ export const de: Dictionary = {
     lookAndFeel: "Aussehen & Gefühl",
     colourPalette: "Farbpalette",
     palettePresets: "Farbvorlagen",
+    // TASK 033: Brand editor simplification
+    customizeColours: "Farben anpassen",
+    restoreCustomColours: "Meine eigenen Farben wiederherstellen",
+    paletteSelected: "Ausgewählt",
     customColours: "Eigene Farben",
     customHex: "Eigener Hex-Wert",
     primaryColour: "Primärfarbe",

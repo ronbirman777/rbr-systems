@@ -13,6 +13,7 @@ import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/mo
 import { afterScheduleSave, noteScheduleRemoval, schedulePersistenceFrom, scheduleIdsToDelete, type SchedulePersistence } from "@/lib/schedule/scheduleSave";
 import { DEFAULT_SESSION_MINUTES, duplicateScheduleItem, followDuration, startTimePatch, suggestEndTime } from "@/lib/schedule/sessionTimes";
 import { countOutsideRetreatDates } from "@/lib/schedule/retreatDays";
+import { preparationEditedInArrival } from "@/lib/modules/arrivalPreparation";
 import { HomeStep } from "./home-step";
 import { MealsStep } from "./meals-step";
 import { GuidelinesStep } from "./guidelines-step";
@@ -39,14 +40,16 @@ import { PALETTES, GUEST_BASE_PALETTE, type AtmosphereKey, type PaletteKey } fro
 import { safeTextColor, meetsAA } from "@/lib/theme/contrast";
 import { ForwardArrow, STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, STUDIO_ROW_ACTION_CLASS, StudioEyebrowContext, StudioField, StudioHeading, StudioIntro, StudioLabel, StudioSectionSub } from "./studio-ui";
 import { StudioTopBar } from "@/components/studio/studio-top-bar";
+import { StudioMobileDrawer } from "@/components/studio/studio-mobile-drawer";
+import { releaseScrollLock } from "@/lib/studio/scrollLock";
 import { saveStatusLabel, previewDraftLabel, previewDraftCaption, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
-import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
-import { PRESET_LABEL, type PresetLabelKey } from "@/lib/brand/presetLabels";
+import { BrandPaletteEditor } from "@/components/studio/brand-palette-editor";
+import { flowPaletteSelection, stashOnPresetApply } from "@/lib/brand/paletteEditor";
 import { SpaceCountryCard } from "@/components/studio/space-country-card";
 import { SpaceLanguageCard } from "@/components/studio/space-language-card";
 import { SpaceCurrencyCard } from "@/components/studio/space-currency-card";
 import { BrandContrastFeedback } from "@/components/studio/brand-contrast-feedback";
-import { getBrandPresets, matchBrandPreset, presetColorUpdate } from "@/lib/brand/presets";
+import { getBrandPresets, presetColorUpdate } from "@/lib/brand/presets";
 import { EmptyState } from "@/components/studio/empty-state";
 import { StatusPill } from "@/components/studio/status-pill";
 import { ReadinessChecklist, type ReadinessItem } from "@/components/studio/readiness-checklist";
@@ -141,6 +144,9 @@ export type RetreatConfiguratorProps = {
   initialGuestAccessSettings: GuestAccessSettings;
   initialFeaturedSubmission: FeaturedSubmission;
 };
+
+/** TASK 033: id of the mobile Studio drawer (aria-controls of the Menu button). */
+const MOBILE_NAV_ID = "flow-studio-mobile-nav";
 
 const draftInitialState: SaveDraftState = { error: null, tenantId: null };
 const scheduleInitialState: SaveScheduleState = { error: null };
@@ -256,125 +262,7 @@ const STEP_LABEL_KEYS: Record<
 /** The hidden form the top bar's Republish button submits. */
 const TOP_BAR_PUBLISH_FORM_ID = "studio-top-bar-publish";
 
-const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
-/**
- * One swatch per canonical preset for a colour role. The preset's NAME is
- * carried as a dictionary key (see lib/brand/presetLabels.ts) rather than
- * the English label on the preset data, so the swatch reads in the
- * Space's own language.
- */
-function swatchesFor(role: "primary" | "accent" | "navigation" | "text" | "surface") {
-  return getBrandPresets("retreat").map((p) => ({ labelKey: PRESET_LABEL[p.key], hex: p[role] }));
-}
-
-/**
- * Shared colour picker for every Brand role: swatches taken from the
- * canonical presets (lib/brand/presets.ts - the one registry, no Flow-only
- * palette) plus a free custom-hex input. Only the bound role, value and
- * swatch list differ.
- */
-/**
- * `first` is an explicit flag, not `label === "Primary Color"`.
- * Branching on display text silently stopped working the moment the
- * label was translated, which is exactly the class of bug localization
- * exposes - the first picker simply lost its spacing in he/de.
- */
-function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: { label: string; hint: string; value: string; swatches: readonly { labelKey: PresetLabelKey; hex: string }[]; onChange: (hex: string) => void; locale: Locale; first?: boolean }) {
-  const { t } = createTranslator(locale);
-  const [draft, setDraft] = useState(value);
-  const [showError, setShowError] = useState(false);
-  // Task 015 UX fix: typing "2D4A3E" (no leading #) is a common, obviously
-  // -intended shorthand for the exact same value - normalized here (not a
-  // second, looser validation rule) so it still only ever commits through
-  // the same HEX_PATTERN check as everything else, and the native
-  // `<input type="color">` swatch (which always needs a real #rrggbb
-  // value) stays in sync either way.
-  const normalizedDraft = /^[0-9a-fA-F]{6}$/.test(draft) ? `#${draft}` : draft;
-  const isValid = HEX_PATTERN.test(normalizedDraft);
-
-  function commit(hex: string) {
-    setDraft(hex);
-    const candidate = /^[0-9a-fA-F]{6}$/.test(hex) ? `#${hex}` : hex;
-    if (HEX_PATTERN.test(candidate)) {
-      setShowError(false);
-      onChange(candidate);
-    } else {
-      // Task 015 UX fix: previously silent - an invalid hex was simply
-      // never applied, with no feedback at all. Now shown inline once the
-      // field has content, without blocking further typing.
-      setShowError(candidate.trim().length > 0);
-    }
-  }
-
-  return (
-    <div>
-      <StudioSectionSub first={first}>{label}</StudioSectionSub>
-      <p className="text-[11px] -mt-2 mb-3" style={{ color: GUEST_BASE_PALETTE.mist }}>
-        {hint}
-      </p>
-      <div className="grid grid-cols-4 gap-2 mb-3">
-        {swatches.map((c) => (
-          <button
-            key={`${c.labelKey}-${c.hex}`}
-            type="button"
-            title={t("studio", c.labelKey)}
-            aria-label={`${t("studio", c.labelKey)} ${c.hex}`}
-            onClick={() => commit(c.hex)}
-            className="flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all"
-            style={{ background: value.toLowerCase() === c.hex.toLowerCase() ? `${GUEST_BASE_PALETTE.forest}14` : "transparent" }}
-          >
-            <span
-              className="w-8 h-8 rounded-lg shadow-sm"
-              style={{ background: c.hex, outline: value.toLowerCase() === c.hex.toLowerCase() ? `2px solid ${GUEST_BASE_PALETTE.forest}66` : "none", outlineOffset: 2 }}
-            />
-            <span className="text-[10px] font-medium" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-              {t("studio", c.labelKey)}
-            </span>
-          </button>
-        ))}
-      </div>
-      <div className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 border" style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, background: "white" }}>
-        {/* Task 015 UX fix: a real visual picker (full hue/saturation/
-            brightness, native to the OS/browser) alongside the existing
-            hex text field, not a second custom-built implementation - no
-            `<input type="color">` existed anywhere else in the project to
-            duplicate/diverge from. Bound to the same normalized hex value
-            both ways: opening it starts from the current color, and
-            picking a new one commits through the identical `commit()`
-            path the presets and text field already use. Falls back to
-            the swatch's fixed forest color while `draft` is invalid, so
-            opening the picker from an invalid typed value still starts
-            somewhere sane rather than at an undefined color. */}
-        <input
-          type="color"
-          value={isValid ? normalizedDraft : "#2D4A3E"}
-          onChange={(e) => commit(e.target.value)}
-          aria-label={t("studio", "openColorPicker", { label })}
-          className="w-8 h-8 rounded-md shrink-0 border-0 p-0 cursor-pointer"
-          style={{ background: "none" }}
-        />
-        <input
-          value={draft}
-          onChange={(e) => commit(e.target.value)}
-          onBlur={() => setShowError(!isValid && draft.trim().length > 0)}
-          aria-invalid={showError}
-          aria-label={t("studio", "hexValueOf", { label })}
-          className="flex-1 min-w-0 py-2 text-base sm:text-[13px] outline-none font-mono"
-          style={{ color: GUEST_BASE_PALETTE.forest }}
-        />
-        <span className="text-[10px] shrink-0" style={{ color: GUEST_BASE_PALETTE.mist }}>
-          {t("studio", "customHex")}
-        </span>
-      </div>
-      {showError && (
-        <p className="text-[11px] mt-1.5" style={{ color: "#B23B3B" }} role="alert">
-          {t("studio", "hexHint")}
-        </p>
-      )}
-    </div>
-  );
-}
 
 type ModuleDescriptionKey =
   | "moduleScheduleDesc"
@@ -1385,15 +1273,22 @@ export function RetreatConfigurator({
   // Guest ground, so an existing Space renders exactly as before.
   const [customSurface, setCustomSurface] = useState<string | null>(initialCustomSurface);
   const [customText, setCustomText] = useState<string | null>(initialCustomText);
-  // Bumped when a Brand preset is applied so the colour pickers re-sync their hex drafts.
-  const [presetNonce, setPresetNonce] = useState(0);
+  // TASK 033: keep-last-custom - the custom colours the organizer left by
+  // picking a preset, offered back by "Restore my custom colours" (editor
+  // state only, never saved on its own).
+  const [lastCustomColors, setLastCustomColors] = useState<{
+    primary: string | null;
+    accent: string | null;
+    navigation: string | null;
+    text: string | null;
+    surface: string | null;
+  } | null>(null);
   const effectivePrimary = customPrimary ?? PALETTES[palette].primary;
   const effectiveSecondary = customSecondary ?? PALETTES[palette].secondary;
   const effectiveNavigation = customNavigation ?? effectivePrimary;
   const effectiveSurface = customSurface ?? GUEST_BASE_PALETTE.parchment;
   const effectiveText = customText ?? effectivePrimary;
-  const activePresetKey =
-    matchBrandPreset("retreat", { primary: customPrimary, accent: customSecondary, navigation: customNavigation, text: customText, surface: customSurface })?.key ?? null;
+  const paletteSelection = flowPaletteSelection({ primary: customPrimary, accent: customSecondary, navigation: customNavigation, text: customText, surface: customSurface });
   const readabilityTextColor = safeTextColor(effectivePrimary);
   const readabilityPasses = meetsAA(effectivePrimary, readabilityTextColor);
   // App Text Color is drawn directly on the app's own light background,
@@ -1841,8 +1736,16 @@ export function RetreatConfigurator({
   // second source of navigation.
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   function mobileNavigate(next: StepKey) {
+    // TASK 033: restore the page under the drawer first, so the jump to the
+    // top of a NEW step below is not undone by the drawer's own cleanup.
+    // Choosing the step already open just closes, back at the exact spot.
+    releaseScrollLock();
     setMobileNavOpen(false);
-    attemptNavigate(() => setStep(next));
+    if (next === step) return;
+    attemptNavigate(() => {
+      setStep(next);
+      window.scrollTo({ top: 0, behavior: "auto" });
+    });
   }
 
   const publishReadiness: ReadinessItem[] = [
@@ -1956,12 +1859,15 @@ export function RetreatConfigurator({
       {/* Mobile Studio Navigation - the desktop sidebar below is
           `hidden lg:flex`, so below that breakpoint this topbar + drawer
           is the only way to switch sections. */}
-      <div className="lg:hidden flex items-center gap-1 px-2 py-2 border-b border-idw-forest/10 bg-white">
+      {/* TASK 033: sticky, so the Menu is reachable from the bottom of a
+          long step (it used to scroll away with the page). */}
+      <div className="lg:hidden sticky top-0 z-40 flex items-center gap-1 px-2 py-2 border-b border-idw-forest/10 bg-white">
         <button
           type="button"
           onClick={() => setMobileNavOpen(true)}
           aria-label={t("studio", "openStudioMenu")}
           aria-expanded={mobileNavOpen}
+          aria-controls={MOBILE_NAV_ID}
           className="w-11 h-11 shrink-0 flex flex-col items-center justify-center gap-1 rounded-lg active:bg-idw-forest/10"
         >
           <span className="w-5 h-0.5 bg-idw-forest rounded-full" />
@@ -1997,112 +1903,96 @@ export function RetreatConfigurator({
         </span>
       </div>
 
-      {mobileNavOpen && (
-        <div className="lg:hidden fixed inset-0 z-[100] flex" role="dialog" aria-modal="true" aria-label={t("studio", "studioMenu")}>
-          <div
-            className="absolute inset-0"
-            style={{ background: "rgba(27,46,36,0.45)" }}
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget) setMobileNavOpen(false);
-            }}
-          />
-          <div className="relative w-[280px] max-w-[80vw] h-full bg-white flex flex-col overflow-hidden shadow-2xl">
-            {/* Scrollable nav region - independent from the pinned footer
-                below, so a long section list never pushes the global
-                actions out of view (see the matching desktop `aside`
-                comment for why this two-region split, not a `flex-1`
-                spacer inside one scroll container, is the real fix). */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-7">
-              <div className="flex items-center justify-between mb-8">
-                <InnerDweSMark size={24} />
-                <button
-                  type="button"
-                  onClick={() => setMobileNavOpen(false)}
-                  aria-label={t("studio", "closeStudioMenu")}
-                  className="text-idw-forest/50 text-xl leading-none px-1"
-                >
-                  ×
-                </button>
-              </div>
-              <PendingNavLink
-                href="/space"
-                beforeNavigate={(go) => {
-                  setMobileNavOpen(false);
-                  attemptNavigate(go);
-                }}
-                ariaLabel={t("studio", "backToMySpaces")}
-                pendingLabel={t("studio", "openingMySpaces")}
-                testId="studio-back-drawer"
-                className="w-full gap-1.5 px-3 mb-4 text-sm font-semibold text-idw-forest/70 hover:bg-idw-forest/5"
-              >
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0 rtl-mirror">
-                  <path d="M12.5 15.5L7 10l5.5-5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                {t("studio", "mySpaces")}
-              </PendingNavLink>
-              {sidebarGroups.map((group) => (
-                <div key={group.label} className="mb-6">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-idw-forest/40 mb-2">
-                    {group.label}
-                  </div>
-                  <ol className="flex flex-col gap-1">
-                    {group.items.map((s) => (
-                      <li key={s.key}>
-                        <button
-                          type="button"
-                          onClick={() => mobileNavigate(s.key)}
-                          className={`w-full text-left px-3 py-2.5 rounded-lg text-sm ${
-                            step === s.key ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
-                          }`}
-                        >
-                          {s.label}
-                        </button>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ))}
-            </div>
-
-            {/* Pinned footer - global Space-level actions, always visible
-                regardless of section list length or which section is
-                selected. */}
-            <div className="px-6 pb-7 pt-3 shrink-0">
+      {/* TASK 033: the shared mobile drawer (portalled, scroll-locked,
+          focus-trapped) - see components/studio/studio-mobile-drawer.tsx. */}
+      <StudioMobileDrawer
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        id={MOBILE_NAV_ID}
+        label={t("studio", "studioMenu")}
+        closeLabel={t("studio", "closeStudioMenu")}
+        lang={spaceLocale}
+        dir={spaceDir}
+        header={<InnerDweSMark size={24} />}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => mobileNavigate("publish")}
+              aria-current={step === "publish" ? "step" : undefined}
+              className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium ${
+                step === "publish" ? "bg-idw-forest text-idw-parchment" : "bg-idw-clay/10 text-idw-clay-text border border-idw-clay/25"
+              }`}
+            >
+              {t("studio", "navPreviewPublish")}
+            </button>
+            {tenantId && (
               <button
                 type="button"
-                onClick={() => mobileNavigate("publish")}
-                className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium ${
-                  step === "publish" ? "bg-idw-forest text-idw-parchment" : "bg-idw-clay/10 text-idw-clay-text border border-idw-clay/25"
+                onClick={() => mobileNavigate("share")}
+              aria-current={step === "share" ? "step" : undefined}
+                className={`w-full mt-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
+                  step === "share" ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
                 }`}
               >
-                {t("studio", "navPreviewPublish")}
+                {t("studio", "shareYourSpace")}
               </button>
-              {tenantId && (
-                <button
-                  type="button"
-                  onClick={() => mobileNavigate("share")}
-                  className={`w-full mt-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
-                    step === "share" ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
-                  }`}
-                >
-                  {t("studio", "shareYourSpace")}
-                </button>
-              )}
-              {tenantId && (
-                <button
-                  type="button"
-                  onClick={() => mobileNavigate("featured")}
-                  className={`w-full mt-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
-                    step === "featured" ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
-                  }`}
-                >
-                  {t("studio", "featuredOnInnerDwes")}
-                </button>
-              )}
+            )}
+            {tenantId && (
+              <button
+                type="button"
+                onClick={() => mobileNavigate("featured")}
+              aria-current={step === "featured" ? "step" : undefined}
+                className={`w-full mt-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
+                  step === "featured" ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
+                }`}
+              >
+                {t("studio", "featuredOnInnerDwes")}
+              </button>
+            )}
+          </>
+        }
+      >
+        <PendingNavLink
+          href="/space"
+          beforeNavigate={(go) => {
+            setMobileNavOpen(false);
+            attemptNavigate(go);
+          }}
+          ariaLabel={t("studio", "backToMySpaces")}
+          pendingLabel={t("studio", "openingMySpaces")}
+          testId="studio-back-drawer"
+          className="w-full gap-1.5 px-3 mb-4 text-sm font-semibold text-idw-forest/70 hover:bg-idw-forest/5"
+        >
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0 rtl-mirror">
+            <path d="M12.5 15.5L7 10l5.5-5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {t("studio", "mySpaces")}
+        </PendingNavLink>
+        {sidebarGroups.map((group) => (
+          <div key={group.label} className="mb-6">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-idw-forest/70 mb-2">
+              {group.label}
             </div>
+            <ol className="flex flex-col gap-1">
+              {group.items.map((s) => (
+                <li key={s.key}>
+                  <button
+                    type="button"
+                    onClick={() => mobileNavigate(s.key)}
+                    aria-current={step === s.key ? "step" : undefined}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm ${
+                      step === s.key ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                </li>
+              ))}
+            </ol>
           </div>
-        </div>
-      )}
+        ))}
+      </StudioMobileDrawer>
 
       <div
         className={`grid gap-0 flex-1 min-h-0 lg:items-start ${
@@ -2438,88 +2328,54 @@ export function RetreatConfigurator({
             <StudioHeading>{t("flow", "brandTitle")}</StudioHeading>
       <StudioIntro>{t("flow", "brandBody")}</StudioIntro>
 
+            {/* TASK 033: the shared preset cards + "Customize colors"
+                (Primary / Accent / Background tint) - the same editor as
+                the Teach Studio. Navigation and text colours are written by
+                a preset and otherwise kept as saved. */}
             <div className="mb-8">
-              <BrandPresetChips
+              <BrandPaletteEditor
                 locale={spaceLocale}
+                dir={spaceDir}
                 presets={getBrandPresets("retreat")}
-                activeKey={activePresetKey}
-                customActive={activePresetKey === null}
-                onCustom={() => document.getElementById("flow-custom-colors")?.scrollIntoView({ block: "nearest", behavior: "smooth" })}
-                onApply={(preset) => {
+                selection={paletteSelection}
+                colors={{ primary: effectivePrimary, accent: effectiveSecondary, surface: effectiveSurface }}
+                hints={{ primary: t("studio", "primaryColourHelp"), accent: t("studio", "accentColourHelp"), surface: t("studio", "backgroundTintHelp") }}
+                onApplyPreset={(preset) => {
+                  setLastCustomColors((prev) =>
+                    stashOnPresetApply(
+                      paletteSelection,
+                      { primary: customPrimary, accent: customSecondary, navigation: customNavigation, text: customText, surface: customSurface },
+                      prev
+                    )
+                  );
                   const next = presetColorUpdate("retreat", preset);
                   setCustomPrimary(next.primary);
                   setCustomSecondary(next.accent);
                   setCustomNavigation(next.navigation);
                   setCustomText(next.text);
                   setCustomSurface(next.surface ?? null);
-                  setPresetNonce((n) => n + 1);
                   dirty.markDirty("identityAndBrand");
                 }}
+                onChange={(role, hex) => {
+                  if (role === "primary") setCustomPrimary(hex);
+                  else if (role === "accent") setCustomSecondary(hex);
+                  else setCustomSurface(hex);
+                  dirty.markDirty("identityAndBrand");
+                }}
+                onRestore={
+                  lastCustomColors && paletteSelection.mode !== "custom"
+                    ? () => {
+                        setCustomPrimary(lastCustomColors.primary);
+                        setCustomSecondary(lastCustomColors.accent);
+                        setCustomNavigation(lastCustomColors.navigation);
+                        setCustomText(lastCustomColors.text);
+                        setCustomSurface(lastCustomColors.surface);
+                        setLastCustomColors(null);
+                        dirty.markDirty("identityAndBrand");
+                      }
+                    : undefined
+                }
               />
-            </div>
-
-            <div id="flow-custom-colors">
-            <ColorPicker
-              locale={spaceLocale}
-              first
-              key={`primary-${presetNonce}`}
-              label={t("studio", "primaryColour")}
-              swatches={swatchesFor("primary")}
-              hint={t("studio", "primaryColourHelp")}
-              value={effectivePrimary}
-              onChange={(hex) => {
-                setCustomPrimary(hex);
-                dirty.markDirty("identityAndBrand");
-              }}
-            />
-            <ColorPicker
-              locale={spaceLocale}
-              key={`accent-${presetNonce}`}
-              label={t("studio", "accentColour")}
-              swatches={swatchesFor("accent")}
-              hint={t("studio", "accentColourHelp")}
-              value={effectiveSecondary}
-              onChange={(hex) => {
-                setCustomSecondary(hex);
-                dirty.markDirty("identityAndBrand");
-              }}
-            />
-            <ColorPicker
-              locale={spaceLocale}
-              key={`navigation-${presetNonce}`}
-              label={t("studio", "navigationColour")}
-              swatches={swatchesFor("navigation")}
-              hint={t("studio", "navigationColourHelpFlow")}
-              value={effectiveNavigation}
-              onChange={(hex) => {
-                setCustomNavigation(hex);
-                dirty.markDirty("identityAndBrand");
-              }}
-            />
-            <ColorPicker
-              locale={spaceLocale}
-              key={`surface-${presetNonce}`}
-              label={t("studio", "backgroundTint")}
-              swatches={swatchesFor("surface")}
-              hint={t("studio", "backgroundTintHelp")}
-              value={effectiveSurface}
-              onChange={(hex) => {
-                setCustomSurface(hex);
-                dirty.markDirty("identityAndBrand");
-              }}
-            />
-            <ColorPicker
-              locale={spaceLocale}
-              key={`text-${presetNonce}`}
-              label={t("studio", "textColour")}
-              swatches={swatchesFor("text")}
-              hint={t("studio", "textColourHelp")}
-              value={effectiveText}
-              onChange={(hex) => {
-                setCustomText(hex);
-                dirty.markDirty("identityAndBrand");
-              }}
-            />
             </div>
 
             <StudioSectionSub>{t("studio", "heroPhotography")}</StudioSectionSub>
@@ -2815,6 +2671,8 @@ export function RetreatConfigurator({
             profile={retreatProfile}
             setProfile={setRetreatProfile}
             arrivalInfo={arrivalInfo}
+            preparationInArrival={preparationEditedInArrival(enabledModules)}
+            onOpenArrival={() => attemptNavigate(() => setStep("arrivalInfo"))}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}
             {...moduleSectionProps.home}
@@ -2861,6 +2719,8 @@ export function RetreatConfigurator({
             tenantId={tenantId}
             info={arrivalInfo}
             setInfo={setArrivalInfo}
+            profile={retreatProfile}
+            setProfile={setRetreatProfile}
             onOpenHome={() => attemptNavigate(() => setStep("home"))}
             onBack={() => goToStep(-1)}
             onContinue={() => goToStep(1)}

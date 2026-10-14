@@ -1811,6 +1811,68 @@ export async function saveRetreatProfile(
   delete content.startDate;
   delete content.endDate;
   const stored = await loadStoredRetreatProfile(ctx.supabase, tenantId);
+  // TASK 033 item 4: when "Preparing for arrival" is edited in Arrival Info
+  // (saveRetreatPreparation), a Home save keeps the STORED lists - the same
+  // rule as the dates, so a stale Home tab can never overwrite them.
+  if (formData.get("keepPreparation") === "1") {
+    const storedLists = retreatProfileSchema.safeParse(stored ?? {});
+    if (!storedLists.success) return { error: t("someDetailsInvalid") };
+    content.whatToBring = storedLists.data.whatToBring;
+    content.whatToExpect = storedLists.data.whatToExpect;
+  }
+  const { error } = await ctx.supabase.from("module_settings").upsert(
+    {
+      tenant_id: tenantId,
+      module_key: RETREAT_PROFILE_KEY,
+      data: withRetreatDates(content, retreatDatesOf(stored)),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "tenant_id,module_key" }
+  );
+  if (error) return { error: error.message };
+  return { error: null };
+}
+
+export type SaveRetreatPreparationState = { error: string | null };
+
+const preparationListSchema = z.array(z.string().trim().min(1).max(500)).max(100);
+
+/**
+ * TASK 033 item 4 (Part 1): saves ONLY "Preparing for arrival" (What to
+ * bring / What to expect) from the Arrival Info step into the canonical
+ * retreatProfile row, merged into what is stored - every other profile
+ * field (and the retreat dates) is left exactly as saved. The legacy
+ * arrivalInfo.whatToBring string is never touched.
+ */
+export async function saveRetreatPreparation(
+  _prevState: SaveRetreatPreparationState,
+  formData: FormData
+): Promise<SaveRetreatPreparationState> {
+  const t = studioMessages(localeFromFormData(formData));
+  const tenantId = String(formData.get("tenantId") ?? "");
+  const ctx = await retreatActionContext(tenantId);
+  if (!ctx.ok) return { error: t(ctx.reason) };
+
+  let bring: unknown;
+  let expect: unknown;
+  try {
+    bring = JSON.parse(String(formData.get("whatToBring") ?? "[]"));
+    expect = JSON.parse(String(formData.get("whatToExpect") ?? "[]"));
+  } catch {
+    return { error: t("couldNotReadList") };
+  }
+  const b = preparationListSchema.safeParse(bring);
+  const e = preparationListSchema.safeParse(expect);
+  if (!b.success || !e.success) return { error: t("someDetailsInvalid") };
+
+  const stored = await loadStoredRetreatProfile(ctx.supabase, tenantId);
+  const base = retreatProfileSchema.safeParse(stored ?? {});
+  // Fail closed: never rebuild an unreadable stored profile from defaults.
+  if (!base.success) return { error: t("someDetailsInvalid") };
+  const current = base.data;
+  const content = { ...current, whatToBring: b.data, whatToExpect: e.data };
+  delete content.startDate;
+  delete content.endDate;
   const { error } = await ctx.supabase.from("module_settings").upsert(
     {
       tenant_id: tenantId,

@@ -50,6 +50,10 @@ export const es: Dictionary = {
 
     // Status
     loading: "Cargando…",
+    // TASK 033: branded loading messages
+    preparingRetreat: "Preparando tu retiro…",
+    preparingClasses: "Preparando tus clases…",
+    openingStudio: "Abriendo tu Studio…",
     error: "Algo no ha funcionado.",
     required: "Obligatorio",
     optional: "Opcional",
@@ -1089,6 +1093,14 @@ export const es: Dictionary = {
     managedInRetreatHome: "Se gestiona en Inicio del retiro",
     managedInRetreatHomeBody: "Esto ahora vive en el Inicio del retiro, para que tus invitados vean una sola versión. Tu texto anterior se conserva y sigue mostrándose hasta que guardes el nuevo.",
     openRetreatHome: "Abrir Inicio del retiro",
+    // TASK 033 item 4: Preparing for arrival back in Arrival Info
+    preparationSeededLegacy: "Recuperado de una versión anterior de este Espacio. Guarda para conservarlo aquí.",
+    preparationOlderListTitle: "También hay guardada una lista anterior de «Qué traer»",
+    preparationOlderListBody: "Tus invitados ven la lista de arriba. Esta lista anterior se conserva y no se muestra a los invitados.",
+    preparationUseOlderList: "Usar la lista anterior",
+    preparationMovedToArrival: "«Qué traer» y «Qué esperar» ahora se editan en Llegada. Tus invitados los siguen viendo en la pantalla de inicio.",
+    openArrivalInfo: "Abrir Llegada",
+    preparationShownOnHome: "Tus invitados ven esto en la pantalla de inicio.",
 
     // ---- TASK 029: Readings ----
     readings: "Lecturas",
@@ -1224,6 +1236,10 @@ export const es: Dictionary = {
     lookAndFeel: "Aspecto y estilo",
     colourPalette: "Paleta de colores",
     palettePresets: "Paletas predefinidas",
+    // TASK 033: Brand editor simplification
+    customizeColours: "Personalizar colores",
+    restoreCustomColours: "Restaurar mis colores personalizados",
+    paletteSelected: "Seleccionada",
     customColours: "Colores personalizados",
     customHex: "Hex personalizado",
     primaryColour: "Color principal",

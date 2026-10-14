@@ -6,6 +6,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 
 const noopSubscribe = () => () => {};
 import { InnerDweSMark } from "@/components/brand/wordmark";
+import { StudioMobileDrawer } from "@/components/studio/studio-mobile-drawer";
+import { releaseScrollLock } from "@/lib/studio/scrollLock";
 import { TeachGuestApp } from "@/components/teach/teach-guest-app";
 import { resolveListUpdate, resolvePatch, type ListUpdate, type Patch } from "./studioStateUpdates";
 import { todayInTimezone, currentTimeInTimezone } from "@/lib/timezone";
@@ -114,6 +116,8 @@ const NAV: { groupKey: TeachKey; items: { key: SectionKey; labelKey: TeachKey }[
     ],
   },
 ];
+/** TASK 033: id of the mobile Studio drawer (aria-controls of the Menu button). */
+const TEACH_MOBILE_NAV_ID = "teach-studio-mobile-nav";
 const ALL_SECTIONS: SectionKey[] = [...NAV.flatMap((g) => g.items.map((i) => i.key)), "publish"];
 
 const PREVIEW_TAB: Record<SectionKey, "home" | "schedule" | "about" | "explore"> = {
@@ -359,8 +363,14 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
   };
 
   const goTo = (s: SectionKey) => {
-    setSection(s);
+    // TASK 033: from the mobile drawer, restore the page under it first so
+    // the scroll-to-top below sticks; re-choosing the open section just
+    // closes the drawer at the exact scroll position.
+    const fromDrawer = mobileNav;
+    releaseScrollLock();
     setMobileNav(false);
+    if (fromDrawer && s === section) return;
+    setSection(s);
     mainRef.current?.scrollTo({ top: 0 });
     window.scrollTo({ top: 0 });
     const url = new URL(window.location.href);
@@ -639,7 +649,7 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
     <div lang={spaceLocale} dir={spaceDir} className="flex-1 flex flex-col bg-[#F3EFE7] min-h-dvh" data-testid="teach-studio">
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 px-4 sm:px-6 py-3 bg-[#F3EFE7]/95 backdrop-blur border-b border-[#E2DACD]">
         <div className="flex items-center gap-3 min-w-0">
-          <button type="button" className="lg:hidden min-h-11 px-2 -ml-2 text-[13px] font-semibold text-[#192B21]" onClick={() => setMobileNav((v) => !v)} aria-expanded={mobileNav}>
+          <button type="button" className="lg:hidden min-h-11 px-2 -ml-2 text-[13px] font-semibold text-[#192B21]" onClick={() => setMobileNav(true)} aria-expanded={mobileNav} aria-controls={TEACH_MOBILE_NAV_ID}>
             ☰ Menu
           </button>
           <PendingNavLink
@@ -680,7 +690,21 @@ export function TeachStudio({ initial }: { initial: TeachStudioInitial }) {
         </div>
       </header>
 
-      {mobileNav ? <div className="lg:hidden border-b border-[#E2DACD] bg-[#EFE9DE] px-3 pb-3">{navList}</div> : null}
+      {/* TASK 033: was an in-flow block under the sticky header - opened from
+          the bottom of a long section it rendered ~2400px above the
+          viewport. Now the shared portalled drawer. */}
+      <StudioMobileDrawer
+        open={mobileNav}
+        onClose={() => setMobileNav(false)}
+        id={TEACH_MOBILE_NAV_ID}
+        label={t("studio", "studioMenu")}
+        closeLabel={t("studio", "closeStudioMenu")}
+        lang={spaceLocale}
+        dir={spaceDir}
+        header={<InnerDweSMark size={24} />}
+      >
+        {navList}
+      </StudioMobileDrawer>
 
       <div className="flex-1 grid lg:grid-cols-[250px_minmax(0,1fr)_400px]">
         <aside className="hidden lg:block bg-[#EFE9DE] px-3 py-4 border-r border-[#E2DACD]">

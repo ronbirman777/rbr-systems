@@ -44,6 +44,10 @@ export const it: Dictionary = {
 
     // Status
     loading: "Caricamento…",
+    // TASK 033: branded loading messages
+    preparingRetreat: "Stiamo preparando il Suo ritiro…",
+    preparingClasses: "Stiamo preparando le Sue lezioni…",
+    openingStudio: "Apertura del Suo Studio…",
     error: "Si è verificato un problema.",
     required: "Obbligatorio",
     optional: "Facoltativo",
@@ -1065,6 +1069,14 @@ export const it: Dictionary = {
     managedInRetreatHome: "Gestito nella Home del ritiro",
     managedInRetreatHomeBody: "Ora questo contenuto si trova nella Home del ritiro, così gli ospiti ne vedono una sola versione. Il testo precedente è conservato e resta visibile finché non salva quello nuovo.",
     openRetreatHome: "Apri la Home del ritiro",
+    // TASK 033 item 4: Preparing for arrival back in Arrival Info
+    preparationSeededLegacy: "Ripreso da una versione precedente di questo Space. Salvi per mantenerlo qui.",
+    preparationOlderListTitle: "È salvato anche un elenco precedente di “Cosa portare”",
+    preparationOlderListBody: "Gli ospiti vedono l’elenco qui sopra. Questo elenco precedente resta salvato e non viene mostrato agli ospiti.",
+    preparationUseOlderList: "Usa l’elenco precedente",
+    preparationMovedToArrival: "“Cosa portare” e “Cosa aspettarsi” ora si modificano in Info per l’arrivo. Gli ospiti continuano a vederli nella schermata Home.",
+    openArrivalInfo: "Apra Info per l’arrivo",
+    preparationShownOnHome: "Gli ospiti li vedono nella schermata Home.",
 
     // ---- TASK 029: Readings ----
     readings: "Letture",
@@ -1200,6 +1212,10 @@ export const it: Dictionary = {
     lookAndFeel: "Aspetto",
     colourPalette: "Palette di colori",
     palettePresets: "Palette predefinite",
+    // TASK 033: Brand editor simplification
+    customizeColours: "Personalizza i colori",
+    restoreCustomColours: "Ripristina i miei colori personalizzati",
+    paletteSelected: "Selezionata",
     customColours: "Colori personalizzati",
     customHex: "Esadecimale personalizzato",
     primaryColour: "Colore principale",

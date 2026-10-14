@@ -3,6 +3,7 @@ import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { Locale } from "@/lib/i18n";
 import { GuestHeroWait } from "./guest-hero-wait";
 import { guestLoadingCopy } from "./guest-loading-screen";
+import { loaderPaletteFor, type GuestLoaderProduct } from "@/lib/guest/loaderPalette";
 
 /**
  * TASK 033 (owner decision "Shell"): the one desktop frame for every
@@ -70,6 +71,8 @@ export function GuestDesktopShell({
   columnStyle,
   lang,
   dir,
+  loadingProduct = null,
+  loadingBackground = null,
 }: (
   | {
       /** The Space's published brand - only its theme tokens are used, for the backdrop. */
@@ -97,6 +100,9 @@ export function GuestDesktopShell({
   columnStyle?: CSSProperties;
   lang?: string;
   dir?: "ltr" | "rtl";
+  /** TASK 033 branded loading: which Guest App, and its published ground colour (see lib/guest/loaderPalette.ts). */
+  loadingProduct?: GuestLoaderProduct;
+  loadingBackground?: string | null;
 }) {
   const vars = givenVars ?? (deriveThemeVars(brand) as CSSProperties);
   return (
@@ -109,7 +115,7 @@ export function GuestDesktopShell({
         {/* The overlay's text is translated HERE - on the server for the
             published Guest routes, where every locale is registered - so
             the client bundle needs no dictionary for it (TASK 033, QA D5). */}
-        {heroWait && <GuestHeroWait locale={locale} copy={guestLoadingCopy(locale)} />}
+        {heroWait && <GuestHeroWait locale={locale} copy={guestLoadingCopy(locale, loadingProduct)} palette={loaderPaletteFor(loadingBackground)} />}
         {children}
       </Column>
     </div>

@@ -1,6 +1,7 @@
 import { InnerDweSMark } from "@/components/brand/wordmark";
 import { createTranslator, type Locale } from "@/lib/i18n/core";
 import { GUEST_HERO_SELECTOR, GUEST_LOGO_SELECTOR } from "@/lib/guest/heroWait";
+import type { GuestLoaderPalette, GuestLoaderProduct } from "@/lib/guest/loaderPalette";
 
 /**
  * TASK 033 (plan section 4.5, D-LD1) - the branded Guest loading screen.
@@ -93,13 +94,19 @@ export const GUEST_LOADING_CONTINUITY_SCRIPT =
   `css("${GUEST_LOADING_SHOWN_STYLE_ID}",'${GUEST_LOADING_SHOWN_CSS}')},200)` +
   `}catch(e){}})()`;
 
-export type GuestLoadingCopy = { loading: string; createdWith: string };
+export type GuestLoadingCopy = { loading: string; createdWith: string; message: string | null };
 
-export function guestLoadingCopy(locale: Locale): GuestLoadingCopy {
+/**
+ * TASK 033 branded loading: the context line is the product's own
+ * ("Preparing your retreat…" / "Preparing your classes…"); an unknown
+ * product shows only the mark and the attribution, as before.
+ */
+export function guestLoadingCopy(locale: Locale, product: GuestLoaderProduct = null): GuestLoadingCopy {
   const { t } = createTranslator(locale);
   return {
     loading: t("common", "loading"),
     createdWith: t("attribution", "createdWith", { brand: "InnerDweS" }),
+    message: product === "retreat" ? t("common", "preparingRetreat") : product === "teach" ? t("common", "preparingClasses") : null,
   };
 }
 
@@ -108,8 +115,18 @@ export function GuestLoadingScreen({
   variant = "stream",
   revealed,
   copy: givenCopy,
+  product = null,
+  palette,
 }: {
   locale: Locale;
+  /** Which Guest App is loading - picks the context line (TASK 033). */
+  product?: GuestLoaderProduct;
+  /**
+   * The published ground + readable text (lib/guest/loaderPalette.ts), so
+   * the loader never flashes a palette the app does not use. Absent: the
+   * parchment ground exactly as before.
+   */
+  palette?: GuestLoaderPalette;
   /**
    * Pre-translated text (TASK 033, QA D5). The overlay is rendered inside
    * the Guest client bundle, which carries only English; its server parent
@@ -120,7 +137,8 @@ export function GuestLoadingScreen({
   /** Overlay only: set once the hero is ready ("fade" if visible, else "instant"). */
   revealed?: "fade" | "instant";
 }) {
-  const copy = givenCopy ?? guestLoadingCopy(locale);
+  const copy = givenCopy ?? guestLoadingCopy(locale, product);
+  const textColor = palette?.text ?? "var(--idw-forest)";
   return (
     <div
       id={variant === "stream" ? GUEST_LOADING_STREAM_ID : undefined}
@@ -132,13 +150,33 @@ export function GuestLoadingScreen({
       className={`idw-guest-loading fixed inset-0 z-50 flex flex-col items-center justify-center gap-5 px-6 bg-idw-parchment ${
         variant === "overlay" ? "guest-column-fixed" : ""
       }`}
+      style={{
+        ...(palette ? { background: palette.background } : null),
+        paddingTop: "env(safe-area-inset-top)",
+        paddingBottom: "env(safe-area-inset-bottom)",
+        minHeight: "100dvh",
+      }}
     >
-      <InnerDweSMark size={44} className="idw-loading-breathe" />
+      {/* The official symbol, unchanged, breathing; a soft halo behind it
+          (transform/opacity only). Both static under reduced motion. */}
+      <span className="relative inline-flex items-center justify-center w-[72px] h-[72px]" aria-hidden="true">
+        <span className="idw-loading-halo absolute inset-0 rounded-full" style={{ border: `1px solid ${textColor}` }} />
+        <InnerDweSMark size={48} className="idw-loading-breathe" tone={palette?.tone} />
+      </span>
       <span className="sr-only">{copy.loading}</span>
+      {copy.message ? (
+        <p
+          className="text-[15px] leading-5 text-center"
+          style={{ color: textColor, fontFamily: "var(--font-dm-serif-display), var(--font-fraunces), serif" }}
+        >
+          {copy.message}
+        </p>
+      ) : null}
       <p
+        aria-hidden={copy.message ? "true" : undefined}
         className="text-[12px] leading-4 text-center"
-        // Forest on parchment: well above AA (about 13:1) for small text.
-        style={{ color: "var(--idw-forest)", fontFamily: "var(--font-dm-sans), system-ui, sans-serif" }}
+        // Forest (or cream on a dark ground) - AA by construction (safeTextColor).
+        style={{ color: textColor, fontFamily: "var(--font-dm-sans), system-ui, sans-serif" }}
       >
         {copy.createdWith}
       </p>

@@ -162,7 +162,7 @@ describe("the Guest client bundle carries no dictionary but English", () => {
       expect(readFileSync(join(SRC, parent), "utf8"), parent).toMatch(/messages=\{guestMessages\(/);
     }
     // The hero-wait overlay gets its text translated by its server parent.
-    expect(readFileSync(join(SRC, "components/guest/guest-desktop-shell.tsx"), "utf8")).toContain("copy={guestLoadingCopy(locale)}");
+    expect(readFileSync(join(SRC, "components/guest/guest-desktop-shell.tsx"), "utf8")).toMatch(/copy=\{guestLoadingCopy\(locale(, loadingProduct)?\)\}/);
   });
 });
 
