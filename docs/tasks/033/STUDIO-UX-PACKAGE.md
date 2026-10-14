@@ -264,6 +264,13 @@ Note: Remove now applies on Save (not instantly); unsaved Add/Duplicate/Remove t
     - a Space with an older list from before TASK 029 shows "Filled in from an earlier version" or the
       older-list box, and nothing is lost.
 13. Home design: review `docs/tasks/033/FLOW-HOME-DESIGN.md` + the frames. Nothing to test on Staging yet.
+14. Guest shell (section 16): on a desktop browser and on an iPad, every Guest page is a centred column no wider than
+    430px with the backdrop outside:
+    - Flow Today / Schedule / Team / Explore, and Teach Home / Schedule / About Me / Explore;
+    - the access-code screen;
+    - an unknown address (404).
+    The bottom tabs stay inside the column and on screen while scrolling, and there is no desktop/multi-column
+    layout anywhere.
 
 ## 12. Mobile Studio menu (queued item 1)
 
@@ -526,3 +533,28 @@ Other findings recorded for the owner:
   build the Flow `brand` object without `customSurface`, so Flow always paints parchment. This is pre-existing and
   NOT changed: fixing it would recolour every Flow Space that applied a preset since 028B.
 - The Studio's "Where you are" question: see section 13.
+
+## 16. Guest Apps: the mobile-app shell on every device (owner rule)
+
+**Change:** `GUEST_COLUMN_MAX_WIDTH` and `.guest-desktop-shell__column` / `.guest-column-fixed` go from 480 to
+**430px**. Media `sizes` follow automatically. The 640px breakpoint is kept: below it the app is full width, and
+every phone is <= 430px.
+- **404 inside the shell:** the 404 for an unknown, unpublished or unavailable Space used to be the bare framework
+  "404 / This page could not be found." outside the shell. It is now `components/guest/guest-not-found.tsx` (via
+  `not-found.tsx` in both Guest routes), inside the shell with platform tokens, still HTTP 404. It reveals nothing
+  about the Space. New strings are in all 7 dictionaries.
+- **Teach:** its tablet/desktop switches are container queries on its own root (`@container`, `@min-[40rem]`,
+  `@4xl`) and `useIsDesktopContainer` measures that container. Both key off the shell, so they can never trigger
+  inside a 430px column. No Guest component uses viewport breakpoints (`sm:`/`md:`/`lg:`) — checked by search.
+
+**QA (`qa033/shell/033-line/{before,after}/`):**
+- Matrix: Flow 4 tabs, Flow he Explore, Teach 4 tabs (incl. About Me = facilitator page), access-code screen and
+  404, x 320/390/430/768/1440, x Chromium + WebKit = 110 page states.
+- **After: 0 problems.** Column = 430px at 768 and 1440; no element escapes the column; no horizontal overflow; the
+  bottom tab bar is inside the column and on screen after scrolling to the bottom on every tabbed page; 0 console
+  errors.
+- Before: the column was 480px (44 states over 430).
+- axe (390 + 1440, Chromium): identical before/after except the 404, which went from `html-has-lang(1)` to none.
+
+Guard test `guestDesktopShell.test.ts` was updated (480 -> 430, Flow tile 240 -> 215, Teach retreat cover 430).
+Not verified on a real iPad/iPhone.

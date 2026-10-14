@@ -49,6 +49,10 @@ export const de: Dictionary = {
     preparingClasses: "Deine Kurse werden vorbereitet …",
 
     openingStudio: "Dein Studio wird geöffnet …",
+
+    guestNotFoundTitle: "Dieser Space ist nicht verfügbar",
+
+    guestNotFoundBody: "Der Link ist vielleicht falsch geschrieben, oder dieser Space ist gerade nicht veröffentlicht.",
     error: "Etwas ist schiefgelaufen.",
     required: "Erforderlich",
     optional: "Optional",

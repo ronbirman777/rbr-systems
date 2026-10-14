@@ -29,9 +29,9 @@
  *
  * TASK 033: a published Teach Space no longer becomes a desktop website from
  * 640px up - it renders inside the shared desktop Guest column (at most
- * 480px, lib/guest/column.ts), where its container queries always see a
+ * 430px, lib/guest/column.ts), where its container queries always see a
  * phone-width container. So every value is now "the phone value, evaluated
- * at the 480px column" from 640px up, and exactly the previous value below
+ * at the 430px column" from 640px up, and exactly the previous value below
  * 640px (where nothing changed). The former @40rem/@4xl clauses described a
  * layout the published page no longer shows, and over-fetched for it.
  */

@@ -17,7 +17,7 @@ import { DEFAULT_PUBLISHED_THEME } from "@/lib/modules/publishedTheme";
 /**
  * TASK 033 - the shared desktop Guest shell.
  *
- * vitest has no layout engine, so the geometry itself (a centred <= 480px
+ * vitest has no layout engine, so the geometry itself (a centred <= 430px
  * column from 640px, full width below) is asserted where it lives - the
  * CSS - and the structure is asserted on the real published screens: both
  * products render inside the SAME column component, with their navigation,
@@ -149,9 +149,9 @@ describe("the column geometry (globals.css)", () => {
     expect(base).not.toContain(".guest-column-fixed {");
   });
 
-  it("from 640px is a centred column of at most 480px over the backdrop", () => {
+  it("from 640px is a centred column of at most 430px (the mobile-app shell on every device) over the backdrop", () => {
     expect(GUEST_COLUMN_MIN_VIEWPORT).toBe(640);
-    expect(GUEST_COLUMN_MAX_WIDTH).toBe(480);
+    expect(GUEST_COLUMN_MAX_WIDTH).toBe(430);
     expect(rule(desktop, ".guest-desktop-shell__column")).toContain(`max-width: ${GUEST_COLUMN_MAX_WIDTH}px`);
     expect(rule(desktop, ".guest-desktop-shell")).toContain("align-items: center");
     expect(rule(desktop, ".guest-desktop-shell")).toContain("var(--guest-backdrop");
@@ -165,14 +165,14 @@ describe("the column geometry (globals.css)", () => {
 
 describe("media sizes follow the column (no over-fetch on desktop, unchanged on a phone)", () => {
   it("Flow's frame and tiles are the column from 640px and the viewport below", () => {
-    expect(FLOW_SIZES.frame).toBe(columnSizes(480, "100vw"));
-    expect(FLOW_SIZES.tile).toBe(columnSizes(240, "50vw"));
+    expect(FLOW_SIZES.frame).toBe(columnSizes(430, "100vw"));
+    expect(FLOW_SIZES.tile).toBe(columnSizes(215, "50vw"));
   });
 
   it("Teach keeps its previous phone values below 640px", () => {
     expect(TEACH_SIZES.gallery.endsWith("(min-width: 576px) 33vw, 50vw")).toBe(true);
     expect(TEACH_SIZES.homeMoreCard.endsWith("45vw")).toBe(true);
-    expect(TEACH_SIZES.retreatCover).toBe(columnSizes(480, "100vw"));
+    expect(TEACH_SIZES.retreatCover).toBe(columnSizes(430, "100vw"));
     for (const value of Object.values(TEACH_SIZES)) expect(value).not.toContain("896px");
   });
 });

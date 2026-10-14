@@ -40,6 +40,8 @@ export const en = {
     preparingRetreat: "Preparing your retreat…",
     preparingClasses: "Preparing your classes…",
     openingStudio: "Opening your Studio…",
+    guestNotFoundTitle: "This Space isn’t available",
+    guestNotFoundBody: "The link may be mistyped, or this Space is not published right now.",
     error: "Something went wrong.",
     required: "Required",
     optional: "Optional",

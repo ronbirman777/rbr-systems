@@ -60,6 +60,10 @@ export const he: Dictionary = {
     preparingClasses: "מכינים את השיעורים שלך…",
 
     openingStudio: "פותחים את הסטודיו שלך…",
+
+    guestNotFoundTitle: "המרחב הזה אינו זמין",
+
+    guestNotFoundBody: "ייתכן שהקישור שגוי, או שהמרחב אינו מפורסם כרגע.",
     error: "משהו השתבש.",
     required: "חובה",
     optional: "לא חובה",

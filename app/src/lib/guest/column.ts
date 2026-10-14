@@ -9,7 +9,7 @@
 /** Viewport width from which the column (and the backdrop) appear. Mirrors globals.css. */
 export const GUEST_COLUMN_MIN_VIEWPORT = 640;
 /** The column's maximum width from that breakpoint up. Mirrors globals.css. */
-export const GUEST_COLUMN_MAX_WIDTH = 480;
+export const GUEST_COLUMN_MAX_WIDTH = 430;
 /** The media condition under which the column is active, for `sizes` strings. */
 export const GUEST_COLUMN_MEDIA = `(min-width: ${GUEST_COLUMN_MIN_VIEWPORT}px)`;
 

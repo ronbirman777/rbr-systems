@@ -53,6 +53,8 @@ export const tr: Dictionary = {
     preparingRetreat: "İnzivanız hazırlanıyor…",
     preparingClasses: "Dersleriniz hazırlanıyor…",
     openingStudio: "Studio'nuz açılıyor…",
+    guestNotFoundTitle: "Bu Space kullanılamıyor",
+    guestNotFoundBody: "Bağlantı yanlış yazılmış olabilir ya da bu Space şu anda yayında değil.",
     error: "Bir sorun oluştu.",
     required: "Zorunlu",
     optional: "İsteğe bağlı",
