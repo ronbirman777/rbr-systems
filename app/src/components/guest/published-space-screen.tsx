@@ -1,7 +1,6 @@
-import type { CSSProperties } from "react";
 import { z } from "zod";
 import { GuestApp } from "@/components/guest-app";
-import { deriveThemeVars } from "@/lib/theme/deriveTheme";
+import { GuestDesktopShell } from "./guest-desktop-shell";
 import type { PaletteKey, AtmosphereKey } from "@/lib/theme/tokens";
 import { publicScheduleItemSchema } from "@/lib/schedule/types";
 import { facilitatorSchema, type DisplayFacilitator } from "@/lib/modules/facilitator";
@@ -181,25 +180,17 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
     imageStyle: theme.imageStyle ?? "rounded",
   };
 
-  const vars = deriveThemeVars(brand) as CSSProperties;
-
+  // The shared Guest App shell (backport of TASK 033 P4, column 430px):
+  // full width on a phone, a centred full-height column from 640px up -
+  // the same shell Time to Teach uses. Inside it the app is exactly the
+  // VISIBLE viewport tall (dvh), not the large one: with `h-full` the
+  // frame was as tall as the viewport with the browser toolbars hidden,
+  // so whenever they were showing the bottom navigation sat below the
+  // fold - the "nav floats mid-screen" report. It used to be a fixed
+  // 390x780 rounded device frame from `sm` up.
   return (
-    <main
-      style={{ ...vars, background: "var(--rbr-parchment-deep)" }}
-      lang={locale}
-      dir={dir}
-      className="guest-viewport flex-1 flex items-center justify-center sm:p-6 p-0 min-h-dvh"
-    >
-      {/* On a phone the shell is exactly the VISIBLE viewport (dvh), not
-          the large one: with `h-full` the frame was as tall as the
-          viewport with the browser toolbars hidden, so whenever they were
-          showing the bottom navigation sat below the fold - the "nav
-          floats mid-screen" report. From `sm` up it is the fixed device
-          frame it has always been. */}
-      <div
-        className="relative flex flex-col overflow-hidden sm:rounded-[44px] w-full h-dvh sm:w-[390px] sm:h-[780px]"
-        style={{ background: "var(--rbr-background)", boxShadow: "0 40px 100px rgba(45,74,62,0.2), 0 10px 30px rgba(45,74,62,0.1)" }}
-      >
+    <GuestDesktopShell brand={brand} as="main" lang={locale} dir={dir} columnClassName="guest-viewport">
+      <div className="relative flex flex-col overflow-hidden w-full h-dvh" style={{ background: "var(--rbr-background)" }}>
         <GuestApp
           tenantName={space.name}
           brand={brand}
@@ -227,6 +218,6 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
           locale={locale}
         />
       </div>
-    </main>
+    </GuestDesktopShell>
   );
 }

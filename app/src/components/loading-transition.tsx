@@ -24,8 +24,12 @@ export function LoadingTransition({ message }: { message: string }) {
       aria-live="polite"
       className="flex-1 flex flex-col items-center justify-center gap-4 py-24 bg-idw-parchment"
     >
-      <InnerDweSMark size={40} className="idw-loading-breathe" />
-      <p className="text-sm font-medium text-idw-forest/70">{message}</p>
+      {/* TASK 033 (backport): the official mark breathing with a soft halo. */}
+      <span className="relative inline-flex items-center justify-center w-[64px] h-[64px]" aria-hidden="true">
+        <span className="idw-loading-halo absolute inset-0 rounded-full border border-idw-forest" />
+        <InnerDweSMark size={40} className="idw-loading-breathe" />
+      </span>
+      <p className="text-sm font-medium text-idw-forest/80">{message}</p>
     </div>
   );
 }
