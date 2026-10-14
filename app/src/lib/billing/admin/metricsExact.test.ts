@@ -20,6 +20,7 @@ function matches(r: Row, filters: CountFilter[]): boolean {
     payment_failed_at: r.paymentFailedAt ? r.paymentFailedAt.toISOString() : null,
     eligible_for_deletion_at: r.eligibleForDeletionAt ? r.eligibleForDeletionAt.toISOString() : null,
     cancel_at_period_end: r.cancelAtPeriodEnd,
+    currency: r.currency,
   };
   return filters.every((f) => {
     if (!(f.col in col)) throw new Error(`spec uses unmapped column ${f.col}`);
@@ -30,6 +31,7 @@ function matches(r: Row, filters: CountFilter[]): boolean {
       case "in": return f.values.includes(v as string);
       case "notIn": return v != null && !f.values.includes(v as string);
       case "notNull": return v != null;
+      case "isNull": return v == null;
       // ISO-8601 UTC strings of equal format compare lexicographically like timestamps.
       case "lte": return v != null && (v as string) <= f.value;
       case "gt": return v != null && (v as string) > f.value;
@@ -45,9 +47,9 @@ describe("overview exact count specs", () => {
   for (const status of SUBSCRIPTION_STATUSES) {
     for (const failedHoursAgo of [null, 1, 23.999, 24, 24.001, 100, 167.999, 168, 168.001, 300, 400]) {
       for (const cancelAtPeriodEnd of [false, true]) {
-        for (const deletion of [false, true]) {
+        for (const deletion of [false, true]) for (const currency of ["USD", null] as (string | null)[]) {
           rows.push({
-            id: `r${i++}`, status, baseAmountMinor: 2500, currentEffectiveAmountMinor: 2000, currency: "USD", cancelAtPeriodEnd,
+            id: `r${i++}`, status, baseAmountMinor: 2500, currentEffectiveAmountMinor: 2000, currency, cancelAtPeriodEnd,
             paymentFailedAt: failedHoursAgo == null ? null : ago(failedHoursAgo), eligibleForDeletionAt: deletion ? ago(1) : null,
           });
         }

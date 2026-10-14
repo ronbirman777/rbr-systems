@@ -16,6 +16,7 @@ export const METRIC_CAPTION_KEYS = {
   scheduledCancellations: "metric_scheduledCancellations",
   deletionEligible: "metric_deletionEligible",
   exempt: "metric_exempt",
+  mrrUnknownCurrency: "metric_mrrUnknownCurrency",
   openCheckouts: "metric_openCheckouts",
   failedEvents: "metric_failedEvents",
   stuckCheckouts: "metric_stuckCheckouts",

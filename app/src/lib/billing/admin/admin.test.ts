@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasRecentMfa, isAal2, latestTotpTimestamp } from "./amr";
+import { factorBacksSession, hasRecentMfa, hasVerifiedTotp, isAal2, latestTotpTimestamp } from "./amr";
 import { couponFormToRaw, draftOfRaw } from "./forms";
 import { computeOverviewMetrics } from "./metrics";
 import { LARGE_DISCOUNT_PERCENT, checkCouponUpdate, couponInputSchema, couponMatchesStripe, financialTermsChanged, requiresStepUp, type CouponComparable } from "./policy";
@@ -9,11 +9,33 @@ describe("MFA claims (amr / aal)", () => {
   const now = new Date("2026-11-01T12:00:00Z");
   const ts = (agoSec: number) => Math.floor(now.getTime() / 1000) - agoSec;
   it("recognises an AAL2 session only", () => {
-    expect(isAal2({ aal: "aal2" })).toBe(true);
+    const totp = [{ method: "password", timestamp: ts(120) }, { method: "totp", timestamp: ts(60) }];
+    expect(isAal2({ aal: "aal2", amr: totp })).toBe(true);
+    expect(isAal2({ aal: "aal1", amr: totp })).toBe(false); // a TOTP entry alone never raises the level
     expect(isAal2({ aal: "aal1" })).toBe(false);
     expect(isAal2({})).toBe(false);
     expect(isAal2(null)).toBe(false);
-    expect(isAal2({ aal: "AAL2" })).toBe(false);
+    expect(isAal2({ aal: "AAL2", amr: totp })).toBe(false);
+  });
+  it("edge cases: aal2 without a TOTP amr entry (other method, malformed, missing) is not Admin MFA", () => {
+    expect(isAal2({ aal: "aal2" })).toBe(false);
+    expect(isAal2({ aal: "aal2", amr: [] })).toBe(false);
+    expect(isAal2({ aal: "aal2", amr: [{ method: "password", timestamp: ts(5) }] })).toBe(false);
+    expect(isAal2({ aal: "aal2", amr: [{ method: "phone", timestamp: ts(5) }] })).toBe(false);
+    expect(isAal2({ aal: "aal2", amr: [{ method: "totp", timestamp: "yesterday" }] })).toBe(false);
+    expect(isAal2({ aal: "aal2", amr: "totp" })).toBe(false);
+  });
+  it("session refresh: a refreshed token keeps the ORIGINAL TOTP time, so step-up ages from the real verification", () => {
+    // After a refresh Supabase re-issues the JWT with the same amr entries: the TOTP timestamp does not move.
+    const refreshed = { aal: "aal2", amr: [{ method: "totp", timestamp: ts(3600) }], iat: Math.floor(now.getTime() / 1000) - 5 };
+    expect(isAal2(refreshed)).toBe(true); // still an AAL2 session for reading pages
+    expect(hasRecentMfa(refreshed, now, 600)).toBe(false); // but not "recent" for a dangerous action
+  });
+  it("step-up boundaries: clock skew up to 60 s in the future is tolerated, more is not", () => {
+    expect(hasRecentMfa({ amr: [{ method: "totp", timestamp: ts(-60) }] }, now, 600)).toBe(true);
+    expect(hasRecentMfa({ amr: [{ method: "totp", timestamp: ts(-61) }] }, now, 600)).toBe(false);
+    expect(hasRecentMfa({ amr: [{ method: "totp", timestamp: Number.NaN }] }, now, 600)).toBe(false);
+    expect(hasRecentMfa({ amr: [{ method: "totp", timestamp: Number.POSITIVE_INFINITY }] }, now, 600)).toBe(false);
   });
   it("finds the most recent TOTP verification and ignores other methods", () => {
     expect(latestTotpTimestamp({ amr: [{ method: "password", timestamp: ts(5) }, { method: "totp", timestamp: ts(900) }, { method: "totp", timestamp: ts(60) }] })).toBe(ts(60));
@@ -28,6 +50,38 @@ describe("MFA claims (amr / aal)", () => {
     expect(hasRecentMfa({ amr: [] }, now, 600)).toBe(false);
     expect(hasRecentMfa(null, now, 600)).toBe(false);
     expect(hasRecentMfa({ amr: [{ method: "totp", timestamp: ts(-3600) }] }, now, 600)).toBe(false); // a timestamp from the future is not "recent"
+  });
+});
+
+describe("factorBacksSession: a still-existing verified TOTP factor must back the session", () => {
+  const ts = 1_760_000_000;
+  const claims = { aal: "aal2", amr: [{ method: "totp", timestamp: ts }] };
+  const f = (o: Partial<{ id: string; factor_type: string; status: string; created_at: string }>) => ({ id: "f1", factor_type: "totp", status: "verified", created_at: new Date((ts - 600) * 1000).toISOString(), ...o });
+  it("an older verified TOTP factor backs it", () => { expect(factorBacksSession(claims, [f({})])).toBe(true); });
+  it("no factors, null, unverified, non-TOTP or a factor created after the verification do not", () => {
+    expect(factorBacksSession(claims, [])).toBe(false);
+    expect(factorBacksSession(claims, null)).toBe(false);
+    expect(factorBacksSession(claims, [f({ status: "unverified" })])).toBe(false);
+    expect(factorBacksSession(claims, [f({ factor_type: "phone" })])).toBe(false);
+    expect(factorBacksSession(claims, [f({ created_at: new Date((ts + 60) * 1000).toISOString() })])).toBe(false);
+    expect(factorBacksSession(claims, [f({ created_at: "not a date" })])).toBe(false);
+  });
+  it("tolerates only 5 s of rounding between creation and verification", () => {
+    expect(factorBacksSession(claims, [f({ created_at: new Date((ts + 5) * 1000).toISOString() })])).toBe(true);
+    expect(factorBacksSession(claims, [f({ created_at: new Date((ts + 6) * 1000).toISOString() })])).toBe(false);
+  });
+  it("a session without a TOTP amr entry is never backed", () => {
+    expect(factorBacksSession({ aal: "aal2", amr: [{ method: "password", timestamp: ts }] }, [f({})])).toBe(false);
+  });
+  it("if the amr ever carries a factor id, it must match exactly", () => {
+    const withId = { aal: "aal2", amr: [{ method: "totp", timestamp: ts, factor_id: "f2" }] };
+    expect(factorBacksSession(withId, [f({ id: "f1" })])).toBe(false);
+    expect(factorBacksSession(withId, [f({ id: "f2" })])).toBe(true);
+  });
+  it("hasVerifiedTotp", () => {
+    expect(hasVerifiedTotp([f({})])).toBe(true);
+    expect(hasVerifiedTotp([f({ status: "unverified" })])).toBe(false);
+    expect(hasVerifiedTotp(null)).toBe(false);
   });
 });
 
@@ -135,6 +189,18 @@ describe("admin overview metrics (documented definitions)", () => {
   const NOW = new Date("2026-11-20T00:00:00Z");
   type Row = Parameters<typeof computeOverviewMetrics>[0][number];
   const row = (o: Partial<Row> & { id: string }): Row => ({ status: "active", baseAmountMinor: 2500, currentEffectiveAmountMinor: 2500, currency: "USD", cancelAtPeriodEnd: false, paymentFailedAt: null, eligibleForDeletionAt: null, ...o });
+  it("never assumes USD: a missing currency is excluded from every currency total and counted separately", () => {
+    const m = computeOverviewMetrics([row({ id: "a" }), row({ id: "b", currency: null }), row({ id: "c", currency: "" }), row({ id: "d", currency: "eur", baseAmountMinor: 2300, currentEffectiveAmountMinor: 2300 })], new Set(), new Date("2026-11-01T00:00:00Z"));
+    expect(m.mrr.listMinor).toEqual({ USD: 2500, EUR: 2300 });
+    expect(m.mrr.currentMinor).toEqual({ USD: 2500, EUR: 2300 });
+    expect(m.mrrUnknownCurrency).toBe(2);
+    expect(m.paidSubscriptions).toBe(4); // still paid subscriptions; only their money is unattributable
+  });
+  it("a missing base amount is excluded and counted, never added as 0", () => {
+    const m = computeOverviewMetrics([row({ id: "a" }), row({ id: "b", baseAmountMinor: null, currentEffectiveAmountMinor: null })], new Set(), new Date("2026-11-01T00:00:00Z"));
+    expect(m.mrr.listMinor).toEqual({ USD: 2500 });
+    expect(m.mrr.missingAmount).toBe(1);
+  });
   it("counts only paying subscriptions and excludes exempt Spaces from every money/count metric", () => {
     const m = computeOverviewMetrics([
       row({ id: "a" }), row({ id: "b", currentEffectiveAmountMinor: 2250 }), row({ id: "c", cancelAtPeriodEnd: true }),

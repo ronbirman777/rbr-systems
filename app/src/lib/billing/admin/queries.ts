@@ -36,7 +36,7 @@ export type OverviewData = {
 
 type CountQuery = ReturnType<ReturnType<SupabaseClient["from"]>["select"]>;
 
-function applyCountFilters(q: CountQuery, filters: CountFilter[]): CountQuery {
+export function applyCountFilters(q: CountQuery, filters: CountFilter[]): CountQuery {
   for (const f of filters) {
     switch (f.op) {
       case "eq": q = q.eq(f.col, f.value); break;
@@ -44,6 +44,7 @@ function applyCountFilters(q: CountQuery, filters: CountFilter[]): CountQuery {
       case "in": q = q.in(f.col, [...f.values]); break;
       case "notIn": q = q.not(f.col, "in", `(${f.values.join(",")})`); break;
       case "notNull": q = q.not(f.col, "is", null); break;
+      case "isNull": q = q.is(f.col, null); break;
       case "lte": q = q.lte(f.col, f.value); break;
       case "gt": q = q.gt(f.col, f.value); break;
     }
@@ -55,7 +56,10 @@ async function exactCount(q: PromiseLike<{ count: number | null; error: { messag
   const { count, error } = await q;
   // Fail visibly: a failed count must never render as a confident 0.
   if (error) throw new Error(`overview count ${what} failed: ${error.message}`);
-  return count ?? 0;
+  // A HEAD count against a table PostgREST does not know (e.g. an environment without the billing migrations) answers
+  // 204 with NO count and NO error. That is "unknown", not 0.
+  if (typeof count !== "number") throw new Error(`overview count ${what} returned no count`);
+  return count;
 }
 
 export async function loadOverview(db: SupabaseClient, now: Date = new Date()): Promise<OverviewData> {
@@ -88,7 +92,9 @@ export async function loadOverview(db: SupabaseClient, now: Date = new Date()): 
 
 export type SubscriptionListRow = {
   subscription: SubscriptionRecord;
-  spaceName: string; spaceType: string; ownerEmail: string | null; couponCode: string | null;
+  /** No owner email: bulk lists never carry customer PII (ADMIN-METRIC-CONTRACTS.md §1.4). The email is shown only on the
+   *  audited, owner-only Space detail page (/admin/spaces/[id]). */
+  spaceName: string; spaceType: string; couponCode: string | null;
   discount: { cyclesCompleted: number; cyclesTotal: number | null; status: string } | null;
   nextAction: ReturnType<typeof computeNextAction>;
 };
@@ -102,12 +108,9 @@ export async function listSubscriptions(
   const { data } = await q;
   const rows = (data ?? []) as unknown as (SubscriptionRow & { tenants: { name: string; product_type: string } | null })[];
   const subIds = rows.map((r) => r.id);
-  const [{ data: reds }, emails] = await Promise.all([
-    subIds.length
-      ? db.from("coupon_redemptions").select("*, coupons(code)").in("space_subscription_id", subIds).in("status", ["redeemed", "completed", "canceled"])
-      : Promise.resolve({ data: [] as Record<string, unknown>[] }),
-    lookupEmails(db, rows.map((r) => r.billing_owner_user_id)),
-  ]);
+  const { data: reds } = subIds.length
+    ? await db.from("coupon_redemptions").select("*, coupons(code)").in("space_subscription_id", subIds).in("status", ["redeemed", "completed", "canceled"])
+    : { data: [] as Record<string, unknown>[] };
   const redBySub = new Map<string, Record<string, unknown>>();
   for (const r of reds ?? []) redBySub.set(r.space_subscription_id as string, r);
   return rows.map((r) => {
@@ -116,7 +119,6 @@ export async function listSubscriptions(
     const state = red ? toRedemptionState(red) : null;
     return {
       subscription: sub, spaceName: r.tenants?.name ?? "", spaceType: r.tenants?.product_type ?? "",
-      ownerEmail: r.billing_owner_user_id ? emails.get(r.billing_owner_user_id) ?? null : null,
       couponCode: ((red?.coupons as { code?: string } | null)?.code) ?? null,
       discount: state ? { cyclesCompleted: state.cyclesCompleted, cyclesTotal: state.cyclesTotal, status: state.status } : null,
       nextAction: computeNextAction(sub, state, { now, nextPaymentAttemptAt: sub.nextPaymentAttemptAt }),
@@ -143,16 +145,16 @@ export async function getSubscriptionDetail(db: SupabaseClient, subscriptionId: 
   if (!row) return null;
   const r = row as unknown as SubscriptionRow & { tenants: { name: string; product_type: string } | null; stripe_price_id: string | null; latest_invoice_id: string | null };
   const sub = toSubscriptionRecord(r);
-  const [{ data: red }, { data: invoices }, { data: events }, emails] = await Promise.all([
+  const [{ data: red }, { data: invoices }, { data: events }] = await Promise.all([
     db.from("coupon_redemptions").select("*, coupons(code)").eq("space_subscription_id", subscriptionId).order("redeemed_at", { ascending: false }).limit(1).maybeSingle(),
     db.from("billing_invoices").select("*").eq("space_subscription_id", subscriptionId).order("issued_at", { ascending: false, nullsFirst: false }).order("created_at", { ascending: false }).limit(100),
     r.stripe_subscription_id ? db.from("billing_events").select("stripe_event_id, event_type, status, received_at, processed_at, error_code").eq("stripe_subscription_id", r.stripe_subscription_id).order("received_at", { ascending: false }).limit(25) : Promise.resolve({ data: [] }),
-    lookupEmails(db, [r.billing_owner_user_id]),
   ]);
   const state = red ? toRedemptionState(red) : null;
   return {
     subscription: sub, spaceName: r.tenants?.name ?? "", spaceType: r.tenants?.product_type ?? "", stripePriceId: r.stripe_price_id,
-    ownerEmail: r.billing_owner_user_id ? emails.get(r.billing_owner_user_id) ?? null : null,
+    // No owner email here either: the owner's contact lives on the audited Space detail page (owner only).
+    tenantId: r.tenant_id,
     redemption: state, nextAction: computeNextAction(sub, state, { now, nextPaymentAttemptAt: sub.nextPaymentAttemptAt }),
     invoices: invoices ?? [], events: events ?? [],
   };
@@ -185,7 +187,6 @@ export async function getCouponDetail(db: SupabaseClient, couponId: string, now:
   if (!coupon) return null;
   const { data: reds } = await db.from("coupon_redemptions").select("*, tenants(name, product_type), space_subscriptions(status, current_period_end, cancel_at_period_end, base_amount_minor, currency)").eq("coupon_id", couponId).order("created_at", { ascending: false }).limit(500);
   const rows = reds ?? [];
-  const emails = await lookupEmails(db, rows.map((r) => r.user_id as string | null));
   const stats: CouponStats = { attempts: rows.length, redemptions: 0, activeDiscounted: 0, completed: 0, canceledSubscriptions: 0, reserved: 0 };
   for (const r of rows) {
     if (["redeemed", "completed", "canceled"].includes(r.status)) stats.redemptions++;
@@ -204,7 +205,7 @@ export async function getCouponDetail(db: SupabaseClient, couponId: string, now:
         next = computeNextAction(rec, r.status === "reserved" ? null : toRedemptionState(r), { now, nextPaymentAttemptAt: rec.nextPaymentAttemptAt });
       }
     }
-    return { redemption: r, userEmail: r.user_id ? emails.get(r.user_id) ?? null : null, subscriptionStatus: subRow?.status ?? null, nextBillingDate: subRow?.current_period_end ?? null, next };
+    return { redemption: r, subscriptionStatus: subRow?.status ?? null, nextBillingDate: subRow?.current_period_end ?? null, next };
   }));
   return { coupon, stats, redemptions };
 }
@@ -216,14 +217,13 @@ export async function listInvoices(db: SupabaseClient, f: { status?: string; ten
   if (f.subscriptionId) q = q.eq("space_subscription_id", f.subscriptionId);
   const { data } = await q;
   const rows = data ?? [];
-  const emails = await lookupEmails(db, rows.map((r) => r.user_id as string | null));
   const codes = new Map<string, string>();
   const redIds = [...new Set(rows.map((r) => r.coupon_redemption_id as string | null).filter((x): x is string => !!x))];
   if (redIds.length) {
     const { data: reds } = await db.from("coupon_redemptions").select("id, coupons(code)").in("id", redIds);
     for (const r of reds ?? []) codes.set(r.id as string, ((r.coupons as { code?: string } | null)?.code) ?? "");
   }
-  return rows.map((r) => ({ invoice: r, spaceName: (r.tenants as { name?: string } | null)?.name ?? "", ownerEmail: r.user_id ? emails.get(r.user_id) ?? null : null, couponCode: r.coupon_redemption_id ? codes.get(r.coupon_redemption_id) ?? null : null }));
+  return rows.map((r) => ({ invoice: r, spaceName: (r.tenants as { name?: string } | null)?.name ?? "", couponCode: r.coupon_redemption_id ? codes.get(r.coupon_redemption_id) ?? null : null }));
 }
 
 export async function listAudit(db: SupabaseClient, limit = 100) {

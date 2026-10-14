@@ -4,6 +4,11 @@ Status: **approved product direction, planning only** (owner, 2026-10-13). Nothi
 deployed unless a row says **AVAILABLE NOW**. Requirements are tracked as `ADM-*` rows in
 `docs/audits/INNERDWES-REQUIREMENTS-MATRIX.md` §2.8.
 
+**Extended 2026-10-14** (this spec remains the base): metric contracts and the corrections list
+(`ADMIN-METRIC-CONTRACTS.md` §0, which wins where this text is older), providers and costs (`PROVIDER-USAGE-AND-COSTS.md`),
+the Backups & DR view (`BACKUP-WATCHDOG-MONITORING-VIEW.md`) and the staged batches (`ADMIN-IMPLEMENTATION-BATCHES.md`).
+Backup thresholds below have been corrected to the owner decision of 2026-10-13 (warning 8 h, critical 12 h).
+
 Labels used throughout:
 - **AVAILABLE NOW**: the data or feature exists in code today (file cited).
 - **PARTIALLY IMPLEMENTED**: some of it exists; the gap is stated.
@@ -59,7 +64,7 @@ Top-level navigation of the extended `/admin` (owner-only sections marked ●; `
 
 **Overview (main page) — only what drives a decision:**
 1. Alert strip: count of open Critical/Warning alerts, each linking to evidence.
-2. Backup freshness: "last verified backup N h ago" (green < 6 h, amber 6–10 h, red > 10 h), from the watchdog.
+2. Backup freshness: "last verified backup N h ago" (green ≤ 8 h, amber > 8–12 h, red > 12 h; owner 2026-10-13), from the watchdog.
 3. Business: paid Spaces, MRR (current, per currency), net new paid Spaces this month, payment failures.
 4. Spaces: total live Spaces by product type; published this month.
 5. Usage: Spaces at ≥ 80% of an audio entitlement (once metered).
@@ -86,7 +91,7 @@ Only services used for InnerDweS are in scope. Personal services are excluded. P
 | **Vercel** | Hosting the Next.js app (Production, Preview, `staging` env); cron | `?` (owner to confirm) | REST API: deployments, project/domain info; usage endpoints depend on plan (REQUIRES RESEARCH) | Invoices in dashboard; billing API availability REQUIRES RESEARCH | Read-scoped access token, server-side | Poll deployments (failed deploys); monthly manual usage/cost entry until an API is confirmed | Failed Production deploy; usage ≥ 80% of plan limits | PLANNED |
 | **Supabase** | Postgres, Auth, Storage (`tenant-media`); Production `qzmsclkzbxrfohuxnitc`, Staging `kkqjsspxupyxytddiumf` | Pro (per `docs/media/r2-audit/02-VENDOR-RESEARCH.md`; confirm) | **SQL (service role) AVAILABLE NOW**: database size, table sizes, storage bytes per bucket/Space, row counts. Management API (personal access token) for project metadata; org usage/egress API REQUIRES RESEARCH | Invoices in dashboard (manual) | Service-role key already server-side (SQL only); a PAT would be a new secret | Daily SQL snapshot; egress/Auth MAU from dashboard (manual) until an API is confirmed | DB or storage ≥ 80% of plan quota; egress ≥ 80% of included | PLANNED (SQL part feasible now) |
 | **Cloudflare** | R2 media POC Worker (`innerdwes-media-poc`), KV, Queue, Analytics Engine; future R2 delivery | Workers Free (owner-confirmed 2026-10-12) | GraphQL Analytics API: Worker requests, CPU time, errors; R2 storage and operations (REQUIRES RESEARCH for exact datasets on Free); Analytics Engine SQL API for per-tenant aggregates | Billing API limited (REQUIRES RESEARCH); invoices in dashboard | Account API token with Analytics:Read only | Daily GraphQL pull; Worker error rate | Worker requests/CPU ≥ 80% of Free daily limits; R2 Class A/B ops ≥ 80% of free tier | PLANNED |
-| **Backblaze B2** | Off-platform backup of Supabase Storage (`innerdwes-production-backup`) | Pay-as-you-go | Native API with a **read-only, bucket-pinned key**: versions, bytes, hide markers, lifecycle (proven in TASK 032.6) | **No usage/billing API**: cost is computed from bytes × published price (Estimated); invoices manual | Read-only application key (expiry tracked) | Watchdog (§7) + daily inventory | Backup age > 10 h; count drop; unexpected hide markers; bytes growth > 2× median | PARTIALLY IMPLEMENTED (scripts exist, not scheduled) |
+| **Backblaze B2** | Off-platform backup of Supabase Storage (`innerdwes-production-backup`) | Pay-as-you-go | Native API with a **read-only, bucket-pinned key**: versions, bytes, hide markers, lifecycle (proven in TASK 032.6) | **No usage/billing API**: cost is computed from bytes × published price (Estimated); invoices manual | Read-only application key (expiry tracked) | Watchdog (§7) + daily inventory | Backup age > 8 h warning / > 12 h critical; count drop; unexpected hide markers; bytes growth > 2× median | PARTIALLY IMPLEMENTED (scripts exist, not scheduled) |
 | **GitHub / Actions** | Backup workflows, CI (infra repo, private) | Free (2,000 private minutes/month) | REST: workflow runs, conclusions, timings (Actions: read); billing usage endpoint REQUIRES RESEARCH | Billing in settings (manual if no API) | Fine-grained token, Actions: read, one repo | Watchdog + daily pull | Backup run failed/missing; minutes ≥ 80% of free | PLANNED |
 | **Stripe** | Subscriptions, invoices, payments (Managed Payments decision pending, BIL-12) | Account exists (Singapore; MP "Eligible", see `docs/billing/research/MANAGED-PAYMENTS-COMPATIBILITY-v2.md`) | Full API: subscriptions, invoices, refunds, disputes, balance transactions (fees), payouts | Yes (Stripe is the ledger) | Restricted key, read-only, server-side | Webhooks (exist) + scheduled reconciliation | Failed-payment spike; webhook failures; sync errors | PARTIALLY IMPLEMENTED (billing tables synced; fees/payouts not stored) |
 | **Resend** | Transactional/billing email | `?` (not configured) | API: sent emails, domains; event webhooks for bounces/complaints; quota data REQUIRES RESEARCH | Dashboard (manual) | Sending key (exists as env name only) | Webhook events + outbox counts | Bounce/complaint rate; daily/monthly quota ≥ 80% | PLANNED |
@@ -129,8 +134,8 @@ metrics and shown separately (as the billing Overview already does).
 ### 4.2 Revenue and billing
 
 Terminology (shown on the page): **Gross revenue** = amounts invoiced to customers before tax.
-**Taxes** = tax collected on invoices (`billing_invoices.tax_minor`); under Managed Payments Stripe is the
-merchant of record and collects/remits tax, so tax is never InnerDweS revenue. **Payment processing fees** =
+**Taxes** = tax collected on invoices (`billing_invoices.tax_minor`); tax is never InnerDweS revenue. Whether
+Stripe acts as merchant of record (Managed Payments) is **undecided** (BIL-12); labels stay conditional on that decision. **Payment processing fees** =
 Stripe fees (and the Managed Payments fee, if adopted) from balance transactions. **Net revenue (estimate)** =
 gross collected − refunds − fees, excluding tax. **Cash received** = Stripe payouts to the bank.
 **Recognized revenue** = not supported (no revenue-recognition ledger; would need Stripe Revenue Recognition,
@@ -235,7 +240,7 @@ show "minutes listened in Space X this month", never "who" or "how many people".
 
 | Area | Alert | Severity |
 |---|---|---|
-| Backups | No verified successful backup within 10 h (warning at 6 h) | critical |
+| Backups | No verified successful backup within 12 h (warning at 8 h; owner 2026-10-13) | critical |
 | Backups | Backup run failed / guard FAILED | critical |
 | Backups | Guard BLOCKED (mass deletion, erosion, empty source, missing bucket) | critical |
 | Backups | Source count drop > 5% vs 7-day max; destination ≠ source after a successful run | warning → critical |
@@ -250,6 +255,12 @@ show "minutes listened in Space X this month", never "who" or "how many people".
 | Security | Operational key expiring in ≤ 14 days (warning) / ≤ 3 days (critical); backup key capabilities changed; new admin granted | warning / critical |
 
 ### 7.3 Delivery architecture (independent of the app)
+
+> **Superseded in detail (2026-10-14)** by the implemented watchdog (infra `docs/watchdog-runbook.md`): the Worker runs
+> every **30 min**; Healthchecks.io monitors the **watchdog** (period 30 min, grace 60 min); a backup-job ping check
+> (4 h / 8 h) is optional phase F2; stale thresholds are 8 h / 12 h; the Worker has **no HTTP endpoint** and writes KV
+> `summary/v1` only. How the dashboard reads it is an open decision: `ADMIN-METRIC-CONTRACTS.md` §5. The diagram
+> below is kept for history.
 
 Critical monitoring must work when Vercel, Supabase or the dashboard are down, and must detect a job that
 **never started**.
@@ -347,7 +358,8 @@ InnerDweS application. Its status, history and alerts are integrated into this d
 
 | Credential | Scope | Where it lives |
 |---|---|---|
-| B2 read-only key (watchdog) | listBuckets, listFiles, readFiles, readBuckets, readBucketLifecycleRules; bucket-pinned; long-lived with a rotation reminder | Cloudflare Worker secret |
+| B2 read-only key (watchdog) | listFiles, readFiles only; bucket-pinned, prefix `_backup-state/`; 365 d with expiry alerts (watchdog runbook §3) | Cloudflare Worker secret |
+| Cloudflare KV read token (dashboard, proposed) | Workers KV Storage: Read (namespace-level scoping UNVERIFIED) | Vercel Production server env |
 | GitHub fine-grained token | Actions: read on `innerdwes_backup_infra` only | Cloudflare Worker secret |
 | healthchecks.io ping URLs | per check | GitHub Actions secret (low sensitivity) |
 | Alert email sender | Resend key restricted to sending from an alerts address, or Cloudflare Email Routing | Cloudflare Worker secret |

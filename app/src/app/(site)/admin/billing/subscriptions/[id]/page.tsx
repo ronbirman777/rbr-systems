@@ -17,7 +17,7 @@ export const dynamic = "force-dynamic";
 export const generateMetadata = () => adminMetaTitle("metaSubscription");
 
 export default async function SubscriptionDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdminPage();
+  const admin = await requireAdminPage();
   const c = await getAdminI18n();
   const { t, locale } = c;
   const { id } = await params;
@@ -45,14 +45,16 @@ export default async function SubscriptionDetailPage({ params }: { params: Promi
           />
         ) : null}
       >
-        {t("sdSubline", { type: spaceTypeLabel(d.spaceType, c), owner: d.ownerEmail ?? t("unknownOwner") })}<Badge tone={statusTone(s.status)}>{statusLabel(s.status, c)}</Badge>
+        {t("sdSublineType", { type: spaceTypeLabel(d.spaceType, c) })}
+        {admin.role === "owner" && d.tenantId ? <><Link className={linkCls} href={`/admin/spaces/${d.tenantId}`}>{t("sdOwnerOnSpacePage")}</Link>{" - "}</> : null}
+        <Badge tone={statusTone(s.status)}>{statusLabel(s.status, c)}</Badge>
       </PageHeader>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card title={t("sdPlanPrice")}>
           <Dl items={[
-            [t("sdBasePrice"), money(s.baseAmountMinor, s.currency, locale)],
-            [t("sdEffectivePrice"), money(effective, s.currency, locale)],
+            [t("sdBasePrice"), money(s.baseAmountMinor, s.currency, locale, c)],
+            [t("sdEffectivePrice"), money(effective, s.currency, locale, c)],
             [t("sdCurrentPeriod"), s.currentPeriodStart ? t("sdPeriodRange", { from: formatUtc(s.currentPeriodStart, c), to: formatUtc(s.currentPeriodEnd, c) }) : "-"],
             [t("sdCancelState"), s.cancelAtPeriodEnd ? t("sdCancelEnds", { time: formatUtc(s.cancelAt ?? s.currentPeriodEnd, c) }) : s.canceledAt ? t("sdCancelCanceled", { time: formatUtc(s.canceledAt, c) }) : t("sdNotCanceling")],
             [t("sdEndedAt"), formatUtc(s.endedAt, c)],
@@ -74,7 +76,7 @@ export default async function SubscriptionDetailPage({ params }: { params: Promi
           <Dl items={[
             [t("sdNextAction"), nextActionLabel(na.action, c)],
             [t("sdWhen"), formatUtc(na.at, c)],
-            [t("sdExpectedCharge"), na.expectedChargeMinor != null ? money(na.expectedChargeMinor, na.currency, locale) : "-"],
+            [t("sdExpectedCharge"), na.expectedChargeMinor != null ? money(na.expectedChargeMinor, na.currency, locale, c) : "-"],
           ]} />
         </Card>
 

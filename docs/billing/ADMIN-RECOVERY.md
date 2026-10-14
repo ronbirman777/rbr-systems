@@ -8,13 +8,16 @@ Three independent server-side gates, all required, evaluated on every page and e
 |---|---|---|
 | Authenticated | `supabase.auth.getClaims()` (signature-verified JWT) | page: redirect to `/log-in?next=/admin` |
 | Authorized | A row in `public.admin_users` for `claims.sub` with `disabled_at` null, read through the service-role client | page: plain 404 (the area does not advertise itself) |
-| MFA | JWT `aal` is `aal2` (a TOTP was verified in this session) | no verified TOTP factor: `/admin/mfa/enroll`; has one: `/admin/mfa/verify` |
+| MFA | JWT `aal` is `aal2` **and** its `amr` has a `totp` entry, **and** a still-existing verified TOTP factor (fresh Auth Admin API read; created no later than that TOTP verification) backs it. Actions and step-up check fresh; page reads cache a positive check 60 s (Admin Batch 1 follow-up) | no verified TOTP factor: `/admin/mfa/enroll`; has one: `/admin/mfa/verify` |
+| Role | Optional `roles` per page/action. Owner only: `/admin/overview`, `/admin/spaces`, the console sections, `/admin/launch` (paid-checkout switch, exemptions), admin grant/revoke | plain 404 (pages) / `not_admin` (actions) |
 
 Not used for authorization: email strings, profile data, client metadata, a hidden URL, an environment switch.
 
 `admin_users`: `user_id` (FK `auth.users`, cascade), `role` (`owner` | `billing_admin`), `note`, `created_by`, `created_at`, `disabled_at`. RLS enabled, **no policies**, all privileges revoked from `anon`/`authenticated`: only the service role reads or writes it. Granting needs `owner` role (`adminGrantAdmin`), step-up, audit. Revoking sets `disabled_at`; it refuses revoking yourself or the last owner.
 
-**First Admin bootstrap** is a manual service-role/SQL insert by the project owner (stated in the 0036 comment). It is not in code and was not re-performed for this document.
+**First Admin bootstrap** is a manual service-role/SQL insert by the project owner (stated in the 0036 comment). It is not in code and was not re-performed for this document. The proposed Staging procedure (grant, enrol within the 15-min AAL1 window, backup factor, recovery) is `docs/admin/STAGING-ADMIN-BOOTSTRAP-AND-RECOVERY.md`.
+
+**Backup authenticator:** `/admin/mfa/enroll?add=1` (header link "Add backup authenticator") enrols an additional TOTP factor; it requires a fresh step-up. At least two factors per Admin are recommended.
 
 ## TOTP enrolment
 

@@ -13,13 +13,15 @@ const ITEMS: [string, AdminKey][] = [
   ["/admin/billing/audit", "navAudit"],
   ["/admin/billing/settings", "navSettings"],
 ];
+/** Owner-only billing pages (the page itself 404s for anyone else; hiding the link is not the protection). */
+const OWNER_ITEMS: [string, AdminKey][] = [["/admin/launch", "navControls"]];
 
-export function AdminNav() {
+export function AdminNav({ ownerItems = false }: { ownerItems?: boolean }) {
   const path = usePathname();
   const { t } = useAdminI18n();
   return (
     <nav aria-label={t("navAria")} className="flex flex-wrap gap-1.5">
-      {ITEMS.map(([href, labelKey]) => {
+      {(ownerItems ? [...ITEMS, ...OWNER_ITEMS] : ITEMS).map(([href, labelKey]) => {
         const active = href === "/admin/billing" ? path === href : path.startsWith(href);
         return (
           <Link key={href} href={href} aria-current={active ? "page" : undefined}

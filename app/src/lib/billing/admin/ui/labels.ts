@@ -99,9 +99,14 @@ export function formatUtcDate(v: Date | string | null | undefined, c: AdminCtx):
 }
 
 /** "$25.00" from an integer minor amount (locale-formatted); "-" for null; falls back to "1234 XYZ" when the currency is not formattable. */
-export function money(minor: number | null | undefined, currency: string | null | undefined, locale: Locale = "en"): string {
+export function money(minor: number | null | undefined, currency: string | null | undefined, locale: Locale = "en", c?: AdminCtx): string {
   if (minor == null) return "-";
-  const cur = (currency ?? "USD").trim().toUpperCase();
+  // A missing currency is never assumed to be USD: the raw minor amount is shown with an explicit "unknown currency".
+  if (currency == null || !currency.trim()) {
+    const n = new Intl.NumberFormat(LOCALE_TAG[locale] ?? "en").format(minor);
+    return c ? c.t("amountUnknownCurrency", { amount: n }) : `${n} (minor units, currency unknown)`;
+  }
+  const cur = currency.trim().toUpperCase();
   try {
     return formatMoney(minor, cur, locale);
   } catch {
@@ -119,7 +124,7 @@ export function discountLabel(d: { discountType: string; percentOff: number | st
     const p = Number(d.percentOff);
     return Number.isFinite(p) ? c.t("discountPercentOff", { percent: new Intl.NumberFormat(LOCALE_TAG[c.locale], { maximumFractionDigits: 2 }).format(Number(p.toFixed(2))) }) : "-";
   }
-  return d.amountOffMinor == null ? "-" : c.t("discountAmountOff", { amount: money(d.amountOffMinor, d.currency, c.locale) });
+  return d.amountOffMinor == null ? "-" : c.t("discountAmountOff", { amount: money(d.amountOffMinor, d.currency, c.locale, c) });
 }
 
 export function couponDiscountLabel(t: CouponTerms, c: AdminCtx): string {
@@ -177,7 +182,7 @@ export function discountProgressText(
 export function invoiceStatusLabel(i: { status: string; amount_refunded_minor?: number | null; currency?: string | null }, c: AdminCtx): string {
   const refunded = Number(i.amount_refunded_minor ?? 0);
   const status = invoiceStatusWord(i.status, c);
-  if (refunded > 0) return c.t("invoiceRefunded", { status, amount: money(refunded, i.currency, c.locale) });
+  if (refunded > 0) return c.t("invoiceRefunded", { status, amount: money(refunded, i.currency, c.locale, c) });
   return status;
 }
 
@@ -244,7 +249,7 @@ const AMOUNT_KEYS: Record<InvoiceAmountKind, AdminKey> = {
 export function invoiceAmountLines(i: InvoiceAmountInput & { currency?: string | null }, c: AdminCtx): { kind: InvoiceAmountKind; label: string; value: string; headline: boolean }[] {
   const a = invoiceAmounts(i);
   const cur = i.currency ? String(i.currency).trim() : null;
-  return a.lines.map((l) => ({ kind: l.kind, label: c.t(AMOUNT_KEYS[l.kind]), value: money(l.minor, cur, c.locale), headline: l.kind === a.headline }));
+  return a.lines.map((l) => ({ kind: l.kind, label: c.t(AMOUNT_KEYS[l.kind]), value: money(l.minor, cur, c.locale, c), headline: l.kind === a.headline }));
 }
 
 export function invoiceAmountNote(i: InvoiceAmountInput, c: AdminCtx): string | null {
