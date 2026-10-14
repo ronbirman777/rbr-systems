@@ -54,6 +54,8 @@ export const es: Dictionary = {
     preparingRetreat: "Preparando tu retiro…",
     preparingClasses: "Preparando tus clases…",
     openingStudio: "Abriendo tu Studio…",
+    guestNotFoundTitle: "Este Espacio no está disponible",
+    guestNotFoundBody: "Puede que el enlace esté mal escrito o que este Espacio no esté publicado ahora mismo.",
     error: "Algo no ha funcionado.",
     required: "Obligatorio",
     optional: "Opcional",

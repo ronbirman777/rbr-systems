@@ -145,7 +145,7 @@ body {
  * TASK 033 - the shared desktop Guest shell (components/guest/guest-desktop-shell.tsx).
  * Below 640px both rules are inert wrappers, so phones render exactly as
  * before. From 640px the published Guest App is a centred column of at most
- * 480px, full window height, over a calm theme-derived backdrop. The two
+ * 430px (owner rule: the mobile-app shell on every device), full window height, over a calm theme-derived backdrop. The two
  * numbers are mirrored by GUEST_COLUMN_MIN_VIEWPORT / GUEST_COLUMN_MAX_WIDTH.
  */
 .guest-desktop-shell {
@@ -169,7 +169,7 @@ body {
     background: var(--guest-backdrop, var(--idw-parchment));
   }
   .guest-desktop-shell__column {
-    max-width: 480px;
+    max-width: 430px;
     box-shadow:
       0 0 0 1px rgb(25 43 33 / 0.06),
       0 30px 90px -30px rgb(45 74 62 / 0.28);
@@ -179,7 +179,7 @@ body {
   .guest-column-fixed {
     left: 50%;
     right: auto;
-    width: min(100%, 480px);
+    width: min(100%, 430px);
     transform: translateX(-50%);
   }
 }

@@ -22,9 +22,9 @@ import { GUEST_COLUMN_MAX_WIDTH, columnSizes } from "@/lib/guest/column";
 
 /*
  * TASK 033: from `sm` up Flow no longer sits in a 390px device frame but in
- * the shared desktop Guest column (lib/guest/column.ts, at most 480px), so
+ * the shared desktop Guest column (lib/guest/column.ts, at most 430px), so
  * the boxes below are derived from that column. The code-entry screen still
- * draws its own 390px frame; asking it for a 480px box lands on the same
+ * draws its own 390px frame; asking it for a 430px box lands on the same
  * MEDIA_WIDTHS rung at 1x and 2x, so it fetches nothing extra.
  */
 export const FLOW_SIZES = {

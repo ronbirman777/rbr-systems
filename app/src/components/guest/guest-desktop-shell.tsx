@@ -21,9 +21,9 @@ import { loaderPaletteFor, type GuestLoaderProduct } from "@/lib/guest/loaderPal
  *   - below 640px (Tailwind `sm`) the shell is a no-op wrapper, so every
  *     phone - including the largest at 430px and phones in landscape up to
  *     639px - renders exactly the full-width layout it rendered before;
- *   - from 640px the column is at most 480px wide (GUEST_COLUMN_MAX_WIDTH):
- *     the largest current phone width plus a little air, and narrow enough
- *     that a 640px tablet still shows the backdrop on both sides.
+ *   - from 640px the column is at most 430px wide (GUEST_COLUMN_MAX_WIDTH):
+ *     the largest current phone width - owner rule (TASK 033): every Guest
+ *     App is the mobile-app shell on every device, never a desktop layout.
  *   Both values live in globals.css (.guest-desktop-shell) and are mirrored
  *   in lib/guest/column.ts so media `sizes` strings can be derived from them.
  *

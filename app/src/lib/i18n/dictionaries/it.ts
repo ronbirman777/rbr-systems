@@ -48,6 +48,8 @@ export const it: Dictionary = {
     preparingRetreat: "Stiamo preparando il Suo ritiro…",
     preparingClasses: "Stiamo preparando le Sue lezioni…",
     openingStudio: "Apertura del Suo Studio…",
+    guestNotFoundTitle: "Questo Space non è disponibile",
+    guestNotFoundBody: "Il link potrebbe essere errato, oppure questo Space al momento non è pubblicato.",
     error: "Si è verificato un problema.",
     required: "Obbligatorio",
     optional: "Facoltativo",
