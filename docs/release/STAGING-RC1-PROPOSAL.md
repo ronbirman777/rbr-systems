@@ -112,3 +112,44 @@ Separate (not part of the Staging approval): your own first Staging admin grant;
 Live Worker `innerdwes-backup-watchdog` on account `1e9ec232…`: B2 KV created, B3 secrets (6), **B4 schedule active since
 2026-10-14 11:16:52Z (`*/30 * * * *`)**; workers.dev/previews off, no routes/domains, public probe 404. First scheduled
 run expected 11:30 UTC. Next gates: B5 (verify first run), B6 drills, B7 drill cleanup, B8 evidence.
+
+## RC1 update 2026-10-14
+
+Local only (no push, no deploy, no hosted calls). Branch `integration/staging-rc1`, previous HEAD `f8b0bb8`.
+Merge commits (no rebase/reset): `425ded2` (origin/main), `1643853` (legal/rc1-versions), `9b013e2` (fix/033-studio-ux); this section is the commit after `9b013e2`.
+
+**Merged, in order**
+
+1. `origin/main` @ `94de158` (Production): 033 UX backports (`be1f9e8`, `5fba95b` line) and legal pack v1.0 (`/legal/*`, `lib/legal/documents.ts`, `isPublicLegalPath` gate exemption, footer/sign-up/My Spaces/pricing links).
+2. `legal/rc1-versions` @ `9860211`: `LEGAL_VERSIONS` read from the registry (`1.0-2026-10-14`), checkout consent links to `/legal/terms`, `/legal/privacy`, `/legal/billing`. Merged cleanly; `documents.ts` byte-identical to main's.
+3. `fix/033-studio-ux` @ `34973a3`: `aac5be9` (430 px Guest shell, 404 inside the shell) and the `34973a3` design docs.
+
+**Conflict resolutions**
+
+- Brand editor: main's `brand-palette-editor.tsx` taken whole (RC editor plus the owner-approved adaptations). "Advanced colours" disclosure keeps navigation/text colours reachable. Flow passes `showSurface={false}`, so there is no Background tint control because the Flow Guest App does not read `custom_surface`. Teach keeps Background tint and puts its "Fine-tune" toggle under Advanced. `advancedColours` added for it ("Colori avanzati") and tr ("Gelişmiş renkler").
+- Guest shell, loader and media sizes: kept the RC (033-line) side in merge 1 because it is the superset (hero-wait overlay, guest loader, localized loader messages). The 430 px column then came from the original `aac5be9` in merge 3. Final: `GUEST_COLUMN_MAX_WIDTH = 430`, CSS `max-width: 430px`, no 480 px left. Main's two extra shell tests were ported, and the access-code one was adapted to the RC call (`locale`, `heroWait={false}`).
+- Preview gate and proxy: union. TASK 032 `isMachineEndpointPath` and `isPublicLegalPath` are both kept.
+- `space/page.tsx` imports: union. `studioMobileGuards.test`: took main's auto-discovery of form primitives.
+- `brandedLoading.test` (new from main): the loader regex now also accepts the RC's `messages={translateAll(...)}` loaders.
+- `it.ts` (merge 3): kept the RC's "tu" loader strings over the branch's older Lei forms and added the two register-neutral `guestNotFound` strings.
+
+**Gates (after `npm ci`)**
+
+| Gate | Result | RC baseline at `f8b0bb8` |
+|---|---|---|
+| `tsc --noEmit` | 0 errors | 0 |
+| `eslint` | 0 errors, 29 warnings | 29 warnings |
+| `vitest run` | 4017 passed, 25 skipped (217 files + 4 skipped) | 3887 / 25 |
+| `next build` | success; `/legal` and `/legal/[slug]` (7 documents) prerendered | — |
+
+The extra 130 tests come from main and the legal branch.
+
+**Checks**
+
+- The Italian register guard ("tu, never Lei") passes. The new Italian strings have no Lei forms.
+- `SPACE_SELECTABLE_LOCALES` is still `en, de, es, fr, he`.
+- Migrations vs main: only `0036`–`0047` added.
+- The legal gate exemption tests (proxy and `lib/legal/*`) pass.
+- The checkout links (`terms`, `privacy`, `billing`) resolve to registry slugs, covered by `checkoutLegalLinks.test`.
+
+**For a later legal v1.1 merge:** `lib/legal/documents.ts` on the RC is exactly main's file with no RC-local edits, so an amendment branch based on main or `legal/rc1-versions` should merge cleanly.
