@@ -202,3 +202,50 @@ Not exercised (no data / needs login or a Studio change): D1 multi-day duplicate
 D4 German-date WebKit fix (all Staging Guest Spaces are English), Studio D2/D3 rows. Same-as-PREV observation: absolute
 `og:image` host is `innerdwes-git-fix-0275-teach-qa-corrections-…` (= D5 site-URL setting). Emulation ≠ real device;
 WebKit ≠ iOS Safari. Evidence: session scratchpad `qa033/stg3/`.
+
+## Round 4 — approved Staging actions G1, G2a, G2b (2026-10-14 06:10–06:28 UTC)
+
+Owner approval: "INNERDWES — TASK 033 STAGING APPROVALS" (Staging only). Production, `main`, Stripe (off), tr/it gate
+unchanged; no real customer data touched; no credential reset (G3 Option B: owner holds the QA password). Evidence:
+session scratchpad `g1/`, `g2/` (0600), `qa033/stg5/`, `qa033/stg6/`.
+
+### G1 — commercially-unavailable 404 test: PASS, restored
+
+| Step | Result |
+|---|---|
+| Pre-change snapshot (REST, 0600 `g1/before-g1.json`) | entitlement row identical to the packet values; 0 subscriptions; tenant `live` |
+| Guard dry-run (SQL, read-only) | change filter **1** row; restore filter 0 rows; 2 rows share the end date (tenant filter excludes `c585f413-…`); no triggers |
+| Bypass | fresh secret (0 before) |
+| Control before | 8/8 PASS (target `/s` + `/g` 200 with Space name; controls 200), Chromium + WebKit |
+| Step 2 (06:16:41Z) | guarded `DO` block: exactly 1 row; `access_ends_at` → 2026-10-06 06:16:41Z |
+| Step 3 | 8/8 PASS: `/s/qa-staging-retreat`, `/g/4eb19601-…` **404 + noindex**, no Space name, 0 `/api/media` requests, both engines; `/s/qa-flow-1h8ve`, `/s/qa-teach-staging` 200 |
+| Step 4 (06:19:13Z) | guarded restore: exactly 1 row; `access_ends_at` and `updated_at` back to `2026-10-03T07:05:32.450636+00:00` / `2027-10-03T07:05:32.450636+00:00` |
+| Step 5 | post-restore snapshot **byte-identical** to the pre-change snapshot; 8/8 PASS (200 again) |
+| Window | unavailable ≈ 2 min 32 s (limit 15 min) |
+| Bypass revoke | 0 active secrets; revoked header 302; local copy deleted; value in 0 evidence files |
+
+### G2a — Staging site address: DONE, verified
+
+| Item | Result |
+|---|---|
+| Before (recorded, 0600 `g2/`) | both records = `https://innerdwes-git-fix-0275-teach-qa-corrections-inner-dwe-s.vercel.app`; full env metadata (44 records, 9 Production) saved |
+| Targets confirmed | records `AbjueOWmjqDQY5eE` (SITE_URL), `wPHMblsr1yFkI5xb` (APP_URL): Preview branch `fix/027.5-teach-qa-corrections` + custom env `staging` (`env_fTINl69sF95hUnVgvL8Evl95HlAv`, branch matcher `feat/task-028-guest-performance`) |
+| Change | value-only PATCH → `https://innerdwes-env-staging-inner-dwe-s.vercel.app`; metadata diff: only these 2 records, only `updatedAt`; targets/branch/custom env unchanged; 0 records added; **0 Production records changed** |
+| Redeploy | `182f47e` (clean detached worktree) → **`dpl_BV2H4q1emg3So83NbqvLjHcoHoPi`, `https://innerdwes-1fn3aanxu-inner-dwe-s.vercel.app`**, READY, custom env `staging`, alias `innerdwes-env-staging-inner-dwe-s.vercel.app` |
+| Canonical / `og:url` | `/s/qa-flow-1h8ve`, `/s/qa-teach-staging`, `/g/3e6e4978-…` → `innerdwes-env-staging-…` (alias and deployment URL) |
+| Share Cards | `og:image` → `innerdwes-env-staging-…/s/<slug>/social/<v>`; 200 `image/png`; bytes/sha identical to round 3 (Flow 1,428,997 `8e06245070a272e9`, Teach 1,251,030 `72355afff56122e6`) |
+| Generated links | Teach page's generated Flow guest links (`teach/retreats.ts`): old host → `innerdwes-env-staging-…`; robots `Sitemap:` and every sitemap `<loc>` → new host; old host in HTML 0, in client JS 0 (origin is server-rendered) |
+| QR codes / Studio "Guest App link" | same server constant (`GUEST_PUBLIC_ORIGIN` = SITE_URL on Staging) as canonical; direct Studio check needs the QA login → owner (iPhone I-12, I-15) |
+| Browsers | Chromium + WebKit: 200, `og:image` + canonical on new host, 0 console errors |
+| Unchanged, pre-existing | marketing `/` has no canonical and its file-based `og:image` uses the deployment's own host — same on the previous build `4iqe9trhs` (Next.js/Vercel preview behaviour), not a G2a effect |
+| Bypass revoke | 0 active secrets; revoked header 302; local copy deleted; value in 0 evidence files |
+| Rollback | PATCH both records back to the recorded value + redeploy `182f47e`, or redeploy from `innerdwes-4iqe9trhs` (old value baked in) |
+
+### G2b — Supabase Auth redirect allow-list: DONE, verified
+
+Staging project `kkqjsspxupyxytddiumf` dashboard → Authentication → URL Configuration: added
+`https://innerdwes-env-staging-inner-dwe-s.vercel.app/**`. After reload: **2 entries** (existing
+`https://innerdwes-git-feat-time-to-teach-integration-inner-dwe-s.vercel.app/**` preserved); Site URL **unchanged**
+(`https://innerdwes-git-feat-time-to-teach-integration-inner-dwe-s.vercel.app`). No authentication email sent.
+Rollback: delete the added entry. (Dashboard banner at the time: Supabase "investigating a technical issue" — no effect
+observed.)

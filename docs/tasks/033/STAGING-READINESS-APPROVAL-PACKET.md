@@ -6,8 +6,8 @@ and QA evidence is preserved in `STAGING-QA-REPORT.md` (rounds 1–3) and the se
 
 | Gate | Status |
 |---|---|
-| G1 404 SQL | **AWAITING APPROVAL of the exact SQL below.** Not executed |
-| G2 site address | Read-only checks **done** (allow-list + all consumers). **AWAITING APPROVAL.** Nothing changed |
+| G1 404 SQL | **DONE 2026-10-14** — PASS, restored byte-identical (`STAGING-QA-REPORT.md` round 4) |
+| G2 site address | **G2a + G2b DONE 2026-10-14** — Staging now `innerdwes-1fn3aanxu` (`182f47e`); Supabase Site URL unchanged (round 4) |
 | G3 QA login | Option B (owner-controlled). Nothing done by Claude; no reset |
 | G4 bypass | **Done and closed:** 1 temporary secret → baseline run → revoked; **0 active** remain |
 | G5 synthetic data | Snapshot **taken**; exact changes listed; changes not made (owner performs them, Option B) |
