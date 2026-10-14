@@ -10,6 +10,8 @@ import { fr } from "./dictionaries/fr";
 import { he } from "./dictionaries/he";
 import { tr } from "./dictionaries/tr";
 import { it as itDictionary } from "./dictionaries/it";
+import { billingIt } from "./dictionaries/billing.it";
+import { adminIt } from "./dictionaries/admin.it";
 
 /**
  * Terminology decisions, pinned.
@@ -265,9 +267,30 @@ describe("Turkish and Italian terminology (pending native review)", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("never addresses anyone informally in Italian", () => {
-    const offenders = values("it").filter(([, v]) => /\b(tu|tuo|tua|tuoi|tue|ti)\b/i.test(v));
+  it("addresses everyone with the informal tu in Italian, never with Lei", () => {
+    // Owner decision 2026-10 (docs/localization/TR-IT-REVIEW-2026-10.md):
+    // Booking, Airbnb, Google, Apple, Stripe and Italian yoga sites all use
+    // tu. The guard covers the shared dictionary AND the account-level
+    // billing and Admin strings, so no Lei form can come back anywhere.
+    // Possessives are banned outright (third-person "suo" is rephrased, so
+    // a stray Lei possessive cannot hide behind it); verbs are the Lei-only
+    // subjunctive imperatives that have no tu reading.
+    const lei = /\b(lei|suo|sua|suoi|sue)\b/i;
+    const leiImperative = /\b(inserisca|scelga|aggiunga|apra|attenda|chieda|condivida|disdica|scriva|esegua|contatti pure|ci contatti|ci racconti|mi scriva)\b/i;
+    const all = [
+      ...values("it"),
+      ...Object.entries(billingIt).map(([key, value]) => [`billing.${key}`, value] as const),
+      ...Object.entries(adminIt).map(([key, value]) => [`admin.${key}`, value] as const),
+    ];
+    expect(all.length).toBeGreaterThan(1900);
+    const offenders = all.filter(([, v]) => lei.test(v) || leiImperative.test(v)).map(([k]) => k);
     expect(offenders).toEqual([]);
+    // And the tu voice is really there, in the Studio, the guest app and billing.
+    expect(translate("it", "studio", "saveFailed")).toContain("Riprova.");
+    expect(translate("it", "common", "languageHelp")).toContain("il tuo Space");
+    expect(translate("it", "flow", "enterAccessCode")).toMatch(/^Inserisci /);
+    expect(billingIt.perSpaceNote).toMatch(/\bPuoi\b/);
+    expect(adminIt.you).toBe("(tu)");
   });
 
   it("names Facilities after rooms, not equipment (as R1)", () => {

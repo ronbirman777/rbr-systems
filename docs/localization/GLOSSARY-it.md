@@ -119,3 +119,46 @@ Items for native review (P5):
 9. `common.live` "Online", `flow.live` "Dal vivo", `chargeAdditional` "A pagamento".
 10. Localised examples (`retreatCurrencyPlaceholder` "es. EUR", `classPricePlaceholder` "15 € · carnet 5 lezioni 65 €", `locationLinePlaceholder` "Milano · …").
 11. ~~Intl range output for it zero-pads the day across months ("14 ott – 03 nov 2026")~~ - Node ICU 78 behaviour (browsers write "3"); **fixed** 2026-10-14 in `formatDateRangeLocalized` (leading zero stripped, TASK 033 D4). Reviewer: confirm "3 gen – 31 mag 2026" reads naturally.
+
+## 2026-10 research-based review (TASK 033 follow-up, branch `i18n/033-tr-it-review`)
+
+Still NOT native-reviewed. Full method, sources and change log: `docs/localization/TR-IT-REVIEW-2026-10.md`.
+
+### Register: **tu** (owner decision 2026-10-14, applied in commit `04f7e39`)
+
+Every live Italian consumer or SaaS interface checked addresses the user with **tu** (pages fetched 2026-10-14):
+Booking.com ("ti bastano pochi click", booking.com/content/about.it.html), Airbnb ("Sei responsabile…", airbnb.it/help/article/2908),
+Google ("Fai clic", support.google.com/calendar/answer/37115?hl=it), Apple ("Tocca Abbonamenti", support.apple.com/it-it/118428),
+Stripe docs ("puoi utilizzare gli sconti", docs.stripe.com/payments/checkout/discounts?locale=it-IT), Shopify ("Il tuo brand", shopify.com/it),
+Notion, Spotify, Microsoft's Italian style guide ("avoids an unnecessarily formal tone"), Italian yoga sites (eventiyoga.it, istitutoiyengaryogafirenze.it,
+yogafestival.it), and even Intesa Sanpaolo, Poste Italiane, INPS and Agenzia delle Entrate. Lei was found only in formal letters/contracts and in one
+non-Italian booking SaaS (Zenamu). Netflix IT mixes both (a negative example).
+
+**Decision (applied):** tu everywhere in the Italian UI: Studio, guest apps, account/billing/Admin and billing e-mails (greeting "Ciao,").
+Buttons keep the tu imperative ("Salva", "Pubblica"). Legal strings changed register only (see `LEGAL-STRINGS-tr-it.md`). Avoid gendered agreement with
+the user. Never "Lei", and no "suo/sua/suoi/sue" at all (third-person uses are rephrased) - enforced by `terminology.test.ts` over the shared, billing and
+Admin dictionaries. Earlier sections of this glossary that say "Lei" are superseded.
+
+### Terminology
+
+| Concept | Decision | Evidence |
+|---|---|---|
+| Retreat | **ritiro** confirmed | "Ritiro Yoga a Favignana", "Cerca o Pubblica Ritiri" (eventiyoga.it, F); "ritiri estivi" (yogafestival.it, F). |
+| Class / teacher | lezione / insegnante confirmed; "maestro" rejected | Iyengar Firenze "Orario corsi", "Insegnanti" (F). |
+| Schedule | Teach "Calendario", Flow "Programma" kept (test-pinned); "Orario" is the studio word for a timetable, open for native review | istitutoiyengaryogafirenze.it (F). |
+| Facilitators | "Guide" kept (test-pinned); sites say "Insegnanti" | eventiyoga.it nav (F). Native review. |
+| Facilities | "Ambienti" kept; "Spazi" would clash with "Space" | no Italian UI label observed. |
+| Share / link | Condividi / Copia link / Chiunque abbia il link confirmed | Google Drive IT (support.google.com/drive/answer/2494822?hl=it, F). |
+| Publish / preview | Pubblica / Anteprima / Bozza confirmed | Notion IT, Wix IT (F/S). |
+| Brand / palette | Brand, palette confirmed ("marchio", "tavolozza" rejected) | shopify.com/it (F), Canva IT (S). |
+| Cancel subscription | "Disdici" kept; Apple/Google/Spotify say "Annulla abbonamento", Netflix "Disdici" | support.apple.com/it-it/118428, support.google.com/googleplay/answer/7018481?hl=it (F). Native/legal review. |
+| Coupon code | "Codice sconto" kept; Stripe docs say "codice promozionale" | docs.stripe.com (F), HubSpot "Aggiungi codice sconto" (S). |
+| Recurrence | "ogni settimana **il** lun, mer" (was "di") | Google Calendar IT "Non si ripete" (F); "il lunedì" pattern not verified. |
+| Library | **libreria** everywhere ("raccolta" removed) | Apple IT "Libreria". |
+| past_due (Admin) | **In ritardo** (was "Scaduto", which means expired) | — |
+| "dal vivo" | removed: means in person; "esempio reale", badge "Adesso" | — |
+| Contractions | "ai miei Space", "dei miei Space" (was "a I miei", "di I miei") | Italian grammar. |
+| Capitalisation | sentence case, lowercase possessive "suo" | Microsoft IT style guide (F). |
+
+Open for native review: tu switch wording; "Guide" vs "Insegnanti"; "Calendario" vs "Orario"; "Disdici" vs "Annulla"; "Codice sconto" vs
+"Codice promozionale"; mixed straight (billing/admin) and typographic (it.ts) apostrophes; "Mettiamoci in contatto" length on a button.
