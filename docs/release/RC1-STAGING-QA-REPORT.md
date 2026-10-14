@@ -203,3 +203,108 @@ Deleting the users would cascade-delete the disabled admin rows; ask if you want
 
 Evidence: `/private/tmp/claude-501/-Users-ronbirman-Desktop-RBR-Project/220dc7e0-cf6b-4803-8d93-512f891783fe/scratchpad/rc1-qa/`
 (`out/` JSON and logs, `shots/`, `before-rc1.json`, `after-rc1.json`, `out/diff.txt`).
+
+## 7. Addendum (2026-10-15): re-check after batch-fix redeploy #1
+
+This is a targeted re-check with the same rules, harness and cleanup pattern as sections 1–6. It used Playwright
+Chromium and WebKit (emulated, not real devices) on an allow-list: the two Staging hosts plus the Staging Supabase host.
+The only blocked host was `vercel.live`.
+
+**Not touched:** Production, `main`, migrations, billing, Stripe and DNS. This run did no deploy or redeploy.
+
+| Item | Value |
+|---|---|
+| Deployment | `dpl_Bq4FLMchTGY6SYw7nY9CHRJCMNNB`, `https://innerdwes-qn2p8nd0h-inner-dwe-s.vercel.app`, READY, custom environment `staging`. Alias `innerdwes-env-staging-inner-dwe-s.vercel.app` (200 on `/s/qa-flow-1h8ve` in both engines) |
+| Commit | `53195cc` (`integration/staging-rc1`). This is `8ed8ea5` plus: D1–D4 (`151a7a5`, `2fceeca`); `fix/033-studio-ux` `f95bf51` (column from 431 px), `f2c39e3` (Teach-style day chips) and `53ae686` (height-aware image `sizes`); and main `b697b6b`/`3df158f`. Vercel metadata commit = `53195cc` |
+
+### Results
+
+| Check | Result | Evidence (`re1/out/`) |
+|---|---|---|
+| **D1** Flow Studio → Stay connected, 320 + 390, both engines: platform `<select>` and URL field | **PASS**: both 16 px (was 13 px) | `studio-d124.json` |
+| **D2** same, horizontal overflow | **PASS**: `scrollWidth` = viewport at 320 and 390. The rightmost control ends at 285 / 355 px | same, `shots/d12-stay-*.png` |
+| **D4** My Spaces confirm dialogs (Delete Space, Replace: both fields, Delete account), 320 + 390, both engines | **PASS**: every field 16 px, no overflow. Each dialog was opened, measured and cancelled; nothing was submitted | same |
+| **D4** preview gate (`/preview-access`) password | **PASS**: 16 px at 320/390, both engines | same |
+| **D3** admin with **two** TOTP factors (synthetic owner, enrolled through the real `/admin/mfa/enroll` page, codes computed by the harness) | **PASS**: **24/24** fresh sign-ins accepted, alternating first/backup factor, 12 per engine (6 per factor per engine). The Auth Admin API showed 2 verified factors. 0 refusals (before the fix: 6 of 13 refused) | `admin-d3.json` |
+| **D3** step-up (TOTP age > 600 s), with the factor **not** used at sign-in | **PASS 4/4**: `?add=1` → `/admin/mfa/verify?stepup=1`; page reads are still allowed; the code is accepted (`aal2`); after that the add-authenticator page opens without a new challenge. Chromium 2/2 (ages 666 s / 671 s), WebKit 2/2 (634 s / 640 s), each factor once per engine. The first WebKit attempt hit a harness navigation race (`goto` interrupted by the idle page's own navigation) and was re-run with a retry | `admin-stepup2-chromium.log`, `admin-stepup2-webkit.json` |
+| Guest shell, Flow + Teach × 320/390/430/431/600/1440 × 2 engines, every tab, Explore sub-screens at 320/390 | **PASS**: 24 shells, 96 tabs, 60 sub-screens, 24 consoles. At ≤ 430 px the app is full width. **From 431 px** it is a centred 430 px column (431: 1–431; 600: 85–515; 1440: 505–935). The bottom nav is inside the column every time. No overflow, no console or page errors | `guest-re1.json` |
+| 404 inside the shell (`/s/<unknown>`, `/g/<unknown uuid>`) × 6 widths × 2 engines | **PASS**: 404 + `noindex`; column = viewport ≤ 430, 430 from 431. No Space data | `site.json` |
+| Access-code screen (code set, then removed, through Studio) × 6 widths × 2 engines | **PASS**: 6 digits (22 px), no content leak, `noindex, nofollow`, same column rule. Wrong code: "That code didn't work". The right code opens the app (codes entered at 390 and 1440 only, to stay under the per-IP limit). After "Disable code" the Space is public | `studio-access.json` |
+| Day navigator (Flow republished with the saved dates 13–17 Oct for this check, then restored) × 320/390/430/431/1440 × 2 engines | **PASS**: 5 chips, each **52 × 69.5 px with a 16 px radius, identical to the Teach strip chip** (Teach measured in the same run). Unselected chips are filled (`#fdfaf4` + hairline). The selected chip is the navigation colour. No "DAY n" text in the chip; "day n" is in each chip's accessible name. The date line reads "Wed 14 Oct · Day 2", and "Thu 15 Oct · Day 3" after choosing day 3. Keyboard: arrows move from the selected day; Home = day 1, End = day 5 | `daychips.json`, `shots/daychips-*.png` |
+| Day navigator in Hebrew (Space language → he, published, then back to en) | **PASS** in both engines: chips run right to left (day 1 on the right), ArrowLeft = next day, `dir=rtl`, chips 52 px | same |
+| Image sharpness: `currentSrc ?w=`, decoded pixels of that render, cover upscale = device px needed / decoded px. 390@3, 430@3, 1440@1, 1440@2, both engines | **PASS**: Teach Home portrait (230×290, `sizes=516px`): `?w=1600` at DPR 3 (0.97), `1280` at DPR 2 (0.81), `640` at DPR 1 (0.81). Flow Today hero (`sizes=498px`): `1600`/`1280`/`640`, 0.67–0.81. Teach "More from" cards (`196px`): 0.60–0.90. Both engines chose the same rung every time. No image was source-limited: the Staging originals are 1920×1080 / 1920×1280 / 1200×800. **Class thumbnails: N/A**, because no class in the QA Teach data has an image | `imgs.json`, `imgs-originals.json` |
+| Legal pages + preview gate | **PASS, unchanged**: the 26 legal/axe entries are identical to the previous run (Terms, Privacy, DPA, Billing v1.1; AUP, Copyright, Subprocessors v1.0; `/v/1.0` archived `noindex`; `/v/1.1` 404 by design; `/terms`, `/privacy` redirect). axe on `/legal` and `/legal/terms`: 0. `/` answers 200 | `site.json` |
+| Share Card | **PASS**: `og:image` 200 `image/png` for both Spaces, on the alias host | `site.json` |
+| axe vs the previous RC1 run | **No new violation caused by this batch.** Same rules: `color-contrast` (serious) and `heading-order` (moderate). Teach Home/Schedule have +1 contrast node: the "Ended" badge, because the 14 Oct class is now in the past. Same token pair. The Flow Explore sub-screens were scanned for the first time; the previous run never reached them. They show the same rules, plus `scrollable-region-focusable` on Facilities and Guidelines (see O10) | `guest-re1.json`, `axe-probe.json` |
+
+Harness notes (not product defects):
+
+- The harness flagged the synthetic contact values `example.com` / `calendly.com` as raw translation keys. They are not.
+- In WebKit, "TypeError: Load failed" appears on `/space` when the harness navigates away from it right after sign-in.
+  It is the abort of an in-flight fetch.
+- First-factor enrolment reached `aal2`. The harness's URL wait stopped at the intermediate `/admin` before the
+  redirect to `/admin/overview`.
+- A step-up deliberately lands on `/admin`, because the `step_up_required` redirect carries no `next`. That was
+  already the behaviour in the previous run.
+
+### New observation (no fix in this batch)
+
+- **O10 (pre-existing, low):** axe `scrollable-region-focusable` (serious) on the Flow Guest Explore → Facilities and
+  Guidelines screens. The screen's own scroll container (`flex-1 overflow-y-auto`) has no focusable child on these
+  text-only pages, so keyboard-only users cannot scroll it.
+  - The code is unchanged in this batch: every `*-screen.tsx` with this container has a 0-line diff `8ed8ea5..53195cc`.
+  - Suggested fix for a later batch: `tabIndex={0}` plus an accessible name on the scroll region.
+
+**New defects: none.** No code change was made, so no gates were re-run.
+
+### Data, cleanup and revocation (verified read-only)
+
+- **Snapshot before:** `re1/before-re1.json`.
+- **Changes made through the UI, then reverted:**
+  - three Flow publishes (en, he, en);
+  - access code enabled, then disabled.
+- **Restored over REST (QA tenant ids only):**
+  - the Flow `published_spaces` row (back to the single 3 Oct day);
+  - Flow `tenants.content_updated_at`;
+  - the one `guest_access_ip_attempts` row this run created was deleted.
+- **Final diff: 0 non-cosmetic differences.** The only remaining differences:
+  - Flow `spaceSettings.updated_at`. Its data is identical: `{"locale":"en","country":"DE","currency":null}`;
+  - `space_guest_access` security counters (`failed_attempts` 15 → 16, `version` 16 → 18). They were deliberately not
+    rolled back.
+
+**Synthetic users and admin rows:**
+
+- What was temporarily changed, as approved:
+  - the automation user `184948ef…` and the owner admin `caa4edf6…` were unbanned, each with a new random password
+    kept in a 0600 file;
+  - the automation user got owner membership on **only** the two QA Spaces;
+  - the owner `admin_users` row was re-enabled, with an `admin.grant` audit row (`bootstrap-staging-rc1-recheck1`);
+  - 2 TOTP factors were enrolled through the real page.
+- `feace8bc…` (billing_admin) was **not** touched.
+- What cleanup did:
+  - removed the 2 memberships;
+  - deleted 2 of 2 factors;
+  - disabled the owner row again;
+  - wrote `admin.revoke` and `admin.mfa_reset` audit rows (`cleanup-staging-rc1-recheck1`);
+  - banned both users again (`banned_until` 2126).
+- Verified afterwards:
+  - all 3 synthetic users: banned, **0 factors**, **0 memberships**;
+  - `admin_users`: 2 rows, **0 active**;
+  - password sign-in for auto and owner returns `400 user_banned`;
+  - this run wrote exactly 3 audit rows.
+
+**Vercel bypass:**
+
+- One temporary bypass was generated (the project had 0 before). It was used as a header only on the first request per
+  engine and host.
+- It was **revoked**: the project has **0 bypass secrets**, and the revoked header gets **302** on both hosts.
+
+**Scratch files:**
+
+- The bypass, passwords, TOTP keys, session storage states and the Studio access-code panel screenshot were removed
+  with `rm -P`.
+- Before deletion, 256 evidence files were scanned: 0 contained any secret value, and 0 contained a JWT or secret key.
+
+Evidence: `/private/tmp/claude-501/-Users-ronbirman-Desktop-RBR-Project/220dc7e0-cf6b-4803-8d93-512f891783fe/scratchpad/rc1-qa/re1/`
+(`out/` JSON and logs, `shots/`, `before-re1.json`, `after-re1.json`, `out/diff.txt`, `out/cleanup-verify.txt`,
+`out/revoke.txt`).
