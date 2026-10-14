@@ -17,7 +17,7 @@ export function PreviewAccessForm({ next }: { next: string }) {
         required
         autoFocus
         placeholder="Preview password"
-        className="w-full rounded-lg border border-idw-forest/15 bg-white px-3 py-2.5 text-sm outline-none focus:border-idw-sage text-center"
+        className="w-full rounded-lg border border-idw-forest/15 bg-white px-3 py-2.5 text-base sm:text-sm outline-none focus:border-idw-sage text-center"
       />
       {state.error && (
         <p className="text-sm text-red-700" role="alert">

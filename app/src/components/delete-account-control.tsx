@@ -98,7 +98,7 @@ function DeleteAccountDialog({
               value={typedEmail}
               onChange={(e) => setTypedEmail(e.target.value)}
               name="confirmEmail"
-              className="mt-1 w-full rounded-lg border border-idw-forest/20 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-idw-forest/20 px-3 py-2 text-base sm:text-sm"
               autoComplete="off"
             />
           </div>
