@@ -270,7 +270,7 @@ export const adminTr: { [K in keyof typeof adminEn]: string } = {
   sdNext: "Sırada ne var",
   sdNextAction: "Sonraki işlem",
   sdWhen: "Ne zaman",
-  sdExpectedCharge: "Beklenen tahsilat (vergi öncesi)",
+  sdExpectedCharge: "Beklenen tahsilat (vergiler hariç)",
   sdLifecycle: "Yaşam döngüsü zaman damgaları",
   sdPaymentFailedAt: "Ödemenin başarısız olduğu zaman",
   sdGuestSuspendedAt: "Misafir Uygulamasının askıya alındığı zaman",
