@@ -35,7 +35,7 @@ async function withVerifiedFlowLinks(data: TeachGuestData): Promise<TeachGuestDa
 export async function TeachPublishedSpaceScreen({ space }: { space: PublishedTeachRow }) {
   const data = await withVerifiedFlowLinks(parsePublishedTeachSpace(space));
   // TASK 033: the same shared desktop Guest shell as Time to Flow - a
-  // centred phone-width column from 640px up, unchanged on a phone.
+  // centred phone-width column from 431px up, unchanged on a phone.
   return (
     <GuestDesktopShell brand={data.brand} locale={data.locale} loadingProduct="teach" loadingBackground={data.settings.teachStyle.background ?? null}>
       <TeachGuestApp data={data} messages={guestMessages(data.locale)} />
