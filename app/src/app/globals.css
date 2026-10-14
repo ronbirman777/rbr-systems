@@ -218,6 +218,25 @@ body {
   animation: idw-loading-breathe 2.2s ease-in-out infinite;
 }
 
+/* TASK 033 branded loading: a soft halo that breathes out behind the
+   official symbol - transform/opacity only (GPU-friendly), same 2.2s
+   rhythm as the mark; static (and faint) under reduced motion. */
+@keyframes idw-loading-halo {
+  0% {
+    transform: scale(0.82);
+    opacity: 0.32;
+  }
+  70%,
+  100% {
+    transform: scale(1.18);
+    opacity: 0;
+  }
+}
+.idw-loading-halo {
+  animation: idw-loading-halo 2.2s ease-out infinite;
+  will-change: transform, opacity;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .idw-animate-fade-rise {
     animation: none;
@@ -229,6 +248,11 @@ body {
   }
   .idw-loading-breathe {
     animation: none;
+  }
+  .idw-loading-halo {
+    animation: none;
+    opacity: 0.18;
+    will-change: auto;
   }
 }
 
