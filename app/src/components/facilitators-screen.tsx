@@ -94,7 +94,7 @@ export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCAL
                   src={f.imageUrl}
                   alt={f.name}
                   className="w-full h-full"
-                  sizes={FLOW_SIZES.frame}
+                  sizes={FLOW_SIZES.facilitatorCard}
                   style={{ objectPosition: objectPositionStyle(f.imagePosition, FACILITATOR_DEFAULT_POSITION) }}
                   fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                 />

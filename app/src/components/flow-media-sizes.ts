@@ -18,16 +18,55 @@
  * merging them would mean one set of breakpoints pretending to describe
  * both.
  */
-import { GUEST_COLUMN_MAX_WIDTH, columnSizes } from "@/lib/guest/column";
+import { GUEST_COLUMN_MAX_WIDTH } from "@/lib/guest/column";
+import { columnCoverSizes, fixedCoverSizes } from "@/lib/media/coverSizes";
 
 /*
- * Backport of TASK 033 P4 (release/033-ux-fast): above 430px Flow no longer
+ * Backport of TASK 033 P4 (release/033-ux-fast): from `sm` up Flow no longer
  * sits in a 390px device frame but in the shared Guest column
  * (lib/guest/column.ts, at most 430px), so the boxes below derive from it.
+ *
+ * Guest image sharpness: every Flow image is object-fit: cover, so each
+ * entry is HEIGHT-aware (lib/media/coverSizes.ts). Declaring only the box
+ * width made the browser pick a render sized to the width that cover then
+ * stretched to fill the height - the Today hero (430x280) and every short
+ * card were upscaled. Each entry names its box; keep the height in step
+ * with the className at the call site.
  */
+const COLUMN = GUEST_COLUMN_MAX_WIDTH;
+/** A full-width card/hero of the given CSS height (`h-[Npx]`). */
+const frame = (heightPx: number) => columnCoverSizes(COLUMN, 100, heightPx);
+/** A half-width tile (two to a row) of the given CSS height. */
+const tile = (heightPx: number) => columnCoverSizes(COLUMN / 2, 50, heightPx);
+
 export const FLOW_SIZES = {
-  /** Full width of the shell: the viewport on a phone, the column above 430px. */
-  frame: columnSizes(GUEST_COLUMN_MAX_WIDTH, "100vw"),
-  /** Half of it, for the Explore tiles that sit two to a row. */
-  tile: columnSizes(GUEST_COLUMN_MAX_WIDTH / 2, "50vw"),
+  /** Today hero: full width, `h-[280px]`. */
+  todayHero: frame(280),
+  /** Guest-access gate hero: full width, `h-[220px]`. */
+  accessHero: frame(220),
+  /** Team card photo: full width, `h-[300px]`. */
+  facilitatorCard: frame(300),
+  /** Treatment card photo: full width, `h-[200px]`. */
+  treatmentCard: frame(200),
+  /** Meal card photo: full width, `h-[160px]`. */
+  mealCard: frame(160),
+  /** Facilities: the first card is `h-[220px]`, the rest `h-[160px]`. */
+  facilityFeatured: frame(220),
+  facilityCard: frame(160),
+  /** Custom page cover: full width, `h-[180px]`. */
+  customPageCover: frame(180),
+  /** Readings featured card and reading detail cover: full width, `h-[200px]`. */
+  readingFeatured: frame(200),
+  readingCover: frame(200),
+  /** Readings list thumbnail: `w-[88px]`, stretched to the row (min 88px; sized for a row up to 120px). */
+  readingRow: fixedCoverSizes(88, 120),
+  /** Audio list thumbnail: `w-[76px] h-[76px]`. */
+  audioRow: fixedCoverSizes(76, 76),
+  /** Audio player artwork: square, `max-w-[280px]`. */
+  audioArtwork: fixedCoverSizes(280, 280),
+  /** Explore: Meals card `h-[180px]`, Treatments card `h-[200px]`, full width. */
+  exploreMeals: frame(180),
+  exploreTreatments: frame(200),
+  /** Explore: the half-width tiles (and compact Facilities card), `h-[140px]`. */
+  exploreTile: tile(140),
 } as const;

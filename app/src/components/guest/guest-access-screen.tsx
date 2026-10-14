@@ -112,7 +112,7 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
               rather than as a full-resolution original. */}
           <BrandImage
             priority
-            sizes={FLOW_SIZES.frame}
+            sizes={FLOW_SIZES.accessHero}
             src={heroImageUrl}
             alt=""
             className="w-full h-full"

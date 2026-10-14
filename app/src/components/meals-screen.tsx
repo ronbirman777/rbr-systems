@@ -85,7 +85,7 @@ export function MealsScreen({ brand, meals, intro, locale = DEFAULT_LOCALE }: Me
                   src={meal.imageUrl}
                   alt={meal.name}
                   className="w-full h-full"
-                  sizes={FLOW_SIZES.frame}
+                  sizes={FLOW_SIZES.mealCard}
                   style={{ objectPosition: objectPositionStyle(meal.imagePosition) }}
                   fallback="var(--rbr-sand)"
                 />

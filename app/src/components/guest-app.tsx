@@ -225,7 +225,7 @@ export function guestPrefetchItems(props: GuestAppProps, activeTab: TabKey): Med
   const items: MediaPrefetchItem[] = [];
 
   if (activeTab !== "facilitators" && enabledModules.includes("facilitators")) {
-    for (const f of props.facilitators) items.push({ src: f.imageUrl, sizes: FLOW_SIZES.frame });
+    for (const f of props.facilitators) items.push({ src: f.imageUrl, sizes: FLOW_SIZES.facilitatorCard });
   }
 
   if (activeTab !== "explore") {
