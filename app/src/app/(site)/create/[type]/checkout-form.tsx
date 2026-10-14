@@ -5,6 +5,15 @@ import { applyCouponAction, cancelCheckoutAction, startCheckoutAction, type Star
 import { formatMoney } from "@/lib/billing/money";
 import { quoteRows, type QuoteViewLike } from "@/lib/billing/checkoutView";
 import type { Locale } from "@/lib/i18n/locales";
+import { getLegalDocument, legalHref, type LegalDocumentId } from "@/lib/legal/documents";
+
+/**
+ * The documents the checkout line refers to. The documents themselves are
+ * published in English only, so the links carry the registry's English
+ * titles (lang="en") rather than a translation of a title that does not exist.
+ * They open a new tab so the checkout form and its consent ticks are kept.
+ */
+const CHECKOUT_LEGAL_DOCS: readonly LegalDocumentId[] = ["terms", "privacy", "billing"];
 
 export type CheckoutFormLabels = {
   dueToday: string; then: string; firstCycle: string; firstCycles: string; everyCycle: string; perMonth: string;
@@ -132,7 +141,18 @@ export function CheckoutForm({
             aria-describedby={submitError === "consent" ? ids.submitErr : undefined} className="mt-0.5 h-5 w-5 shrink-0 accent-[#192b21]" />
           <span>{labels.consentWithdrawal}</span>
         </label>
-        <p id={ids.terms} className="text-xs text-idw-forest/60">{labels.termsLine}</p>
+        <div id={ids.terms} className="text-xs text-idw-forest/60">
+          <p>{labels.termsLine}</p>
+          <ul className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1" data-testid="checkout-legal-links">
+            {CHECKOUT_LEGAL_DOCS.map((id) => (
+              <li key={id}>
+                <a href={legalHref(id)} target="_blank" rel="noopener" lang="en" hrefLang="en" className="underline underline-offset-2 text-idw-forest/80 hover:text-idw-forest">
+                  {getLegalDocument(id).title}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
 
         {submitError ? <p id={ids.submitErr} role="alert" className="text-sm text-idw-clay-text">{msg(submitError)}</p> : null}
 
