@@ -11,7 +11,7 @@ Search note: sources below were located with web search; page contents were take
 | Billing cycle / period | faturalama dönemi | fatura döngüsü | Netflix TR wording. | https://help.netflix.com/tr/node/54896 |
 | Invoice / receipt | fatura / makbuz | fiş, dekont | "Fiş" is a retail till receipt; "makbuz" fits a payment receipt, "fatura" the tax document. Kept both with slash like source. No claim of e-Arşiv/legal status. | iyzico/Stripe TR docs (general usage) |
 | Payment method | ödeme yöntemi | ödeme aracı | Netflix TR "ödeme yöntemleri". | https://help.netflix.com/tr/node/113408 |
-| Coupon code | kupon kodu | indirim kodu, promosyon kodu | Product is called "coupon" in the UI and admin; "kupon" is commonly understood in Turkish e-commerce. Codes are never translated. "İndirim" used for the discount itself. | https://www.qrcode-tiger.com/tr/stripe-payment-method-qrtiger (general) |
+| Coupon code | indirim kodu (customer-facing billing); kupon (Admin, internal object) | kupon kodu (customer-facing), promosyon kodu | Changed 2026-10 review: Shopify TR checkout labels the field "İndirim kodu" (https://help.shopify.com/tr/manual/checkout-settings/checkout-style). Admin keeps "kupon" because it names the managed object. Codes are never translated. | https://help.shopify.com/tr/manual/discounts |
 | Cancel | iptal et / dönem sonunda iptal et | sonlandır | Spotify/Netflix TR use "iptal". Period-end cancellation phrased explicitly. | https://help.netflix.com/tr/node/407 , https://support.spotify.com/tr/article/how-to-cancel-your-subscription/ |
 | Resume subscription | aboneliği yeniden başlat | devam ettir | Clear action verb; Netflix uses "yeniden başlat" for restart. | https://help.netflix.com/tr/node/407 |
 | Renewal | yenileme / yenilenir | uzatma | Standard in Turkish subscription copy. | Netflix/Spotify TR help |
@@ -116,3 +116,29 @@ Items for native review (P5):
 8. `featuredOnInnerDwes` "InnerDweS'te öne çıkarılma".
 9. MB suffixes "8 MB'tan" / "8 MB'a" (assumes "megabayt").
 10. Localised sample values (`classLocationPlaceholder` "Zeytin Ağacı Stüdyosu · Kadıköy", `classPricePlaceholder` "₺400 · 5 derslik kart ₺1.800").
+
+## 2026-10 research-based review (TASK 033 follow-up, branch `i18n/033-tr-it-review`)
+
+Still NOT native-reviewed. Full method, sources and change log: `docs/localization/TR-IT-REVIEW-2026-10.md`.
+Decisions confirmed or changed by observed usage (F = page fetched, S = search summary only):
+
+| Concept | Decision | Evidence |
+|---|---|---|
+| Retreat | **inziva** confirmed (glossary item 1 can close) | 0 uses of "retreat" in Turkish running text across 12 operator pages; "Mardin Yoga İnzivası" (gunesayyoga.com, F), "Spa Paketleri ve İnzivalar" (mandarinoriental.com/tr, F), "Kış İnzivası" (soultreatstravel.com, F). "Kamp" is the budget register. |
+| Register | formal **siz** in sentences, bare imperative on buttons, confirmed | Google TR help "Saat diliminizi değiştirebilirsiniz" (support.google.com/calendar/answer/37064?hl=tr, F); Airbnb TR "Tarih ekleyin" (F). |
+| Teacher / class / session | eğitmen / ders / seans confirmed | "eğitmen" 38 vs "öğretmen" 9 hits on studio pages (F). |
+| Class timetable | Studio section **Ders programı**; guest tab stays **Program** (length) | "Ders Programı" (guzelbahceyoga.com/dersler, F); Yoga Iatro App Store TR (F). |
+| Meals | **Yemekler** everywhere (billing "öğünler" fixed) | "Yemekler Hakkında" (workshopix, F); "öğün" rare. |
+| Publish / draft / preview | Yayınla / Taslak / Önizleme confirmed | WordPress TR .po (F), Wix TR (F). |
+| Link / share | Bağlantı / Bağlantıyı kopyala / Paylaş confirmed | Google Drive TR (support.google.com/drive/answer/2494822?hl=tr, F). |
+| Check-in / out | Giriş / Çıkış confirmed | Airbnb TR search widget labels (F). |
+| Capacity | Kontenjan confirmed | "Kontenjan sınırlıdır" (yogazone.ist, F). |
+| Dialog cancel | "Vazgeç" for dismiss buttons (billing/admin); `common.cancel` stays **İptal** because it is also the "cancel this class date" button | WordPress TR "Vazgeç" (F); AOSP Calendar "İptal" (F). |
+| Abbreviation suffixes | **MB'den / MB'ye** (was MB'tan / MB'a) | TDK Kısaltmalar: uppercase abbreviations take the suffix of the last letter's reading (tdk.gov.tr, F). |
+| Day number | **"{n}. Gün"** (was "Gün {n}") | Turkish ordinal counting, already used in retreatDatesBody "1. gün". |
+| Live status | Space chip `common.live` **Yayında**; session badge `flow.live` **Sürüyor** | "Canlı" reads as a live broadcast. |
+| Library | **kitaplık** everywhere (kütüphane removed) | Consistency with "Ses kitaplığı". |
+| Treatments | **Terapiler** kept, but OPEN | Spa menus use "Bakımlar" / "Spa hizmetleri" (mandarinoriental, kempinski TR, F); "terapi" covers healing sessions better. Native reviewer to decide. |
+| Withdrawal right | **cayma hakkı** kept, legal review still required | Mesafeli Sözleşmeler Yönetmeliği (secondary sources, S); Apple uses "vazgeçme hakkı" (F). |
+
+New items for native review: "Terapiler" vs "Bakımlar"; "{venue} üzerinden rezervasyon yapın" length on a button; "Şu kadar tekrardan sonra" (`teach.endsAfter`, Google Calendar wording not verified); "MB'den" vs the common colloquial "MB'tan".
