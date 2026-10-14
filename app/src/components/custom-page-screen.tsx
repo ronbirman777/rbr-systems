@@ -26,7 +26,7 @@ export function CustomPageScreen({ brand, page }: CustomPageScreenProps) {
             src={page.imageUrl}
             alt=""
             className="w-full h-full"
-            sizes={FLOW_SIZES.frame}
+            sizes={FLOW_SIZES.customPageCover}
             style={{ objectPosition: objectPositionStyle(page.imagePosition) }}
           />
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.15), transparent 60%)" }} />

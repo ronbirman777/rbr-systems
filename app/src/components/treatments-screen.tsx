@@ -66,7 +66,7 @@ export function TreatmentsScreen({ brand, treatments, locale = DEFAULT_LOCALE }:
                     src={t.imageUrl}
                     alt={t.name}
                     className="w-full h-full"
-                    sizes={FLOW_SIZES.frame}
+                    sizes={FLOW_SIZES.treatmentCard}
                     style={{ objectPosition: objectPositionStyle(t.imagePosition) }}
                     fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                   />

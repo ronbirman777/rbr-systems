@@ -81,7 +81,7 @@ export function AudioScreen({ brand, tracks, locale = DEFAULT_LOCALE }: AudioScr
                   src={a.imageUrl}
                   alt=""
                   className="w-full h-full"
-                  sizes={FLOW_SIZES.tile}
+                  sizes={FLOW_SIZES.audioRow}
                   style={{ objectPosition: objectPositionStyle(a.metadata.imagePosition) }}
                   fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                 />
@@ -195,7 +195,7 @@ export function AudioPlayerScreen({
             src={track.imageUrl}
             alt=""
             className="w-full h-full"
-            sizes={FLOW_SIZES.frame}
+            sizes={FLOW_SIZES.audioArtwork}
             style={{ objectPosition: objectPositionStyle(track.metadata.imagePosition) }}
             fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
           />

@@ -253,7 +253,7 @@ export function guestPrefetchItems(props: GuestAppProps, activeTab: TabKey): Med
   };
 
   if (activeTab !== "facilitators" && enabledModules.includes("facilitators")) {
-    pushGroup(props.facilitators.map((f) => ({ src: f.imageUrl, sizes: FLOW_SIZES.frame })));
+    pushGroup(props.facilitators.map((f) => ({ src: f.imageUrl, sizes: FLOW_SIZES.facilitatorCard })));
   }
 
   if (activeTab !== "explore") {
@@ -286,15 +286,17 @@ export function guestPrefetchItems(props: GuestAppProps, activeTab: TabKey): Med
 
   // Stage 3 tail: the first photo inside each Explore sub-screen - one
   // press past Explore, so only ever background work.
-  const subScreens: [OptionalModuleKey, { imageUrl: string | null }[]][] = [
-    ["meals", props.meals],
-    ["treatments", props.treatments],
-    ["facilities", props.facilities],
+  // Each with its own card's height-aware `sizes` (the first facility is
+  // the taller featured card), so the warmed render is the one displayed.
+  const subScreens: [OptionalModuleKey, { imageUrl: string | null }[], (index: number) => string][] = [
+    ["meals", props.meals, () => FLOW_SIZES.mealCard],
+    ["treatments", props.treatments, () => FLOW_SIZES.treatmentCard],
+    ["facilities", props.facilities, (i) => (i === 0 ? FLOW_SIZES.facilityFeatured : FLOW_SIZES.facilityCard)],
   ];
-  for (const [moduleKey, list] of subScreens) {
+  for (const [moduleKey, list, sizesAt] of subScreens) {
     if (!enabledModules.includes(moduleKey)) continue;
-    const first = list.find((entry) => entry.imageUrl);
-    if (first) items.push({ src: first.imageUrl, sizes: FLOW_SIZES.frame, stage: 3 });
+    const index = list.findIndex((entry) => entry.imageUrl);
+    if (index >= 0) items.push({ src: list[index].imageUrl, sizes: sizesAt(index), stage: 3 });
   }
 
   return items;

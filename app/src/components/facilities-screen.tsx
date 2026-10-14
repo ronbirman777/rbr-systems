@@ -59,7 +59,7 @@ export function FacilitiesScreen({ brand, facilities, locale = DEFAULT_LOCALE }:
                   src={f.imageUrl}
                   alt={f.name}
                   className="w-full h-full"
-                  sizes={FLOW_SIZES.frame}
+                  sizes={i === 0 ? FLOW_SIZES.facilityFeatured : FLOW_SIZES.facilityCard}
                   style={{ objectPosition: objectPositionStyle(f.imagePosition) }}
                   fallback="linear-gradient(160deg, var(--rbr-primary), var(--rbr-primary-dark))"
                 />

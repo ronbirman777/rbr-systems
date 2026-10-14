@@ -26,7 +26,6 @@ import {
 import { TeachIcon, type TeachIconName } from "./teach-icons";
 import { TeachImage } from "./teach-image";
 import { TEACH_SIZES } from "./teach-media-sizes";
-import { GUEST_COLUMN_MAX_WIDTH, columnSizes } from "@/lib/guest/column";
 import { MediaPrefetch } from "@/components/shared/media-prefetch";
 import type { MediaPrefetchItem } from "@/lib/media/prefetch";
 import { TeachClassCard, TeachAvailabilityCard } from "./teach-class-card";
@@ -173,7 +172,8 @@ export function teachPrefetchItems(
   }
 
   if (tab !== "about" && data.settings.teachAbout.showTab) {
-    for (const g of data.gallery) items.push({ src: url(g.imageRef), sizes: TEACH_SIZES.gallery, stage: 3 });
+    // Same alternation as the rendered gallery (every third tile is the tall one).
+    data.gallery.forEach((g, i) => items.push({ src: url(g.imageRef), sizes: i % 3 === 0 ? TEACH_SIZES.galleryTall : TEACH_SIZES.galleryShort, stage: 3 }));
   }
 
   return items;
@@ -384,10 +384,8 @@ function DesktopTopNav({ data, tabs, tab, onTab, url }: { data: TeachGuestData; 
 // Home
 // ---------------------------------------------------------------------------
 
-/** TASK 033: the full-bleed hero spans the Guest column from 640px up, the viewport below. */
-const HERO_FULLBLEED_SIZES = columnSizes(GUEST_COLUMN_MAX_WIDTH, "100vw");
-/** The arch/circle portrait is 230px (arch) or 168px (circle) on the phone layout the column always shows. */
-const HERO_PORTRAIT_SIZES = "230px";
+/** TASK 033: the full-bleed hero spans the Guest column, the viewport below (height-aware: TEACH_SIZES). */
+const HERO_FULLBLEED_SIZES = TEACH_SIZES.heroFullbleed;
 
 /**
  * Responsive sizes use container queries so the Studio preview frame and a
@@ -470,7 +468,7 @@ function Hero({
         };
   return (
     <div className="flex flex-col items-center gap-5 px-6 pt-3 @min-[40rem]:flex-row @min-[40rem]:justify-between @min-[40rem]:gap-10 @min-[40rem]:mx-6 @min-[40rem]:p-10 @min-[40rem]:bg-[var(--tt-surface)] @min-[40rem]:border @min-[40rem]:border-[var(--tt-line)] @min-[40rem]:rounded-[calc(var(--tt-radius-card)+8px)] @4xl:mx-10 @4xl:gap-16 @4xl:px-16 @4xl:py-14">
-      <TeachImage priority sizes={HERO_PORTRAIT_SIZES} src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className={`shrink-0 @min-[40rem]:order-last ${imgClass}`} style={imgStyle} />
+      <TeachImage priority sizes={layout === "circle" ? TEACH_SIZES.heroPortraitCircle : TEACH_SIZES.heroPortraitArch} src={src} focal={p.heroImagePosition} alt={`${data.teacherName}`} fallbackLabel={data.teacherName} className={`shrink-0 @min-[40rem]:order-last ${imgClass}`} style={imgStyle} />
       <div className="@min-[40rem]:flex-1 @min-[40rem]:min-w-0">{identity(false)}</div>
     </div>
   );
@@ -939,7 +937,7 @@ function ScheduleAgenda({
  * render this screen will (see EXPLORE_CARD_SIZES for why that matters).
  */
 // TASK 033: the 210px @4xl portrait is never reached inside the Guest column.
-export const ABOUT_PORTRAIT_SIZES = "150px";
+export const ABOUT_PORTRAIT_SIZES = TEACH_SIZES.aboutPortrait;
 
 function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | null) => string | null }) {
   const a = data.settings.teachAbout;
@@ -1031,7 +1029,7 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
                   src={url(g.imageRef)}
                   focal={g.metadata.imagePosition}
                   alt={g.title || t("teach", "galleryPhoto", { index: i + 1 })}
-                  sizes={TEACH_SIZES.gallery}
+                  sizes={i % 3 === 0 ? TEACH_SIZES.galleryTall : TEACH_SIZES.galleryShort}
                   className={`w-full ${i % 3 === 0 ? "h-[220px] @4xl:h-[300px]" : "h-[140px] @4xl:h-[200px]"}`}
                   style={{ borderRadius: "var(--tt-radius-image)" }}
                 />
@@ -1110,10 +1108,10 @@ function AboutScreen({ data, url }: { data: TeachGuestData; url: (r: string | nu
 // TASK 033: published Teach renders in the shared desktop Guest column from
 // 640px up (one card per row there), so the @4xl px values are gone and the
 // column width takes their place; below 640px the values are unchanged.
-export const EXPLORE_CARD_SIZES = columnSizes(GUEST_COLUMN_MAX_WIDTH, "(min-width: 576px) 50vw, 100vw");
+export const EXPLORE_CARD_SIZES = TEACH_SIZES.exploreCard;
 
 /** The lead tile: two of three columns, plus the gap between them. */
-export const EXPLORE_FEATURE_CARD_SIZES = columnSizes(GUEST_COLUMN_MAX_WIDTH, "(min-width: 576px) 50vw, 100vw");
+export const EXPLORE_FEATURE_CARD_SIZES = TEACH_SIZES.exploreCard;
 
 function ExploreCard({
   title,

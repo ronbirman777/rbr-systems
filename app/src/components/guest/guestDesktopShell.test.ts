@@ -8,7 +8,7 @@ vi.mock("@/lib/teach/fonts", () => ({ TEACH_FONT_VARIABLES: "" }));
 import { PublishedSpaceScreen } from "./published-space-screen";
 import { TeachPublishedSpaceScreen } from "@/components/teach/teach-published-screen";
 import { GuestDesktopShell } from "./guest-desktop-shell";
-import { GUEST_COLUMN_MAX_WIDTH, GUEST_COLUMN_MIN_VIEWPORT, GUEST_COLUMN_MEDIA, columnSizes } from "@/lib/guest/column";
+import { GUEST_COLUMN_MAX_WIDTH, GUEST_COLUMN_MIN_VIEWPORT, GUEST_COLUMN_MEDIA } from "@/lib/guest/column";
 import { FLOW_SIZES } from "@/components/flow-media-sizes";
 import { TEACH_SIZES } from "@/components/teach/teach-media-sizes";
 import { brandFromPublishedTheme } from "@/lib/teach/guestData";
@@ -164,15 +164,13 @@ describe("no 431-639px gap (owner rule: the mobile-app shell on every device)", 
 });
 
 describe("media sizes follow the column (no over-fetch on desktop, unchanged on a phone)", () => {
-  it("Flow's frame and tiles are the column from 431px and the viewport at or below 430px", () => {
-    expect(FLOW_SIZES.frame).toBe(columnSizes(430, "100vw"));
-    expect(FLOW_SIZES.tile).toBe(columnSizes(215, "50vw"));
+  it("Flow's full-width cards are the column from 431px and the viewport at or below 430px (height-aware)", () => {
+    expect(FLOW_SIZES.treatmentCard).toBe(`${GUEST_COLUMN_MEDIA} 430px, max(100vw, 356px)`);
+    expect(FLOW_SIZES.exploreTile).toBe("249px");
   });
 
-  it("Teach keeps its previous phone values at or below 430px", () => {
-    expect(TEACH_SIZES.gallery.endsWith("(min-width: 576px) 33vw, 50vw")).toBe(true);
-    expect(TEACH_SIZES.homeMoreCard.endsWith("45vw")).toBe(true);
-    expect(TEACH_SIZES.retreatCover).toBe(columnSizes(430, "100vw"));
+  it("Teach keeps its phone/column split and never describes the retired desktop layout", () => {
+    expect(TEACH_SIZES.retreatCover).toBe(`${GUEST_COLUMN_MEDIA} 430px, max(100vw, 427px)`);
     for (const value of Object.values(TEACH_SIZES)) expect(value).not.toContain("896px");
   });
 });

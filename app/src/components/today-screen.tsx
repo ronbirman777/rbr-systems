@@ -116,7 +116,7 @@ export function TodayScreen({
             screen stays lazy. */}
         <BrandImage
           priority
-          sizes={FLOW_SIZES.frame}
+          sizes={FLOW_SIZES.todayHero}
           src={heroImageUrl}
           focal={null}
           alt=""
