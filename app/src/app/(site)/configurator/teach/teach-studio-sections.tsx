@@ -67,6 +67,9 @@ import { EXPLORE_MODULE_EMPTY_HINT, exploreModuleStatus } from "@/lib/teach/modu
 import { weekdayLabels, describeAvailability, sortClasses } from "@/lib/teach/schedule";
 import { formatDuration } from "@/lib/modules/duration";
 import { getBrandPresets, presetColorUpdate } from "@/lib/brand/presets";
+import { stashOnPresetApply, teachPaletteSelection } from "@/lib/brand/paletteEditor";
+import { BrandPaletteEditor } from "@/components/studio/brand-palette-editor";
+import { directionOf } from "@/lib/i18n/locales";
 import type { StudioApi, SectionKey } from "./teach-studio";
 import { audioAttached, audioDetached, imageRemoved, imageUploaded, moveItemById, patchExploreCard, patchItemById, patchSlot, type Patch } from "./studioStateUpdates";
 import { SectionHeader } from "@/components/studio/section-header";
@@ -75,7 +78,6 @@ import { createTranslator, translate, type Locale, type TranslationKey } from "@
 import { formatShortDateLocalized, shortWeekdayName } from "@/lib/i18n/datetime";
 import { retreatDateSummary, formatRetreatPrice } from "@/lib/teach/retreats";
 import { formatPublishedAtUtc } from "@/lib/studio/status";
-import { PRESET_LABEL } from "@/lib/brand/presetLabels";
 import {
   Card,
   ColorField,
@@ -504,109 +506,82 @@ export function BrandSection({ api }: Props) {
   const styleLabel = styleLabels(api.locale);
   const style = api.settings.teachStyle;
   const set = (patch: Partial<typeof style>) => api.updateSetting("teachStyle", patch, "brand");
+  // Backport: the existing "Fine-tune navigation and text colours" toggle
+  // and its two fields are kept as they were (same state, same writes),
+  // now under "Advanced colours" inside "Customize colors".
   const [advanced, setAdvanced] = useState(Boolean(api.colors.navigation || api.colors.text));
   const presets = getBrandPresets("teach");
-  const customSelected = !presets.some((p) => p.key === style.preset);
+  const selection = teachPaletteSelection(style.preset);
+  // TASK 033: keep-last-custom (editor state only) - see lib/brand/paletteEditor.ts.
+  const [lastCustom, setLastCustom] = useState<{ colors: typeof api.colors; background: string | null } | null>(null);
   const opt = <T extends string>(keys: readonly T[], labels: Record<T, string>) => keys.map((k) => ({ value: k, label: labels[k] }));
   return (
     <>
       <SectionHeader eyebrow={t("teach", "identityEyebrow")} title={t("teach", "sectionBrand")} intro={t("teach", "brandBody")} />
       <Card title={t("studio", "colourPalette")} description={t("teach", "palettePresetsBody")}>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5" role="radiogroup" aria-label={t("studio", "palettePresets")} data-testid="brand-presets">
-          {presets.map((p) => {
-            const selected = style.preset === p.key;
-            return (
-              <button
-                key={p.key}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                onClick={() => {
-                  const next = presetColorUpdate("teach", p);
-                  api.setColors({ primary: next.primary, accent: next.accent, navigation: next.navigation, text: next.text });
-                  setAdvanced(true);
-                  set({ preset: p.key, background: next.surface });
-                }}
-                className="flex flex-col gap-2 p-3 rounded-xl text-left"
-                style={{ background: p.surface, border: selected ? "2px solid #192B21" : "1px solid #E2DACD" }}
-              >
-                <span className="flex gap-1.5">
-                  <span className="w-6 h-6 rounded-full" style={{ background: p.primary }} />
-                  <span className="w-6 h-6 rounded-full" style={{ background: p.accent }} />
-                </span>
-                <span className="text-[13px] font-semibold" style={{ color: p.text }}>
-                  {t("studio", PRESET_LABEL[p.key])}
-                </span>
-              </button>
-            );
-          })}
-          <button
-            type="button"
-            role="radio"
-            aria-checked={customSelected}
-            onClick={() => set({ preset: "custom" })}
-            className="flex flex-col gap-2 p-3 rounded-xl text-left bg-white"
-            style={{ border: customSelected ? "2px solid #192B21" : "1px dashed #CFC4B4" }}
-          >
-            <span className="flex gap-1.5">
-              <span className="w-6 h-6 rounded-full" style={{ background: api.colors.primary }} />
-              <span className="w-6 h-6 rounded-full" style={{ background: api.colors.accent }} />
-            </span>
-            <span className="text-[13px] font-semibold text-[#192B21]">{t("teach", "customColours")}</span>
-          </button>
-        </div>
-        {/* Shared with Flow - the same component grades both products, so
-            "is this readable" has one answer across InnerDweS. */}
-        <BrandContrastFeedback
+        {/* TASK 033: the shared preset cards + "Customize colors" (Primary /
+            Accent / Background tint), the same editor as the Flow Studio. */}
+        <BrandPaletteEditor
           locale={api.locale}
-          primary={api.colors.primary}
-          accent={api.colors.accent}
-          navigation={api.colors.navigation ?? api.colors.primary}
-          text={api.colors.text ?? api.colors.primary}
-          surface={style.background ?? GUEST_BASE_PALETTE.parchment}
-        />
-        <Grid>
-          <ColorField
+          dir={directionOf(api.locale)}
+          presets={presets}
+          selection={selection}
+          colors={{ primary: api.colors.primary, accent: api.colors.accent, surface: style.background ?? "#F5F0E8" }}
+          hints={{ primary: t("teach", "primaryColourHelpTeach"), accent: t("teach", "accentColourHelpTeach"), surface: t("teach", "backgroundTintHelpTeach") }}
+          onApplyPreset={(p) => {
+            setLastCustom((prev) => stashOnPresetApply(selection, { colors: api.colors, background: style.background ?? null }, prev));
+            const next = presetColorUpdate("teach", p);
+            api.setColors({ primary: next.primary, accent: next.accent, navigation: next.navigation, text: next.text });
+            setAdvanced(true);
+            set({ preset: p.key, background: next.surface });
+          }}
+          onChange={(role, hex) => {
+            if (role === "primary") api.setColors({ ...api.colors, primary: hex });
+            else if (role === "accent") api.setColors({ ...api.colors, accent: hex });
+            if (role === "surface") set({ background: hex, preset: "custom" });
+            else set({ preset: "custom" });
+          }}
+          onRestore={
+            lastCustom && selection.mode !== "custom"
+              ? () => {
+                  api.setColors(lastCustom.colors);
+                  set({ background: lastCustom.background, preset: "custom" });
+                  setLastCustom(null);
+                }
+              : undefined
+          }
+          advanced={
+            <>
+              <Toggle checked={advanced} onChange={(v) => {
+                setAdvanced(v);
+                if (!v) api.setColors({ ...api.colors, navigation: null, text: null });
+              }} label={t("teach", "fineTuneColours")} description={t("teach", "fineTuneColoursBody")} />
+              {advanced ? (
+                <Grid>
+                  <ColorField locale={api.locale} label={t("studio", "navigationColour")} value={api.colors.navigation ?? api.colors.primary} onChange={(hex) => {
+                    api.setColors({ ...api.colors, navigation: hex });
+                    set({ preset: "custom" });
+                  }} />
+                  <ColorField locale={api.locale} label={t("studio", "textColour")} value={api.colors.text ?? api.colors.primary} onChange={(hex) => {
+                    api.setColors({ ...api.colors, text: hex });
+                    set({ preset: "custom" });
+                  }} />
+                </Grid>
+              ) : null}
+            </>
+          }
+        >
+          {/* Shared with Flow - the same component grades both products, so
+              "is this readable" has one answer across InnerDweS. */}
+          <BrandContrastFeedback
             locale={api.locale}
-            label={t("studio", "primaryColour")}
-            value={api.colors.primary}
-            checkWhiteText
-            swatches={presets.map((p) => ({ label: t("studio", PRESET_LABEL[p.key]), hex: p.primary }))}
-            onChange={(hex) => {
-              api.setColors({ ...api.colors, primary: hex });
-              set({ preset: "custom" });
-            }}
-            hint={t("teach", "primaryColourHelpTeach")}
+            primary={api.colors.primary}
+            accent={api.colors.accent}
+            navigation={api.colors.navigation ?? api.colors.primary}
+            text={api.colors.text ?? api.colors.primary}
+            surface={style.background ?? GUEST_BASE_PALETTE.parchment}
           />
-          <ColorField
-            locale={api.locale}
-            label={t("studio", "accentColour")}
-            value={api.colors.accent}
-            swatches={presets.map((p) => ({ label: t("studio", PRESET_LABEL[p.key]), hex: p.accent }))}
-            onChange={(hex) => {
-              api.setColors({ ...api.colors, accent: hex });
-              set({ preset: "custom" });
-            }}
-            hint={t("teach", "accentColourHelpTeach")}
-          />
-        </Grid>
-        <ColorField locale={api.locale} label={t("studio", "backgroundTint")} value={style.background ?? "#F5F0E8"} onChange={(hex) => set({ background: hex, preset: "custom" })} hint={t("teach", "backgroundTintHelpTeach")} />
-        <Toggle checked={advanced} onChange={(v) => {
-          setAdvanced(v);
-          if (!v) api.setColors({ ...api.colors, navigation: null, text: null });
-        }} label={t("teach", "fineTuneColours")} description={t("teach", "fineTuneColoursBody")} />
-        {advanced ? (
-          <Grid>
-            <ColorField locale={api.locale} label={t("studio", "navigationColour")} value={api.colors.navigation ?? api.colors.primary} onChange={(hex) => {
-              api.setColors({ ...api.colors, navigation: hex });
-              set({ preset: "custom" });
-            }} />
-            <ColorField locale={api.locale} label={t("studio", "textColour")} value={api.colors.text ?? api.colors.primary} onChange={(hex) => {
-              api.setColors({ ...api.colors, text: hex });
-              set({ preset: "custom" });
-            }} />
-          </Grid>
-        ) : null}
+        </BrandPaletteEditor>
       </Card>
       <Card title={t("studio", "lookAndFeel")} description={t("teach", "lookAndFeelBody")}>
         {(

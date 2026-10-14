@@ -38,12 +38,14 @@ import { StudioTopBar } from "@/components/studio/studio-top-bar";
 import { StudioMobileDrawer } from "@/components/studio/studio-mobile-drawer";
 import { releaseScrollLock } from "@/lib/studio/scrollLock";
 import { saveStatusLabel, previewDraftLabel, previewDraftCaption, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
-import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
-import { PRESET_LABEL, type PresetLabelKey } from "@/lib/brand/presetLabels";
+import { BrandPaletteEditor } from "@/components/studio/brand-palette-editor";
+import { ColorField } from "@/components/studio/studio-fields";
+import { flowPaletteSelection, stashOnPresetApply } from "@/lib/brand/paletteEditor";
+import { PRESET_LABEL } from "@/lib/brand/presetLabels";
 import { SpaceCountryCard } from "@/components/studio/space-country-card";
 import { SpaceLanguageCard } from "@/components/studio/space-language-card";
 import { BrandContrastFeedback } from "@/components/studio/brand-contrast-feedback";
-import { getBrandPresets, matchBrandPreset, presetColorUpdate } from "@/lib/brand/presets";
+import { getBrandPresets, presetColorUpdate } from "@/lib/brand/presets";
 import { EmptyState } from "@/components/studio/empty-state";
 import { StatusPill } from "@/components/studio/status-pill";
 import { ReadinessChecklist, type ReadinessItem } from "@/components/studio/readiness-checklist";
@@ -252,124 +254,12 @@ const STEP_LABEL_KEYS: Record<
 /** The hidden form the top bar's Republish button submits. */
 const TOP_BAR_PUBLISH_FORM_ID = "studio-top-bar-publish";
 
-const HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
 
-/**
- * One swatch per canonical preset for a colour role. The preset's NAME is
- * carried as a dictionary key (see lib/brand/presetLabels.ts) rather than
- * the English label on the preset data, so the swatch reads in the
- * Space's own language.
- */
-function swatchesFor(role: "primary" | "accent" | "navigation" | "text" | "surface") {
-  return getBrandPresets("retreat").map((p) => ({ labelKey: PRESET_LABEL[p.key], hex: p[role] }));
-}
 
-/**
- * Shared colour picker for every Brand role: swatches taken from the
- * canonical presets (lib/brand/presets.ts - the one registry, no Flow-only
- * palette) plus a free custom-hex input. Only the bound role, value and
- * swatch list differ.
- */
-/**
- * `first` is an explicit flag, not `label === "Primary Color"`.
- * Branching on display text silently stopped working the moment the
- * label was translated, which is exactly the class of bug localization
- * exposes - the first picker simply lost its spacing in he/de.
- */
-function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: { label: string; hint: string; value: string; swatches: readonly { labelKey: PresetLabelKey; hex: string }[]; onChange: (hex: string) => void; locale: Locale; first?: boolean }) {
+/** Preset swatches for one colour role, labelled in the Space's language. */
+function flowSwatchesFor(role: "navigation" | "text", locale: Locale) {
   const { t } = createTranslator(locale);
-  const [draft, setDraft] = useState(value);
-  const [showError, setShowError] = useState(false);
-  // Task 015 UX fix: typing "2D4A3E" (no leading #) is a common, obviously
-  // -intended shorthand for the exact same value - normalized here (not a
-  // second, looser validation rule) so it still only ever commits through
-  // the same HEX_PATTERN check as everything else, and the native
-  // `<input type="color">` swatch (which always needs a real #rrggbb
-  // value) stays in sync either way.
-  const normalizedDraft = /^[0-9a-fA-F]{6}$/.test(draft) ? `#${draft}` : draft;
-  const isValid = HEX_PATTERN.test(normalizedDraft);
-
-  function commit(hex: string) {
-    setDraft(hex);
-    const candidate = /^[0-9a-fA-F]{6}$/.test(hex) ? `#${hex}` : hex;
-    if (HEX_PATTERN.test(candidate)) {
-      setShowError(false);
-      onChange(candidate);
-    } else {
-      // Task 015 UX fix: previously silent - an invalid hex was simply
-      // never applied, with no feedback at all. Now shown inline once the
-      // field has content, without blocking further typing.
-      setShowError(candidate.trim().length > 0);
-    }
-  }
-
-  return (
-    <div>
-      <StudioSectionSub first={first}>{label}</StudioSectionSub>
-      <p className="text-[11px] -mt-2 mb-3" style={{ color: GUEST_BASE_PALETTE.mist }}>
-        {hint}
-      </p>
-      <div className="grid grid-cols-4 gap-2 mb-3">
-        {swatches.map((c) => (
-          <button
-            key={`${c.labelKey}-${c.hex}`}
-            type="button"
-            title={t("studio", c.labelKey)}
-            aria-label={`${t("studio", c.labelKey)} ${c.hex}`}
-            onClick={() => commit(c.hex)}
-            className="flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all"
-            style={{ background: value.toLowerCase() === c.hex.toLowerCase() ? `${GUEST_BASE_PALETTE.forest}14` : "transparent" }}
-          >
-            <span
-              className="w-8 h-8 rounded-lg shadow-sm"
-              style={{ background: c.hex, outline: value.toLowerCase() === c.hex.toLowerCase() ? `2px solid ${GUEST_BASE_PALETTE.forest}66` : "none", outlineOffset: 2 }}
-            />
-            <span className="text-[10px] font-medium" style={{ color: GUEST_BASE_PALETTE.dusk }}>
-              {t("studio", c.labelKey)}
-            </span>
-          </button>
-        ))}
-      </div>
-      <div className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 border" style={{ borderColor: `${GUEST_BASE_PALETTE.sand}99`, background: "white" }}>
-        {/* Task 015 UX fix: a real visual picker (full hue/saturation/
-            brightness, native to the OS/browser) alongside the existing
-            hex text field, not a second custom-built implementation - no
-            `<input type="color">` existed anywhere else in the project to
-            duplicate/diverge from. Bound to the same normalized hex value
-            both ways: opening it starts from the current color, and
-            picking a new one commits through the identical `commit()`
-            path the presets and text field already use. Falls back to
-            the swatch's fixed forest color while `draft` is invalid, so
-            opening the picker from an invalid typed value still starts
-            somewhere sane rather than at an undefined color. */}
-        <input
-          type="color"
-          value={isValid ? normalizedDraft : "#2D4A3E"}
-          onChange={(e) => commit(e.target.value)}
-          aria-label={t("studio", "openColorPicker", { label })}
-          className="w-8 h-8 rounded-md shrink-0 border-0 p-0 cursor-pointer"
-          style={{ background: "none" }}
-        />
-        <input
-          value={draft}
-          onChange={(e) => commit(e.target.value)}
-          onBlur={() => setShowError(!isValid && draft.trim().length > 0)}
-          aria-invalid={showError}
-          aria-label={t("studio", "hexValueOf", { label })}
-          className="flex-1 min-w-0 py-2 text-base sm:text-[13px] outline-none font-mono"
-          style={{ color: GUEST_BASE_PALETTE.forest }}
-        />
-        <span className="text-[10px] shrink-0" style={{ color: GUEST_BASE_PALETTE.mist }}>
-          {t("studio", "customHex")}
-        </span>
-      </div>
-      {showError && (
-        <p className="text-[11px] mt-1.5" style={{ color: "#B23B3B" }} role="alert">
-          {t("studio", "hexHint")}
-        </p>
-      )}
-    </div>
-  );
+  return getBrandPresets("retreat").map((p) => ({ label: t("studio", PRESET_LABEL[p.key]), hex: p[role] }));
 }
 
 type ModuleDescriptionKey =
@@ -1308,15 +1198,22 @@ export function RetreatConfigurator({
   // Guest ground, so an existing Space renders exactly as before.
   const [customSurface, setCustomSurface] = useState<string | null>(initialCustomSurface);
   const [customText, setCustomText] = useState<string | null>(initialCustomText);
-  // Bumped when a Brand preset is applied so the colour pickers re-sync their hex drafts.
-  const [presetNonce, setPresetNonce] = useState(0);
+  // TASK 033: keep-last-custom - the custom colours the organizer left by
+  // picking a preset, offered back by "Restore my custom colours" (editor
+  // state only, never saved on its own).
+  const [lastCustomColors, setLastCustomColors] = useState<{
+    primary: string | null;
+    accent: string | null;
+    navigation: string | null;
+    text: string | null;
+    surface: string | null;
+  } | null>(null);
   const effectivePrimary = customPrimary ?? PALETTES[palette].primary;
   const effectiveSecondary = customSecondary ?? PALETTES[palette].secondary;
   const effectiveNavigation = customNavigation ?? effectivePrimary;
   const effectiveSurface = customSurface ?? GUEST_BASE_PALETTE.parchment;
   const effectiveText = customText ?? effectivePrimary;
-  const activePresetKey =
-    matchBrandPreset("retreat", { primary: customPrimary, accent: customSecondary, navigation: customNavigation, text: customText, surface: customSurface })?.key ?? null;
+  const paletteSelection = flowPaletteSelection({ primary: customPrimary, accent: customSecondary, navigation: customNavigation, text: customText, surface: customSurface });
   const readabilityTextColor = safeTextColor(effectivePrimary);
   const readabilityPasses = meetsAA(effectivePrimary, readabilityTextColor);
   // App Text Color is drawn directly on the app's own light background,
@@ -2331,88 +2228,86 @@ export function RetreatConfigurator({
             <StudioHeading>{t("flow", "brandTitle")}</StudioHeading>
       <StudioIntro>{t("flow", "brandBody")}</StudioIntro>
 
+            {/* TASK 033: the shared preset cards + "Customize colors"
+                (Primary / Accent / Background tint) - the same editor as
+                the Teach Studio. Navigation and text colours are written by
+                a preset and otherwise kept as saved. */}
             <div className="mb-8">
-              <BrandPresetChips
+              <BrandPaletteEditor
                 locale={spaceLocale}
+                dir={spaceDir}
                 presets={getBrandPresets("retreat")}
-                activeKey={activePresetKey}
-                customActive={activePresetKey === null}
-                onCustom={() => document.getElementById("flow-custom-colors")?.scrollIntoView({ block: "nearest", behavior: "smooth" })}
-                onApply={(preset) => {
+                selection={paletteSelection}
+                colors={{ primary: effectivePrimary, accent: effectiveSecondary, surface: effectiveSurface }}
+                hints={{ primary: t("studio", "primaryColourHelp"), accent: t("studio", "accentColourHelp") }}
+                // Backport: the Flow Guest App does not render custom_surface,
+                // so no Background tint control is offered here (a preset
+                // still writes it exactly as before; a saved value is kept).
+                showSurface={false}
+                // Backport: the navigation / text colour pickers Flow already
+                // had stay reachable under "Advanced colours", same writes.
+                advanced={
+                  <>
+                    <ColorField
+                      locale={spaceLocale}
+                      label={t("studio", "navigationColour")}
+                      value={effectiveNavigation}
+                      swatches={flowSwatchesFor("navigation", spaceLocale)}
+                      hint={t("studio", "navigationColourHelpFlow")}
+                      onChange={(hex) => {
+                        setCustomNavigation(hex);
+                        dirty.markDirty("identityAndBrand");
+                      }}
+                    />
+                    <ColorField
+                      locale={spaceLocale}
+                      label={t("studio", "textColour")}
+                      value={effectiveText}
+                      swatches={flowSwatchesFor("text", spaceLocale)}
+                      hint={t("studio", "textColourHelp")}
+                      onChange={(hex) => {
+                        setCustomText(hex);
+                        dirty.markDirty("identityAndBrand");
+                      }}
+                    />
+                  </>
+                }
+                onApplyPreset={(preset) => {
+                  setLastCustomColors((prev) =>
+                    stashOnPresetApply(
+                      paletteSelection,
+                      { primary: customPrimary, accent: customSecondary, navigation: customNavigation, text: customText, surface: customSurface },
+                      prev
+                    )
+                  );
                   const next = presetColorUpdate("retreat", preset);
                   setCustomPrimary(next.primary);
                   setCustomSecondary(next.accent);
                   setCustomNavigation(next.navigation);
                   setCustomText(next.text);
                   setCustomSurface(next.surface ?? null);
-                  setPresetNonce((n) => n + 1);
                   dirty.markDirty("identityAndBrand");
                 }}
+                onChange={(role, hex) => {
+                  if (role === "primary") setCustomPrimary(hex);
+                  else if (role === "accent") setCustomSecondary(hex);
+                  else if (role === "surface") setCustomSurface(hex);
+                  dirty.markDirty("identityAndBrand");
+                }}
+                onRestore={
+                  lastCustomColors && paletteSelection.mode !== "custom"
+                    ? () => {
+                        setCustomPrimary(lastCustomColors.primary);
+                        setCustomSecondary(lastCustomColors.accent);
+                        setCustomNavigation(lastCustomColors.navigation);
+                        setCustomText(lastCustomColors.text);
+                        setCustomSurface(lastCustomColors.surface);
+                        setLastCustomColors(null);
+                        dirty.markDirty("identityAndBrand");
+                      }
+                    : undefined
+                }
               />
-            </div>
-
-            <div id="flow-custom-colors">
-            <ColorPicker
-              locale={spaceLocale}
-              first
-              key={`primary-${presetNonce}`}
-              label={t("studio", "primaryColour")}
-              swatches={swatchesFor("primary")}
-              hint={t("studio", "primaryColourHelp")}
-              value={effectivePrimary}
-              onChange={(hex) => {
-                setCustomPrimary(hex);
-                dirty.markDirty("identityAndBrand");
-              }}
-            />
-            <ColorPicker
-              locale={spaceLocale}
-              key={`accent-${presetNonce}`}
-              label={t("studio", "accentColour")}
-              swatches={swatchesFor("accent")}
-              hint={t("studio", "accentColourHelp")}
-              value={effectiveSecondary}
-              onChange={(hex) => {
-                setCustomSecondary(hex);
-                dirty.markDirty("identityAndBrand");
-              }}
-            />
-            <ColorPicker
-              locale={spaceLocale}
-              key={`navigation-${presetNonce}`}
-              label={t("studio", "navigationColour")}
-              swatches={swatchesFor("navigation")}
-              hint={t("studio", "navigationColourHelpFlow")}
-              value={effectiveNavigation}
-              onChange={(hex) => {
-                setCustomNavigation(hex);
-                dirty.markDirty("identityAndBrand");
-              }}
-            />
-            <ColorPicker
-              locale={spaceLocale}
-              key={`surface-${presetNonce}`}
-              label={t("studio", "backgroundTint")}
-              swatches={swatchesFor("surface")}
-              hint={t("studio", "backgroundTintHelp")}
-              value={effectiveSurface}
-              onChange={(hex) => {
-                setCustomSurface(hex);
-                dirty.markDirty("identityAndBrand");
-              }}
-            />
-            <ColorPicker
-              locale={spaceLocale}
-              key={`text-${presetNonce}`}
-              label={t("studio", "textColour")}
-              swatches={swatchesFor("text")}
-              hint={t("studio", "textColourHelp")}
-              value={effectiveText}
-              onChange={(hex) => {
-                setCustomText(hex);
-                dirty.markDirty("identityAndBrand");
-              }}
-            />
             </div>
 
             <StudioSectionSub>{t("studio", "heroPhotography")}</StudioSectionSub>

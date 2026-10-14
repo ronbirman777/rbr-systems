@@ -10,7 +10,7 @@ import { StatusPill } from "./status-pill";
 import { PublicLinkCard } from "./public-link-card";
 import { QrCodeCard } from "./qr-code-card";
 import { SectionHeader } from "./section-header";
-import { BrandPresetChips } from "./brand-preset-chips";
+import { BrandPaletteEditor } from "./brand-palette-editor";
 import { CollapsibleItemRow } from "./collapsible-item-row";
 import { StudioTopBar } from "./studio-top-bar";
 import { getBrandPresets } from "@/lib/brand/presets";
@@ -68,21 +68,90 @@ describe("shared Studio components", () => {
     expect(html(createElement(StudioHeading, null, "Brand"))).not.toContain("uppercase tracking-[0.14em]");
   });
 
-  it("BrandPresetChips marks the active preset", () => {
+  // TASK 033: BrandPresetChips (aria-pressed chips) was replaced by the
+  // shared BrandPaletteEditor (radio cards) in both Studios.
+  const editor = (selection: { mode: "preset" | "custom" | "default"; selectedKey: string | null }) =>
+    html(
+      createElement(BrandPaletteEditor, {
+        presets: getBrandPresets("retreat"),
+        selection: selection as never,
+        colors: { primary: "#112233", accent: "#445566", surface: "#F5F0E8" },
+        onApplyPreset: () => {},
+        onChange: () => {},
+      })
+    );
+
+  it("BrandPaletteEditor marks exactly the selected preset card, with a non-colour cue", () => {
     const presets = getBrandPresets("retreat");
-    const out = html(createElement(BrandPresetChips, { presets, activeKey: presets[1].key, onApply: () => {} }));
+    const out = editor({ mode: "preset", selectedKey: presets[1].key });
     for (const p of presets) expect(out).toContain(p.label);
-    expect(out.match(/aria-pressed="true"/g)).toHaveLength(1);
-    expect(out).not.toContain("Custom colors");
+    expect(out).toContain('role="radiogroup"');
+    expect(out.match(/aria-checked="true"/g)).toHaveLength(1);
+    expect(out.match(/role="radio"/g)).toHaveLength(8);
+    expect(out).toContain("✓");
+    expect(out).toContain(", Selected</span>");
+    expect(out).not.toContain('data-preset="custom"');
   });
 
-  it("BrandPresetChips shows a separate Custom colors option when asked, active only with no preset", () => {
-    const presets = getBrandPresets("retreat");
-    const custom = html(createElement(BrandPresetChips, { presets, activeKey: null, customActive: true, onCustom: () => {}, onApply: () => {} }));
-    expect(custom).toContain("Custom colors");
-    expect(custom.match(/aria-pressed="true"/g)).toHaveLength(1);
-    const preset = html(createElement(BrandPresetChips, { presets, activeKey: presets[0].key, customActive: false, onCustom: () => {}, onApply: () => {} }));
-    expect(preset.match(/aria-pressed="true"/g)).toHaveLength(1);
+  it("BrandPaletteEditor: preset in use -> Customize colors collapsed; custom in use -> Custom card selected and section open", () => {
+    const preset = editor({ mode: "preset", selectedKey: "forest" });
+    expect(preset).toMatch(/aria-expanded="false"[^>]*aria-controls="/);
+    expect(preset).toMatch(/data-open="false"/);
+    expect(preset).toContain("inert");
+    const custom = editor({ mode: "custom", selectedKey: null });
+    expect(custom).toContain('data-preset="custom"');
+    expect(custom.match(/aria-checked="true"/g)).toHaveLength(1);
+    expect(custom).toMatch(/aria-expanded="true"/);
+    expect(custom).toMatch(/data-open="true"/);
+    // exactly the three custom fields
+    for (const label of ["Primary colour", "Accent colour", "Background tint"]) expect(custom).toContain(label);
+    expect(custom).not.toContain("Navigation colour");
+    expect(custom).not.toContain("Text colour");
+  });
+
+  // release/033-ux-fast backport: owner requirements for the Brand editor.
+  it("BrandPaletteEditor: showSurface={false} omits the Background tint field (Flow); default keeps it (Teach)", () => {
+    const base = {
+      presets: getBrandPresets("retreat"),
+      selection: { mode: "custom", selectedKey: null } as never,
+      colors: { primary: "#112233", accent: "#445566", surface: "#F5F0E8" },
+      onApplyPreset: () => {},
+      onChange: () => {},
+    };
+    const flow = html(createElement(BrandPaletteEditor, { ...base, showSurface: false }));
+    expect(flow).toContain("Primary colour");
+    expect(flow).toContain("Accent colour");
+    expect(flow).not.toContain("Background tint");
+    expect(html(createElement(BrandPaletteEditor, base))).toContain("Background tint");
+  });
+
+  it("BrandPaletteEditor: the product's advanced controls sit inside Customize colors behind a collapsed 'Advanced colours' disclosure", () => {
+    const out = html(
+      createElement(BrandPaletteEditor, {
+        presets: getBrandPresets("retreat"),
+        selection: { mode: "custom", selectedKey: null } as never,
+        colors: { primary: "#112233", accent: "#445566", surface: "#F5F0E8" },
+        onApplyPreset: () => {},
+        onChange: () => {},
+        advanced: createElement("p", { "data-testid": "adv-probe" }, "Navigation colour"),
+      })
+    );
+    expect(out).toMatch(/aria-expanded="false" aria-controls="[^"]+"[^>]*data-testid="advanced-colours"/);
+    expect(out).toContain("Advanced colours");
+    // reachable (in the DOM) but collapsed until opened
+    expect(out).toMatch(/<div id="[^"]+" hidden="" data-advanced-open="false"[^>]*><p data-testid="adv-probe">Navigation colour<\/p>/);
+    // the disclosure lives inside the Customize colors section
+    const section = out.indexOf('data-open="true"');
+    expect(section).toBeGreaterThan(-1);
+    expect(out.indexOf("advanced-colours")).toBeGreaterThan(section);
+    // without an advanced slot there is no disclosure
+    expect(editor({ mode: "custom", selectedKey: null })).not.toContain("advanced-colours");
+  });
+
+  it("BrandPaletteEditor: a legacy default Space selects nothing and keeps the section closed", () => {
+    const out = editor({ mode: "default", selectedKey: null });
+    expect(out).not.toContain('aria-checked="true"');
+    expect(out).toMatch(/data-open="false"/);
   });
 
   it("StudioTopBar shows name, badge, save status and the Publish action", () => {

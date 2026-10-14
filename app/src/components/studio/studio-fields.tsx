@@ -254,7 +254,7 @@ export function ColorField({
     <div className="flex flex-col gap-2.5" data-testid={`color-field-${label}`}>
       <Label htmlFor={id}>{label}</Label>
       {swatches ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-0.5 -ms-1.5">
           {swatches.map((s) => (
             <button
               key={s.hex + s.label}
@@ -262,9 +262,15 @@ export function ColorField({
               onClick={() => commit(s.hex)}
               title={s.label}
               aria-label={`${s.label} ${s.hex}`}
-              className="w-8 h-8 rounded-full border border-black/10"
-              style={{ background: s.hex, outline: value.toLowerCase() === s.hex.toLowerCase() ? "2px solid #192B21" : "none", outlineOffset: 2 }}
-            />
+              className="w-11 h-11 inline-flex items-center justify-center rounded-full"
+            >
+              {/* 44px hit area around the 32px dot (release/033-ux-fast). */}
+              <span
+                aria-hidden="true"
+                className="w-8 h-8 rounded-full border border-black/10"
+                style={{ background: s.hex, outline: value.toLowerCase() === s.hex.toLowerCase() ? "2px solid #192B21" : "none", outlineOffset: 2 }}
+              />
+            </button>
           ))}
         </div>
       ) : null}
