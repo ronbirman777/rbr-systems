@@ -93,7 +93,7 @@ export const adminIt: { [K in keyof typeof adminEn]: string } = {
   status_incomplete_expired: "Incompleto (scaduto)",
   status_trialing: "In prova",
   status_active: "Attivo",
-  status_past_due: "Scaduto",
+  status_past_due: "In ritardo",
   status_unpaid: "Non pagato",
   status_canceled: "Disdetto",
   status_paused: "In pausa",
@@ -182,8 +182,8 @@ export const adminIt: { [K in keyof typeof adminEn]: string } = {
   fieldMsg_stateWhy: "indichi il motivo (minimo 5 caratteri)",
 
   // --- Overview metrics ---
-  metric_paidSubscriptions: "Attivi o in prova, non esenti. Quelli scaduti sono conteggiati in Pagamenti non riusciti.",
-  metric_paidSpaces: "Space distinti con un abbonamento non esente e non terminato (inclusi quelli scaduti).",
+  metric_paidSubscriptions: "Attivi o in prova, non esenti. Quelli con pagamento in ritardo sono conteggiati in Pagamenti non riusciti.",
+  metric_paidSpaces: "Space distinti con un abbonamento non esente e non terminato (inclusi quelli con pagamento in ritardo).",
   metric_mrrList: "Valore lordo di listino: somma dei prezzi del piano base degli abbonamenti a pagamento, prima di qualsiasi sconto.",
   metric_mrrCurrent: "Importo ricorrente attuale al netto degli sconti in corso, per gli stessi abbonamenti del valore di listino.",
   metric_discounted: "Abbonamenti a pagamento con uno sconto coupon ancora in corso.",
