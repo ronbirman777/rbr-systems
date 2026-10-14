@@ -1,7 +1,8 @@
 # RC1 on Staging: owner acceptance checklist
 
-This list covers only what is deployed in RC1 (`8ed8ea5`). Items marked **(after fix redeploy)** check the
-`fix/rc1-staging` batch once the coordinator has redeployed it.
+This list covers what is deployed on Staging: `53195cc` (RC1 `8ed8ea5` plus the D1–D4 fixes, the 431 px column, the
+Teach-style day chips and sharper Guest images). Items marked **(fix redeploy #1)** were re-checked automatically on
+2026-10-15 (report section 7). They still need your eyes on a real iPhone.
 
 **Before you start**
 
@@ -12,12 +13,18 @@ This list covers only what is deployed in RC1 (`8ed8ea5`). Items marked **(after
 
 ## Flow Guest App: [/s/qa-flow-1h8ve](https://innerdwes-env-staging-inner-dwe-s.vercel.app/s/qa-flow-1h8ve)
 
-- [ ] On iPhone it fills the screen. On a desktop it is a phone-width column in the middle, with a soft backdrop on
-      both sides.
+- [ ] On iPhone it fills the screen. In any window wider than a large phone (from 431 px, including a tablet or a
+      narrow desktop window) it is a phone-width column in the middle, with a soft backdrop on both sides. There is no
+      in-between stretched layout **(fix redeploy #1)**.
 - [ ] The bottom bar (Today, Schedule, Team, Explore) stays inside the app on desktop. Nothing scrolls sideways.
 - [ ] **Today:** greeting, date, tagline, "What to bring" / "What to expect", and the quote all show.
 - [ ] **Schedule:** sessions show for 3 October. (The retreat dates 13–17 Oct are saved in Studio but not published,
       on purpose.)
+- [ ] **Day chips (optional, needs a Republish of QA Flow):** after a Republish, the retreat days 13–17 Oct show as
+      chips that look like Teach's week strip: rounded, filled, with the weekday and date, and the selected day in the
+      navigation colour. "Day 2" moves to the line under the chips ("Wed 14 Oct · Day 2"). In Hebrew the chips run
+      right to left **(fix redeploy #1)**.
+- [ ] **Images:** on a Retina screen and on iPhone, the Today hero photo is sharp, not soft **(fix redeploy #1)**.
 - [ ] **Explore:** each card opens (Meals, Treatments, Facilities, Arrival information, Guidelines, Questions, Readings,
       Audio, Stay connected, custom pages). Back returns to Explore.
 - [ ] **Treatments:** the price reads "THB 700.00".
@@ -30,6 +37,9 @@ This list covers only what is deployed in RC1 (`8ed8ea5`). Items marked **(after
 
 - [ ] Phone layout with the bottom tabs (Home, Schedule, About Me, Explore) on iPhone and on desktop. Never a wide
       website layout.
+- [ ] **Images:** the teacher portrait on Home, the "More from" cards, and any class photo are sharp on a Retina screen
+      and on iPhone **(fix redeploy #1)**. The QA classes have no photos, so check class thumbnails on a Space that
+      has them.
 - [ ] **Schedule:** the week strip shows 14 days with class counts. Tapping a class opens its details in place (repeat
       rule, description, price "₪65", length).
 - [ ] **Explore:** Readings, Audio, Retreats, Contact and the custom page each open.
@@ -65,9 +75,9 @@ when you tap a field.
   - [ ] Turn the code off again.
 - [ ] **Identity → Language:** switch to עברית and publish, then check the Guest App reads right-to-left. Switch back to
       English and publish.
-- [ ] **Stay connected** on iPhone **(after fix redeploy)**: tapping the platform picker does not zoom the page. At the
+- [ ] **Stay connected** on iPhone **(fix redeploy #1)**: tapping the platform picker does not zoom the page. At the
       smallest phone width the row fits without sideways scrolling.
-- [ ] **My Spaces** confirm boxes (Archive / Replace / Delete) on iPhone **(after fix redeploy)**: typing in them does
+- [ ] **My Spaces** confirm boxes (Archive / Replace / Delete) on iPhone **(fix redeploy #1)**: typing in them does
       not zoom the page.
 
 ## Teach Studio: [/space](https://innerdwes-env-staging-inner-dwe-s.vercel.app/space), then Manage Space on QA Teacher
@@ -90,7 +100,8 @@ Until then, `/admin` shows a plain 404. That is correct.
 - [ ] **Launch & exemptions** shows "Paid checkout: DISABLED". Do not turn it on.
 - [ ] Billing pages show no customer e-mail addresses. Only admin addresses appear (you, the admin list, the audit log).
 - [ ] Add a backup authenticator (header link). Then sign out and sign in with the **backup** several times in a row.
-      Every correct code must be accepted **(after fix redeploy)**.
+      Every correct code must be accepted, with either authenticator **(fix redeploy #1)**. The automated re-check
+      accepted 24 of 24 sign-ins, alternating both factors.
 
 ## Languages
 
