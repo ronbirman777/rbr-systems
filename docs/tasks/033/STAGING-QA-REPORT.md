@@ -168,3 +168,37 @@ the synthetic Flow Space for ~3 min during restore.
 - Rollback (immediately after):
   `update public.space_entitlements set access_ends_at = '2027-10-03T07:05:32.450636+00:00' where tenant_id = '4eb19601-1f88-4753-a13d-989de04ac935' returning access_ends_at;` then re-check 200.
 - Note: `updated_at` on that row will change. Requires explicit owner approval of these exact statements.
+
+## Round 3 — redeploy `182f47e` + read-only Guest QA (2026-10-14)
+
+Owner approval: "INNERDWES — TASK 033 STAGING CONTINUATION" (Staging only). **Production not touched. No merge or push
+to `main`. No migration or SQL (the 404 proposal above is still NOT executed). Staging env/site-URL settings unchanged
+(D5 still open). Stripe inactive.**
+
+| Item | Value |
+|---|---|
+| Commit | `182f47e` (`feat/033-guest-experience`; app delta `e3ed1eb..182f47e` = 13 files: D1–D3 `e293838`, D4 WebKit #418 `caa39b6`, legacy pricing tests; no migrations, config, dependency or env changes) |
+| Deployment | `dpl_EME1Fuq7cxYeDbEdC4AfnETsuy61` — `https://innerdwes-4iqe9trhs-inner-dwe-s.vercel.app`, READY |
+| Target | custom environment `staging`; alias `innerdwes-env-staging-inner-dwe-s.vercel.app` now points at it |
+| Source | clean detached worktree at `182f47e` (`vercel deploy --target=staging --yes`, repo root) |
+| Pre-checks | Staging env names unchanged (same 7 as round 1, no Stripe/Resend/cron); `paid_checkout_enabled = false`; Production latest `innerdwes-cdlnhanhr` unchanged before and after |
+| Rollback | reassign the staging alias / redeploy `e3ed1eb` → `innerdwes-85fff4s07` (READY, kept); older `innerdwes-3i0hzkev6`. No data or schema change to undo |
+| QA access | temporary bypass secret (0600 scratch, never printed) → **revoked**; project has **0** bypass secrets; revoked header → 302; scratch file securely deleted; secret grep over evidence: 0 hits |
+
+Read-only Guest QA (Playwright Chromium + WebKit; NEW `4iqe9trhs` vs PREV `85fff4s07`; GETs, navigation and tab
+clicks only; host allowlist = the two deployments + Staging Supabase):
+
+| Check | Result |
+|---|---|
+| Status codes | PASS — `/s` ×3, `/g` ×3, `/`, `/log-in` 200; unknown slug / `/g` id 404 + `noindex`, no Space text; identical to PREV |
+| Guest rendering (Flow, Teach, Flow2 × 320/390/430/768/1440) | PASS 84/84 on NEW and PREV (shell, overflow, nav, Teach week strip 14 days, tab round trips, prices `THB 700.00` / `€450.00` / `€1,250.50` / free text `₪65`) |
+| Console / hydration | PASS — 0 errors, 0 React #418/#423/#425 on both engines and builds |
+| Loader | PASS — 0 overlay-over-content violations in 24 cold loads (fast + 4G) |
+| Social image | PASS — 200 png 1200×1200, byte-identical to PREV |
+| Site pages | PASS — 0 differing pixels in 32 comparisons (8 pages × 390/1440 × 2 engines); CSS diff = only the D3 `min-[480px]:` utilities |
+| Performance | PASS — no measurable regression: paired NEW−PREV medians (24 pairs) Flow end-of-body +227 ms [IQR −133…+777], Teach +81 [−243…+764]; every IQR straddles 0; transfer +0.2–0.3 KB |
+
+Not exercised (no data / needs login or a Studio change): D1 multi-day duplicate-key fix (Staging Flow has one day),
+D4 German-date WebKit fix (all Staging Guest Spaces are English), Studio D2/D3 rows. Same-as-PREV observation: absolute
+`og:image` host is `innerdwes-git-fix-0275-teach-qa-corrections-…` (= D5 site-URL setting). Emulation ≠ real device;
+WebKit ≠ iOS Safari. Evidence: session scratchpad `qa033/stg3/`.
