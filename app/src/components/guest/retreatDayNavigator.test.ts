@@ -92,7 +92,17 @@ describe("RetreatDayNavigator - Today marker", () => {
     const today = tabs(html).filter((t) => t.includes('data-today="true"'));
     expect(today).toHaveLength(1);
     expect(today[0]).toContain('data-date="2027-10-15"');
-    expect(html.match(/data-today-dot="true"/g)).toHaveLength(1);
+    // TASK 033 addendum D: today is a solid text-colour ring, not the dot -
+    // the dot now means "has activities", as in the Teach strip.
+    expect(today[0]).toContain("border:1px solid var(--rbr-text)");
+    expect(html).not.toContain("data-today-dot");
+  });
+
+  it("dots exactly the days that have activities (Teach parity)", () => {
+    const html = nav({ showToday: true });
+    const dotted = tabs(html).filter((t) => t.includes('data-has-activities="true"')).length;
+    expect(dotted).toBe(days.filter((d) => d.hasActivities).length);
+    expect(html.match(/data-activity-dot="true"/g)?.length ?? 0).toBe(dotted);
   });
 
   it("renders no marker before mount (showToday=false)", () => {

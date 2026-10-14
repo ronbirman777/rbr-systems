@@ -8,6 +8,7 @@ import type { CSSProperties } from "react";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { buildRetreatDays, defaultRetreatDay } from "@/lib/schedule/retreatDays";
+import { formatDateRangeLocalized, formatShortDateLocalized } from "@/lib/i18n/datetime";
 import { dayTabId, RetreatDayHeader, RetreatDayNavigator } from "./guest/retreat-day-navigator";
 export type ScheduleScreenProps = {
   brand: BrandConfig;
@@ -104,14 +105,25 @@ export function ScheduleScreen({
 
   return (
     <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
-      <div className="px-6 pt-8 pb-5">
-        <h1 className="text-[26px] font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
+      {/* TASK 033 addendum D: the Teach schedule header - an eyebrow over a
+          32px display title, 20px edges - with the retreat's own date
+          range as the eyebrow (Teach shows "This week with {name}"). */}
+      <div className="px-5 pt-3 pb-4 flex flex-col gap-1">
+        {days.length > 1 && (
+          <p
+            className="text-[10.5px] font-semibold uppercase tracking-[0.18em]"
+            style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text-subtle)" }}
+          >
+            {formatDateRangeLocalized(days[0].date, days[days.length - 1].date, locale)}
+          </p>
+        )}
+        <h1 className="text-[32px] leading-tight font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
           {t("flow", "navSchedule")}
         </h1>
       </div>
 
       {days.length > 1 && (
-        <div className="mb-5">
+        <div className="mb-4">
           <RetreatDayNavigator
             days={days}
             selected={activeDate}
@@ -121,6 +133,18 @@ export function ScheduleScreen({
             panelId={panelId}
             idPrefix={idPrefix}
           />
+          {/* The selected day spelled out under the strip, as in Teach
+              ("Wed 14 Oct · 1 class"); Flow's second half is its Day n. */}
+          {activeDay && (
+            <p
+              data-selected-day-line="true"
+              className="px-5 mt-4 text-[12px] font-semibold"
+              style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-text-subtle)" }}
+            >
+              {formatShortDateLocalized(activeDay.date, locale)}
+              {activeDay.dayNumber !== null ? ` · ${t("flow", "dayN", { n: activeDay.dayNumber })}` : ""}
+            </p>
+          )}
         </div>
       )}
       {days.length === 1 && activeDay && <RetreatDayHeader day={activeDay} locale={locale} showToday={mounted} />}

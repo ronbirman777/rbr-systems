@@ -12,7 +12,14 @@ import type { RetreatDay } from "@/lib/schedule/retreatDays";
  * ScheduleScreen) in Flow's own --rbr-* tokens: no image, and no class
  * count or booking semantics - a chip is a retreat DAY, never a slot.
  *
- * Each chip: localized short weekday, date number, "DAY n", Today dot.
+ * Each chip: localized short weekday, date number, "DAY n", and - as in
+ * Teach - a dot when the day has something scheduled. TASK 033 addendum D
+ * aligned the rest with the Teach strip: 20px edge padding, a 19px date
+ * number, the selected chip kept in view without re-centring the strip,
+ * and the selected day's date line under the strip (schedule-screen.tsx).
+ * Today (which Teach does not mark) is a solid text-colour ring on its
+ * chip instead of the dot, so the dot means the same thing in both
+ * products.
  * Every string is derived from the "YYYY-MM-DD" itself on a UTC-noon date,
  * so neither the device's locale nor its timezone can move a weekday.
  *
@@ -153,7 +160,10 @@ export function RetreatDayNavigator({
     if (!el || typeof el.scrollIntoView !== "function") return;
     const behavior: ScrollBehavior = firstScroll.current || prefersReducedMotion() ? "auto" : "smooth";
     firstScroll.current = false;
-    el.scrollIntoView({ behavior, block: "nearest", inline: "center" });
+    // "nearest", like a guest scrolling it into view - the strip does not
+    // jump to centre the chip when it is already visible (Teach never moves
+    // its strip at all; Flow keeps the selected/today chip in view).
+    el.scrollIntoView({ behavior, block: "nearest", inline: "nearest" });
   }, [selectedIndex]);
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -170,7 +180,7 @@ export function RetreatDayNavigator({
       aria-label={t("flow", "chooseDay")}
       aria-orientation="horizontal"
       onKeyDown={onKeyDown}
-      className="flex gap-2 overflow-x-auto no-scrollbar px-4 pb-1 overscroll-x-contain"
+      className="flex gap-2 overflow-x-auto no-scrollbar px-5 scroll-px-5 pb-1 overscroll-x-contain"
     >
       {days.map((day, i) => {
         const active = i === selectedIndex;
@@ -192,15 +202,21 @@ export function RetreatDayNavigator({
             tabIndex={active ? 0 : -1}
             data-date={day.date}
             data-today={today ? "true" : undefined}
+            data-has-activities={day.hasActivities ? "true" : undefined}
             onClick={() => onSelect(day.date)}
-            className="shrink-0 w-[56px] h-[72px] min-w-11 min-h-11 flex flex-col items-center justify-center gap-0.5 rounded-2xl transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="shrink-0 w-[56px] py-2 min-w-11 min-h-11 flex flex-col items-center justify-center gap-0.5 rounded-2xl transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
             data-outside-range={dimmed ? "true" : undefined}
             style={{
               background: active ? DAY_CHIP_COLORS.activeSurface : dimmed ? DAY_CHIP_COLORS.outOfRangeSurface : DAY_CHIP_COLORS.surface,
               color: active ? DAY_CHIP_COLORS.activeText : DAY_CHIP_COLORS.number,
               border: active
                 ? "1px solid transparent"
-                : `1px ${dimmed ? "dashed" : "solid"} color-mix(in srgb, var(--rbr-sand) ${dimmed ? 100 : 60}%, transparent)`,
+                : today
+                  ? `1px solid ${DAY_CHIP_COLORS.number}`
+                  : `1px ${dimmed ? "dashed" : "solid"} color-mix(in srgb, var(--rbr-sand) ${dimmed ? 100 : 60}%, transparent)`,
+              // Today while selected: a ring outside the chip, in the page
+              // background then the selected surface, so it reads on any palette.
+              boxShadow: active && today ? `0 0 0 2px var(--rbr-background), 0 0 0 3px ${DAY_CHIP_COLORS.activeSurface}` : undefined,
               outlineColor: "var(--rbr-primary)",
             }}
           >
@@ -211,7 +227,7 @@ export function RetreatDayNavigator({
             >
               {shortWeekdayName(weekdayIndexOf(day.date), locale)}
             </span>
-            <span aria-hidden="true" className="text-[21px] leading-none" style={{ fontFamily: "var(--rbr-font-display)" }}>
+            <span aria-hidden="true" className="text-[19px] leading-none" style={{ fontFamily: "var(--rbr-font-display)" }}>
               {Number(day.date.slice(8, 10))}
             </span>
             <span
@@ -227,9 +243,9 @@ export function RetreatDayNavigator({
             </span>
             <span
               aria-hidden="true"
-              data-today-dot={today ? "true" : undefined}
+              data-activity-dot={day.hasActivities ? "true" : undefined}
               className="w-1 h-1 rounded-full mt-0.5"
-              style={{ background: today ? (active ? "currentColor" : "var(--rbr-primary)") : "transparent" }}
+              style={{ background: day.hasActivities ? (active ? "currentColor" : "var(--rbr-primary)") : "transparent" }}
             />
           </button>
         );
