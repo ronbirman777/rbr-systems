@@ -49,6 +49,10 @@ export const tr: Dictionary = {
 
     // Status
     loading: "Yükleniyor…",
+    // TASK 033: branded loading messages
+    preparingRetreat: "İnzivanız hazırlanıyor…",
+    preparingClasses: "Dersleriniz hazırlanıyor…",
+    openingStudio: "Studio'nuz açılıyor…",
     error: "Bir sorun oluştu.",
     required: "Zorunlu",
     optional: "İsteğe bağlı",

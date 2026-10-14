@@ -1,4 +1,6 @@
 import { InnerDweSMark } from "@/components/brand/wordmark";
+import { LocalizedStatusText } from "@/components/localized-status-text";
+import type { Locale } from "@/lib/i18n/locales";
 
 /**
  * Task 011 (items D/E) - the one shared "something is happening" moment
@@ -17,15 +19,23 @@ import { InnerDweSMark } from "@/components/brand/wordmark";
  * or a pending form state) is responsible for how long it stays mounted;
  * this component never fakes a minimum display duration itself.
  */
-export function LoadingTransition({ message }: { message: string }) {
+export function LoadingTransition({ message, messages }: { message?: string; messages?: Record<Locale, string> }) {
   return (
     <div
       role="status"
       aria-live="polite"
       className="flex-1 flex flex-col items-center justify-center gap-4 py-24 bg-idw-parchment"
     >
-      <InnerDweSMark size={40} className="idw-loading-breathe" />
-      <p className="text-sm font-medium text-idw-forest/70">{message}</p>
+      {/* TASK 033: the same branded mark + halo as the Guest loading screen. */}
+      <span className="relative inline-flex items-center justify-center w-[64px] h-[64px]" aria-hidden="true">
+        <span className="idw-loading-halo absolute inset-0 rounded-full border border-idw-forest" />
+        <InnerDweSMark size={40} className="idw-loading-breathe" />
+      </span>
+      {messages ? (
+        <LocalizedStatusText messages={messages} className="text-sm font-medium text-idw-forest/80" />
+      ) : (
+        <p className="text-sm font-medium text-idw-forest/80">{message}</p>
+      )}
     </div>
   );
 }

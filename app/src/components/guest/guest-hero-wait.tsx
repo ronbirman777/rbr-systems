@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Locale } from "@/lib/i18n";
 import { waitForGuestHero } from "@/lib/guest/heroWait";
 import { GuestLoadingScreen, type GuestLoadingCopy } from "./guest-loading-screen";
+import type { GuestLoaderPalette } from "@/lib/guest/loaderPalette";
 
 /**
  * TASK 033 (D-LD1) - the client half of the branded loading: an overlay in
@@ -19,7 +20,7 @@ import { GuestLoadingScreen, type GuestLoadingCopy } from "./guest-loading-scree
  * never runs. Once revealed it fades out (or disappears instantly if it was
  * not visible) and is then removed.
  */
-export function GuestHeroWait({ locale, copy }: { locale: Locale; copy?: GuestLoadingCopy }) {
+export function GuestHeroWait({ locale, copy, palette }: { locale: Locale; copy?: GuestLoadingCopy; palette?: GuestLoaderPalette }) {
   const ref = useRef<HTMLDivElement>(null);
   const [revealed, setRevealed] = useState<"fade" | "instant" | null>(null);
   const [gone, setGone] = useState(false);
@@ -45,7 +46,7 @@ export function GuestHeroWait({ locale, copy }: { locale: Locale; copy?: GuestLo
   if (gone) return null;
   return (
     <div ref={ref} className="contents">
-      <GuestLoadingScreen locale={locale} copy={copy} variant="overlay" revealed={revealed ?? undefined} />
+      <GuestLoadingScreen locale={locale} copy={copy} palette={palette} variant="overlay" revealed={revealed ?? undefined} />
     </div>
   );
 }

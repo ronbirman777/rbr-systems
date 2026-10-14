@@ -50,6 +50,10 @@ export const es: Dictionary = {
 
     // Status
     loading: "Cargando…",
+    // TASK 033: branded loading messages
+    preparingRetreat: "Preparando tu retiro…",
+    preparingClasses: "Preparando tus clases…",
+    openingStudio: "Abriendo tu Studio…",
     error: "Algo no ha funcionado.",
     required: "Obligatorio",
     optional: "Opcional",

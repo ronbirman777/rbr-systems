@@ -3,6 +3,7 @@ import { DocumentShell, sharedMetadata, sharedViewport } from "../../../document
 import { directionOf } from "@/lib/i18n";
 import { socialSpaceBySlug } from "@/lib/share/publishedSocialSpace";
 import { GuestLoadingScreen } from "@/components/guest/guest-loading-screen";
+import { guestLoaderProduct, loaderPaletteFor, publishedLoaderBackground } from "@/lib/guest/loaderPalette";
 import { localeFromPublishedModules } from "@/lib/spaceSettings";
 import { GUEST_FONT_VARIABLES } from "../../guest-fonts";
 import { guestGate } from "../../guestGate";
@@ -59,7 +60,7 @@ export default async function GuestSlugRootLayout({
   const locale = localeFromPublishedModules(loaded?.modules ?? null);
   return (
     <DocumentShell lang={locale} dir={directionOf(locale)} fontVariables={GUEST_FONT_VARIABLES}>
-      {guestGate(loaded) === "app" ? <Suspense fallback={<GuestLoadingScreen locale={locale} />}>{children}</Suspense> : children}
+      {guestGate(loaded) === "app" ? <Suspense fallback={<GuestLoadingScreen locale={locale} product={guestLoaderProduct(loaded?.row?.product_type)} palette={loaderPaletteFor(publishedLoaderBackground(loaded?.row))} />}>{children}</Suspense> : children}
     </DocumentShell>
   );
 }

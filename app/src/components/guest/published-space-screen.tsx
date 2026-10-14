@@ -195,7 +195,7 @@ export function PublishedSpaceScreen({ space }: { space: PublishedSpaceRow }) {
   // showing the bottom navigation sat below the fold - the "nav floats
   // mid-screen" report.
   return (
-    <GuestDesktopShell brand={brand} locale={locale} as="main" lang={locale} dir={dir} columnClassName="guest-viewport">
+    <GuestDesktopShell brand={brand} locale={locale} as="main" lang={locale} dir={dir} columnClassName="guest-viewport" loadingProduct="retreat">
       <div className="relative flex flex-col overflow-hidden w-full h-dvh" style={{ background: "var(--rbr-background)" }}>
         <GuestApp
           tenantName={space.name}

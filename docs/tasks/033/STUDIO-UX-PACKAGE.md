@@ -251,6 +251,11 @@ Note: Remove now applies on Save (not instantly); unsaved Add/Duplicate/Remove t
     selected and "Customize colors" collapsed; open it, change Primary / Accent / Background tint, Save, reopen;
     pick a preset after custom edits -> "Restore my custom colours" brings them back; Publish -> the Guest App
     uses the new colours (and not before Publish). Hebrew: cards read right-to-left. Then re-check item 9 on Brand.
+11. Branded loading (section 14): on a slow connection open a Teach Space that links a Flow retreat, and a Flow
+    Space. Where a loader appears it shows the InnerDweS symbol with a soft halo plus "Preparing your classes…" /
+    "Preparing your retreat…" on the Space's own background, and hands over without flashing. On a fast
+    connection no loader appears at all. Tap "Manage Space" in My Spaces: "Opening your Studio…" in the account
+    language. With Reduce Motion on, both are static. VoiceOver reads "Loading… Preparing your …" once.
 
 ## 12. Mobile Studio menu (queued item 1)
 
@@ -399,3 +404,62 @@ Tests: `lib/brand/paletteEditor.test.ts` (fixtures for:
 component they tested is gone; the same guarantees are asserted on the new cards and props).
 
 Local fixtures (`qa-flow-brand`, `qa-flow-brand-he`, `qa-teach-brand`) are deleted after QA.
+
+## 14. Branded loading experience (queued item 3)
+
+**What changed (extends the existing loaders, no parallel ones):**
+- `GuestLoadingScreen` (streaming fallback + hero-wait overlay) keeps every D1 guarantee unchanged: the 200 ms delay,
+  the overlay hidden unless it continues a visible fallback, the 1.5 s CSS + JS cap, fixed positioning and the
+  continuity script. It now adds:
+  - the official symbol (`InnerDweSMark`, unchanged geometry, 48px; its existing `on-dark` tone only on a dark
+    ground) with its existing breathe plus a new soft halo ring (`idw-loading-halo`, transform/opacity only, same
+    2.2 s rhythm). Both are static under reduced motion;
+  - a context line from the dictionaries (all 7): Flow "Preparing your retreat…", Teach "Preparing your classes…";
+  - the Space's published ground colour (`lib/guest/loaderPalette.ts`): Teach `teachStyle.background` (its
+    `--tt-bg`); Flow parchment, because that is what the Flow app actually paints. Text is cream/forest, whichever
+    is AA. Before, the loader used `bg-idw-parchment` `#F3EFE7` while both apps paint `#F5F0E8`; now it matches;
+  - `100dvh` + safe-area padding. The status is announced once: `role="status"` `aria-live="polite"` with the
+    hidden "Loading…" + the context line, and the attribution line is `aria-hidden` when a context line is
+    present.
+- Studio route loaders (`configurator/retreat|teach/[tenantId]/loading.tsx`, `space/loading.tsx`) use the same mark +
+  halo. They now say "Opening your Studio…" / "Opening My Spaces…" in the account language instead of hard-coded
+  English. The loading.tsx files stay STATIC (prefetchable, the TASK 031 W3 instant-feedback guarantee): they pass every
+  locale's string (`translateAll`), and `LocalizedStatusText` picks one on the client (cookie `idw_locale` ->
+  browser language -> English, like `getAccountLocale`) via `useSyncExternalStore`. There is no hydration mismatch;
+  the server render is English.
+- Not done (deviation, explained): `aria-busy` was NOT added. On the status element itself it would make screen
+  readers defer the announcement, and the region being loaded does not exist yet while the fallback shows.
+  The symbol's geometry is reconstructed from the Concept 03 board image (see `wordmark.tsx`); **no official vector
+  source is in the repo**, and the geometry was not touched.
+- Figma: not used (the loader reuses the existing symbol; nothing needed designing beyond tokens).
+
+**QA (local; `qa033/ux/loading/`):**
+
+| check | before | after |
+|---|---|---|
+| fast / CDP 4G / CDP slow-3G cold loads, Flow + Teach, 320/390/430/1440 (Chromium) + fast (WebKit): loader shown | never (30 runs) | never (30 runs): no flash |
+| behind a local 900 ms delay proxy in front of the local Supabase (a Teach Space whose render awaits a Flow-link check), 31 runs both engines incl. Hebrew + reduced motion | fallback from ~3.9 s, overlay continues it, 0 overlay-over-content | same timeline, 0 violations; shows symbol + halo + "Preparing your classes…" on `#EAF2F4` (the Space's tint) |
+| reduced motion | mark static | mark + halo `animation-name: none` |
+| Studio loader on My Spaces -> Manage Space (behind the proxy), en / de / he, both engines | "Opening your space…" in every language | "Opening your Studio…", "Dein Studio wird geöffnet …", "פותחים את הסטודיו שלך…" |
+| CLS (max over runs) | 0.0001 | 0.0001 |
+| JS transferred (Guest page) | 307,219 B (Chromium) / 307,621 B (WebKit) | +498 B / +498 B |
+| CSS transferred | 21,457 B | +120 B |
+| extra network requests | - | none (inline SVG, CSS keyframes) |
+| console / hydration errors | 0 | 0 |
+
+Screenshots: `qa033/ux/loading/shots/` (before/after x engine x 390/320/1440 x en/he x motion, plus `studio-*.png`);
+side-by-side `qa033/ux/loading/compare-390.png`; videos `qa033/ux/loading/stream-after/*.webm` and
+`stream-before/*.webm`. Tests: `components/guest/brandedLoading.test.ts` covers:
+- the message in all 7 locales;
+- one announcement;
+- the palette rules + AA text;
+- parchment default;
+- halo transform/opacity-only keyframes + reduced-motion override;
+- fixed/dvh/safe-area;
+- the D1 timing guards;
+- the Studio loaders staying static;
+- the client language pick.
+
+`guestMessages.test.ts`'s source guard was widened to accept the product-aware `guestLoadingCopy(locale,
+loadingProduct)` call. Limits: emulation only (no real iPhone/VoiceOver); the WebKit runs could not use CDP network
+throttling, so WebKit slowness was produced by the delay proxy.

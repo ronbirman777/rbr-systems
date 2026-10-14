@@ -1,4 +1,5 @@
 import { LoadingTransition } from "@/components/loading-transition";
+import { translateAll } from "@/lib/i18n/translateAll";
 
 /**
  * Task 011 (item D): Next.js's route-level loading convention - shown
@@ -10,5 +11,6 @@ import { LoadingTransition } from "@/components/loading-transition";
  * needs manual dismissal.
  */
 export default function Loading() {
-  return <LoadingTransition message="Opening your space…" />;
+  // TASK 033: every language, picked on the client - loading.tsx stays static (prefetchable).
+  return <LoadingTransition messages={translateAll("common", "openingStudio")} />;
 }

@@ -1,4 +1,5 @@
 import { LoadingTransition } from "@/components/loading-transition";
+import { translateAll } from "@/lib/i18n/translateAll";
 
 /**
  * TASK 031 (W3): the instant response when anything navigates to My Spaces.
@@ -11,5 +12,6 @@ import { LoadingTransition } from "@/components/loading-transition";
  * Studio back controls, Create, the logo, and the log-in redirect.
  */
 export default function MySpacesLoading() {
-  return <LoadingTransition message="Opening My Spaces…" />;
+  // TASK 033: every language, picked on the client - loading.tsx stays static (prefetchable).
+  return <LoadingTransition messages={translateAll("studio", "openingMySpaces")} />;
 }

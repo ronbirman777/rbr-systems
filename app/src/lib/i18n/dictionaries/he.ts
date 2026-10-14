@@ -52,6 +52,14 @@ export const he: Dictionary = {
     search: "חיפוש",
 
     loading: "טוען…",
+
+    // TASK 033: branded loading messages
+
+    preparingRetreat: "מכינים את הריטריט שלך…",
+
+    preparingClasses: "מכינים את השיעורים שלך…",
+
+    openingStudio: "פותחים את הסטודיו שלך…",
     error: "משהו השתבש.",
     required: "חובה",
     optional: "לא חובה",

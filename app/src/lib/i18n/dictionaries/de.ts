@@ -41,6 +41,14 @@ export const de: Dictionary = {
     search: "Suchen",
 
     loading: "Wird geladen…",
+
+    // TASK 033: branded loading messages
+
+    preparingRetreat: "Dein Retreat wird vorbereitet …",
+
+    preparingClasses: "Deine Kurse werden vorbereitet …",
+
+    openingStudio: "Dein Studio wird geöffnet …",
     error: "Etwas ist schiefgelaufen.",
     required: "Erforderlich",
     optional: "Optional",

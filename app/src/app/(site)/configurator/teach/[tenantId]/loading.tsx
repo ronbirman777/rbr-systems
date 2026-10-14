@@ -1,4 +1,5 @@
 import { LoadingTransition } from "@/components/loading-transition";
+import { translateAll } from "@/lib/i18n/translateAll";
 
 /**
  * Shown the instant the redirect from Create (or a click on Manage Space)
@@ -6,5 +7,6 @@ import { LoadingTransition } from "@/components/loading-transition";
  * Studio's loading.tsx. Without it the Create screen looked idle for seconds.
  */
 export default function Loading() {
-  return <LoadingTransition message="Opening your studio…" />;
+  // TASK 033: every language, picked on the client - loading.tsx stays static (prefetchable).
+  return <LoadingTransition messages={translateAll("common", "openingStudio")} />;
 }

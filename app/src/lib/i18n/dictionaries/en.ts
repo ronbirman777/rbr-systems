@@ -36,6 +36,10 @@ export const en = {
 
     // Status
     loading: "Loading…",
+    // TASK 033: branded loading messages
+    preparingRetreat: "Preparing your retreat…",
+    preparingClasses: "Preparing your classes…",
+    openingStudio: "Opening your Studio…",
     error: "Something went wrong.",
     required: "Required",
     optional: "Optional",
