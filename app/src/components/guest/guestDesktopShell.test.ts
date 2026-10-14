@@ -21,7 +21,7 @@ import { DEFAULT_PUBLISHED_THEME } from "@/lib/modules/publishedTheme";
  * so their assertions are not ported.
  *
  * vitest has no layout engine, so the geometry itself (a centred <= 430px
- * column from 640px, full width below) is asserted where it lives - the
+ * column from 431px - any window wider than the column - full width at or below 430px) is asserted where it lives - the
  * CSS - and the structure is asserted on the real published screens: both
  * products (and the access-code screen) render inside the SAME column
  * component, with their navigation inside it. Browser evidence at real widths is
@@ -30,7 +30,7 @@ import { DEFAULT_PUBLISHED_THEME } from "@/lib/modules/publishedTheme";
 
 const GLOBALS = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-/** The CSS text outside every @media block, and the text inside the 640px one. */
+/** The CSS text outside every @media block, and the text inside the column (431px) one. */
 function cssScopes(css: string) {
   const mediaStart = css.indexOf(`@media ${GUEST_COLUMN_MEDIA}`);
   expect(mediaStart, "the column breakpoint block exists").toBeGreaterThan(-1);
@@ -133,14 +133,16 @@ describe("both Guest Apps render inside the one shared column", () => {
 describe("the column geometry (globals.css)", () => {
   const { base, desktop } = cssScopes(GLOBALS);
 
-  it("is inert below 640px: no width cap, no backdrop", () => {
+  it("is inert at or below 430px (every phone): no width cap, no backdrop", () => {
     expect(rule(base, ".guest-desktop-shell__column")).not.toContain("max-width");
     expect(rule(base, ".guest-desktop-shell")).not.toContain("background");
     expect(rule(base, ".guest-desktop-shell")).toContain("min-height: 100dvh");
   });
 
-  it("from 640px is a centred, full-height column of at most 430px over the backdrop", () => {
-    expect(GUEST_COLUMN_MIN_VIEWPORT).toBe(640);
+  it("from 431px (any window wider than the column) is a centred, full-height column of at most 430px over the backdrop", () => {
+    expect(GUEST_COLUMN_MIN_VIEWPORT).toBe(431);
+    expect(GUEST_COLUMN_MIN_VIEWPORT).toBe(GUEST_COLUMN_MAX_WIDTH + 1);
+    expect(GUEST_COLUMN_MEDIA).toBe("(min-width: 431px)");
     expect(GUEST_COLUMN_MAX_WIDTH).toBe(430);
     expect(rule(desktop, ".guest-desktop-shell__column")).toContain(`max-width: ${GUEST_COLUMN_MAX_WIDTH}px`);
     expect(rule(desktop, ".guest-desktop-shell__column")).not.toMatch(/(^|[^-])height:/);
@@ -149,13 +151,28 @@ describe("the column geometry (globals.css)", () => {
   });
 });
 
+describe("no 431-639px gap (owner rule: the mobile-app shell on every device)", () => {
+  it("no other media block styles the shell: the column is the only breakpoint", () => {
+    const shellBlocks = [...GLOBALS.matchAll(/@media[^{]*\{[^@]*?\.guest-desktop-shell/g)].map((m) => m[0].slice(0, m[0].indexOf("{")).trim());
+    expect(shellBlocks).toEqual([`@media ${GUEST_COLUMN_MEDIA}`]);
+    expect(GLOBALS).not.toMatch(/@media \(min-width: 640px\)\s*\{\s*\.guest-/);
+  });
+
+  it("every viewport is either a phone (<= 430px, full width) or shows the column", () => {
+    for (const vw of [320, 390, 430, 431, 480, 600, 639, 640, 768, 1440]) {
+      const appWidth = vw >= GUEST_COLUMN_MIN_VIEWPORT ? Math.min(vw, GUEST_COLUMN_MAX_WIDTH) : vw;
+      expect(appWidth, `app width at ${vw}px`).toBeLessThanOrEqual(GUEST_COLUMN_MAX_WIDTH);
+    }
+  });
+});
+
 describe("media sizes follow the column (no over-fetch on desktop, unchanged on a phone)", () => {
-  it("Flow's frame and tiles are the column from 640px and the viewport below", () => {
+  it("Flow's frame and tiles are the column from 431px and the viewport at or below 430px", () => {
     expect(FLOW_SIZES.frame).toBe(columnSizes(430, "100vw"));
     expect(FLOW_SIZES.tile).toBe(columnSizes(215, "50vw"));
   });
 
-  it("Teach keeps its previous phone values below 640px", () => {
+  it("Teach keeps its previous phone values at or below 430px", () => {
     expect(TEACH_SIZES.gallery.endsWith("(min-width: 576px) 33vw, 50vw")).toBe(true);
     expect(TEACH_SIZES.homeMoreCard.endsWith("45vw")).toBe(true);
     expect(TEACH_SIZES.retreatCover).toBe(columnSizes(430, "100vw"));

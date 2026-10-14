@@ -34,7 +34,7 @@ async function withVerifiedFlowLinks(data: TeachGuestData): Promise<TeachGuestDa
 export async function TeachPublishedSpaceScreen({ space }: { space: PublishedTeachRow }) {
   const data = await withVerifiedFlowLinks(parsePublishedTeachSpace(space));
   // The same shared Guest App shell as Time to Flow (backport of TASK 033
-  // P4, column 430px): a centred full-height column from 640px up, so the
+  // P4, column 430px): a centred full-height column from 431px up, so the
   // app's container queries see the column and Teach keeps its phone
   // presentation; unchanged on a phone.
   return (

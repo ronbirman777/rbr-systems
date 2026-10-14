@@ -99,7 +99,7 @@ export function GuestAccessScreen({ tenantId, name, heroImageUrl, logoUrl, vars,
   return (
     // The shared Guest App shell (backport of TASK 033 P4, column 430px):
     // full width on a phone, the same centred full-height column as the
-    // Guest App itself from 640px up (it was a fixed 390x780 device frame).
+    // Guest App itself from 431px up (it was a fixed 390x780 device frame).
     <GuestDesktopShell vars={vars} as="main">
       <div className="relative flex flex-col overflow-hidden w-full flex-1" style={{ background: "var(--rbr-background)" }}>
         {/* Identity hero - same treatment as the real Today hero (photo

@@ -31,8 +31,9 @@
  * 640px up - it renders inside the shared desktop Guest column (at most
  * 430px, lib/guest/column.ts), where its container queries always see a
  * phone-width container. So every value is now "the phone value, evaluated
- * at the 430px column" from 640px up, and exactly the previous value below
- * 640px (where nothing changed). The former @40rem/@4xl clauses described a
+ * at the 430px column" once the column is active (from 431px, i.e. any
+ * window wider than a phone), and exactly the previous phone value at or
+ * below 430px (where nothing changed). The former @40rem/@4xl clauses described a
  * layout the published page no longer shows, and over-fetched for it.
  */
 import { GUEST_COLUMN_MAX_WIDTH as COLUMN, columnSizes } from "@/lib/guest/column";

@@ -21,12 +21,12 @@
 import { GUEST_COLUMN_MAX_WIDTH, columnSizes } from "@/lib/guest/column";
 
 /*
- * Backport of TASK 033 P4 (release/033-ux-fast): from `sm` up Flow no longer
+ * Backport of TASK 033 P4 (release/033-ux-fast): above 430px Flow no longer
  * sits in a 390px device frame but in the shared Guest column
  * (lib/guest/column.ts, at most 430px), so the boxes below derive from it.
  */
 export const FLOW_SIZES = {
-  /** Full width of the shell: the viewport on a phone, the column above `sm`. */
+  /** Full width of the shell: the viewport on a phone, the column above 430px. */
   frame: columnSizes(GUEST_COLUMN_MAX_WIDTH, "100vw"),
   /** Half of it, for the Explore tiles that sit two to a row. */
   tile: columnSizes(GUEST_COLUMN_MAX_WIDTH / 2, "50vw"),

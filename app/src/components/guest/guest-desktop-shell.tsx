@@ -13,10 +13,12 @@ import { deriveThemeVars } from "@/lib/theme/deriveTheme";
  * - over a calm backdrop derived from the Space's theme. Guest content
  * never becomes a full-width desktop website.
  *
- *   - below 640px (Tailwind `sm`) the shell is a no-op wrapper, so every
- *     phone - including phones in landscape up to 639px - renders the
- *     full-width layout it rendered before;
- *   - from 640px the column is at most 430px (GUEST_COLUMN_MAX_WIDTH).
+ *   - up to 430px the shell is a no-op wrapper, so every phone in portrait
+ *     renders the full-width layout it rendered before;
+ *   - from 431px (GUEST_COLUMN_MIN_VIEWPORT = max + 1) - any window wider
+ *     than the column, including a phone in landscape - the column is at
+ *     most 430px (GUEST_COLUMN_MAX_WIDTH). The earlier 640px (`sm`)
+ *     breakpoint left a 431-639px band with a full-width app.
  *   Both values live in globals.css (.guest-desktop-shell) and are mirrored
  *   in lib/guest/column.ts so media `sizes` strings derive from them.
  *

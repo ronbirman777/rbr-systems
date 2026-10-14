@@ -149,10 +149,12 @@ body {
 /*
  * The shared Guest App shell (components/guest/guest-desktop-shell.tsx) -
  * backport of the TASK 033 P4 shell, column 430px (release/033-ux-fast).
- * Below 640px both rules are inert wrappers, so phones render exactly as
- * before. From 640px the published Guest App is a centred column of at most
- * 430px, full window height, over a calm theme-derived backdrop. The two
- * numbers are mirrored by GUEST_COLUMN_MIN_VIEWPORT / GUEST_COLUMN_MAX_WIDTH.
+ * Up to 430px (every phone) both rules are inert wrappers, so phones render
+ * full width exactly as before. From 431px - any window wider than the
+ * column - the published Guest App is a centred column of at most 430px,
+ * full window height, over a calm theme-derived backdrop: there is no
+ * 431-639px band of a wider-than-phone app. The two numbers are mirrored by
+ * GUEST_COLUMN_MIN_VIEWPORT (= max + 1) / GUEST_COLUMN_MAX_WIDTH.
  */
 .guest-desktop-shell {
   flex: 1 1 auto;
@@ -169,7 +171,7 @@ body {
   width: 100%;
   min-width: 0;
 }
-@media (min-width: 640px) {
+@media (min-width: 431px) {
   .guest-desktop-shell {
     align-items: center;
     background: var(--guest-backdrop, var(--idw-parchment));
