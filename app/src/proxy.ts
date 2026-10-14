@@ -5,6 +5,7 @@ import {
   PREVIEW_GATE_PATH,
   isPreviewGateEnabled,
   isPublicGuestPath,
+  isPublicLegalPath,
 } from "@/lib/preview-gate/config";
 import { sha256Hex, timingSafeEqual } from "@/lib/preview-gate/hash";
 import { classifyHostname, PRODUCTION_APEX } from "@/lib/hostname";
@@ -146,6 +147,10 @@ async function checkPreviewGate(
   // direct /s/<slug> URL is - while app.innerdwes.com's root, rewritten
   // to /space, is not. See isPublicGuestPath for the full boundary.
   if (isPublicGuestPath(effectivePathname)) return null;
+  // The public legal documents (Terms, Privacy, ...) must be readable
+  // without an account or the staff password. Exactly /legal, /legal/*,
+  // /terms and /privacy - see isPublicLegalPath for the boundary.
+  if (isPublicLegalPath(effectivePathname)) return null;
   // Task 011A: the previous opengraph-image exemption existed purely so
   // social crawlers could render a link preview for shared marketing
   // links - a marketing convenience, not a technical requirement for the

@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site-url";
 
 /**
- * Only the three public marketing pages are meant to be crawled. Everything
+ * Only the three public marketing pages and the public legal documents
+ * (/legal, /legal/<slug>) are meant to be crawled. Everything
  * else - auth, Creator/configurator, the private preview-access gate, and
  * the UUID-based public guest route (published but not meant to be
  * search-indexed by tenant ID) - is explicitly disallowed rather than left
@@ -12,7 +13,7 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/time-to-heal", "/time-to-elevate"],
+      allow: ["/", "/time-to-heal", "/time-to-elevate", "/legal", "/legal/"],
       disallow: [
         "/sign-up",
         "/log-in",

@@ -239,6 +239,86 @@ describe("proxy() - Task 011A strict site-wide password gate", () => {
     });
   });
 
+  describe("public legal documents stay reachable while the gate is on (exactly /legal, /legal/*, /terms, /privacy)", () => {
+    beforeEach(() => {
+      process.env.INNERDWES_PREVIEW_PASSWORD = TEST_PASSWORD;
+    });
+
+    const legalPaths = [
+      "/legal",
+      "/legal/",
+      "/legal/terms",
+      "/legal/privacy",
+      "/legal/dpa",
+      "/legal/acceptable-use",
+      "/legal/copyright",
+      "/legal/subprocessors",
+      "/legal/billing",
+      "/terms",
+      "/privacy",
+    ];
+
+    it.each(legalPaths)("serves %s without an account or the preview password", async (path) => {
+      const res = await proxy(req(`https://${PRODUCTION_APEX}${path}`, { host: PRODUCTION_APEX }));
+      expectNotGated(res);
+    });
+
+    it("also serves them with a query string or an RSC navigation request", async () => {
+      for (const path of ["/legal/terms?ref=footer", "/legal/privacy?_rsc=abc", "/terms?x=1"]) {
+        const res = await proxy(req(`https://${PRODUCTION_APEX}${path}`, { host: PRODUCTION_APEX }));
+        expectNotGated(res);
+      }
+    });
+
+    it("an unknown /legal/<slug> passes the gate only to reach the route's own 404 (no data behind it)", async () => {
+      const res = await proxy(req(`https://${PRODUCTION_APEX}/legal/not-a-document`, { host: PRODUCTION_APEX }));
+      expectNotGated(res);
+    });
+
+    const lookalikes = [
+      "/legalese",
+      "/legal-notes",
+      "/legals",
+      "/terms-old",
+      "/terms/extra",
+      "/privacy/extra",
+      "/privacy-policy",
+      "/termsofservice",
+      "/api/legal",
+      "/space/legal",
+      "/configurator/legal",
+      "/s",
+      "/sign-up",
+      "/log-in",
+      "/space",
+      "/create",
+      "/",
+      "/time-to-heal",
+      "/time-to-elevate",
+      "/preview-access-legal",
+    ];
+
+    it.each(lookalikes)("keeps %s behind the password", async (path) => {
+      const res = await proxy(req(`https://${PRODUCTION_APEX}${path}`, { host: PRODUCTION_APEX }));
+      expectGatedTo(res, path);
+    });
+
+    it("rejects a dot-segment that tries to walk out of /legal", async () => {
+      const { isPublicLegalPath } = await import("@/lib/preview-gate/config");
+      expect(isPublicLegalPath("/legal/../space")).toBe(false);
+      expect(isPublicLegalPath("/legal/terms")).toBe(true);
+      expect(isPublicLegalPath("/legalx")).toBe(false);
+      expect(isPublicLegalPath("/Legal/terms")).toBe(false);
+    });
+
+    it("on the app host, /legal is public but the app root stays gated", async () => {
+      const legal = await proxy(req(`https://${PRODUCTION_APP}/legal/terms`, { host: PRODUCTION_APP }));
+      expectNotGated(legal);
+      const root = await proxy(req(`https://${PRODUCTION_APP}/`, { host: PRODUCTION_APP }));
+      expectGatedTo(root, "/space");
+    });
+  });
+
   describe("gate disabled (INNERDWES_PREVIEW_PASSWORD unset) - unchanged baseline behavior", () => {
     beforeEach(() => {
       delete process.env.INNERDWES_PREVIEW_PASSWORD;

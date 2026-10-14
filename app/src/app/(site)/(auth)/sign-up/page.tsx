@@ -7,11 +7,39 @@ import { BackToHomeLink } from "@/components/back-to-home-link";
 import { signUp, resendConfirmationEmail, type SignUpState } from "../actions";
 import { CountrySelect } from "@/components/forms/country-select";
 import { PhoneField, type PhoneFieldValue } from "@/components/forms/phone-field";
+import { getLegalDocument, legalHref } from "@/lib/legal/documents";
 
 const initialState: SignUpState = { error: null, checkEmail: false, email: null };
 const INPUT_CLASS =
   "mt-1 w-full rounded-lg border border-idw-forest/15 bg-white px-3 py-2.5 text-base sm:text-sm outline-none focus:border-idw-sage";
 const LABEL_CLASS = "text-xs font-semibold tracking-wide uppercase text-idw-forest/70";
+
+/**
+ * Informational legal notice shown with the Create account button. Text and
+ * links only: it is not a checkbox, does not change what signUp() submits and
+ * records nothing (Production has no signup acceptance table - see the legal
+ * handoff). The links open a new tab so a half-filled form is never lost.
+ */
+function SignUpLegalNotice() {
+  const terms = getLegalDocument("terms");
+  const privacy = getLegalDocument("privacy");
+  const linkClass = "underline underline-offset-2 text-idw-forest";
+  return (
+    <p className="text-xs leading-5 text-idw-forest/75" data-testid="signup-legal-notice">
+      By creating an account you agree to the{" "}
+      <a href={legalHref("terms")} target="_blank" rel="noopener" className={linkClass}>
+        {terms.title}
+        <span className="sr-only"> (opens in a new tab)</span>
+      </a>{" "}
+      and acknowledge the{" "}
+      <a href={legalHref("privacy")} target="_blank" rel="noopener" className={linkClass}>
+        {privacy.title}
+        <span className="sr-only"> (opens in a new tab)</span>
+      </a>
+      . InnerDweS is for people aged 18 and older.
+    </p>
+  );
+}
 
 function CheckEmailState({ email }: { email: string }) {
   const [pending, startTransition] = useTransition();
@@ -190,6 +218,8 @@ export default function SignUpPage() {
           >
             {pending ? "Creating account…" : "Create account"}
           </button>
+
+          <SignUpLegalNotice />
         </form>
 
         <p className="text-sm text-idw-forest/60 mt-6">

@@ -32,6 +32,10 @@
    * text-idw-clay-text usages where the surface behind it is light.
    */
   --idw-clay-text: #8f5844;
+  /* The same clay family, lightened for small text on the dark forest
+   * surface (footer): #c98a72 on --idw-forest measures ~5.2:1, where the
+   * canonical clay is ~3.4:1 and fails WCAG AA for the 9px descriptor. */
+  --idw-clay-on-dark: #c98a72;
 }
 
 @theme inline {
@@ -45,6 +49,7 @@
   --color-idw-graphite: var(--idw-graphite);
   --color-idw-linen: var(--idw-linen);
   --color-idw-clay-text: var(--idw-clay-text);
+  --color-idw-clay-on-dark: var(--idw-clay-on-dark);
 
   /*
    * Three intentional typography roles, not a single global serif swap:

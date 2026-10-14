@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BASE_MONTHLY_PRICE_USD, DONE_FOR_YOU_SETUP_PRICE_USD } from "@/lib/commercial/pricing";
+import { getLegalDocument, legalHref } from "@/lib/legal/documents";
 
 /**
  * Approved commercial direction only - no invented limits, quotas, or
@@ -106,6 +107,11 @@ export function PricingSection() {
         <p className="font-ui text-xs text-idw-forest/40 mt-3 max-w-lg mx-auto leading-relaxed">
           When a Time to Flow subscription ends, the public guest space goes offline at the end of the billing
           period - your content stays saved in your account, ready to reactivate whenever you return.
+        </p>
+        <p className="font-ui text-xs text-idw-forest/70 mt-3 max-w-lg mx-auto leading-relaxed">
+          <Link href={legalHref("billing")} className="underline underline-offset-2 hover:text-idw-forest">
+            {getLegalDocument("billing").title}
+          </Link>
         </p>
       </div>
     </section>
