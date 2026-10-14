@@ -866,6 +866,10 @@ export const en = {
     stepScheduleTitle: "Build your schedule",
     stepScheduleBody: "Add and arrange sessions for each day of your retreat. Your guests see this on the Schedule screen.",
     editSession: "Edit session",
+    // TASK 033: Duplicate session + out-of-range hint
+    duplicateSession: "Duplicate",
+    duplicateSessionLabel: "Duplicate session",
+    sessionsOutsideRetreatDates: "{count} of your sessions fall outside the retreat dates, so guests won't see them in the schedule. Move them into the dates, or change the dates.",
     sessionTitle: "Session title",
     sessionTitlePlaceholder: "e.g. Morning Yoga Flow",
     facilitator: "Facilitator",

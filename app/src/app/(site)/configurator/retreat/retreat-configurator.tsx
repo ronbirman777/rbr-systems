@@ -10,7 +10,9 @@ import { ModuleCoverPhotoField } from "@/components/module-cover-photo-field";
 import { FocalPointPicker } from "@/components/focal-point-picker";
 import { objectPositionStyle, type ImagePosition } from "@/lib/modules/imagePosition";
 import { persistNewItemStub, persistItemRemoval, enqueueItemsOp } from "@/lib/modules/persistItem";
-import { persistNewScheduleItemStub, persistScheduleItemRemoval } from "@/lib/modules/persistSchedule";
+import { afterScheduleSave, noteScheduleRemoval, schedulePersistenceFrom, scheduleIdsToDelete, type SchedulePersistence } from "@/lib/schedule/scheduleSave";
+import { DEFAULT_SESSION_MINUTES, duplicateScheduleItem, followDuration, startTimePatch, suggestEndTime } from "@/lib/schedule/sessionTimes";
+import { countOutsideRetreatDates } from "@/lib/schedule/retreatDays";
 import { HomeStep } from "./home-step";
 import { MealsStep } from "./meals-step";
 import { GuidelinesStep } from "./guidelines-step";
@@ -153,7 +155,8 @@ function blankScheduleItem(): EditableScheduleItem {
     id: crypto.randomUUID(),
     date: new Date().toISOString().slice(0, 10),
     startTime: "09:00",
-    endTime: null,
+    // TASK 033: a new session suggests a one-hour slot (09:00 -> 10:00).
+    endTime: suggestEndTime("09:00", DEFAULT_SESSION_MINUTES),
     title: "",
     facilitator: null,
     location: null,
@@ -474,9 +477,10 @@ function studioDayStrip(dateIso: string, locale: Locale): { weekday: string; day
  * dates already present in the schedule, not a hardcoded week) plus a
  * session list that expands into an inline edit panel on demand, instead
  * of every field always being visible at once. Same underlying state/
- * persistence (schedule/setSchedule/updateScheduleItem, the per-item
- * persistScheduleItemRemoval/persistNewScheduleItemStub queue, and
- * handleSaveSchedule's bulk save) as before - purely a visual/interaction
+ * persistence (schedule/updateScheduleItem and handleSaveSchedule's bulk
+ * save; since TASK 033 addendum B a new or duplicated session lives only
+ * in the editor until Save, and Save deletes only the sessions removed
+ * here) as before - purely a visual/interaction
  * restyle, not a data-model change. Category/End time/Notes are exposed
  * here for the first time even though the underlying fields already
  * existed on EditableScheduleItem - closing a real editor gap, not
@@ -485,21 +489,28 @@ function studioDayStrip(dateIso: string, locale: Locale): { weekday: string; day
 function ScheduleEditor({
   locale,
   schedule,
-  setSchedule,
+  addScheduleItem,
+  removeScheduleItem,
   updateScheduleItem,
-  tenantId,
   scheduleState,
   schedulePending,
   handleSaveSchedule,
   goToStep,
   datesPanel,
+  retreatStartDate = null,
+  retreatEndDate = null,
 }: {
   /** TASK 033 P2: the retreat start/end dates, shown under the intro. */
   datesPanel?: ReactNode;
   schedule: EditableScheduleItem[];
-  setSchedule: Dispatch<SetStateAction<EditableScheduleItem[]>>;
+  /** Adds a session to the editor only - it is persisted by Save (TASK 033 addendum B). */
+  addScheduleItem: (item: EditableScheduleItem) => void;
+  /** Removes a session from the editor; a saved one is deleted by the next Save. */
+  removeScheduleItem: (id: string) => void;
   updateScheduleItem: (id: string, patch: Partial<EditableScheduleItem>) => void;
-  tenantId: string;
+  /** TASK 033 addendum A: the saved retreat dates, for the out-of-range hint. */
+  retreatStartDate?: string | null;
+  retreatEndDate?: string | null;
   scheduleState: SaveScheduleState;
   schedulePending: boolean;
   handleSaveSchedule: () => void;
@@ -510,6 +521,13 @@ function ScheduleEditor({
   const dates = useMemo(() => Array.from(new Set(schedule.map((s) => s.date))).sort(), [schedule]);
   const [activeDate, setActiveDate] = useState<string | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
+  /**
+   * TASK 033: sessions created in THIS editor (Add or Duplicate) whose end
+   * time still follows the start, keyed by id -> the duration it follows.
+   * Existing saved sessions are never in here, so their end never moves on
+   * its own; a hand edit of the end removes the session for good.
+   */
+  const [endFollows, setEndFollows] = useState<Record<string, number>>({});
 
   const currentDate = activeDate && dates.includes(activeDate) ? activeDate : (dates[0] ?? null);
   const dayItems = currentDate
@@ -521,20 +539,49 @@ function ScheduleEditor({
     setEditId(null);
   }
 
-  function handleAdd() {
-    const item = blankScheduleItem();
-    if (currentDate) item.date = currentDate;
-    setSchedule((items) => [...items, item]);
-    persistNewScheduleItemStub(tenantId, item.id, item.date, item.startTime);
+  function stopFollowing(id: string) {
+    setEndFollows((f) => {
+      if (!(id in f)) return f;
+      const next = { ...f };
+      delete next[id];
+      return next;
+    });
+  }
+
+  function openNew(item: EditableScheduleItem) {
+    addScheduleItem(item);
+    setEndFollows((f) => ({ ...f, [item.id]: followDuration(item.startTime, item.endTime) }));
     setActiveDate(item.date);
     setEditId(item.id);
   }
 
+  function handleAdd() {
+    const item = blankScheduleItem();
+    if (currentDate) item.date = currentDate;
+    openNew(item);
+  }
+
+  /** A separate new session prefilled from `item`; the original is never touched. */
+  function handleDuplicate(item: EditableScheduleItem) {
+    openNew(duplicateScheduleItem(item, crypto.randomUUID()));
+  }
+
   function handleRemove(id: string) {
-    setSchedule((items) => items.filter((it) => it.id !== id));
-    persistScheduleItemRemoval(tenantId, id);
+    removeScheduleItem(id);
+    stopFollowing(id);
     if (editId === id) closePanel();
   }
+
+  function handleStartTime(id: string, value: string) {
+    updateScheduleItem(id, startTimePatch(value, endFollows[id] ?? null));
+  }
+
+  function handleEndTime(id: string, value: string) {
+    stopFollowing(id);
+    updateScheduleItem(id, { endTime: value || null });
+  }
+
+  const outsideDatesCount = countOutsideRetreatDates(schedule, retreatStartDate, retreatEndDate);
 
   return (
     <div className="max-w-2xl">
@@ -627,6 +674,17 @@ function ScheduleEditor({
                 </button>
                 <button
                   type="button"
+                  onClick={() => handleDuplicate(item)}
+                  aria-label={t("flow", "duplicateSessionLabel")}
+                  title={t("flow", "duplicateSessionLabel")}
+                  data-action="duplicate-session"
+                  className={`${STUDIO_ROW_ACTION_CLASS} ${STUDIO_HIT_ROW_CLASS}`}
+                  style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
+                >
+                  {t("flow", "duplicateSession")}
+                </button>
+                <button
+                  type="button"
                   onClick={() => handleRemove(item.id)}
                   className={`${STUDIO_ROW_ACTION_CLASS} ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
@@ -644,6 +702,17 @@ function ScheduleEditor({
           />
         )}
       </div>
+
+      {outsideDatesCount > 0 && (
+        <p
+          className="text-[12px] rounded-xl px-3.5 py-2.5 mb-3 border"
+          role="note"
+          data-hint="sessions-outside-retreat-dates"
+          style={{ color: GUEST_BASE_PALETTE.dusk, borderColor: `${GUEST_BASE_PALETTE.sand}99`, background: GUEST_BASE_PALETTE.parchmentDeep }}
+        >
+          {t("flow", "sessionsOutsideRetreatDates", { count: String(outsideDatesCount) })}
+        </p>
+      )}
 
       <button
         type="button"
@@ -678,8 +747,8 @@ function ScheduleEditor({
                 <input
                   type="time"
                   value={editing.startTime}
-                  onChange={(e) => updateScheduleItem(editing.id, { startTime: e.target.value })}
-                  className={STUDIO_INPUT_CLASS}
+                  onChange={(e) => handleStartTime(editing.id, e.target.value)}
+                  className={`${STUDIO_INPUT_CLASS} min-w-0`}
                 />
               </StudioField>
             </div>
@@ -688,8 +757,8 @@ function ScheduleEditor({
                 <input
                   type="time"
                   value={editing.endTime ?? ""}
-                  onChange={(e) => updateScheduleItem(editing.id, { endTime: e.target.value || null })}
-                  className={STUDIO_INPUT_CLASS}
+                  onChange={(e) => handleEndTime(editing.id, e.target.value)}
+                  className={`${STUDIO_INPUT_CLASS} min-w-0`}
                 />
               </StudioField>
             </div>
@@ -1374,6 +1443,13 @@ export function RetreatConfigurator({
     void updateModuleCoverPosition({ error: null }, formData);
   }
   const [schedule, setSchedule] = useState<EditableScheduleItem[]>(initialSchedule);
+  /**
+   * TASK 033 addendum B: which schedule rows exist in the database and
+   * which of those the organizer removed since the last Save. New
+   * sessions are not persisted until Save, and Save deletes only the
+   * removed ids - never "every row the editor did not send".
+   */
+  const schedulePersistenceRef = useRef<SchedulePersistence>(schedulePersistenceFrom(initialSchedule.map((s) => s.id)));
   const [facilitators, setFacilitators] = useState<EditableFacilitator[]>(initialFacilitators);
   const [meals, setMeals] = useState<EditableMeal[]>(initialMeals);
   const [treatments, setTreatments] = useState<EditableTreatment[]>(initialTreatments);
@@ -1441,16 +1517,21 @@ export function RetreatConfigurator({
     formData.set("tenantId", tenantId ?? "");
     formData.set("items", JSON.stringify(schedule));
     const ids = schedule.map((s) => s.id);
+    const removedIds = scheduleIdsToDelete([...schedulePersistenceRef.current.removed], ids);
+    formData.set("removedIds", JSON.stringify(removedIds));
     setSchedulePending(true);
     // Queued behind every currently-in-flight write for these items (a
     // stub create) so Save is always applied after anything already
     // requested for them, and becomes the new queue position so a Remove
     // clicked right after this Save correctly waits for it - see
     // enqueueItemsOp in persistItem.ts.
-    const result = await enqueueItemsOp(ids, () => saveSchedule(scheduleInitialState, formData));
+    const result = await enqueueItemsOp([...ids, ...removedIds], () => saveSchedule(scheduleInitialState, formData));
     setSchedulePending(false);
     setScheduleState(result);
-    if (!result.error) dirty.markClean("schedule");
+    if (!result.error) {
+      schedulePersistenceRef.current = afterScheduleSave(schedulePersistenceRef.current, ids, removedIds);
+      dirty.markClean("schedule");
+    }
     return !result.error;
   }
 
@@ -1732,6 +1813,18 @@ export function RetreatConfigurator({
 
   function updateScheduleItem(id: string, patch: Partial<EditableScheduleItem>) {
     setSchedule((items) => items.map((it) => (it.id === id ? { ...it, ...patch } : it)));
+    dirty.markDirty("schedule");
+  }
+
+  /** TASK 033 addendum B: an unsaved new session is an unsaved change. */
+  function addScheduleItem(item: EditableScheduleItem) {
+    setSchedule((items) => [...items, item]);
+    dirty.markDirty("schedule");
+  }
+
+  function removeScheduleItem(id: string) {
+    setSchedule((items) => items.filter((it) => it.id !== id));
+    schedulePersistenceRef.current = noteScheduleRemoval(schedulePersistenceRef.current, id);
     dirty.markDirty("schedule");
   }
   function updateFacilitator(id: string, patch: Partial<EditableFacilitator>) {
@@ -2680,9 +2773,11 @@ export function RetreatConfigurator({
         {step === "schedule" && tenantId && (
           <ScheduleEditor
             schedule={schedule}
-            setSchedule={setSchedule}
+            addScheduleItem={addScheduleItem}
+            removeScheduleItem={removeScheduleItem}
             updateScheduleItem={updateScheduleItem}
-            tenantId={tenantId}
+            retreatStartDate={retreatProfile.startDate ?? null}
+            retreatEndDate={retreatProfile.endDate ?? null}
             scheduleState={scheduleState}
             schedulePending={schedulePending}
             handleSaveSchedule={handleSaveSchedule}

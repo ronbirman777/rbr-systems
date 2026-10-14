@@ -863,6 +863,10 @@ export const de: Dictionary = {
     stepScheduleTitle: "Stell deinen Zeitplan zusammen",
     stepScheduleBody: "Füge für jeden Tag deines Retreats Einheiten hinzu und ordne sie. Deine Gäste sehen das im Zeitplan.",
     editSession: "Einheit bearbeiten",
+    // TASK 033: Duplicate session + out-of-range hint
+    duplicateSession: "Duplizieren",
+    duplicateSessionLabel: "Einheit duplizieren",
+    sessionsOutsideRetreatDates: "{count} deiner Einheiten liegen außerhalb des Retreat-Zeitraums und werden Gästen im Zeitplan nicht angezeigt. Verschiebe sie in den Zeitraum oder passe den Zeitraum an.",
     sessionTitle: "Titel der Einheit",
     sessionTitlePlaceholder: "z. B. Morgen-Yoga-Flow",
     facilitator: "Begleitung",

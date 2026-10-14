@@ -856,6 +856,10 @@ export const tr: Dictionary = {
     stepScheduleTitle: "Programınızı oluşturun",
     stepScheduleBody: "İnzivanızın her günü için seanslar ekleyin ve düzenleyin. Misafirleriniz bunları Program ekranında görür.",
     editSession: "Seansı düzenle",
+    // TASK 033: Duplicate session + out-of-range hint
+    duplicateSession: "Çoğalt",
+    duplicateSessionLabel: "Seansı çoğalt",
+    sessionsOutsideRetreatDates: "Seanslarınızdan {count} tanesi inziva tarihlerinin dışında kalıyor, bu yüzden misafirler bunları programda görmeyecek. Seansları tarihlerin içine taşıyın ya da tarihleri değiştirin.",
     sessionTitle: "Seans başlığı",
     sessionTitlePlaceholder: "örn. Sabah Yoga Akışı",
     facilitator: "Rehber",

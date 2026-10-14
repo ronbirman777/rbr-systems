@@ -7,6 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { brandConfigSchema } from "@/lib/theme/tokens";
 import { publicScheduleItemSchema } from "@/lib/schedule/types";
+import { parseRemovedIds, scheduleIdsToDelete } from "@/lib/schedule/scheduleSave";
 import { facilitatorSchema } from "@/lib/modules/facilitator";
 import { mealSchema } from "@/lib/modules/meal";
 import { storedTreatmentPricing, treatmentSchema, treatmentsNeedingCurrency } from "@/lib/modules/treatment";
@@ -260,16 +261,25 @@ type ScheduleItemUpsert = {
 };
 
 /**
- * Upsert-by-id, delete-only-removed - the same invariant already proven for
- * Meals/Treatments/Facilities/Facilitators via saveModuleItemsGeneric,
- * brought to Schedule's own table. Schedule previously deleted every row
- * for the tenant and reinserted from scratch on every Save, which let
- * Postgres mint a fresh id on every save (confirmed live: two consecutive
- * saves of identical content produced two different row ids) - the exact
- * duplicate-row race already fixed everywhere else. schedule_items has no
- * image_ref/media concern, so this is simpler than saveModuleItemsGeneric,
- * not a variant of it - a shared abstraction across two different tables'
- * shapes would cost more clarity than the ~15 lines of duplication saves.
+ * Upsert-by-id, delete-only-what-the-organizer-removed.
+ *
+ * TASK 033 (addendum B): new sessions are no longer persisted as an
+ * "Untitled" stub the moment Add/Duplicate is clicked - an abandoned Add
+ * left an empty placeholder row that publish_space then shipped to guests.
+ * A new session now exists only in the editor until this Save.
+ *
+ * DELETES ARE EXPLICIT. The editor sends `removedIds`: the ids of rows it
+ * loaded (or saved) and the organizer removed in this editor session. Only
+ * those rows are deleted. This replaces "delete every tenant row missing
+ * from the submitted list", which could drop rows the editor never loaded
+ * (a second tab, a row created elsewhere, stale editor state). Any id that
+ * is also in `items` is never deleted. Identical sessions with distinct
+ * ids ("twins") are separate rows and are both kept.
+ *
+ * Schedule previously deleted every row for the tenant and reinserted from
+ * scratch on every Save, which let Postgres mint a fresh id on every save -
+ * upsert-by-id keeps ids stable. schedule_items has no image_ref/media
+ * concern, so this is simpler than saveModuleItemsGeneric, not a variant.
  */
 export async function saveSchedule(
   _prevState: SaveScheduleState,
@@ -288,6 +298,9 @@ export async function saveSchedule(
   const parsed = parseItemsWithIds(formData, publicScheduleItemSchema);
   if ("error" in parsed) return { error: parsed.error };
 
+  const removed = parseRemovedIds(formData.get("removedIds"));
+  if (removed === null) return { error: t("couldNotReadList") };
+
   const rows: ScheduleItemUpsert[] = parsed.data.map((item) => ({
     id: item.id,
     tenant_id: tenantId,
@@ -305,12 +318,7 @@ export async function saveSchedule(
     metadata: { whatToBring: item.whatToBring, whatToExpect: item.whatToExpect },
   }));
 
-  const incomingIds = new Set(rows.map((r) => r.id));
-  const { data: existingRows } = await supabase
-    .from("schedule_items")
-    .select("id")
-    .eq("tenant_id", tenantId);
-  const removedIds = (existingRows ?? []).filter((r) => !incomingIds.has(r.id)).map((r) => r.id);
+  const removedIds = scheduleIdsToDelete(removed, rows.map((r) => r.id));
 
   if (removedIds.length > 0) {
     const { error: deleteError } = await supabase
@@ -325,74 +333,6 @@ export async function saveSchedule(
     const { error: upsertError } = await supabase.from("schedule_items").upsert(rows, { onConflict: "id" });
     if (upsertError) return { error: upsertError.message };
   }
-
-  return { error: null };
-}
-
-export type ScheduleItemStubState = { error: string | null };
-
-/**
- * Schedule's counterpart to createModuleItemStub - a brand-new schedule
- * item must exist in the database from the moment it's added, not only
- * once the organizer clicks Save, for the same reason every other module
- * already works this way (see the Time to Flow persistence-consistency
- * fix). ON CONFLICT DO NOTHING: this call only guarantees the row exists,
- * never overwrites content a later Save (or a since-resolved earlier one)
- * already wrote.
- */
-export async function createScheduleItemStub(
-  _prevState: ScheduleItemStubState,
-  formData: FormData
-): Promise<ScheduleItemStubState> {
-  const t = studioMessages(localeFromFormData(formData));
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: t("notLoggedIn") };
-
-  const tenantId = String(formData.get("tenantId") ?? "");
-  const itemId = String(formData.get("itemId") ?? "");
-  const date = String(formData.get("date") ?? "");
-  const startTime = String(formData.get("startTime") ?? "");
-  if (!tenantId || !itemId) return { error: t("missingSpaceOrItem") };
-
-  const { error } = await supabase.from("schedule_items").upsert(
-    {
-      id: itemId,
-      tenant_id: tenantId,
-      date: date || new Date().toISOString().slice(0, 10),
-      start_time: startTime || "09:00",
-      title: translate(localeFromFormData(formData), "common", "untitled"),
-    },
-    { onConflict: "id", ignoreDuplicates: true }
-  );
-  if (error) return { error: error.message };
-
-  return { error: null };
-}
-
-export type DeleteScheduleItemState = { error: string | null };
-
-/** Schedule's counterpart to deleteModuleItem - no media to clean up, so
- * just the row. */
-export async function deleteScheduleItem(
-  _prevState: DeleteScheduleItemState,
-  formData: FormData
-): Promise<DeleteScheduleItemState> {
-  const t = studioMessages(localeFromFormData(formData));
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: t("notLoggedIn") };
-
-  const tenantId = String(formData.get("tenantId") ?? "");
-  const itemId = String(formData.get("itemId") ?? "");
-  if (!tenantId || !itemId) return { error: t("missingSpaceOrItem") };
-
-  const { error } = await supabase.from("schedule_items").delete().eq("id", itemId).eq("tenant_id", tenantId);
-  if (error) return { error: error.message };
 
   return { error: null };
 }

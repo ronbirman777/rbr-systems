@@ -874,6 +874,10 @@ export const he: Dictionary = {
     stepScheduleTitle: "בנו את לוח הזמנים",
     stepScheduleBody: "הוסיפו וסדרו מפגשים לכל יום בריטריט. האורחים רואים את זה במסך לוח הזמנים.",
     editSession: "עריכת מפגש",
+    // TASK 033: Duplicate session + out-of-range hint
+    duplicateSession: "שכפול",
+    duplicateSessionLabel: "שכפול המפגש",
+    sessionsOutsideRetreatDates: "{count} מהמפגשים שלך נמצאים מחוץ לתאריכי הריטריט, ולכן האורחים לא יראו אותם בלוח הזמנים. אפשר להעביר אותם אל התאריכים או לשנות את התאריכים.",
     sessionTitle: "שם המפגש",
     sessionTitlePlaceholder: "למשל: יוגה בוקר",
     facilitator: "מנחה",

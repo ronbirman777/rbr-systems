@@ -874,6 +874,10 @@ export const es: Dictionary = {
     stepScheduleTitle: "Crea tu programa",
     stepScheduleBody: "Añade y ordena las sesiones de cada día de tu retiro. Tus invitados lo ven en la pantalla de Programa.",
     editSession: "Editar la sesión",
+    // TASK 033: Duplicate session + out-of-range hint
+    duplicateSession: "Duplicar",
+    duplicateSessionLabel: "Duplicar la sesión",
+    sessionsOutsideRetreatDates: "{count} de tus sesiones quedan fuera de las fechas del retiro, así que tus invitados no las verán en el programa. Muévelas dentro de las fechas o cambia las fechas.",
     sessionTitle: "Nombre de la sesión",
     sessionTitlePlaceholder: "p. ej. Yoga Flow de la mañana",
     facilitator: "Quien la guía",
