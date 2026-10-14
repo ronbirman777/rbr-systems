@@ -35,6 +35,8 @@ import { PALETTES, GUEST_BASE_PALETTE, type AtmosphereKey, type PaletteKey } fro
 import { safeTextColor, meetsAA } from "@/lib/theme/contrast";
 import { ForwardArrow, STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, STUDIO_ROW_ACTION_CLASS, StudioEyebrowContext, StudioField, StudioHeading, StudioIntro, StudioLabel, StudioSectionSub } from "./studio-ui";
 import { StudioTopBar } from "@/components/studio/studio-top-bar";
+import { StudioMobileDrawer } from "@/components/studio/studio-mobile-drawer";
+import { releaseScrollLock } from "@/lib/studio/scrollLock";
 import { saveStatusLabel, previewDraftLabel, previewDraftCaption, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
 import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
 import { PRESET_LABEL, type PresetLabelKey } from "@/lib/brand/presetLabels";
@@ -133,6 +135,9 @@ export type RetreatConfiguratorProps = {
   initialGuestAccessSettings: GuestAccessSettings;
   initialFeaturedSubmission: FeaturedSubmission;
 };
+
+/** TASK 033: id of the mobile Studio drawer (aria-controls of the Menu button). */
+const MOBILE_NAV_ID = "flow-studio-mobile-nav";
 
 const draftInitialState: SaveDraftState = { error: null, tenantId: null };
 const scheduleInitialState: SaveScheduleState = { error: null };
@@ -1735,8 +1740,16 @@ export function RetreatConfigurator({
   // second source of navigation.
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   function mobileNavigate(next: StepKey) {
+    // TASK 033: restore the page under the drawer first, so the jump to the
+    // top of a NEW step below is not undone by the drawer's own cleanup.
+    // Choosing the step already open just closes, back at the exact spot.
+    releaseScrollLock();
     setMobileNavOpen(false);
-    attemptNavigate(() => setStep(next));
+    if (next === step) return;
+    attemptNavigate(() => {
+      setStep(next);
+      window.scrollTo({ top: 0, behavior: "auto" });
+    });
   }
 
   const publishReadiness: ReadinessItem[] = [
@@ -1850,12 +1863,15 @@ export function RetreatConfigurator({
       {/* Mobile Studio Navigation - the desktop sidebar below is
           `hidden lg:flex`, so below that breakpoint this topbar + drawer
           is the only way to switch sections. */}
-      <div className="lg:hidden flex items-center gap-1 px-2 py-2 border-b border-idw-forest/10 bg-white">
+      {/* TASK 033: sticky, so the Menu is reachable from the bottom of a
+          long step (it used to scroll away with the page). */}
+      <div className="lg:hidden sticky top-0 z-40 flex items-center gap-1 px-2 py-2 border-b border-idw-forest/10 bg-white">
         <button
           type="button"
           onClick={() => setMobileNavOpen(true)}
           aria-label={t("studio", "openStudioMenu")}
           aria-expanded={mobileNavOpen}
+          aria-controls={MOBILE_NAV_ID}
           className="w-11 h-11 shrink-0 flex flex-col items-center justify-center gap-1 rounded-lg active:bg-idw-forest/10"
         >
           <span className="w-5 h-0.5 bg-idw-forest rounded-full" />
@@ -1891,112 +1907,96 @@ export function RetreatConfigurator({
         </span>
       </div>
 
-      {mobileNavOpen && (
-        <div className="lg:hidden fixed inset-0 z-[100] flex" role="dialog" aria-modal="true" aria-label={t("studio", "studioMenu")}>
-          <div
-            className="absolute inset-0"
-            style={{ background: "rgba(27,46,36,0.45)" }}
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget) setMobileNavOpen(false);
-            }}
-          />
-          <div className="relative w-[280px] max-w-[80vw] h-full bg-white flex flex-col overflow-hidden shadow-2xl">
-            {/* Scrollable nav region - independent from the pinned footer
-                below, so a long section list never pushes the global
-                actions out of view (see the matching desktop `aside`
-                comment for why this two-region split, not a `flex-1`
-                spacer inside one scroll container, is the real fix). */}
-            <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-7">
-              <div className="flex items-center justify-between mb-8">
-                <InnerDweSMark size={24} />
-                <button
-                  type="button"
-                  onClick={() => setMobileNavOpen(false)}
-                  aria-label={t("studio", "closeStudioMenu")}
-                  className="text-idw-forest/50 text-xl leading-none px-1"
-                >
-                  ×
-                </button>
-              </div>
-              <PendingNavLink
-                href="/space"
-                beforeNavigate={(go) => {
-                  setMobileNavOpen(false);
-                  attemptNavigate(go);
-                }}
-                ariaLabel={t("studio", "backToMySpaces")}
-                pendingLabel={t("studio", "openingMySpaces")}
-                testId="studio-back-drawer"
-                className="w-full gap-1.5 px-3 mb-4 text-sm font-semibold text-idw-forest/70 hover:bg-idw-forest/5"
-              >
-                <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0 rtl-mirror">
-                  <path d="M12.5 15.5L7 10l5.5-5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                {t("studio", "mySpaces")}
-              </PendingNavLink>
-              {sidebarGroups.map((group) => (
-                <div key={group.label} className="mb-6">
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-idw-forest/40 mb-2">
-                    {group.label}
-                  </div>
-                  <ol className="flex flex-col gap-1">
-                    {group.items.map((s) => (
-                      <li key={s.key}>
-                        <button
-                          type="button"
-                          onClick={() => mobileNavigate(s.key)}
-                          className={`w-full text-left px-3 py-2.5 rounded-lg text-sm ${
-                            step === s.key ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
-                          }`}
-                        >
-                          {s.label}
-                        </button>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              ))}
-            </div>
-
-            {/* Pinned footer - global Space-level actions, always visible
-                regardless of section list length or which section is
-                selected. */}
-            <div className="px-6 pb-7 pt-3 shrink-0">
+      {/* TASK 033: the shared mobile drawer (portalled, scroll-locked,
+          focus-trapped) - see components/studio/studio-mobile-drawer.tsx. */}
+      <StudioMobileDrawer
+        open={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        id={MOBILE_NAV_ID}
+        label={t("studio", "studioMenu")}
+        closeLabel={t("studio", "closeStudioMenu")}
+        lang={spaceLocale}
+        dir={spaceDir}
+        header={<InnerDweSMark size={24} />}
+        footer={
+          <>
+            <button
+              type="button"
+              onClick={() => mobileNavigate("publish")}
+              aria-current={step === "publish" ? "step" : undefined}
+              className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium ${
+                step === "publish" ? "bg-idw-forest text-idw-parchment" : "bg-idw-clay/10 text-idw-clay-text border border-idw-clay/25"
+              }`}
+            >
+              {t("studio", "navPreviewPublish")}
+            </button>
+            {tenantId && (
               <button
                 type="button"
-                onClick={() => mobileNavigate("publish")}
-                className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium ${
-                  step === "publish" ? "bg-idw-forest text-idw-parchment" : "bg-idw-clay/10 text-idw-clay-text border border-idw-clay/25"
+                onClick={() => mobileNavigate("share")}
+              aria-current={step === "share" ? "step" : undefined}
+                className={`w-full mt-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
+                  step === "share" ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
                 }`}
               >
-                {t("studio", "navPreviewPublish")}
+                {t("studio", "shareYourSpace")}
               </button>
-              {tenantId && (
-                <button
-                  type="button"
-                  onClick={() => mobileNavigate("share")}
-                  className={`w-full mt-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
-                    step === "share" ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
-                  }`}
-                >
-                  {t("studio", "shareYourSpace")}
-                </button>
-              )}
-              {tenantId && (
-                <button
-                  type="button"
-                  onClick={() => mobileNavigate("featured")}
-                  className={`w-full mt-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
-                    step === "featured" ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
-                  }`}
-                >
-                  {t("studio", "featuredOnInnerDwes")}
-                </button>
-              )}
+            )}
+            {tenantId && (
+              <button
+                type="button"
+                onClick={() => mobileNavigate("featured")}
+              aria-current={step === "featured" ? "step" : undefined}
+                className={`w-full mt-2 px-3 py-2.5 rounded-xl text-sm font-medium ${
+                  step === "featured" ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
+                }`}
+              >
+                {t("studio", "featuredOnInnerDwes")}
+              </button>
+            )}
+          </>
+        }
+      >
+        <PendingNavLink
+          href="/space"
+          beforeNavigate={(go) => {
+            setMobileNavOpen(false);
+            attemptNavigate(go);
+          }}
+          ariaLabel={t("studio", "backToMySpaces")}
+          pendingLabel={t("studio", "openingMySpaces")}
+          testId="studio-back-drawer"
+          className="w-full gap-1.5 px-3 mb-4 text-sm font-semibold text-idw-forest/70 hover:bg-idw-forest/5"
+        >
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" className="shrink-0 rtl-mirror">
+            <path d="M12.5 15.5L7 10l5.5-5.5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {t("studio", "mySpaces")}
+        </PendingNavLink>
+        {sidebarGroups.map((group) => (
+          <div key={group.label} className="mb-6">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-idw-forest/70 mb-2">
+              {group.label}
             </div>
+            <ol className="flex flex-col gap-1">
+              {group.items.map((s) => (
+                <li key={s.key}>
+                  <button
+                    type="button"
+                    onClick={() => mobileNavigate(s.key)}
+                    aria-current={step === s.key ? "step" : undefined}
+                    className={`w-full text-left px-3 py-2.5 rounded-lg text-sm ${
+                      step === s.key ? "bg-idw-forest text-idw-parchment" : "text-idw-forest/70"
+                    }`}
+                  >
+                    {s.label}
+                  </button>
+                </li>
+              ))}
+            </ol>
           </div>
-        </div>
-      )}
+        ))}
+      </StudioMobileDrawer>
 
       <div
         className={`grid gap-0 flex-1 min-h-0 lg:items-start ${
