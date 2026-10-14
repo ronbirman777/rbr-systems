@@ -39,7 +39,7 @@ export default async function WelcomePage({ params }: { params: Promise<{ tenant
               maxLength={80}
               autoComplete="off"
               autoFocus
-              className="mt-2 w-full min-h-11 rounded-xl border border-idw-forest/20 bg-white px-3 text-sm text-idw-forest"
+              className="mt-2 w-full min-h-11 rounded-xl border border-idw-forest/20 bg-white px-3 text-base sm:text-sm text-idw-forest"
             />
           </div>
           <div className="flex flex-wrap gap-2.5">

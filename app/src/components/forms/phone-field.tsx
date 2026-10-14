@@ -106,7 +106,7 @@ export function PhoneField({
             onChange={(event) => onNumberChange(event.target.value)}
             onBlur={() => setTouched(true)}
             placeholder="50 123 4567"
-            className="w-full min-h-11 px-3 rounded-xl border border-[#D9D1C3] bg-white text-[14px] text-[#192B21] placeholder:text-[#8C8A84]"
+            className="w-full min-h-11 px-3 rounded-xl border border-[#D9D1C3] bg-white text-base sm:text-[14px] text-[#192B21] placeholder:text-[#8C8A84]"
           />
         </div>
       </div>

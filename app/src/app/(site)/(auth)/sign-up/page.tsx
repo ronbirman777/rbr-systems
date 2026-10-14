@@ -10,7 +10,7 @@ import { PhoneField, type PhoneFieldValue } from "@/components/forms/phone-field
 
 const initialState: SignUpState = { error: null, checkEmail: false, email: null };
 const INPUT_CLASS =
-  "mt-1 w-full rounded-lg border border-idw-forest/15 bg-white px-3 py-2.5 text-sm outline-none focus:border-idw-sage";
+  "mt-1 w-full rounded-lg border border-idw-forest/15 bg-white px-3 py-2.5 text-base sm:text-sm outline-none focus:border-idw-sage";
 const LABEL_CLASS = "text-xs font-semibold tracking-wide uppercase text-idw-forest/70";
 
 function CheckEmailState({ email }: { email: string }) {
