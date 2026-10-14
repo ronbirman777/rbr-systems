@@ -72,8 +72,20 @@ export const STUDIO_REORDER_BUTTON_CLASS =
   // the sibling arrow's focus.
   "focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-current rounded-sm";
 
+/**
+ * TASK 033: a Schedule row action ("Edit", "Duplicate", "Remove").
+ *
+ * Below `sm` (phones) the actions sit on their own line under the session
+ * and are real 44x44-minimum boxes - there is no hover on touch, and three
+ * actions no longer fit beside the title at 320px. From `sm` up they are
+ * exactly the previous quiet 11px pills (STUDIO_HIT_ROW_CLASS still adds
+ * the 44px-tall hit area there).
+ */
+export const STUDIO_ROW_ACTION_CLASS =
+  "inline-flex items-center justify-center min-h-11 min-w-11 px-3.5 text-[13px] sm:min-h-0 sm:min-w-0 sm:px-2.5 sm:py-1 sm:text-[11px] rounded-lg border transition-colors";
+
 export const STUDIO_INPUT_CLASS =
-  "w-full bg-white border border-[#D4C5A9]/70 rounded-xl px-3.5 py-2.5 text-[13px] text-[#2D4A3E] outline-none focus:ring-2 focus:ring-[#2D4A3E]/15 focus:border-[#2D4A3E]/30 placeholder:text-[#9B8E84]/60 transition-all";
+  "w-full bg-white border border-[#D4C5A9]/70 rounded-xl px-3.5 py-2.5 text-base sm:text-[13px] text-[#2D4A3E] outline-none focus:ring-2 focus:ring-[#2D4A3E]/15 focus:border-[#2D4A3E]/30 placeholder:text-[#9B8E84]/60 transition-all";
 
 /**
  * A field label. It has always rendered a real <label>, which is exactly

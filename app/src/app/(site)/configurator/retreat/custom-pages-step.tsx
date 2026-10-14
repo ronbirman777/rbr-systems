@@ -253,14 +253,14 @@ export function CustomPagesStep({ tenantId, customPages, setCustomPages, onBack,
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button type="button" onClick={onBack} className="rounded-full border border-idw-forest/20 text-idw-forest text-sm font-semibold uppercase tracking-wide px-6 py-3">
           {t("common", "back")}
         </button>
         <button type="button" disabled={pending} onClick={handleSave} className="rounded-full bg-idw-forest text-idw-parchment text-sm font-semibold uppercase tracking-wide px-6 py-3 disabled:opacity-60">
           {pending ? t("common", "savingNow") : t("studio", "saveSection", { section: t("flow", "moduleCustomPages") })}
         </button>
-        <button type="button" onClick={onContinue} className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11">
+        <button type="button" onClick={onContinue} className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:-translate-y-1/2 after:h-11">
           {t("common", "next")} <ForwardArrow />
         </button>
       </div>

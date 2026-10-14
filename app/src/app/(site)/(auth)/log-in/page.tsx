@@ -163,7 +163,7 @@ export default function LogInPage() {
               type="email"
               required
               autoComplete="email"
-              className="mt-1 w-full rounded-lg border border-idw-forest/15 bg-white px-3 py-2.5 text-sm outline-none focus:border-idw-sage"
+              className="mt-1 w-full rounded-lg border border-idw-forest/15 bg-white px-3 py-2.5 text-base sm:text-sm outline-none focus:border-idw-sage"
             />
           </div>
           <div>
@@ -181,7 +181,7 @@ export default function LogInPage() {
               type="password"
               required
               autoComplete="current-password"
-              className="mt-1 w-full rounded-lg border border-idw-forest/15 bg-white px-3 py-2.5 text-sm outline-none focus:border-idw-sage"
+              className="mt-1 w-full rounded-lg border border-idw-forest/15 bg-white px-3 py-2.5 text-base sm:text-sm outline-none focus:border-idw-sage"
             />
           </div>
 

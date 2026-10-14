@@ -33,7 +33,7 @@ import { PendingNavLink } from "@/components/nav/pending-nav-link";
 import { BrandImageField } from "./brand-image-field";
 import { PALETTES, GUEST_BASE_PALETTE, type AtmosphereKey, type PaletteKey } from "@/lib/theme/tokens";
 import { safeTextColor, meetsAA } from "@/lib/theme/contrast";
-import { ForwardArrow, STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, StudioEyebrowContext, StudioField, StudioHeading, StudioIntro, StudioLabel, StudioSectionSub } from "./studio-ui";
+import { ForwardArrow, STUDIO_HIT_ROW_CLASS, STUDIO_INPUT_CLASS, STUDIO_ROW_ACTION_CLASS, StudioEyebrowContext, StudioField, StudioHeading, StudioIntro, StudioLabel, StudioSectionSub } from "./studio-ui";
 import { StudioTopBar } from "@/components/studio/studio-top-bar";
 import { saveStatusLabel, previewDraftLabel, previewDraftCaption, studioPublishState, formatPublishedAtUtc } from "@/lib/studio/status";
 import { BrandPresetChips } from "@/components/studio/brand-preset-chips";
@@ -351,7 +351,7 @@ function ColorPicker({ label, hint, value, swatches, onChange, locale, first }: 
           onBlur={() => setShowError(!isValid && draft.trim().length > 0)}
           aria-invalid={showError}
           aria-label={t("studio", "hexValueOf", { label })}
-          className="flex-1 min-w-0 py-2 text-[13px] outline-none font-mono"
+          className="flex-1 min-w-0 py-2 text-base sm:text-[13px] outline-none font-mono"
           style={{ color: GUEST_BASE_PALETTE.forest }}
         />
         <span className="text-[10px] shrink-0" style={{ color: GUEST_BASE_PALETTE.mist }}>
@@ -574,7 +574,7 @@ function ScheduleEditor({
           return (
             <div
               key={item.id}
-              className="group flex items-center gap-4 rounded-2xl p-4 border transition-all"
+              className="group flex flex-wrap sm:flex-nowrap items-center gap-x-4 gap-y-2 rounded-2xl p-4 border transition-all"
               style={{
                 background: "white",
                 borderColor: isEditing ? `${GUEST_BASE_PALETTE.forest}4d` : `${GUEST_BASE_PALETTE.sand}80`,
@@ -601,11 +601,15 @@ function ScheduleEditor({
                   {item.category}
                 </span>
               )}
-              <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+              {/* TASK 033: on a phone the row actions sit on their own line,
+                  always visible (there is no hover on touch) and 44px tall.
+                  From `sm` up they keep the quiet hover-reveal, now also
+                  revealed while any of them has keyboard focus. */}
+              <div className="flex items-center justify-end gap-1.5 w-full sm:w-auto opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity flex-shrink-0">
                 <button
                   type="button"
                   onClick={() => setEditId(isEditing ? null : item.id)}
-                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
+                  className={`${STUDIO_ROW_ACTION_CLASS} ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.forest, borderColor: "rgba(45,74,62,0.2)" }}
                 >
                   {t("common", "edit")}
@@ -613,7 +617,7 @@ function ScheduleEditor({
                 <button
                   type="button"
                   onClick={() => handleRemove(item.id)}
-                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-colors ${STUDIO_HIT_ROW_CLASS}`}
+                  className={`${STUDIO_ROW_ACTION_CLASS} ${STUDIO_HIT_ROW_CLASS}`}
                   style={{ color: GUEST_BASE_PALETTE.mist, borderColor: `${GUEST_BASE_PALETTE.sand}80` }}
                 >
                   {t("common", "remove")}
@@ -649,8 +653,16 @@ function ScheduleEditor({
               {t("common", "done")}
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
+          {/* TASK 033 (mobile): one column below `sm`, so no field is
+              squeezed into half a phone's width (the native date input
+              clipped its own value at 320px). The time pair stays side by
+              side from 360px - two short values - with min-w-0 so a
+              native time control can never push past its cell, and the
+              inputs bottom-aligned when the End label wraps. From `sm` up
+              the layout is exactly the previous two-column grid. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="col-span-full grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
+            <div className="min-w-0 flex flex-col justify-end">
               <StudioField label={t("common", "startTime")}>
                 <input
                   type="time"
@@ -660,7 +672,7 @@ function ScheduleEditor({
                 />
               </StudioField>
             </div>
-            <div>
+            <div className="min-w-0 flex flex-col justify-end">
               <StudioField label={t("flow", "endTimeOptional")}>
                 <input
                   type="time"
@@ -670,7 +682,8 @@ function ScheduleEditor({
                 />
               </StudioField>
             </div>
-            <div className="col-span-2">
+            </div>
+            <div className="col-span-full min-w-0">
               <StudioField label={t("flow", "sessionTitle")}>
                 <input
                   value={editing.title}
@@ -680,7 +693,7 @@ function ScheduleEditor({
                 />
               </StudioField>
             </div>
-            <div>
+            <div className="min-w-0">
               <StudioField label={t("flow", "facilitator")}>
                 <input
                   value={editing.facilitator ?? ""}
@@ -690,7 +703,7 @@ function ScheduleEditor({
                 />
               </StudioField>
             </div>
-            <div>
+            <div className="min-w-0">
               <StudioField label={t("common", "location")}>
                 <input
                   value={editing.location ?? ""}
@@ -700,7 +713,7 @@ function ScheduleEditor({
                 />
               </StudioField>
             </div>
-            <div>
+            <div className="min-w-0">
               <StudioField label={t("common", "date")}>
                 <input
                   type="date"
@@ -713,7 +726,7 @@ function ScheduleEditor({
                 />
               </StudioField>
             </div>
-            <div>
+            <div className="min-w-0">
               <StudioField label={t("common", "category")}>
                 <select
                   value={editing.category ?? ""}
@@ -729,7 +742,7 @@ function ScheduleEditor({
                 </select>
               </StudioField>
             </div>
-            <div className="col-span-2">
+            <div className="col-span-full min-w-0">
               <StudioField label={t("flow", "notesOptional")}>
                 <input
                   value={editing.description ?? ""}
@@ -746,9 +759,9 @@ function ScheduleEditor({
                 <details> rather than custom state: it is keyboard- and
                 screen-reader-operable for free, and this panel already
                 re-mounts whenever a different session is opened. */}
-            <details className="col-span-2 group">
+            <details className="col-span-full min-w-0 group">
               <summary
-                className="cursor-pointer text-[11px] font-semibold uppercase tracking-[0.14em] py-1.5 list-none flex items-center gap-1.5 relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
+                className="cursor-pointer text-[11px] font-semibold uppercase tracking-[0.14em] py-1.5 list-none flex items-center gap-1.5 relative after:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:-translate-y-1/2 after:h-11"
                 style={{ color: GUEST_BASE_PALETTE.mist }}
               >
                 <span aria-hidden="true" className="group-open:rotate-90 transition-transform inline-block">
@@ -766,8 +779,8 @@ function ScheduleEditor({
               <p className="text-[11px] mb-3 mt-1" style={{ color: GUEST_BASE_PALETTE.mist }}>
                 {t("flow", "extraDetailsHint")}
               </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="min-w-0">
                   <StudioLabel>{t("flow", "whatToBring")}</StudioLabel>
                   <textarea
                     aria-label={t("flow", "whatToBring")}
@@ -780,7 +793,7 @@ function ScheduleEditor({
                     dir="auto"
                   />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <StudioLabel>{t("flow", "whatToExpect")}</StudioLabel>
                   <textarea
                     aria-label={t("flow", "whatToExpect")}
@@ -808,7 +821,7 @@ function ScheduleEditor({
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button
           type="button"
           onClick={() => goToStep(-1)}
@@ -827,7 +840,7 @@ function ScheduleEditor({
         <button
           type="button"
           onClick={() => goToStep(1)}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>
@@ -998,7 +1011,7 @@ function TeamEditor({
           <div className="w-8 h-8 rounded-full border-2 flex items-center justify-center" style={{ borderColor: `${GUEST_BASE_PALETTE.sand}b3` }}>
             +
           </div>
-          <span className="text-[11px] font-medium relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11">{t("flow", "addFacilitator")}</span>
+          <span className="text-[11px] font-medium relative after:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:-translate-y-1/2 after:h-11">{t("flow", "addFacilitator")}</span>
         </button>
       </div>
 
@@ -1158,7 +1171,7 @@ function TeamEditor({
                       const next = SOCIAL_PLATFORMS.find((p) => !used.has(p)) ?? SOCIAL_PLATFORMS[0];
                       updateFacilitator(editing.id, { socialLinks: [...editing.socialLinks, { platform: next, url: "" }] });
                     }}
-                    className="text-[11px] font-medium relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
+                    className="text-[11px] font-medium relative after:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:-translate-y-1/2 after:h-11"
                     style={{ color: GUEST_BASE_PALETTE.forest }}
                   >
                     + {t("flow", "addSocialLink")}
@@ -1176,7 +1189,7 @@ function TeamEditor({
         </p>
       )}
 
-      <div className="mt-8 flex gap-3 items-center">
+      <div className="mt-8 flex flex-wrap gap-3 items-center">
         <button
           type="button"
           onClick={() => goToStep(-1)}
@@ -1195,7 +1208,7 @@ function TeamEditor({
         <button
           type="button"
           onClick={() => goToStep(1)}
-          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
+          className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:-translate-y-1/2 after:h-11"
         >
           {t("common", "next")} <ForwardArrow />
         </button>
@@ -2174,7 +2187,7 @@ export function RetreatConfigurator({
                   setSlugCheckState(slugCheckInitialState);
                 }}
                 placeholder="samadhi"
-                className="flex-1 min-w-0 px-3.5 py-2.5 text-[13px] outline-none"
+                className="flex-1 min-w-0 px-3.5 py-2.5 text-base sm:text-[13px] outline-none"
                 style={{ color: GUEST_BASE_PALETTE.forest }}
               />
               <span className="pr-3.5 text-[13px] whitespace-nowrap" style={{ color: GUEST_BASE_PALETTE.mist }}>
@@ -2187,7 +2200,7 @@ export function RetreatConfigurator({
                 type="button"
                 onClick={handleCheckSlug}
                 disabled={slugCheckPending || !slugInput || localSlugStatus !== "ok"}
-                className="text-[11px] font-semibold uppercase tracking-wide underline disabled:opacity-40 relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
+                className="text-[11px] font-semibold uppercase tracking-wide underline disabled:opacity-40 relative after:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:-translate-y-1/2 after:h-11"
                 style={{ color: GUEST_BASE_PALETTE.forest }}
               >
                 {slugCheckPending ? t("studio", "checking") : t("studio", "checkAvailability")}
@@ -2479,7 +2492,7 @@ export function RetreatConfigurator({
               </p>
             )}
 
-            <div className="mt-8 flex gap-3">
+            <div className="mt-8 flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={() => setStep("identity")}
@@ -2498,7 +2511,7 @@ export function RetreatConfigurator({
                 <button
                   type="button"
                   onClick={() => setStep("modules")}
-                  className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
+                  className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:-translate-y-1/2 after:h-11"
                 >
                   {t("flow", "continueToModules")} <ForwardArrow />
                 </button>
@@ -2624,7 +2637,7 @@ export function RetreatConfigurator({
               </p>
             )}
 
-            <div className="mt-8 flex gap-3 items-center">
+            <div className="mt-8 flex flex-wrap gap-3 items-center">
               <button
                 type="button"
                 onClick={() => setStep("brand")}
@@ -2642,7 +2655,7 @@ export function RetreatConfigurator({
               <button
                 type="button"
                 onClick={() => goToStep(1)}
-                className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:-inset-x-2 after:top-1/2 after:-translate-y-1/2 after:h-11"
+                className="text-xs font-semibold uppercase tracking-wide text-idw-forest/50 hover:text-idw-forest relative after:content-[''] after:absolute after:inset-x-0 after:top-1/2 after:-translate-y-1/2 after:h-11"
               >
                 {t("common", "next")} <ForwardArrow />
               </button>
