@@ -213,3 +213,31 @@ QA tenants were deleted from the local stack afterwards.
    start..end (Day 1 = start); that activity appears nowhere for guests; Today screen does not show it.
 9. Guest Schedule on iPhone vs Teach: header, chip size, dots, date line; Hebrew order mirrored.
 10. Teach Studio fields (Identity, About, Contact): no zoom on focus.
+
+## 11. Coordinator verification and Staging QA plan (2026-10-14)
+
+Independently re-run in the worktree at `104171f`: `tsc` clean; eslint 0 errors / 29 warnings (baseline); vitest
+3319 passed / 18 skipped; `next build` exit 0. Diff `86404b3..104171f`: 48 files, no migrations, package/lock, env,
+`vercel.json` or `next.config` changes; no secret-like strings; no zoom-disabling or overflow masking.
+
+Visual assessment (side-by-side composites, `qa033/ux/nav/`): Flow now has Teach's eyebrow + title, 20 px edge, date
+line under the strip, and the exact 5-day range; the chips still differ from Teach (outlined, with a "DAY n" line;
+Teach chips are filled, weekday + date only). Owner to judge on the iPhone whether this is close enough.
+
+### Proposed Staging deployment (needs approval)
+`vercel deploy --target=staging --yes` from a clean detached checkout of `104171f` (`~/Desktop/RBR-033-deploy`),
+no env change, no migration (Staging 0001–0047). Rollback: redeploy `182f47e` / point back to `innerdwes-1fn3aanxu`
+(`dpl_BV2H4q1emg3So83NbqvLjHcoHoPi`). Optional: one temporary bypass for automated checks, revoked afterwards.
+
+### Staging QA after deployment (owner on iPhone; Claude read-only snapshots)
+1. Studio entry after log-in: no zoom-in, no sideways scroll (log-in → My Spaces → Flow configurator → Schedule).
+2. Edit Session panel: date/start/end fully visible, no overlap; tap fields → no auto-zoom.
+3. Add Session → leave without saving → no new row (Claude snapshot diff: 0 rows added).
+4. Add Session: start 09:00 → end 10:00 automatically; change end by hand → change start → end stays.
+5. Duplicate "QA sample 0" → change its date to 2026-10-15 (DAY 3) and time 11:00 → Save → original unchanged, new row
+   (Claude diff: exactly 1 new row, original fields identical). This also covers the missing "activity on a later day".
+6. Publish (S1 dates + S2 + step 5) → Guest: exactly DAY 1–DAY 5 (13–17 Oct), 3 Oct activities not shown, twins on DAY 2,
+   empty days 4–5, Today marker on today, Daily Inspiration from 13 Oct.
+7. Compare the Flow strip with the Teach strip (`/s/qa-teach-staging`) on the same iPhone.
+8. S3/S4 (access code, German) as planned after this, then cleanup per `G5-SYNTHETIC-DATA-PLAN.md`.
+Note: Remove now applies on Save (not instantly); unsaved Add/Duplicate/Remove trigger the unsaved-changes guard.
