@@ -171,7 +171,7 @@ export const termsBody: LegalDocumentBody = {
     ]),
     section("cancellation", "21. Cancellation", [
       p(
-        `You may cancel a subscription at any time. Cancellation generally takes effect at the end of the current paid billing period, and you keep access to the paid features of that Space until then. See our ${L.billing} for how to cancel and what happens afterwards.`,
+        `You may cancel a subscription at any time. Cancellation generally takes effect at the end of the current paid billing period: when you cancel a paid subscription, it remains active, and you keep access to the paid features of that Space, until the end of the billing period you have already paid for. When that period ends, the Space becomes unavailable to guests, and you keep access to billing and reactivation for it. The Space content is preserved for 30 days after the end of the paid period; after those 30 days, the Space becomes eligible for deletion, subject to applicable legal obligations and any required notices. If you reactivate the Space before it is deleted, it is restored without data loss. A cancellation affects only that Space: your other Spaces are not automatically deleted. This is separate from the failed-payment process in section 24. See our ${L.billing} for how to cancel and the details.`,
       ),
     ]),
     section("refunds", "22. Refunds", [
@@ -191,7 +191,7 @@ export const termsBody: LegalDocumentBody = {
     ]),
     section("retention", "25. Data retention", [
       p(
-        `We keep data for the periods described in our ${L.privacy}. In summary, when you delete your Account or a Space, we remove the related data from our active systems within approximately 30 days, subject to legal, security and billing exceptions. Residual copies may remain in backups until the applicable backup lifecycle expires.`,
+        `We keep data for the periods described in our ${L.privacy}. In summary, when you delete your Account or a Space, we remove the related data from our active systems within approximately 30 days, subject to legal, security and billing exceptions. When you cancel a paid subscription, the content of the affected Space is preserved for 30 days after the end of the paid period and then becomes eligible for deletion (section 21); after a failed payment, the timeline in section 24 applies. Residual copies may remain in backups until the applicable backup lifecycle expires.`,
       ),
     ]),
     section("backups", "26. Backups and data loss", [
@@ -214,7 +214,7 @@ export const termsBody: LegalDocumentBody = {
     ]),
     section("reactivation", "29. Reactivation", [
       p(
-        "Where a Space has been suspended for non-payment, you can reactivate it by paying the outstanding amount before the Space is deleted. Where a Space has been suspended for another reason, we may reactivate it once the underlying issue has been resolved to our reasonable satisfaction. Content that has already been deleted from our active systems may not be recoverable.",
+        "Where you have cancelled a paid subscription, you can reactivate the Space by subscribing again before it is deleted, and it is then restored without data loss. Where a Space has been suspended for non-payment, you can reactivate it by paying the outstanding amount before the Space is deleted. Where a Space has been suspended for another reason, we may reactivate it once the underlying issue has been resolved to our reasonable satisfaction. Content that has already been deleted from our active systems may not be recoverable.",
       ),
     ]),
     section("availability", "30. Service availability", [

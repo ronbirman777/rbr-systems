@@ -187,6 +187,7 @@ export const privacyBody: LegalDocumentBody = {
         [
           ["Account data after account deletion", "Removed from active systems within approximately 30 days, subject to legal, security and billing exceptions."],
           ["Deleted Space content", "Removed from active systems within approximately 30 days."],
+          ["Content of a Space whose paid subscription you cancelled", "Preserved for 30 days after the end of the paid billing period, so that you can reactivate the Space without data loss; after that, eligible for deletion from active systems, subject to legal obligations and any required notices. Your other Spaces are not affected."],
           ["Support records", "Approximately 12 months after the request is closed."],
           ["Security and operational logs", "Approximately 90 days by default; longer where reasonably required for an investigation, fraud prevention, security or legal claims."],
           ["Billing and tax records", "As required by applicable law."],
@@ -201,7 +202,7 @@ export const privacyBody: LegalDocumentBody = {
     ]),
     section("failed-payment-retention", "18. Failed payment retention", [
       p(
-        `If payment for a Space fails and is not resolved, the Space becomes eligible for deletion from active systems from day 14 of the failed-payment process described in our ${L.billing}, after a final warning. Until then the content is kept so that the Space can be restored if payment succeeds. Where feasible, we preserve the Space's identifier and address through the retention period. Billing records relating to the failed payment are kept as required by law.`,
+        `If payment for a Space fails and is not resolved, the Space becomes eligible for deletion from active systems from day 14 of the failed-payment process described in our ${L.billing}, after a final warning. Until then the content is kept so that the Space can be restored if payment succeeds. Where feasible, we preserve the Space's identifier and address through the retention period. Billing records relating to the failed payment are kept as required by law. This failed-payment timeline is separate from the retention that follows a cancellation you make yourself, shown in the table in section 17.`,
       ),
     ]),
     section("security", "19. Security", [

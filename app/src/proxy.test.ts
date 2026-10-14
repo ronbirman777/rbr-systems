@@ -254,6 +254,10 @@ describe("proxy() - Task 011A strict site-wide password gate", () => {
       "/legal/copyright",
       "/legal/subprocessors",
       "/legal/billing",
+      "/legal/terms/v/1.0",
+      "/legal/privacy/v/1.0",
+      "/legal/dpa/v/1.0",
+      "/legal/billing/v/1.0",
       "/terms",
       "/privacy",
     ];

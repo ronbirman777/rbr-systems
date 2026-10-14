@@ -106,7 +106,7 @@ export function PricingSection() {
         </p>
         <p className="font-ui text-xs text-idw-forest/40 mt-3 max-w-lg mx-auto leading-relaxed">
           When a Time to Flow subscription ends, the public guest space goes offline at the end of the billing
-          period - your content stays saved in your account, ready to reactivate whenever you return.
+          period - your content stays saved for 30 days after that, ready to reactivate.
         </p>
         <p className="font-ui text-xs text-idw-forest/70 mt-3 max-w-lg mx-auto leading-relaxed">
           <Link href={legalHref("billing")} className="underline underline-offset-2 hover:text-idw-forest">

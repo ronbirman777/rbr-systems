@@ -59,12 +59,29 @@ export const billingBody: LegalDocumentBody = {
     ]),
     section("cancellation", "10. Cancellation", [
       p(
-        `You may cancel a subscription at any time, using the cancellation options available in your account where provided, or by contacting us at ${MAIL}. Cancellation generally takes effect at the **end of the current paid billing period**. Until then, the paid features of the Space remain available.`,
+        `You may cancel a subscription at any time, using the cancellation options available in your account where provided, or by contacting us at ${MAIL}. Cancellation generally takes effect at the **end of the current paid billing period**: when you cancel a paid subscription, it remains active until the end of the billing period you have already paid for, and until then the paid features of the Space, including its Guest App, remain available. Section 11 explains what happens next.`,
       ),
     ]),
     section("after-cancellation", "11. What happens after cancellation", [
+      p("When you cancel a paid subscription for a Space, the following steps apply to that Space:"),
+      table(
+        "Cancellation timeline",
+        ["When", "What happens"],
+        [
+          ["Until the end of the paid billing period", "The subscription remains active. The Space and its Guest App stay available as before."],
+          ["When the paid billing period ends", "The paid features for the Space end and the Space becomes unavailable to guests. You keep access to billing and reactivation for the Space."],
+          ["For 30 days after the end of the paid billing period", "The Space content is preserved. It is not deleted during this time."],
+          ["After those 30 days", "The Space becomes eligible for deletion from our active systems, subject to applicable legal obligations and any notices we are required to give."],
+        ],
+      ),
       p(
-        "When a cancellation takes effect, the paid features for that Space end and its Guest App is no longer publicly available. Cancelling does not by itself delete the Space content immediately: it remains in your account so that you can reactivate the Space by subscribing again. You can delete a Space or your Account at any time; deleted content is removed from our active systems within approximately 30 days, and residual copies may remain in backups until the applicable backup lifecycle expires.",
+        "If you reactivate the Space by subscribing again before it is deleted, it is restored without data loss. Content that has already been deleted from our active systems may not be recoverable.",
+      ),
+      p(
+        "A cancellation affects only the Space it relates to: other Spaces in your Account are not automatically deleted. This cancellation timeline is separate from the failed-payment process in section 15, which applies only when a payment fails and has its own timeline.",
+      ),
+      p(
+        "You can delete a Space or your Account at any time; deleted content is removed from our active systems within approximately 30 days, and residual copies may remain in backups until the applicable backup lifecycle expires.",
       ),
     ]),
     section("refunds", "12. Refunds", [
@@ -100,7 +117,7 @@ export const billingBody: LegalDocumentBody = {
     ]),
     section("failed-payments", "15. Failed payments", [
       p(
-        "If a payment for a Space fails, the following steps apply to the affected Space. Where possible, only the affected Space is suspended, not other Spaces owned by the same Account.",
+        "If a payment for a Space fails, the following steps apply to the affected Space. Where possible, only the affected Space is suspended, not other Spaces owned by the same Account. This failed-payment process is separate from a cancellation you make yourself, described in sections 10 and 11.",
       ),
       table(
         "Failed payment timeline",
