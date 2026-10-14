@@ -118,4 +118,4 @@ Items for native review (P5):
 8. `listMeOnInnerDwes` "Voglio comparire su InnerDweS".
 9. `common.live` "Online", `flow.live` "Dal vivo", `chargeAdditional` "A pagamento".
 10. Localised examples (`retreatCurrencyPlaceholder` "es. EUR", `classPricePlaceholder` "15 € · carnet 5 lezioni 65 €", `locationLinePlaceholder` "Milano · …").
-11. Intl range output for it zero-pads the second day across months ("14 ott – 03 nov 2026") - ICU behaviour, not a dictionary string.
+11. ~~Intl range output for it zero-pads the day across months ("14 ott – 03 nov 2026")~~ - Node ICU 78 behaviour (browsers write "3"); **fixed** 2026-10-14 in `formatDateRangeLocalized` (leading zero stripped, TASK 033 D4). Reviewer: confirm "3 gen – 31 mag 2026" reads naturally.
