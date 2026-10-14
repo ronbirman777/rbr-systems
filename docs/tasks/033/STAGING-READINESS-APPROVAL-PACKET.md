@@ -1,56 +1,56 @@
-# TASK 033 — Staging readiness approval packet (2026-10-14)
+# TASK 033 — Staging readiness approval packet (2026-10-14, v2)
 
-Owner instruction: "Continue TASK 033 Staging readiness … Return one consolidated approval packet." **Nothing in this
-packet has been executed.** No SQL was run, no site setting changed, no credential reset or created. Production, `main`,
-Stripe (off) and the tr/it gate are unchanged. Completed deployment and QA evidence: `STAGING-QA-REPORT.md` (rounds 1–3).
+Owner approval "INNERDWES — TASK 033 STAGING QA CONTINUATION" (2026-10-14): G3 = Option B, G4 approved, G5 prepare,
+G6 prepare; **stop at G1 and G2**. Production, `main`, Stripe (off) and the tr/it gate are unchanged. Completed deployment
+and QA evidence is preserved in `STAGING-QA-REPORT.md` (rounds 1–3) and the session scratchpad `qa033/stg3/`.
 
-Facts below were gathered read-only on 2026-10-14 05:00–05:35 UTC (Supabase REST GETs with the Staging secret key,
-Vercel API GETs for env **metadata**, and an in-process equality check of two public `NEXT_PUBLIC_*` values against the
-host already visible in the page HTML — values not printed).
+| Gate | Status |
+|---|---|
+| G1 404 SQL | **AWAITING APPROVAL of the exact SQL below.** Not executed |
+| G2 site address | Read-only checks **done** (allow-list + all consumers). **AWAITING APPROVAL.** Nothing changed |
+| G3 QA login | Option B (owner-controlled). Nothing done by Claude; no reset |
+| G4 bypass | **Done and closed:** 1 temporary secret → baseline run → revoked; **0 active** remain |
+| G5 synthetic data | Snapshot **taken**; exact changes listed; changes not made (owner performs them, Option B) |
+| G6 iPhone | Checklist ready: `IPHONE-CHECKLIST.md` (21 steps) |
 
-## 0. Current state
+## 0. Current state (read-only, 2026-10-14 ~06:00 UTC)
 
 | Item | Value |
 |---|---|
-| Staging deployment | `dpl_EME1Fuq7cxYeDbEdC4AfnETsuy61` — `https://innerdwes-4iqe9trhs-inner-dwe-s.vercel.app` (`182f47e`), alias `innerdwes-env-staging-inner-dwe-s.vercel.app` |
-| Rollback build | `innerdwes-85fff4s07` (`e3ed1eb`, READY) |
-| Production | latest `innerdwes-cdlnhanhr` (`44426be`), unchanged; Supabase Production `qzmsclkzbxrfohuxnitc` not touched |
-| Bypass secrets on the project | 0 |
+| Staging deployment | `dpl_EME1Fuq7cxYeDbEdC4AfnETsuy61` — `https://innerdwes-4iqe9trhs-inner-dwe-s.vercel.app` (`182f47e`), alias `innerdwes-env-staging-inner-dwe-s.vercel.app`; rollback `innerdwes-85fff4s07` (`e3ed1eb`) |
+| Production | `innerdwes-cdlnhanhr` (`44426be`), unchanged; Supabase Production `qzmsclkzbxrfohuxnitc` not touched |
 | Staging billing | `paid_checkout_enabled = false`; `space_subscriptions` 0 rows; no Stripe env names |
 | tr/it | not in `SPACE_SELECTABLE_LOCALES` (en, de, es, fr, he) |
 
-Staging synthetic Spaces (read-only):
-
-| Tenant | Slug | Type | Zone | Language | Guest access | Notes |
-|---|---|---|---|---|---|---|
-| `3e6e4978-…` | `qa-flow-1h8ve` | Flow | Europe/Lisbon | en | public | QA owner's; schedule 5 items, **one date** (2026-10-03); retreatProfile has **no start/end dates** |
-| `cc51ee9a-…` | `qa-teach-staging` | Teach | Asia/Jerusalem | en | public | QA owner's |
-| `4eb19601-…` | `qa-staging-retreat` | Flow | UTC | — | public | **not** the QA owner's (owner on `example.com`); 404-test target |
-| `c585f413-…` | (no slug) | Flow | UTC | en | — | not the QA owner's; **same `access_ends_at` as the 404 target** → the SQL filters by `tenant_id` |
+Synthetic Spaces: `qa-flow-1h8ve` (`3e6e4978-…`, Flow, Europe/Lisbon, en, public, one schedule date 2026-10-03, no retreat
+dates) and `qa-teach-staging` (`cc51ee9a-…`, Teach, Asia/Jerusalem, en, public). Both owned by the QA owner
+(`qa.example`) plus one synthetic co-owner (`example.com`); no real customer account. 404 target `qa-staging-retreat`
+(`4eb19601-…`) is owned by an `example.com` synthetic user only.
 
 ---
 
-## G1 — Commercially-unavailable 404 test (SQL, Staging only, synthetic tenant)
+## G1 — Commercially-unavailable 404 test — EXACT SQL FOR APPROVAL
 
-**Target row (re-verified 2026-10-14):** `public.space_entitlements` where `tenant_id = '4eb19601-1f88-4753-a13d-989de04ac935'`:
-`access_type complimentary`, `starts_at = created_at = updated_at = 2026-10-03T07:05:32.450636+00:00`,
-`access_ends_at = 2027-10-03T07:05:32.450636+00:00`, Stripe ids null. No `space_subscriptions` rows exist. No trigger on
-`space_entitlements` in migrations 0001–0047. Availability rule (`app/src/lib/entitlements/availability.ts`): unavailable
-once `now > access_ends_at + 168 h`; `−8 days` is past the grace.
+| Item | Value |
+|---|---|
+| Project | **`kkqjsspxupyxytddiumf` (InnerDweS Staging) only**; runner: Supabase connector `execute_sql` with that project id. Production id never passed |
+| Target tenant | **`4eb19601-1f88-4753-a13d-989de04ac935`** (`qa-staging-retreat`, synthetic, not a QA-owner Space) |
+| Target row (re-verified 2026-10-14) | `public.space_entitlements`: `access_type complimentary`, `starts_at = created_at = updated_at = 2026-10-03T07:05:32.450636+00:00`, `access_ends_at = 2027-10-03T07:05:32.450636+00:00`, Stripe ids null |
+| Other facts | 0 `space_subscriptions` rows; no trigger on `space_entitlements` in 0001–0047; tenant `c585f413-…` has the **same** `access_ends_at`, so every statement also filters by `tenant_id` |
+| Rule | unavailable once `now > access_ends_at + 168 h` (`app/src/lib/entitlements/availability.ts`); `−8 days` is past the grace |
 
-**Runner:** Supabase SQL on project **`kkqjsspxupyxytddiumf` (InnerDweS Staging)** only, via the Supabase connector
-`execute_sql` with that exact project id (Production id `qzmsclkzbxrfohuxnitc` never passed). Each step is one statement
-that refuses to act unless exactly one row matches.
+**Guards:** each write is a `DO` block that raises (and so changes nothing) unless **exactly one** row matches tenant id +
+access type + expected current value. Step 1 must match before step 2 runs.
 
 **Step 1 — read-only pre-check**
 ```sql
 select tenant_id, access_type, access_ends_at, updated_at
 from public.space_entitlements
 where tenant_id = '4eb19601-1f88-4753-a13d-989de04ac935';
--- expect exactly 1 row: complimentary, 2027-10-03 07:05:32.450636+00, 2026-10-03 07:05:32.450636+00
+-- expect exactly 1 row: complimentary | 2027-10-03 07:05:32.450636+00 | 2026-10-03 07:05:32.450636+00
 ```
 
-**Step 2 — make the synthetic Space commercially unavailable**
+**Step 2 — make unavailable**
 ```sql
 do $$
 declare n int;
@@ -65,11 +65,11 @@ begin
 end $$;
 ```
 
-**Step 3 — test (read-only, needs a temporary bypass secret, see G4)**: `/s/qa-staging-retreat` and
-`/g/4eb19601-1f88-4753-a13d-989de04ac935` → **404**, `<meta name="robots" content="noindex">`, no Space name/content, no
-`/api/media` request; Chromium + WebKit; plus `/s/qa-flow-1h8ve` and `/s/qa-teach-staging` still 200 (no collateral).
+**Step 3 — test** (needs a fresh temporary bypass, same G4 method, revoked after): `/s/qa-staging-retreat` and
+`/g/4eb19601-1f88-4753-a13d-989de04ac935` → 404 + `noindex`, no Space name/content, no `/api/media` request, Chromium +
+WebKit; `/s/qa-flow-1h8ve`, `/s/qa-teach-staging` still 200. Baseline before (G4 run): all six `/s`+`/g` paths 200.
 
-**Step 4 — rollback (immediately after step 3, also if step 3 fails part-way)**
+**Step 4 — restoration (immediately after step 3, also if step 3 fails part-way)**
 ```sql
 do $$
 declare n int;
@@ -84,189 +84,133 @@ begin
   if n <> 1 then raise exception 'expected exactly 1 row, got %', n; end if;
 end $$;
 ```
-**Step 5 — verify:** repeat step 1 (row byte-identical to the pre-check, `updated_at` included); `/s/qa-staging-retreat`
-and `/g/4eb19601-…` → 200 again. Expected window between step 2 and step 4: < 15 minutes.
 
-Not covered: Studio "inactive" view for that tenant's owner (not our account; would need another login). Guest-suspended
-(billing) state stays verified locally only.
+**Step 5 — verify restoration:** step 1 again → byte-identical to the pre-check (incl. `updated_at`); both paths 200
+again. Window step 2 → step 4: < 15 minutes.
 
-**Approval line:** "Approve G1: run steps 1–5 of the 404 test SQL on Staging `kkqjsspxupyxytddiumf` exactly as written."
+**Approval line:** "Approve G1: run steps 1–5 on Staging `kkqjsspxupyxytddiumf` exactly as written, with a temporary
+bypass for step 3 revoked afterwards."
 
 ---
 
-## G2 — D5: Staging site-address setting (Vercel env + redeploy, Staging only)
+## G2 — D5 Staging site address — impact and rollback (read-only checks done)
 
-**Finding:** both Staging values equal `https://innerdwes-git-fix-0275-teach-qa-corrections-inner-dwe-s.vercel.app`
-(no trailing slash). That alias currently serves an **11-day-old Preview build** (`innerdwes-c9csggnnm`,
-`dpl_7ic1i9FDwiumW1RQaspJmrZbjBUa`, 2026-10-03). Effects on Staging today:
+### G2.1 Supabase Auth URL configuration (Staging, read in the dashboard, nothing saved)
 
-| Code path | Variable | Effect now |
-|---|---|---|
-| `metadataBase` → `og:image`, canonical, sitemap/robots (`document-shell.tsx`, `robots.ts`, `sitemap.ts`) | `NEXT_PUBLIC_SITE_URL` | point at the old build |
-| Guest share links / QR / Copy Link (`GUEST_PUBLIC_ORIGIN`; `NEXT_PUBLIC_GUEST_URL` is **Production-only**, so Staging falls back to SITE_URL) | `NEXT_PUBLIC_SITE_URL` | QR on iPhone opens the old build |
-| Sign-up / resend / password-recovery email redirect (`actions.ts`, `recoveryActions.ts`) | `NEXT_PUBLIC_APP_URL` | links land on the old build |
-| Billing `appUrl` (`billing/deps.server.ts`) | `NEXT_PUBLIC_APP_URL` | inert (Stripe off) |
+| Setting | Current value |
+|---|---|
+| Site URL | `https://innerdwes-git-feat-time-to-teach-integration-inner-dwe-s.vercel.app` → Preview `innerdwes-bviwf3kkc` (`dpl_BMKptWcQTBMBNw3w4mCVL5pwsGHm`, 2026-10-03) |
+| Redirect URLs (1) | `https://innerdwes-git-feat-time-to-teach-integration-inner-dwe-s.vercel.app/**` |
 
-**The env records are shared:** each is one record targeting Preview branch `fix/027.5-teach-qa-corrections` **and**
-the `staging` custom environment (`env_fTINl69sF95hUnVgvL8Evl95HlAv`):
-`NEXT_PUBLIC_SITE_URL` id `AbjueOWmjqDQY5eE`, `NEXT_PUBLIC_APP_URL` id `wPHMblsr1yFkI5xb`. Production records
-(`0vVC93RGNLxYEgfD`, `0V1i61hw5io8efss`, `wA2z9Emka83uyW4E`) are separate and are **not touched**.
+**Finding:** the current `NEXT_PUBLIC_APP_URL` (`…git-fix-0275-teach-qa-corrections…`) is **not** on the allow-list, so
+today Staging sign-up/recovery email links already fall back to the Site URL — a **third** old build. Changing the Vercel
+value alone does **not** fix email links; the allow-list needs the new host too (G2b). Password login does not use either.
 
-**New value (both):** `https://innerdwes-env-staging-inner-dwe-s.vercel.app` — the stable Staging alias, which follows
-every Staging redeploy. Still SSO-protected (Production unaffected; no domain or DNS change).
+### G2.2 Every consumer of the shared Vercel records
 
-**Exact change** (from `~/Desktop/RBR-033-deploy`, project/team ids from its gitignored `.vercel/project.json`; the body is
-written to a 0600 scratch file, not echoed):
-1. `vercel api "/v9/projects/$P/env/AbjueOWmjqDQY5eE?teamId=$O" -X PATCH --input body.json` with
+Records: `NEXT_PUBLIC_SITE_URL` `AbjueOWmjqDQY5eE`, `NEXT_PUBLIC_APP_URL` `wPHMblsr1yFkI5xb`; both value
+`https://innerdwes-git-fix-0275-teach-qa-corrections-inner-dwe-s.vercel.app`; targets: Preview branch
+`fix/027.5-teach-qa-corrections` **and** custom environment `staging` (`env_fTINl69sF95hUnVgvL8Evl95HlAv`).
+
+| Consumer | Effect of the change |
+|---|---|
+| Future `staging` builds — CLI `vercel deploy --target=staging`, **and** Git pushes to `feat/task-028-guest-performance` (the staging branch matcher; branch exists on origin `5d402c1`) | get the new value. Existing builds keep the old one (inlined at build time) |
+| Future Preview builds of `fix/027.5-teach-qa-corrections` (branch exists on origin `d6a4901`; project is Git-linked, so a push would build) | get the Staging alias. 1 existing deployment (`innerdwes-c9csggnnm`) unchanged. No push planned |
+| Code (`182f47e`): `metadataBase` (`document-shell.tsx`), `robots.ts`, `sitemap.ts`, `GUEST_PUBLIC_ORIGIN` → share URL/QR/Copy Link (`guestSpaceUrl.ts`), `og:url`/`og:image`/canonical (`share/socialMetadata.ts`), Teach→Flow link builder + host check (`teach/retreats.ts`), demo links (`billing/demos.ts`) | SITE_URL: all point at the Staging alias. Teach host check also accepts any `*.vercel.app`, so existing links keep working |
+| Code: auth email redirects (`(auth)/actions.ts`, `recoveryActions.ts`), billing `appUrl` (`billing/deps.server.ts`) | APP_URL: email links target the alias **only if G2b adds it**; billing inert (Stripe off) |
+| Not consumers | Production records (`0vVC93RGNLxYEgfD`, `0V1i61hw5io8efss`); `NEXT_PUBLIC_GUEST_URL` (Production only, `wA2z9Emka83uyW4E`); other branch-scoped Preview records; R2 POC Worker (`ALLOWED_ORIGIN "*"`); R2 product Worker (not deployed; Staging origin is a placeholder → should become the same alias at R2 G1); no hard-coded host in any repo outside docs |
+| Stored data | QA Space data contains one pasted host `innerdwes-hajqi9jcv-…` (content, unaffected) |
+
+**Baseline (G4 run, both engines, 390 px):** all six `/s` + `/g` paths 200, `og:image`, `og:url` and canonical host =
+`innerdwes-git-fix-0275-teach-qa-corrections-…`, 0 console errors.
+
+### G2a — Vercel change (proposed, not executed)
+
+1. `vercel api "/v9/projects/$P/env/AbjueOWmjqDQY5eE?teamId=$O" -X PATCH --input <0600 file>` with
    `{"value":"https://innerdwes-env-staging-inner-dwe-s.vercel.app"}`; same for `wPHMblsr1yFkI5xb`.
-2. Verify (metadata GET): both records keep `target ["preview"]`, `gitBranch fix/027.5-teach-qa-corrections`,
-   `customEnvironmentIds [staging]`; only `updatedAt` changes; in-process equality check against the new value; Production
-   records' `updatedAt` unchanged.
-3. `NEXT_PUBLIC_*` values are inlined at build time → **redeploy the same commit** `182f47e` from the clean detached
-   worktree: `vercel deploy --target=staging --yes` (no code change). Record the new deployment id.
-4. Read-only check (with G4 bypass): `og:image` / canonical host = `innerdwes-env-staging-inner-dwe-s.vercel.app`;
-   Studio "Guest App link" and QR target the same host (needs G3 login); guest pages 200; Production unchanged.
-
-**Side effect, stated:** any *future* Preview build of the old branch `fix/027.5-teach-qa-corrections` would also get the
-Staging alias. No such build is planned; existing deployments are unchanged (values are baked in).
-Alternative (cleaner, more steps): detach `staging` from the shared records and create two staging-only records — offered
-only if you prefer it.
-
-**Unverified dependency:** the Supabase Staging Auth "Site URL / Redirect URLs" allow-list. Reading it needs the Supabase
-CLI token from the macOS keychain, which raised a keychain prompt; I stopped instead of waiting. If
-`https://innerdwes-env-staging-inner-dwe-s.vercel.app/auth/confirm` is not allowed, email links fall back to the
-Supabase Site URL. **Password login (G3) does not use it.** Owner check: Supabase dashboard → InnerDweS Staging →
-Authentication → URL Configuration (read only; any change there is a separate approval).
+2. Verify via metadata GET: targets, branch and `customEnvironmentIds` unchanged, only `updatedAt` moved; in-process
+   equality check; Production records' `updatedAt` unchanged.
+3. Redeploy the **same commit** `182f47e` from the clean detached worktree: `vercel deploy --target=staging --yes`.
+4. Check (temporary bypass, revoked after): `og:image`/`og:url`/canonical host = `innerdwes-env-staging-inner-dwe-s.vercel.app`; guest pages 200; Production unchanged.
 
 **Rollback:** PATCH both records back to `https://innerdwes-git-fix-0275-teach-qa-corrections-inner-dwe-s.vercel.app`
-and redeploy `182f47e`; or immediately point Staging back at `innerdwes-4iqe9trhs` (build with the old value baked in) by
-redeploying from it. No data or schema involved.
+and redeploy `182f47e` from `innerdwes-4iqe9trhs`'s commit (or deploy the old build's commit again). No data or schema.
 
-**Approval line:** "Approve G2: set the two shared Staging `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_APP_URL` records to
-`https://innerdwes-env-staging-inner-dwe-s.vercel.app` and redeploy `182f47e` to `staging`."
+### G2b — Supabase Auth allow-list (proposed, not executed; Staging project only)
+
+Add Redirect URL `https://innerdwes-env-staging-inner-dwe-s.vercel.app/**` (dashboard → Authentication → URL
+Configuration → Add URL). **Keep** the existing entry. Optional: set Site URL to the same alias (only then do fallback
+links stop pointing at an old build). **Rollback:** remove the added entry; restore Site URL to
+`https://innerdwes-git-feat-time-to-teach-integration-inner-dwe-s.vercel.app`.
+
+**Approval lines:** "Approve G2a" (Vercel records + redeploy) and, separately, "Approve G2b" (allow-list add; say whether
+the Site URL changes too).
 
 ---
 
-## G3 — Existing Staging QA account: login procedure (no reset)
+## G3 — QA login (Option B, owner-controlled)
 
-| Item | Value |
+Account `innerdwes.staging.qa+028@qa.example` (`b7a0e045-…`, Staging only). The password set on 2026-10-13 sits only in
+this session's scratchpad `stg033b/qa-owner.pw` (0600); Claude does not print, send, log or use it, and does not reset
+the account. **The scratchpad ends with this session** — copy it to your password manager first:
+
+1. In this session: `! pbcopy < "/private/tmp/claude-501/-Users-ronbirman-Desktop-RBR-Project/220dc7e0-cf6b-4803-8d93-512f891783fe/scratchpad/stg033b/qa-owner.pw"` (prints nothing).
+2. Paste into your password manager entry for `innerdwes-env-staging-inner-dwe-s.vercel.app`; then `! pbcopy < /dev/null`.
+3. iPhone Safari → `https://innerdwes-env-staging-inner-dwe-s.vercel.app/log-in` → your **Vercel** login first (team SSO),
+   then the QA email + password from the password manager.
+
+If sign-in fails: stop; a reset is a separate approval.
+
+---
+
+## G4 — Temporary bypass (approved; executed and closed)
+
+| Step | Evidence |
 |---|---|
-| Account | `innerdwes.staging.qa+028@qa.example`, id `b7a0e045-0006-471c-8a2c-e91bc0c3980b`, Staging only; owner of `qa-flow-1h8ve` and `qa-teach-staging` |
-| Password | set 2026-10-13 under the earlier approval; stored only in this session's scratchpad `stg033b/qa-owner.pw` (0600). Never printed, logged or committed |
-| Lifetime | the scratchpad is session-scoped. When this session ends the file is gone and only a **new reset** (separate approval) restores access, unless you copy it to your password manager first (option B) |
+| Before | 0 bypass secrets on the project |
+| Generate | Vercel API `PATCH /v1/projects/<id>/protection-bypass` (`generate`), scope `automation-bypass`; value written to a 0600 scratch file, never printed |
+| Use | read-only baseline: 6 paths × Chromium + WebKit, GETs/navigation only, header once per host per engine, host allow-list (only `vercel.live` blocked); `qa033/stg4/baseline.json` + screenshots |
+| Revoke | `revoke` with `regenerate:false` → **0 active bypass secrets**; revoked header → **302** (SSO); local copy `rm -P`; value found in 0 evidence files |
 
-**A — Claude-run (automated Studio checks):** Playwright reads the file in-process and types it into `/log-in` on the
-Staging host only; tracing/video off during the login step; no screenshot of the field; logs redacted; session cookie
-kept in memory. Needs a temporary bypass secret (G4). Sign out at the end.
-
-**B — Owner on iPhone/Mac (no value in chat):**
-1. On the Mac, type in this session: `! pbcopy < "/private/tmp/claude-501/-Users-ronbirman-Desktop-RBR-Project/220dc7e0-cf6b-4803-8d93-512f891783fe/scratchpad/stg033b/qa-owner.pw"` (copies, prints nothing).
-2. Paste it into your password manager entry for the Staging host (recommended), or paste on the iPhone via Universal Clipboard.
-3. Clear the clipboard: `! pbcopy < /dev/null`.
-4. iPhone Safari → `https://innerdwes-env-staging-inner-dwe-s.vercel.app/log-in`. Vercel first asks for **your Vercel
-   login** (team SSO; no bypass secret needed for you), then the app log-in with the QA email + pasted password.
-
-**Validity:** not re-tested today (testing it is a login). The first sign-in is the check. If it fails: stop, **no
-reset** without a separate approval.
-
-**Approval line (only for A):** "Approve G3-A: Claude signs in as the existing Staging QA owner for Studio checks."
-(B needs no approval from me — it is your action.)
+G1 step 3 and G2a step 4 each need a fresh secret by the same method (state it in the G1/G2 approval).
 
 ---
 
-## G4 — Temporary protection-bypass secret (credential, Staging project)
+## G5 — Synthetic QA data: snapshot + exact changes (owner performs in the Studio, Option B)
 
-Needed by Claude for G1 step 3, G2 step 4 and G3-A (you on the iPhone use Vercel SSO instead). Same procedure as rounds
-1–3: generate via the Vercel API, value 0600 in scratch, header on the first request per host only, **revoke** after the
-run, verify 0 remain and that the revoked header gets 302, then delete the file.
+**Snapshot taken** 2026-10-14 (read-only REST, Staging secret key, scoped to the two QA tenant ids, asserts the QA owner
+owns both): `g5/before-g5.json` (0600, sha256 prefix `ff0c3ddcc1e3228c`). Tables: tenants, tenant_members,
+module_settings 5+8, module_configs 13+5, module_items 42+21, schedule_items 5+0, brand_configs, space_guest_access
+(code hashes stored as digests only), access_code_redemptions 0, published_spaces, space_entitlements,
+guest_access_ip_attempts 2+1. Diff tool `g5/diff.py` (self-test 0 differences).
 
-**Approval line:** "Approve G4: one temporary bypass secret for this QA run, revoked afterwards."
+| # | Allowed area | Exact change (Studio UI, then Publish) | Restore (Studio UI, then Publish) |
+|---|---|---|---|
+| S1 | Multi-day Flow dates | `qa-flow-1h8ve` → "Retreat dates": Start date start = test day − 1, End date = test day + 3 (Space timezone Europe/Lisbon) | clear both dates (snapshot: no `startDate`/`endDate`) |
+| S2 | Sample activities + empty days | Schedule: add 3 activities "QA sample 1/2/3" on day 2 (09:00, 11:00, 15:00) and 1 on day 3 (10:00); add one **twin** = exact copy of "QA sample 1" on day 2; leave day 4 and day 5 **empty** | delete the 5 added activities (snapshot: 5 items, all 2026-10-03) |
+| S3 | Access code | `qa-flow-1h8ve` → "Guest Access" → turn the access code on; the Studio shows a generated **6-digit code once** — keep it on your device only, never send it in chat | "Guest Access" → turn the code off (snapshot: mode `public`) |
+| S4 | German Teach | `qa-teach-staging` → "Language" → German (`de`) | "Language" → English (snapshot: `locale en`) |
 
----
+**Restore check (Claude, read-only):** a new snapshot + `diff.py` against `before-g5.json` → expected 0 non-cosmetic
+differences. Expected cosmetic / residual: `published_at`, `content_updated_at`, `updated_at`, `space_guest_access.version`;
+**new `guest_access_ip_attempts` rows** from the wrong-code test (rate-limit counters, IP HMACs, no personal data) —
+cannot be removed from the UI; left in place unless you approve a separate cleanup.
 
-## G5 — Synthetic Studio data for the iPhone pass (QA owner's Spaces only, via the Studio UI)
-
-Needed because Staging has no multi-day Flow, no German Space and no access code today. All changes on `qa-flow-1h8ve` /
-`qa-teach-staging` only, Studio UI only (no SQL), each logged, restored afterwards, and diffed against a read-only REST
-snapshot taken before (round-2 pattern; cosmetic differences such as `published_at` advancing are expected).
-
-| # | Change | Restore |
-|---|---|---|
-| S1 | `qa-flow-1h8ve` retreat dates: start = test day − 1, end = test day + 3 (Europe/Lisbon), Publish | clear both dates, Publish |
-| S2 | `qa-flow-1h8ve`: copy existing activities onto two more days; add one **twin** (same date, time and title) on day 2 (D1 check) | delete the added activities, Publish |
-| S3 | `qa-flow-1h8ve`: set a guest access code (chosen by **you**, typed on the device, never sent in chat), Publish | remove the code, Publish → `public` |
-| S4 | `qa-teach-staging`: Space language `de` (D4 German dates on real WebKit), Publish | back to `en`, Publish |
-
-Who: you on the iPhone (also exercises Studio on iPhone) or Claude beforehand (needs G3-A + G4). Restore + snapshot diff:
-Claude (read-only) afterwards.
-
-**Approval line:** "Approve G5: synthetic Studio changes S1–S4 on the two QA Spaces, restored afterwards."
+No other Space is touched (the snapshot scope and the diff cover only the two QA tenant ids).
 
 ---
 
-## G6 — Real-iPhone checklist (owner)
+## G6 — Real-iPhone checklist
 
-Order: after G2 (so QR and links point at the current Staging host) and G5 setup. Latest iOS Safari; an older iOS too if
-available. Emulation already passed these in Playwright WebKit — this is the real-device confirmation only.
-Send back: one folder `iphone-<model>-ios<version>/`, files `I-<n>-<name>.png|mov`, plus one line per item PASS/FAIL + note.
+`IPHONE-CHECKLIST.md` — 21 steps: Flow multi-day (I-1–I-7), Teach (I-8–I-11), Share Cards (I-12–I-15), access codes
+(I-16–I-21). Best after G2a (QR/links point at the current Staging host); runs with or without it (limits stated there).
 
-### Flow — multi-day Day Navigator (`/s/qa-flow-1h8ve`, needs S1 + S2)
+## Still gated
 
-| # | Check | Pass when |
-|---|---|---|
-| I-1 | Schedule opens on **today** (Lisbon date) | the selected tab is today's, labelled `<WEEKDAY> <date> · DAY 2` (S1 puts today on day 2); Today control visible |
-| I-2 | Swipe the day strip; tap each day | smooth, no horizontal page scroll, each day shows only its own activities; tab targets easy to hit (56×72) |
-| I-3 | Empty day (if one in range) | empty-day message, no stale cards |
-| I-4 | Twin activity day (S2) | both twins show once each on day 2; switching quickly between days leaves **no stale card** (D1) |
-| I-5 | Leave Schedule (Today / Explore) and come back | same selected day and content |
-| I-6 | Daily Inspiration | anchored to the retreat start (day-n text matches) |
-| I-7 | Rotate to landscape; then text size larger (Settings → Display → Text Size) | nothing clipped, nav not under the home indicator |
+tr/it native review → `SPACE_SELECTABLE_LOCALES`; Stripe (final launch phase); Production (TASK 032 gates first); no
+`main` merge or push.
 
-### Teach (`/s/qa-teach-staging`)
+## Recommended order
 
-| # | Check | Pass when |
-|---|---|---|
-| I-8 | Home, week strip, tap through 14 days | counts match the cards; "0 classes" days show the empty state with "Next:" |
-| I-9 | Class sheet (e.g. Mon 26 Oct) opens/closes, scrolls | price free text `₪65`; sheet not under the notch/home indicator |
-| I-10 | Retreats list prices | `THB 700.00`, `€450.00`, `€1,250.50` |
-| I-11 | With S4 (`de`): Home + schedule | German dates like `Mi., 14. Okt.`; no flash of different text after load; in Safari on the Mac (Web Inspector console) **no React #418** |
-
-### Share Cards
-
-| # | Check | Pass when |
-|---|---|---|
-| I-12 | Studio (Flow) → "Share your Space" on the iPhone | iOS share sheet opens with the card image + link; link host = `innerdwes-env-staging-…` (after G2) |
-| I-13 | Open the card image route in Safari: `/s/qa-flow-1h8ve/social/<v>` (link from the page's share) | 1200×1200 image of the published Space photo |
-| I-14 | Teach Share Card in Teach Studio | card shows the portrait/hero; after a Republish the card updates |
-| I-15 | Studio QR scanned with the iPhone camera | opens the current Staging host (after G2), SSO login then the Space |
-| — | **Limit:** WhatsApp/iMessage **link previews** cannot fetch the card on Staging (SSO-protected; crawlers have no Vercel login) → expected "no preview" on Staging; verifiable only on a public host (Production release or a separately approved protection exception) | record what you see, not a FAIL |
-
-### Access codes (needs S3)
-
-| # | Check | Pass when |
-|---|---|---|
-| I-16 | Open `/s/qa-flow-1h8ve` | code screen inside the shell, no Space content or images before the code |
-| I-17 | Keypad | numeric keypad; SMS/one-time-code suggestion does not insert garbage; paste of a full code works |
-| I-18 | Wrong code | error shown; after ~5 tries rate-limited message |
-| I-19 | Right code | unlocks; still unlocked after closing and reopening Safari |
-| I-20 | Same link opened from Messages / WhatsApp (in-app browser) | same code screen; unlock works |
-| I-21 | After S3 restore | Space public again without a code |
-
-General (any page): no blank page > ~2 s on 4G/5G; loader never on top of painted content; safe areas respected
-(portrait + landscape).
-
-**Approval needed:** none from me — your action. Depends on G2, G5 and your Vercel SSO on the iPhone.
-
----
-
-## Still gated (not requested here)
-
-- tr/it: native review (`docs/localization/NATIVE-REVIEW-CHECKLIST-tr-it.md`) → then `SPACE_SELECTABLE_LOCALES`.
-- Stripe: off until the final launch phase.
-- Production: needs the TASK 032 release gates first (Staging 0001–0047, Production 0035); no `main` merge or push.
-- Optional code-only speed-up (parallel access reads) — `OWNER-ACCEPTANCE-CHECKLIST.md` B4.
-
-## Recommended order (one session)
-
-G4 → G2 (env + redeploy + check) → G1 (404 test, < 15 min, rollback) → G3 (A or B) → G5 setup → G6 iPhone → G5 restore +
-snapshot diff → revoke G4 → report round 4.
+G1 (approve SQL) and G2a/G2b (approve) → one Claude session: fresh bypass → G2a + check → G1 steps 1–5 → revoke → you:
+G3 + G5 setup + G6 on the iPhone + G5 restore → Claude: restore diff → round-4 report.
