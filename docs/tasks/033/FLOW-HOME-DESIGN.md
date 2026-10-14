@@ -1,12 +1,16 @@
 # TASK 033: Time to Flow Guest Home, design proposal (FOR OWNER REVIEW, not implemented)
 
+**Owner rule, revision 2 (2026-10-14):** every Guest App is the mobile-app shell on every device. On desktop that means
+the same app in a centred column of at most 430px (`GUEST_COLUMN_MAX_WIDTH`) over the Space's calm branded backdrop,
+with the bottom navigation inside the shell. The wide two-column desktop layout from revision 1 is withdrawn.
+
 Status: this is a design only. No Home layout code has been changed. Implementation waits for owner review, plus the
 separate Dynamic Home approval for the live "Happening now" behaviour (`DYNAMIC-HOME-PROPOSAL.md` §8).
 
 **Artifacts.** These are static HTML/PNG frames rendered from real app tokens. Figma was not used: no Figma skill was
 loaded in this run, and the brief allows this fallback.
 - Frames: `qa033/ux/home-design/frames/*.png` (session scratchpad).
-- Overview: `qa033/ux/home-design/overview-mobile.png`.
+- Overview: `qa033/ux/home-design/overview-mobile.png` and `overview-desktop.png`.
 - HTML source of a frame: `frames/frame-source-mobile.html`.
 - Generator: `qa033/ux/home-design.mjs`.
 - How they were rendered: inside the real local Guest page, so the self-hosted Flow fonts apply (DM Serif Display =
@@ -20,15 +24,21 @@ loaded in this run, and the brief allows this fallback.
 
 ## Frames
 
-| # | State | Mobile 390 | Desktop 1440 |
+Every state has a 390px frame and a 430px frame (`<state>-430-<palette>.png`, the shell's maximum width). All 14
+measured 0px of content past the frame edge. Desktop 1440 frames show the same app centred at 430px on the
+branded backdrop, with the tab bar pinned inside the shell.
+
+| # | State | Mobile 390 / 430 | Desktop 1440 (centred shell) |
 |---|---|---|---|
-| 1 | Before the retreat: day countdown + Day 1 preview (<= 4) | `1-before-retreat-390-forest.png` | - |
-| 2 | During the retreat: Right now (1 card) + Up next | `2-during-retreat-390-forest.png` | `2-during-retreat-1440-forest.png` |
-| 3 | After the retreat: thank-you + Stay connected | `3-after-retreat-390-forest.png` | - |
-| 4 | With the optional feature image | `4-with-feature-image-390-dustyRose.png` | `4-with-feature-image-1440-dustyRose.png` |
-| 5 | Without it (no empty placeholder) | `5-without-feature-image-390-dustyRose.png` | `5-without-feature-image-1440-forest.png` |
-| 6 | Several activities at once: up to 3 cards, then "+N more · View schedule" | `6-simultaneous-activities-390-forest.png` | - |
-| 7 | Between activities: Up next only, "Tomorrow · 07:00" + end-of-day line; never an empty live box | `7-between-activities-390-dustyRose.png` | - |
+| 1 | Before the retreat: day countdown + Day 1 preview (<= 4) | `1-before-retreat-{390,430}-forest.png` | - |
+| 2 | During the retreat: Right now (1 card) + Up next | `2-during-retreat-{390,430}-forest.png` | `2-during-retreat-1440-forest.png` |
+| 3 | After the retreat: thank-you + Stay connected | `3-after-retreat-{390,430}-forest.png` | - |
+| 4 | With the optional feature image | `4-with-feature-image-{390,430}-dustyRose.png` | `4-with-feature-image-1440-dustyRose.png` |
+| 5 | Without it (no empty placeholder) | `5-without-feature-image-{390,430}-dustyRose.png` | `5-without-feature-image-1440-forest.png` |
+| 6 | Several activities at once: up to 3 cards, then "+N more · View schedule" | `6-simultaneous-activities-{390,430}-forest.png` | - |
+| 7 | Between activities: Up next only, "Tomorrow · 07:00" + end-of-day line; never an empty live box | `7-between-activities-{390,430}-dustyRose.png` | - |
+
+Sample copy fix: the tagline now reads "Five quiet days by the ocean", matching the 13–17 Oct range (5 days).
 
 ## Structure (mobile first)
 
@@ -61,21 +71,21 @@ loaded in this run, and the brief allows this fallback.
 8. **Explore:** module cards (Meals, Treatments, Facilities, Questions, ...).
 9. Attribution, then the tab bar (unchanged).
 
-**Desktop 1440:** the Teach-style wide frame (max 1180px).
-- Top nav with the Space name and tabs.
-- 420px hero with a 32px radius and a 64px display line.
-- Then two columns: left = HomeLive + entry cards; right = hosts' word, feature image, Daily inspiration.
+**Desktop 1440 (revision 2):** no separate desktop layout. It is the same app, centred at <= 430px over the
+backdrop. The backdrop is `GUEST_BACKDROP`, the Space primary at 10% over parchment-deep, with a hairline + soft
+shadow on the column edge. Hero, HomeLive, the optional feature image and all retreat content stay inside the shell.
+The bottom tab bar is inside the shell and reachable while scrolling.
 
 ## Type, spacing, colour
 
 | | Mobile | Desktop |
 |---|---|---|
-| Hero display | DM Serif Display 40/1.05 | 64/1.02 |
+| Hero display | DM Serif Display 40/1.05 | same (the shell) |
 | Section eyebrow | DM Sans 10.5px 600, +0.18em, uppercase (Teach `Eyebrow`) | same |
-| Card title | DM Serif Display 18-21px | 22px |
-| Body | DM Sans 14/1.6 | 16/1.6 |
-| Section gap | 26px | 30px |
-| Card | `--rbr-cream`-like surface, 1px line, 20px radius, 14-18px padding (Teach card) | 20-22px padding |
+| Card title | DM Serif Display 18-21px | same |
+| Body | DM Sans 14/1.6 | same |
+| Section gap | 26px | same |
+| Card | `--rbr-cream`-like surface, 1px line, 20px radius, 14-18px padding (Teach card) | same |
 
 Colour comes only from the Space's palette tokens:
 - primary: Live pill, countdown number;
@@ -91,7 +101,7 @@ The hero text sits on a gradient scrim, so it reaches AA on any photo.
 - eyebrow + serif display hierarchy;
 - card styling (surface, line, radius);
 - pill buttons and chips;
-- the desktop frame (max 1180px, wide hero, two columns);
+- the shell: both apps are the same centred <= 430px column on desktop;
 - the Daily inspiration card;
 - the tab bar, attribution and palette tokens.
 
