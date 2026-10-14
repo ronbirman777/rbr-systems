@@ -18,8 +18,8 @@ export default async function VerifyPage({ searchParams }: { searchParams: Promi
   const sp = await searchParams;
   const who = await requireAdminForMfaPages();
   const stepUp = sp.stepup === "1";
-  if (who.aal2 && !stepUp) redirect("/admin/billing");
-  const next = safeInternalRedirectPath(typeof sp.next === "string" ? sp.next : null, "/admin/billing");
+  if (who.aal2 && !stepUp) redirect("/admin");
+  const next = safeInternalRedirectPath(typeof sp.next === "string" ? sp.next : null, "/admin");
   const { t, locale, dict } = await getAdminI18n();
   return (
     <AdminI18nProvider dict={dict} locale={locale}>

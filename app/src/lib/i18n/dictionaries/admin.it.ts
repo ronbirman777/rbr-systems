@@ -603,7 +603,7 @@ export const adminIt: { [K in keyof typeof adminEn]: string } = {
   ovcBusiness: "Attività",
   ovcMrr: "MRR (attuale, per valuta)",
   ovcMrrNone: "Nessun abbonamento a pagamento",
-  ovcMrrCurrencyMissing: "{count} abbonamenti a pagamento non hanno valuta. La panoramica della fatturazione li conta in USD; è un problema di qualità dei dati.",
+  ovcMrrCurrencyMissing: "Abbonamenti a pagamento senza valuta: {count}. La panoramica della fatturazione li conta in USD; è un problema di qualità dei dati.",
   ovcCurrencyUnknown: "valuta sconosciuta",
   ovcNetNew: "Nuovi Space a pagamento netti questo mese",
   ovcSpaces: "Space",

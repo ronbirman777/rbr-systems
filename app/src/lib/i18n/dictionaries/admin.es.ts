@@ -602,7 +602,7 @@ export const adminEs: { [K in keyof typeof adminEn]: string } = {
   ovcBusiness: "Negocio",
   ovcMrr: "MRR (actual, por moneda)",
   ovcMrrNone: "No hay suscripciones de pago",
-  ovcMrrCurrencyMissing: "{count} suscripciones de pago no tienen moneda. El resumen de facturación las cuenta como USD; es un problema de calidad de datos.",
+  ovcMrrCurrencyMissing: "Suscripciones de pago sin moneda: {count}. El resumen de facturación las cuenta como USD; es un problema de calidad de datos.",
   ovcCurrencyUnknown: "moneda desconocida",
   ovcNetNew: "Nuevos Espacios de pago netos este mes",
   ovcSpaces: "Espacios",

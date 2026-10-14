@@ -608,7 +608,7 @@ export const adminHe: { [K in keyof typeof adminEn]: string } = {
   ovcBusiness: "עסקי",
   ovcMrr: "MRR (נוכחי, לפי מטבע)",
   ovcMrrNone: "אין מנויים בתשלום",
-  ovcMrrCurrencyMissing: "ל-{count} מנויים בתשלום אין מטבע. סקירת החיוב סופרת אותם כ-USD; זו בעיית איכות נתונים שיש לתקן.",
+  ovcMrrCurrencyMissing: "מנויים בתשלום ללא מטבע: {count}. סקירת החיוב סופרת אותם כ-USD; זו בעיית איכות נתונים שיש לתקן.",
   ovcCurrencyUnknown: "מטבע לא ידוע",
   ovcNetNew: "מרחבים חדשים בתשלום (נטו) החודש",
   ovcSpaces: "מרחבים",

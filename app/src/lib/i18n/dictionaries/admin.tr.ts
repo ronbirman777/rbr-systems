@@ -603,7 +603,7 @@ export const adminTr: { [K in keyof typeof adminEn]: string } = {
   ovcBusiness: "İş",
   ovcMrr: "MRR (güncel, para birimine göre)",
   ovcMrrNone: "Ücretli abonelik yok",
-  ovcMrrCurrencyMissing: "{count} ücretli aboneliğin para birimi yok. Faturalandırma özeti bunları USD sayıyor; bu düzeltilmesi gereken bir veri kalitesi sorunu.",
+  ovcMrrCurrencyMissing: "Para birimi olmayan ücretli abonelikler: {count}. Faturalandırma özeti bunları USD sayıyor; bu düzeltilmesi gereken bir veri kalitesi sorunu.",
   ovcCurrencyUnknown: "para birimi bilinmiyor",
   ovcNetNew: "Bu ay net yeni ücretli Space'ler",
   ovcSpaces: "Space'ler",

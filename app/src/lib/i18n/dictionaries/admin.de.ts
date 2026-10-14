@@ -602,7 +602,7 @@ export const adminDe: { [K in keyof typeof adminEn]: string } = {
   ovcBusiness: "Geschäft",
   ovcMrr: "MRR (aktuell, je Währung)",
   ovcMrrNone: "Keine kostenpflichtigen Abos",
-  ovcMrrCurrencyMissing: "{count} kostenpflichtige Abos haben keine Währung. Die Abrechnungsübersicht zählt sie als USD; das ist ein Datenqualitätsproblem.",
+  ovcMrrCurrencyMissing: "Kostenpflichtige Abos ohne Währung: {count}. Die Abrechnungsübersicht zählt sie als USD; das ist ein Datenqualitätsproblem.",
   ovcCurrencyUnknown: "Währung unbekannt",
   ovcNetNew: "Netto neue kostenpflichtige Spaces diesen Monat",
   ovcSpaces: "Spaces",

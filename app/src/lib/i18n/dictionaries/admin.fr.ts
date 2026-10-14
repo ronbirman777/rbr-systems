@@ -602,7 +602,7 @@ export const adminFr: { [K in keyof typeof adminEn]: string } = {
   ovcBusiness: "Activité",
   ovcMrr: "MRR (actuel, par devise)",
   ovcMrrNone: "Aucun abonnement payant",
-  ovcMrrCurrencyMissing: "{count} abonnements payants n'ont pas de devise. La vue d'ensemble de facturation les compte en USD ; c'est un problème de qualité des données.",
+  ovcMrrCurrencyMissing: "Abonnements payants sans devise : {count}. La vue d'ensemble de facturation les compte en USD ; c'est un problème de qualité des données.",
   ovcCurrencyUnknown: "devise inconnue",
   ovcNetNew: "Nouveaux Espaces payants nets ce mois-ci",
   ovcSpaces: "Espaces",

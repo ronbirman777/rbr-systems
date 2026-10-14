@@ -611,7 +611,7 @@ export const adminEn = {
   ovcBusiness: "Business",
   ovcMrr: "MRR (current, per currency)",
   ovcMrrNone: "No paid subscriptions",
-  ovcMrrCurrencyMissing: "{count} paid subscriptions have no currency. The billing overview counts them as USD; this is a data-quality problem to fix.",
+  ovcMrrCurrencyMissing: "Paid subscriptions without a currency: {count}. The billing overview counts them as USD; this is a data-quality problem to fix.",
   ovcCurrencyUnknown: "currency unknown",
   ovcNetNew: "Net new paid Spaces this month",
   ovcSpaces: "Spaces",

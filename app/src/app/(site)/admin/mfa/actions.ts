@@ -36,7 +36,7 @@ export async function completeMfaEnrollmentAction(factorId: string, _prev: Verif
   const supabase = await createClient();
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code: parsed.data });
   if (error) return { ok: false, error: "invalid_code" };
-  redirect("/admin/billing");
+  redirect("/admin");
 }
 
 /** Sign-in challenge AND step-up share this: verifying a fresh code refreshes the session's TOTP timestamp. */
@@ -50,7 +50,7 @@ export async function verifyMfaAction(next: string, _prev: VerifyState, fd: Form
   if (!factor) redirect("/admin/mfa/enroll");
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId: factor.id, code: parsed.data });
   if (error) return { ok: false, error: "invalid_code" };
-  redirect(safeInternalRedirectPath(next, "/admin/billing"));
+  redirect(safeInternalRedirectPath(next, "/admin"));
 }
 
 export type StepUpState = { ok: true; at: number } | { ok: false; error: string } | null;

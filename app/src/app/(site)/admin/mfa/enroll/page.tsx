@@ -15,7 +15,7 @@ const RECOVERY_DOC = "docs/billing/ADMIN-RECOVERY.md";
 
 export default async function EnrollPage() {
   const who = await requireAdminForMfaPages();
-  if (who.aal2) redirect("/admin/billing");
+  if (who.aal2) redirect("/admin");
   const { t, locale, dict } = await getAdminI18n();
   return (
     <AdminI18nProvider dict={dict} locale={locale}>
