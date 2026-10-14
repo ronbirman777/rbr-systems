@@ -124,7 +124,7 @@ Items for native review (P5):
 
 Still NOT native-reviewed. Full method, sources and change log: `docs/localization/TR-IT-REVIEW-2026-10.md`.
 
-### Register: evidence favours "tu", switch NOT applied (owner decision needed)
+### Register: **tu** (owner decision 2026-10-14, applied in commit `04f7e39`)
 
 Every live Italian consumer or SaaS interface checked addresses the user with **tu** (pages fetched 2026-10-14):
 Booking.com ("ti bastano pochi click", booking.com/content/about.it.html), Airbnb ("Sei responsabile…", airbnb.it/help/article/2908),
@@ -134,10 +134,10 @@ Notion, Spotify, Microsoft's Italian style guide ("avoids an unnecessarily forma
 yogafestival.it), and even Intesa Sanpaolo, Poste Italiane, INPS and Agenzia delle Entrate. Lei was found only in formal letters/contracts and in one
 non-Italian booking SaaS (Zenamu). Netflix IT mixes both (a negative example).
 
-**Decision:** the product should move to **tu** for the Studio, the guest apps and billing e-mails (legal text impersonal). It is **not** applied on this
-branch because `terminology.test.ts` pins "never addresses anyone informally in Italian" and the task forbids code/test changes. Scope of the switch: about
-270 strings (it.ts ~177, billing.it.ts ~40, admin.it.ts ~55 contain Lei verb or possessive forms). Until then the current Lei is kept consistent, and
-masculine-only agreements were neutralised ("Tutto pronto per la pubblicazione?", "quando è tutto pronto").
+**Decision (applied):** tu everywhere in the Italian UI: Studio, guest apps, account/billing/Admin and billing e-mails (greeting "Ciao,").
+Buttons keep the tu imperative ("Salva", "Pubblica"). Legal strings changed register only (see `LEGAL-STRINGS-tr-it.md`). Avoid gendered agreement with
+the user. Never "Lei", and no "suo/sua/suoi/sue" at all (third-person uses are rephrased) - enforced by `terminology.test.ts` over the shared, billing and
+Admin dictionaries. Earlier sections of this glossary that say "Lei" are superseded.
 
 ### Terminology
 

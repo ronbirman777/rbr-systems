@@ -56,11 +56,9 @@ Not retrievable: Booking.com TR/IT form labels, Stripe Checkout TR/IT field labe
 
 **Turkish: formal "siz" in sentences, bare imperative on buttons. Confirmed** (Google TR help, Airbnb TR placeholders, WordPress TR). Unchanged.
 
-**Italian: the evidence says "tu"; switch NOT applied.** Every live Italian interface checked uses tu (I1-I14), including banks and public bodies;
-Lei appears only in formal letters/contracts and in one non-Italian SaaS (I15). Recommendation: tu for the Studio, the guest apps and billing e-mails,
-impersonal phrasing in legal text, never mixed. Not applied here because `terminology.test.ts` pins "never addresses anyone informally in Italian"
-and this task forbids test/code changes. Scope: ~270 strings (it.ts ~177, billing.it.ts ~40, admin.it.ts ~55). This is an owner decision; it should be
-done as one dedicated commit that also flips the test guard, ideally with the native reviewer.
+**Italian: switched from Lei to tu (owner decision, 2026-10-14; commit `04f7e39`).** Every live Italian interface checked uses tu (I1-I14),
+including banks and public bodies; Lei appears only in formal letters/contracts and in one non-Italian SaaS (I15). The owner approved the switch for
+the Studio, the guest apps and the account/billing/Admin UI. See "Italian tu conversion" below.
 
 ## Terminology decisions
 
@@ -91,7 +89,7 @@ done as one dedicated commit that also flips the test guard, ideally with the na
 
 | Term | Chosen | Rejected | Evidence |
 |---|---|---|---|
-| register | Lei kept for now; **tu recommended** | | I1-I15 |
+| register | **tu** (applied, owner decision) | Lei | I1-I15 |
 | retreat | ritiro | retreat | I11, I13 |
 | class / teacher | lezione / insegnante | maestro, corso (single class) | I12 |
 | schedule | Calendario (Teach), Programma (Flow), test-pinned; "Orario" open | | I12, I13 |
@@ -117,7 +115,51 @@ done as one dedicated commit that also flips the test guard, ideally with the na
 | admin | 1 | 3 |
 | **Total** | **58** | **25** |
 
-Italian is lower because its wording was already accurate; most of its open issues are the register switch, which is not applied.
+Italian is lower because its wording was already accurate. The register switch that followed is counted separately below.
+
+## Italian tu conversion (commit `04f7e39`)
+
+Owner decision: modern, friendly **tu** everywhere in the Italian UI (Studio, guest apps, account/billing/Admin). The 25 corrections above were kept.
+
+| File | Values changed |
+|---|---|
+| it.ts: common 2, studio 68, flow 67, teach 67 | 204 |
+| billing.it.ts | 46 |
+| admin.it.ts | 43 |
+| **Total** | **293** |
+
+Rules applied: tu verbs and imperatives (Riprova, Inserisci, Scegli, Carica, Controlla, Disdici, Digita); possessives tuo/tua/tuoi/tue; clitics ti/te
+("gli ospiti ti troveranno", "pronto per te", "ti verrà chiesto"); "Ci racconti il suo ritiro" → "Raccontaci il tuo ritiro"; teacher-voice CTAs
+"Mi scriva su WhatsApp" → "Scrivimi su WhatsApp", "Mettiamoci in contatto" → "Contattami"; guest-written WhatsApp templates "Buongiorno … Potrebbe" →
+"Ciao … Puoi", and the gendered "sono interessato/a" → "mi interessa"; billing e-mail greeting "Buongiorno," → "Ciao,"; `admin.you` "(Lei)" → "(tu)".
+Third-person "suo/sua" referring to customers or objects in Admin was rephrased ("le relative fatture", "la finestra di disponibilità") so the guard can
+ban the possessive outright. Gendered agreement with the user is avoided ("Tutto pronto…", "Hai modifiche non salvate").
+
+Guard (`terminology.test.ts`): the old test "never addresses anyone informally in Italian" (shared dictionary only) became "addresses everyone with
+the informal tu in Italian, never with Lei". It now scans the shared dictionary **and** billing and Admin (1,985 strings, asserted > 1,900), bans
+`lei|suo|sua|suoi|sue` and the Lei-only imperatives (inserisca, scelga, aggiunga, apra, attenda, chieda, condivida, disdica, scriva, esegua, "ci
+racconti", "mi scriva", "ci contatti"), and pins five tu strings across Studio, guest app, billing and Admin. Ambiguous forms (riprovi, carichi, usi,
+lasci, pubblichi are also tu indicatives) are deliberately not banned.
+
+Legal and consumer-rights strings: register only, substance unchanged; listed for specialist review in
+`docs/localization/LEGAL-STRINGS-tr-it.md` (24 keys, EN/TR/IT side by side with the pre-branch Italian).
+
+Terminology re-check for tu UIs: Booking.com (I1), Airbnb (I2), Google Calendar/Drive (I3, I4), Apple (I5), Stripe docs (I6), Shopify (I7), Notion (I8)
+and the Microsoft Italian style guide (I10) all use the same tu imperatives on buttons ("Salva", "Condividi", "Copia link", "Annulla") that the product
+already used, so button labels did not need to change.
+
+### Local browser spot-check (Italian, tu)
+
+Local `next build` + `next start` on port 3135 against the local Supabase stack (`supabase_*_innerdwes-local-qa`), Playwright Chromium. Temporary,
+reverted after the run (none committed): `"it"` added to `SPACE_SELECTABLE_LOCALES`; a local `.env.local` with the local stack's demo keys; local DB:
+`qa-teach-de` set to `it` (restored to `de`) and `billing_settings.paid_checkout_enabled` set true (restored to false); a placeholder
+`STRIPE_SECRET_KEY` in the server's process environment only so the pre-checkout page renders (no Stripe call is made by rendering it).
+
+Screens (scratchpad `qa033/it-tu/`, plus `result.json` with page text): guest Flow home and Programma (390 px), guest Teach home and Calendario
+(390 px), Studio Flow entry / Programma / Brand, Studio Teach entry / Calendario / Brand (1440 px), pre-checkout `/create/flow`, create chooser
+`/create`, billing page of a past-due QA Space. Result: every screen rendered Italian tu copy; 0 Lei forms found in visible text; no English UI strings
+from the dictionaries (the English/German texts visible are the QA Spaces' own content). Observation: account pages set `lang` on their `<main>`,
+so `document.documentElement.lang` reads `en` there (pre-existing, not a translation issue). This is Chromium emulation, not a real phone.
 
 ## Notable fixes (before → after)
 
@@ -251,10 +293,9 @@ Turkish:
 - "cayma hakkı" consent sentence: legal review still needed.
 
 Italian:
-- The tu switch (wording of ~270 strings); until then, whether Lei reads too stiff for onboarding.
+- The tu wording of the 293 converted strings (natural flow, CTA tone such as "Contattami", "Scrivimi su {method}").
 - "Guide" vs "Insegnanti"; "Calendario" vs "Orario"; "Ambienti" for facilities.
 - "Disdici" vs "Annulla abbonamento"; "Codice sconto" vs "Codice promozionale" (Stripe Checkout's own label not verified).
-- `teach.getInTouch` "Mettiamoci in contatto" is long for a button.
 - Straight apostrophes in billing/admin vs typographic ’ in it.ts (cosmetic).
 - "diritto di recesso" consent sentence: legal review still needed.
 
@@ -264,7 +305,9 @@ Italian:
 - Full suite `npx vitest run`: 193 files passed, 3 skipped; 3,317 tests passed, 20 skipped, 0 failed.
 - `npx tsc --noEmit -p .`: exit 0.
 - `npx eslint`: 0 errors, 29 warnings (all in files this branch does not touch).
-- Browser spot-check: not done. No screenshots or UI evidence are claimed.
+- After the tu switch (commit `04f7e39`): i18n 6 files / 113 tests passed; full suite 193 files passed, 3 skipped; 3,317 tests passed,
+  20 skipped, 0 failed; tsc exit 0; eslint 0 errors (29 pre-existing warnings).
+- Browser spot-check: see "Local browser spot-check" above (Chromium emulation only).
 
 ## Recommendation on enabling tr / it for Spaces
 
@@ -273,6 +316,13 @@ the sign-off the checklist requires.
 
 - **Turkish** is close to ready: terminology and register are consistent with what Turkish booking and wellness sites use. Enable after one native
   reviewer walks the checklist (Treatments wording, suffix label forms, Share Card lines) and a legal check of "cayma hakkı".
-- **Italian** should not be enabled before the register decision. The evidence clearly favours tu; shipping Lei would read noticeably more formal
-  than Booking, Airbnb, Google, Apple and Italian yoga sites. Recommended order: owner approves tu → one commit converts the ~270 strings and flips the
-  test guard → native review → legal check of "diritto di recesso" → release switch.
+- **Italian** now uses tu (owner decision applied). Remaining blockers before enabling: native review of the converted wording; legal check of the
+  strings in `LEGAL-STRINGS-tr-it.md` ("diritto di recesso", consent sentences, "fattura / ricevuta", "imposte escluse"); the open terminology items
+  above; a real-device check (truncation at 320 px, bottom nav, Share Card canvas lines).
+
+Blockers common to both languages before adding them to `SPACE_SELECTABLE_LOCALES` (not done here):
+1. Native-speaker sign-off per `NATIVE-REVIEW-CHECKLIST-tr-it.md` (none has happened).
+2. Legal/consumer-rights review of `LEGAL-STRINGS-tr-it.md`.
+3. Real-device QA (iPhone Safari, Android Chrome) at 320-430 px; Share Card glyph coverage for Turkish İ/ş/ğ in the canvas fonts.
+4. The release change itself: flip the constant and update "the release switch for Turkish and Italian is still off" in `trIt.test.ts` in the same
+   commit, then the normal Staging → Production gates.
