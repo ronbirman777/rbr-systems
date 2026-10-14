@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   buildRetreatDays,
+  countOutsideRetreatDates,
+  isWithinRetreatDates,
   defaultRetreatDay,
   inclusiveDaySpan,
   isoToEpochDay,
@@ -77,29 +79,82 @@ describe("buildRetreatDays - fallback when dates are unset (derived)", () => {
   });
 });
 
-describe("buildRetreatDays - activities outside the configured range stay reachable", () => {
-  it("extends the list after the end, keeping calendar numbering", () => {
-    const r = buildRetreatDays({ activityDates: ["2027-10-21"], startDate: "2027-10-14", endDate: "2027-10-19", todayIso: "2000-01-01" });
-    expect(dates(r).at(-1)).toBe("2027-10-21");
-    const last = r.days.at(-1)!;
-    expect(last.dayNumber).toBe(8);
-    expect(last.outsideRange).toBe(true);
-    expect(r.days.find((d) => d.date === "2027-10-20")?.outsideRange).toBe(true);
-    expect(r.days.find((d) => d.date === "2027-10-19")?.outsideRange).toBe(false);
+describe("buildRetreatDays - both dates set: exact boundaries (TASK 033 addendum A)", () => {
+  // DEPARTURE from TASK 033 P2: an activity outside an explicit start/end
+  // range used to EXTEND the list (flagged outsideRange). The owner's rule
+  // is now that both dates are hard boundaries.
+  it("owner example: 2026-10-13..17 with stray activities on 2026-10-03 -> exactly Day 1..Day 5", () => {
+    const r = buildRetreatDays({
+      activityDates: ["2026-10-03", "2026-10-03", "2026-10-13", "2026-10-14", "2026-10-14"],
+      startDate: "2026-10-13",
+      endDate: "2026-10-17",
+      todayIso: "2026-10-03",
+    });
+    expect(dates(r)).toEqual(["2026-10-13", "2026-10-14", "2026-10-15", "2026-10-16", "2026-10-17"]);
+    expect(numbers(r)).toEqual([1, 2, 3, 4, 5]);
+    expect(r.days.every((d) => !d.outsideRange)).toBe(true);
+    expect(r.days.some((d) => d.isToday)).toBe(false);
+    expect(r.days.map((d) => d.hasActivities)).toEqual([true, true, false, false, false]);
   });
 
-  it("extends the list before the start with no Day number", () => {
+  it("does not extend after the end", () => {
+    const r = buildRetreatDays({ activityDates: ["2027-10-21"], startDate: "2027-10-14", endDate: "2027-10-19", todayIso: "2000-01-01" });
+    expect(dates(r).at(-1)).toBe("2027-10-19");
+    expect(r.days).toHaveLength(6);
+  });
+
+  it("does not extend before the start", () => {
     const r = buildRetreatDays({ activityDates: ["2027-10-12"], startDate: "2027-10-14", endDate: "2027-10-15", todayIso: "2000-01-01" });
-    expect(dates(r)).toEqual(["2027-10-12", "2027-10-13", "2027-10-14", "2027-10-15"]);
-    expect(numbers(r)).toEqual([null, null, 1, 2]);
+    expect(dates(r)).toEqual(["2027-10-14", "2027-10-15"]);
+    expect(numbers(r)).toEqual([1, 2]);
+  });
+
+  it("a stray activity years away no longer adds a chip", () => {
+    const r = buildRetreatDays({ activityDates: ["2029-01-01"], startDate: "2027-10-14", endDate: "2027-10-16", todayIso: "2000-01-01" });
+    expect(dates(r)).toEqual(["2027-10-14", "2027-10-15", "2027-10-16"]);
+  });
+
+  it("guards a stored range longer than the navigator cap", () => {
+    const r = buildRetreatDays({ activityDates: [], startDate: "2027-01-01", endDate: "2028-01-01", todayIso: "2000-01-01" });
+    expect(r.days).toHaveLength(MAX_NAVIGATOR_SPAN_DAYS);
+  });
+});
+
+describe("buildRetreatDays - one side only keeps the earlier behaviour", () => {
+  it("start only: an activity before the start is still listed, unnumbered and flagged", () => {
+    const r = buildRetreatDays({ activityDates: ["2027-10-12", "2027-10-16"], startDate: "2027-10-14", todayIso: "2000-01-01" });
+    expect(dates(r)).toEqual(["2027-10-12", "2027-10-13", "2027-10-14", "2027-10-15", "2027-10-16"]);
+    expect(numbers(r)).toEqual([null, null, 1, 2, 3]);
     expect(r.days[0].outsideRange).toBe(true);
   });
 
-  it("caps a sprawling span to the configured range plus the activity dates", () => {
-    const r = buildRetreatDays({ activityDates: ["2029-01-01"], startDate: "2027-10-14", endDate: "2027-10-16", todayIso: "2000-01-01" });
-    expect(r.days.length).toBeLessThanOrEqual(MAX_NAVIGATOR_SPAN_DAYS);
-    expect(dates(r)).toEqual(["2027-10-14", "2027-10-15", "2027-10-16", "2029-01-01"]);
+  it("a span beyond the cap keeps the start of the range plus the activity dates (no end set)", () => {
+    const r = buildRetreatDays({ activityDates: ["2027-10-14", "2029-01-01"], startDate: "2027-10-14", todayIso: "2000-01-01" });
+    // unchanged pre-addendum rule: the first MAX_NAVIGATOR_SPAN_DAYS days of the range plus every activity date
+    expect(r.days).toHaveLength(MAX_NAVIGATOR_SPAN_DAYS + 1);
+    expect(dates(r)[0]).toBe("2027-10-14");
+    expect(dates(r).at(-1)).toBe("2029-01-01");
     expect(r.days.at(-1)?.dayNumber).toBe((isoToEpochDay("2029-01-01")! - isoToEpochDay("2027-10-14")!) + 1);
+  });
+});
+
+describe("isWithinRetreatDates / countOutsideRetreatDates", () => {
+  it("filters only when both dates are set", () => {
+    expect(isWithinRetreatDates("2026-10-03", "2026-10-13", "2026-10-17")).toBe(false);
+    expect(isWithinRetreatDates("2026-10-13", "2026-10-13", "2026-10-17")).toBe(true);
+    expect(isWithinRetreatDates("2026-10-17", "2026-10-13", "2026-10-17")).toBe(true);
+    expect(isWithinRetreatDates("2026-10-18", "2026-10-13", "2026-10-17")).toBe(false);
+    expect(isWithinRetreatDates("2026-10-03", "2026-10-13", null)).toBe(true);
+    expect(isWithinRetreatDates("2026-10-03", null, "2026-10-17")).toBe(true);
+    expect(isWithinRetreatDates("2026-10-03", null, null)).toBe(true);
+    // a reversed stored pair is ignored, like buildRetreatDays does
+    expect(isWithinRetreatDates("2026-10-03", "2026-10-17", "2026-10-13")).toBe(true);
+  });
+
+  it("counts the activities the guest will not see", () => {
+    const items = [{ date: "2026-10-03" }, { date: "2026-10-03" }, { date: "2026-10-14" }];
+    expect(countOutsideRetreatDates(items, "2026-10-13", "2026-10-17")).toBe(2);
+    expect(countOutsideRetreatDates(items, null, null)).toBe(0);
   });
 });
 

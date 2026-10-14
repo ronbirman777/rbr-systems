@@ -21,12 +21,21 @@
  * list is derived from the activities and flagged `derived`, so a UI (or a
  * reviewer) can tell the two apart.
  *
- * ACTIVITIES OUTSIDE THE CONFIGURED RANGE stay reachable: the list is
- * EXTENDED to include them rather than hiding them, because an organizer
- * who moved the dates but not every activity must not silently lose
- * sessions from the guest's schedule. Extended days are flagged
- * `outsideRange`. A day before the start has no meaningful "Day n", so its
- * `dayNumber` is null; a day after the end keeps its calendar number.
+ * EXPLICIT START AND END (TASK 033 addendum A, owner decision). When BOTH
+ * dates are set they are the navigator's exact boundaries: Day 1 is the
+ * start, every date through the end is listed (empty days included), and
+ * activities outside the range do NOT extend the list - they stay stored
+ * untouched but the guest schedule does not show them (the Studio warns
+ * the organizer instead, countOutsideRetreatDates()). This replaces the
+ * earlier "extend the list and flag outsideRange" rule for that case.
+ *
+ * ONE SIDE ONLY (unchanged). The missing side is derived from the
+ * activities, so a list with only a start reaches the last activity, and
+ * one with only an end starts at the first. Activities before an explicit
+ * start (start only) are still listed with a null `dayNumber` and flagged
+ * `outsideRange`: with only one boundary set the configuration is
+ * incomplete, and hiding sessions on a guess would be worse than showing
+ * them unnumbered.
  *
  * SAFETY CAP. A navigator of hundreds of chips is unusable, and a stray
  * activity years away would otherwise produce one. When the full span is
@@ -51,7 +60,7 @@ export type RetreatDay = {
   dayNumber: number | null;
   isToday: boolean;
   hasActivities: boolean;
-  /** True for a day added only because an activity falls outside the configured dates. */
+  /** True for a day added only because an activity falls outside a ONE-SIDED configured range (never when both dates are set). */
   outsideRange: boolean;
 };
 
@@ -108,6 +117,8 @@ type ResolvedRetreatRange = {
   start: number | null;
   end: number | null;
   derived: boolean;
+  /** Both start and end were set (and valid, end >= start): they are hard boundaries. */
+  explicit: boolean;
 };
 
 /**
@@ -126,13 +137,14 @@ function resolveRetreatRange({ activityDates, startDate, endDate }: Omit<BuildRe
   // rather than producing an empty or reversed list.
   if (start !== null && end !== null && end < start) end = null;
   const derived = start === null && end === null;
+  const explicit = start !== null && end !== null;
 
   const firstActivity = activityDays[0] ?? null;
   const lastActivity = activityDays[activityDays.length - 1] ?? null;
 
   if (start === null) start = end !== null && (firstActivity === null || firstActivity > end) ? end : firstActivity;
   if (end === null) end = lastActivity !== null && start !== null && lastActivity >= start ? lastActivity : start;
-  return { activityDays, start, end, derived };
+  return { activityDays, start, end, derived, explicit };
 }
 
 /**
@@ -147,7 +159,7 @@ export function retreatDayOne(input: Omit<BuildRetreatDaysInput, "todayIso">): s
 }
 
 export function buildRetreatDays({ activityDates, startDate, endDate, todayIso }: BuildRetreatDaysInput): RetreatDayList {
-  const { activityDays, start, end, derived } = resolveRetreatRange({ activityDates, startDate, endDate });
+  const { activityDays, start, end, derived, explicit } = resolveRetreatRange({ activityDates, startDate, endDate });
   if (start === null || end === null) return { days: [], derived };
 
   const firstActivity = activityDays[0] ?? null;
@@ -155,16 +167,20 @@ export function buildRetreatDays({ activityDates, startDate, endDate, todayIso }
 
   const rangeStart = start;
   const rangeEnd = end;
-  const from = Math.min(rangeStart, firstActivity ?? rangeStart);
-  const to = Math.max(rangeEnd, lastActivity ?? rangeEnd);
+  // Both dates set: exactly the configured range (addendum A).
+  const from = explicit ? rangeStart : Math.min(rangeStart, firstActivity ?? rangeStart);
+  const to = explicit ? rangeEnd : Math.max(rangeEnd, lastActivity ?? rangeEnd);
 
   const activitySet = new Set(activityDays);
   const today = isoToEpochDay(todayIso);
 
   let epochDays: number[];
-  if (to - from + 1 <= MAX_NAVIGATOR_SPAN_DAYS) {
+  if (explicit || to - from + 1 <= MAX_NAVIGATOR_SPAN_DAYS) {
+    // An explicit range is already capped by validateRetreatDates
+    // (MAX_RETREAT_RANGE_DAYS); guard a stored over-long one anyway.
     epochDays = [];
-    for (let n = from; n <= to; n++) epochDays.push(n);
+    const last = explicit ? Math.min(to, from + MAX_NAVIGATOR_SPAN_DAYS - 1) : to;
+    for (let n = from; n <= last; n++) epochDays.push(n);
   } else {
     const kept = new Set(activityDays);
     const rangeLength = Math.min(rangeEnd - rangeStart + 1, MAX_NAVIGATOR_SPAN_DAYS);
@@ -183,6 +199,28 @@ export function buildRetreatDays({ activityDates, startDate, endDate, todayIso }
     };
   });
   return { days, derived };
+}
+
+/**
+ * TASK 033 addendum A: whether an activity date is shown to guests. With
+ * both retreat dates set, only dates inside the range are; otherwise
+ * (legacy / one-sided) every date is, exactly as before.
+ */
+export function isWithinRetreatDates(dateIso: string, startDate?: string | null, endDate?: string | null): boolean {
+  const s = isoToEpochDay(startDate ?? null);
+  const e = isoToEpochDay(endDate ?? null);
+  if (s === null || e === null || e < s) return true;
+  const d = isoToEpochDay(dateIso);
+  return d !== null && d >= s && d <= e;
+}
+
+/** How many activities fall outside both-set retreat dates (0 otherwise) - the Studio hint. */
+export function countOutsideRetreatDates(
+  items: readonly { date: string }[],
+  startDate?: string | null,
+  endDate?: string | null
+): number {
+  return items.filter((i) => !isWithinRetreatDates(i.date, startDate, endDate)).length;
 }
 
 /**

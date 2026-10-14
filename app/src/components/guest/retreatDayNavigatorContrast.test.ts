@@ -103,10 +103,12 @@ describe("Day Navigator text contrast (WCAG AA 4.5:1, small text)", () => {
 });
 
 describe("Day Navigator markup uses only those solid tokens", () => {
+  // TASK 033 addendum A: with BOTH dates set nothing is outside the range
+  // any more, so the out-of-range chip is produced the one way that still
+  // exists - a start date only, with an activity before it.
   const { days } = buildRetreatDays({
-    activityDates: ["2027-10-12", "2027-10-15"],
+    activityDates: ["2027-10-12", "2027-10-15", "2027-10-17"],
     startDate: "2027-10-14",
-    endDate: "2027-10-17",
     todayIso: "2027-10-15",
   });
   const render = (locale: Locale) =>

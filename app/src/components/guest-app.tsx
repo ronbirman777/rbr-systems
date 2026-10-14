@@ -13,6 +13,7 @@ import { TodayIcon, ScheduleIcon, TeamIcon, ExploreIcon } from "./guest/icons";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import type { BrandConfig } from "@/lib/theme/tokens";
 import type { PublicScheduleItem } from "@/lib/schedule/types";
+import { isWithinRetreatDates } from "@/lib/schedule/retreatDays";
 import type { DisplayFacilitator } from "@/lib/modules/facilitator";
 import type { DisplayMeal } from "@/lib/modules/meal";
 import type { DisplayTreatment } from "@/lib/modules/treatment";
@@ -131,7 +132,12 @@ const GUEST_TABS: TabDef[] = [
         brand={props.brand}
         heroImageUrl={props.heroImageUrl}
         logoUrl={props.logoUrl}
-        schedule={props.schedule}
+        /* TASK 033 addendum A: with both retreat dates set, an activity
+           outside them is not on the guest's schedule, so Happening Now /
+           Up Next must not surface it either. */
+        schedule={props.schedule.filter((s) =>
+          isWithinRetreatDates(s.date, props.retreatProfile?.startDate, props.retreatProfile?.endDate)
+        )}
         todayIso={props.todayIso}
         nowTime={props.nowTime}
         tagline={props.retreatProfile?.tagline ?? null}
