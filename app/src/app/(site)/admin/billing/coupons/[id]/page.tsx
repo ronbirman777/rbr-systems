@@ -117,13 +117,12 @@ export default async function CouponDetailPage({ params }: { params: Promise<{ i
       <Card title={t("cdRedemptions", { count: redemptions.length })}>
         {redemptions.length === 0 ? <EmptyRow>{t("cdNoRedemptions")}</EmptyRow> : (
           <RTable caption={t("cdRedemptionsCaption")}>
-            <RHead cols={[t("colCustomer"), t("colSpace"), t("colRedeemed"), t("colDiscountRuns"), t("colCycles"), t("colStatus"), t("colNextBilling"), t("colNextAction")]} />
+            <RHead cols={[t("colSpace"), t("colRedeemed"), t("colDiscountRuns"), t("colCycles"), t("colStatus"), t("colNextBilling"), t("colNextAction")]} />
             <RBody>
-              {redemptions.map(({ redemption: r, userEmail, nextBillingDate, next }) => {
+              {redemptions.map(({ redemption: r, nextBillingDate, next }) => {
                 const tn = r.tenants as { name?: string; product_type?: string } | null;
                 return (
                   <RRow key={r.id as string}>
-                    <RCell label={t("colCustomer")}>{userEmail ?? "-"}</RCell>
                     <RCell label={t("colSpace")}>{tn?.name ?? "-"}<span className="block text-xs text-idw-forest/70">{spaceTypeLabel(tn?.product_type, c)}</span></RCell>
                     <RCell label={t("colRedeemed")}>{formatUtc(r.redeemed_at, c)}</RCell>
                     <RCell label={t("colDiscountRuns")}>{formatUtc(r.discount_starts_at, c)}<span className="block text-xs">{t("cdRunsTo", { time: r.discount_ends_at ? formatUtc(r.discount_ends_at, c) : r.cycles_total == null && r.duration_type === "forever" ? t("cdNeverForever") : "-" })}</span></RCell>

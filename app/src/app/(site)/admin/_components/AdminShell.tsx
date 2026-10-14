@@ -28,6 +28,7 @@ export async function AdminShell({ admin, subnav, children }: { admin: AdminCont
             <div className="flex flex-wrap items-center gap-3 text-xs text-idw-forest/75">
               {sections.length > 1 ? <span className="rounded-full border border-idw-forest/20 px-2 py-0.5 font-semibold" data-admin-env={env}>{t("envLabel", { env: t(`env_${env}`) })}</span> : null}
               <span><bdi>{admin.email ?? t("adminFallback")}</bdi> ({admin.role === "owner" ? t("roleOwner") : t("roleBillingAdmin")})</span>
+              <Link href="/admin/mfa/enroll?add=1" className="inline-flex min-h-11 items-center font-medium underline underline-offset-2">{t("shellAddBackupFactor")}</Link>
               <Link href="/space" className="inline-flex min-h-11 items-center font-medium underline underline-offset-2">{t("backToSpaces")}</Link>
             </div>
           </div>

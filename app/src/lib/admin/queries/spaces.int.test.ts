@@ -142,8 +142,8 @@ describe.skipIf(!ENABLED)("Spaces & Overview exact counts vs adm1 fixtures (loca
       const m = o.mrr.current.USD;
       return m ? (v(m) as number) : 0;
     };
-    // The billing loader buckets the null-currency subscription as USD (documented; flagged by mrrCurrencyMissing).
-    expect(usd(ovAfter) - usd(ovBefore)).toBe(3500);
+    // The null-currency subscription (T6) is NOT added to USD: it is excluded and counted in mrrCurrencyMissing.
+    expect(usd(ovAfter) - usd(ovBefore)).toBe(2500);
     expect(ovAfter.netNewPaidMonth.state).toBe("not_measured");
     expect(ovAfter.watchdog.state).toBe("not_connected");
   });

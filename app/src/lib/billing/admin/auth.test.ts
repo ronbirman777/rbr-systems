@@ -4,7 +4,9 @@ vi.mock("server-only", () => ({}));
 
 // Controllable stand-ins for the two clients the gate uses.
 let claims: { data: { claims: Record<string, unknown> } | null; error: unknown } = { data: null, error: new Error("no session") };
-let factors: { data: { totp: { status: string }[] } | null; error?: unknown } = { data: { totp: [] } };
+type F = { status: string; id?: string; created_at?: string };
+let factors: { data: { totp: F[] } | null; error?: unknown } = { data: { totp: [] } };
+let adminFactorCalls = 0;
 let adminRow: { data: { role: string; disabled_at: string | null } | null; error: unknown } = { data: null, error: null };
 const redirectCalls: string[] = [];
 let notFoundCalled = false;
@@ -13,14 +15,23 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({ auth: { getClaims: async () => claims, mfa: { listFactors: async () => factors } } }),
 }));
 vi.mock("@/lib/supabase/admin", () => ({
-  createAdminClient: () => ({ from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => adminRow }) }) }) }),
+  createAdminClient: () => ({
+    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => adminRow }) }) }),
+    // The gate reads factors FRESH through the Auth Admin API (service role), not from the session.
+    auth: { admin: { mfa: { listFactors: async () => {
+      adminFactorCalls++;
+      return factors.data
+        ? { data: { factors: factors.data.totp.map((f, i) => ({ id: f.id ?? `f${i}`, factor_type: "totp", status: f.status, created_at: f.created_at ?? "2026-01-01T00:00:00Z" })) }, error: factors.error ?? null }
+        : { data: null, error: factors.error ?? new Error("no data") };
+    } } } },
+  }),
 }));
 vi.mock("next/navigation", () => ({
   redirect: (to: string) => { redirectCalls.push(to); throw new Error(`NEXT_REDIRECT:${to}`); },
   notFound: () => { notFoundCalled = true; throw new Error("NEXT_NOT_FOUND"); },
 }));
 
-import { AdminAuthError, OWNER_ONLY, requireAdminAction, requireAdminForMfaPages, requireAdminPage } from "./auth";
+import { AdminAuthError, OWNER_ONLY, __resetFactorCacheForTests, requireAdminAction, requireAdminForMfaPages, requireAdminPage } from "./auth";
 
 const U = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const nowSec = () => Math.floor(Date.now() / 1000);
@@ -33,6 +44,8 @@ beforeEach(() => {
   adminRow = { data: { role: "owner", disabled_at: null }, error: null };
   redirectCalls.length = 0;
   notFoundCalled = false;
+  adminFactorCalls = 0;
+  __resetFactorCacheForTests();
 });
 
 describe("requireAdminAction - the server-side gate behind every Admin mutation", () => {
@@ -205,5 +218,49 @@ describe("requireAdminForMfaPages - only an authorised admin may even reach the 
   it("signed-out goes to log in", async () => {
     claims = { data: null, error: new Error("x") };
     await expect(requireAdminForMfaPages()).rejects.toThrow("NEXT_REDIRECT:/log-in?next=/admin");
+  });
+});
+
+describe("stale factor: a removed factor never authorizes via a still-valid AAL2 JWT", () => {
+  const isoAgo = (sec: number) => new Date(Date.now() - sec * 1000).toISOString();
+  it("every server action re-reads factors fresh (no cache)", async () => {
+    await requireAdminAction(); await requireAdminAction();
+    expect(adminFactorCalls).toBe(2);
+  });
+  it("factor removed (no verified factor left): actions -> mfa_required path, step-up -> step_up_required, pages -> enrol", async () => {
+    factors = { data: { totp: [] } };
+    expect(await denial(requireAdminAction())).toBe("mfa_enroll_required");
+    expect(await denial(requireAdminAction({ recentMfa: true }))).toBe("step_up_required");
+    await expect(requireAdminPage()).rejects.toThrow("NEXT_REDIRECT:/admin/mfa/enroll");
+  });
+  it("factor replaced: a NEW factor created after this session's TOTP verification does not back it", async () => {
+    factors = { data: { totp: [{ status: "verified", created_at: isoAgo(5) }] } }; // session TOTP was 30 s ago
+    expect(await denial(requireAdminAction())).toBe("mfa_challenge_required");
+    await expect(requireAdminPage()).rejects.toThrow("NEXT_REDIRECT:/admin/mfa/verify");
+    // the MFA screens then treat the session as NOT aal2, so verify/enrol does not loop back to /admin
+    await expect(requireAdminForMfaPages()).resolves.toMatchObject({ aal2: false });
+  });
+  it("a factor created before the verification (the one that verified it, or an older backup) backs it", async () => {
+    factors = { data: { totp: [{ status: "verified", created_at: isoAgo(3600) }] } };
+    await expect(requireAdminAction({ recentMfa: true })).resolves.toMatchObject({ userId: U });
+    await expect(requireAdminForMfaPages()).resolves.toMatchObject({ aal2: true });
+  });
+  it("the factor lookup failing fails closed for actions, step-up and pages", async () => {
+    factors = { data: null, error: new Error("auth admin down") };
+    expect(await denial(requireAdminAction())).toBe("mfa_enroll_required");
+    expect(await denial(requireAdminAction({ recentMfa: true }))).toBe("step_up_required");
+    await expect(requireAdminPage()).rejects.toThrow(/NEXT_REDIRECT:\/admin\/mfa\//);
+  });
+  it("page reads cache only a POSITIVE check briefly; a removal after the cache window is caught; negatives are never cached", async () => {
+    await requireAdminPage(); await requireAdminPage();
+    expect(adminFactorCalls).toBe(1); // cached for FACTOR_CACHE_MS
+    // step-up pages and actions never use the cache
+    await requireAdminPage({ recentMfa: true });
+    expect(adminFactorCalls).toBe(2);
+    __resetFactorCacheForTests(); // = the 60 s window elapsed
+    factors = { data: { totp: [] } };
+    await expect(requireAdminPage()).rejects.toThrow("NEXT_REDIRECT:/admin/mfa/enroll");
+    await expect(requireAdminPage()).rejects.toThrow("NEXT_REDIRECT:/admin/mfa/enroll");
+    expect(adminFactorCalls).toBe(4);
   });
 });

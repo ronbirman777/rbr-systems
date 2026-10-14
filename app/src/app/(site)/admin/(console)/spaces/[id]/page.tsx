@@ -83,7 +83,7 @@ export default async function SpaceDetailPage({ params }: { params: Promise<{ id
             <>
               <Dl items={[
                 [t("spdSubStatus"), statusLabel(sub.status, c)],
-                [t("spdSubAmount"), sub.baseAmountMinor == null && sub.currentEffectiveAmountMinor == null ? "-" : `${money(sub.currentEffectiveAmountMinor ?? sub.baseAmountMinor, sub.currency, c.locale)} ${sub.currency ?? t("ovcCurrencyUnknown")}`],
+                [t("spdSubAmount"), sub.baseAmountMinor == null && sub.currentEffectiveAmountMinor == null ? "-" : `${money(sub.currentEffectiveAmountMinor ?? sub.baseAmountMinor, sub.currency, c.locale, c)} ${sub.currency ?? t("ovcCurrencyUnknown")}`],
                 [t("spdSubPeriodEnd"), sub.currentPeriodEnd ? formatUtc(sub.currentPeriodEnd, c) : "-"],
                 [t("spdSubCancelAtEnd"), sub.cancelAtPeriodEnd ? t("spdYes") : t("spdNo")],
                 [t("spdSubPaymentFailed"), sub.paymentFailedAt ? formatUtc(sub.paymentFailedAt, c) : "-"],

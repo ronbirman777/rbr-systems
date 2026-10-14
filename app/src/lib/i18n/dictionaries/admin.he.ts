@@ -608,7 +608,7 @@ export const adminHe: { [K in keyof typeof adminEn]: string } = {
   ovcBusiness: "עסקי",
   ovcMrr: "MRR (נוכחי, לפי מטבע)",
   ovcMrrNone: "אין מנויים בתשלום",
-  ovcMrrCurrencyMissing: "מנויים בתשלום ללא מטבע: {count}. סקירת החיוב סופרת אותם כ-USD; זו בעיית איכות נתונים שיש לתקן.",
+  ovcMrrCurrencyMissing: "מטבע לא ידוע: {count} מנויים בתשלום. הם אינם נכללים בסכומים שלמעלה ולעולם אינם נספרים כ-USD.",
   ovcCurrencyUnknown: "מטבע לא ידוע",
   ovcNetNew: "מרחבים חדשים בתשלום (נטו) החודש",
   ovcSpaces: "מרחבים",
@@ -730,4 +730,18 @@ export const adminHe: { [K in keyof typeof adminEn]: string } = {
   bkThresholds: "ספים: אזהרה אחרי {warn} שעות ללא גיבוי מאומת, קריטי אחרי {crit} שעות; סיכום ישן מ-{stale} דקות נחשב לא ידוע.",
   bkEvidence: "ראיות להתאוששות מאסון",
   bkEvidenceBody: "עדיין לא הוגדר: מרשם של טענות מתוארכות (תרגילי שחזור, כספת, עותק של מסד הנתונים), כל אחת עם הפניה לראיה.",
+
+  // --- Admin Batch 1 follow-up (owner-only controls, PII, unknown currency, backup authenticator) ---
+  ovMrrUnknownCurrency: "מטבע לא ידוע (מנויים בתשלום)",
+  metric_mrrUnknownCurrency: "מנויים פעילים או בניסיון ללא מטבע רשום. הם אינם נכללים באף סכום MRR ולעולם אינם נחשבים כ-USD.",
+  ovMrrMissingAmount: "ל-{count} נוספים אין סכום, וגם הם אינם נכללים.",
+  amountUnknownCurrency: "{amount} (יחידות משנה, מטבע לא ידוע)",
+  navControls: "השקה ופטורים",
+  ctIntro: "לבעלים בלבד: מתג ההשקה של התשלום ופטורי החיוב. כל שינוי מחייב קוד חדש ונרשם ביומן הביקורת.",
+  ctMovedNote: "מתג התשלום והפטורים נמצאים עכשיו תחת השקה ופטורים (בעלים בלבד).",
+  sdSublineType: "מרחב {type} - ",
+  sdOwnerOnSpacePage: "פרטי הבעלים: דף המרחב",
+  mfaAddTitle: "הוספת מאמת גיבוי",
+  mfaAddIntro: "הגדירו מאמת שני (למשל במכשיר אחר או במנהל הסיסמאות) כדי שאובדן מכשיר אחד לעולם לא ינעל אתכם בחוץ.",
+  shellAddBackupFactor: "הוספת מאמת גיבוי",
 } as const;

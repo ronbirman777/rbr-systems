@@ -33,22 +33,21 @@ export default async function PaymentsPage({ searchParams }: { searchParams: Pro
       <FilterLinks base="/admin/billing/payments" param="status" current={status} label={t("filterAria")} options={[["", t("filterAll")], ...STATUSES.map((s): [string, string] => [s, invoiceStatusWord(s, c)])]} />
       {rows.length === 0 ? <EmptyRow>{t("payEmpty")}</EmptyRow> : (
         <RTable caption={t("payCaption")}>
-          <RHead cols={[t("colDate"), t("colCustomer"), t("colSpace"), t("colStripeInvoice"), t("colStatus"), t("colAmounts"), t("colCoupon"), t("colPaidFailed"), t("colDocuments")]} />
+          <RHead cols={[t("colDate"), t("colSpace"), t("colStripeInvoice"), t("colStatus"), t("colAmounts"), t("colCoupon"), t("colPaidFailed"), t("colDocuments")]} />
           <RBody>
-            {rows.map(({ invoice: i, spaceName, ownerEmail, couponCode }) => {
+            {rows.map(({ invoice: i, spaceName, couponCode }) => {
               const hosted = safeHttpsUrl(i.hosted_invoice_url);
               const pdf = safeHttpsUrl(i.invoice_pdf_url);
               const receipt = safeHttpsUrl(i.receipt_url);
               return (
                 <RRow key={i.id as string}>
                   <RCell label={t("colDate")}>{formatUtc(i.issued_at, c)}</RCell>
-                  <RCell label={t("colCustomer")}>{ownerEmail ?? "-"}</RCell>
                   <RCell label={t("colSpace")}>{spaceName || "-"}{i.space_subscription_id ? <span className="block text-xs"><Link className={linkCls} href={`/admin/billing/subscriptions/${i.space_subscription_id}`}>{t("paySubscriptionLink")}</Link></span> : null}</RCell>
                   <RCell label={t("colStripeInvoice")}><code className="font-mono text-xs">{i.stripe_invoice_id}</code>{i.invoice_number ? <span className="block text-xs">{t("payInvoiceNo", { number: i.invoice_number })}</span> : null}<span className="block text-xs text-idw-forest/70">{i.stripe_mode}</span></RCell>
                   <RCell label={t("colStatus")}><Badge tone={i.status === "paid" ? "good" : i.status === "open" ? "warn" : "neutral"}>{invoiceStatusLabel(i, c)}</Badge></RCell>
                   <RCell label={t("colAmounts")}>
                     <InvoiceAmounts lines={invoiceAmountLines(i, c)} note={invoiceAmountNote(i, c)} currency={String(i.currency).trim()} />
-                    {i.discount_minor > 0 ? <span className="block text-xs">{t("payDiscount", { amount: money(i.discount_minor, i.currency, locale) })}</span> : null}
+                    {i.discount_minor > 0 ? <span className="block text-xs">{t("payDiscount", { amount: money(i.discount_minor, i.currency, locale, c) })}</span> : null}
                   </RCell>
                   <RCell label={t("colCoupon")}>{couponCode ? <code className="font-mono text-xs">{couponCode}</code> : "-"}</RCell>
                   <RCell label={t("colPaidFailed")}>{i.paid_at ? t("payPaid", { time: formatUtc(i.paid_at, c) }) : i.failed_at ? t("payFailed", { time: formatUtc(i.failed_at, c) }) : "-"}</RCell>

@@ -32,7 +32,14 @@ export type MoneyByCurrency = Record<string, number>;
 export type OverviewMetrics = {
   paidSubscriptions: number;
   paidSpaces: number;
-  mrr: { listMinor: MoneyByCurrency; currentMinor: MoneyByCurrency };
+  /**
+   * Per-currency sums. A paid subscription whose currency is missing is NEVER assumed to be USD: it is excluded from
+   * every currency total and counted in `mrrUnknownCurrency` instead. One whose base amount is missing is excluded and
+   * counted in `missingAmount` (missing is not zero).
+   */
+  mrr: { listMinor: MoneyByCurrency; currentMinor: MoneyByCurrency; missingAmount: number };
+  /** Paid (active/trialing) subscriptions with no currency: shown separately as "Unknown currency". Exact count. */
+  mrrUnknownCurrency: number;
   discounted: number;
   paymentFailures: number;
   guestSuspended: number;
@@ -51,7 +58,7 @@ type MetricRow = Pick<
 
 export function computeOverviewMetrics(subs: MetricRow[], discountedSubscriptionIds: { has(id: string): boolean }, now: Date): OverviewMetrics {
   const m: OverviewMetrics = {
-    paidSubscriptions: 0, paidSpaces: 0, mrr: { listMinor: {}, currentMinor: {} }, discounted: 0, paymentFailures: 0,
+    paidSubscriptions: 0, paidSpaces: 0, mrr: { listMinor: {}, currentMinor: {}, missingAmount: 0 }, mrrUnknownCurrency: 0, discounted: 0, paymentFailures: 0,
     guestSuspended: 0, studioSuspended: 0, scheduledCancellations: 0, deletionEligible: 0, exempt: 0,
   };
   for (const s of subs) {
@@ -68,10 +75,16 @@ export function computeOverviewMetrics(subs: MetricRow[], discountedSubscription
     }
     if (s.status === "active" || s.status === "trialing") {
       m.paidSubscriptions++;
-      const cur = (s.currency ?? "USD").toUpperCase();
-      const base = s.baseAmountMinor ?? 0;
-      m.mrr.listMinor[cur] = (m.mrr.listMinor[cur] ?? 0) + base;
-      m.mrr.currentMinor[cur] = (m.mrr.currentMinor[cur] ?? 0) + (s.currentEffectiveAmountMinor ?? base);
+      const cur = s.currency == null ? "" : s.currency.trim().toUpperCase();
+      if (!cur) {
+        m.mrrUnknownCurrency++; // never assumed to be USD
+      } else if (s.baseAmountMinor == null) {
+        m.mrr.missingAmount++; // never counted as 0
+      } else {
+        const base = s.baseAmountMinor;
+        m.mrr.listMinor[cur] = (m.mrr.listMinor[cur] ?? 0) + base;
+        m.mrr.currentMinor[cur] = (m.mrr.currentMinor[cur] ?? 0) + (s.currentEffectiveAmountMinor ?? base);
+      }
       if (s.cancelAtPeriodEnd) m.scheduledCancellations++;
       if (discountedSubscriptionIds.has(s.id)) m.discounted++;
     }
@@ -101,12 +114,13 @@ export type CountFilter =
   | { op: "in"; col: string; values: readonly string[] }
   | { op: "notIn"; col: string; values: readonly string[] }
   | { op: "notNull"; col: string }
+  | { op: "isNull"; col: string }
   | { op: "lte"; col: string; value: string }
   | { op: "gt"; col: string; value: string };
 
 export type CountedMetric =
   | "paidSubscriptions" | "paidSpaces" | "paymentFailures" | "guestSuspended" | "studioSuspended"
-  | "scheduledCancellations" | "deletionEligible" | "exempt";
+  | "scheduledCancellations" | "deletionEligible" | "exempt" | "mrrUnknownCurrency";
 
 const PAID = ["active", "trialing"] as const;
 const NOT_COUNTED_AS_SPACE = ["exempt", "canceled", "incomplete_expired"] as const;
@@ -129,6 +143,7 @@ export function overviewCountSpecs(now: Date): Record<CountedMetric, CountFilter
     scheduledCancellations: [{ op: "in", col: "status", values: PAID }, { op: "eq", col: "cancel_at_period_end", value: true }],
     deletionEligible: [{ op: "notNull", col: "eligible_for_deletion_at" }, { op: "neq", col: "status", value: "exempt" }],
     exempt: [{ op: "eq", col: "status", value: "exempt" }],
+    mrrUnknownCurrency: [{ op: "in", col: "status", values: PAID }, { op: "isNull", col: "currency" }],
   };
 }
 

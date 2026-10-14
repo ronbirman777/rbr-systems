@@ -1,67 +1,32 @@
+import Link from "next/link";
 import { requireAdminPage } from "@/lib/billing/admin/auth";
-import { listAdmins, loadOverview } from "@/lib/billing/admin/queries";
+import { listAdmins } from "@/lib/billing/admin/queries";
 import { formatUtc } from "@/lib/billing/admin/ui/labels";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { currentStripeMode } from "../../_lib/mode";
 import { adminMetaTitle, getAdminI18n } from "../../_lib/i18n";
-import { revokeAdminAction, setPaidCheckoutAction, syncPlanAction } from "../actions";
+import { revokeAdminAction, syncPlanAction } from "../actions";
 import { ConfirmActionButton } from "../../_components/ConfirmActionButton";
-import { GrantAdminForm, SetExemptForm } from "../../_components/forms";
+import { GrantAdminForm } from "../../_components/forms";
 import { Badge, Card, PageHeader } from "../../_components/ui";
+import { linkCls } from "../../_components/styles";
 
 export const dynamic = "force-dynamic";
 export const generateMetadata = () => adminMetaTitle("navSettings");
-
-const LAUNCH_GATES_DOC = "docs/billing/LAUNCH-GATES.md";
 
 export default async function SettingsPage() {
   const me = await requireAdminPage();
   const c = await getAdminI18n();
   const { t } = c;
   const db = createAdminClient();
-  const [overview, admins] = await Promise.all([loadOverview(db), listAdmins(db)]);
-  const enabled = overview.paidCheckoutEnabled;
+  const admins = await listAdmins(db);
   const mode = currentStripeMode();
   const isOwner = me.role === "owner";
   return (
     <>
       <PageHeader title={t("navSettings")}>{t("stIntro")}</PageHeader>
+      {isOwner ? <p className="mb-4 text-sm"><Link className={linkCls} href="/admin/launch">{t("ctMovedNote")}</Link></p> : null}
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card title={t("stPaidCheckout")} id="paid-checkout">
-          <p className="mb-3 text-sm">{t("stCurrentState")} <Badge tone={enabled ? "good" : "neutral"}>{enabled ? t("stEnabledBadge") : t("stDisabledBadge")}</Badge></p>
-          <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">
-            <p className="font-semibold">{t("stDeliberate")}</p>
-            <p className="mt-1">{t("stBeforeOn", { doc: LAUNCH_GATES_DOC })}</p>
-            <ul className="mt-1 list-disc pl-5">
-              <li>{t("stGateLegal")}</li>
-              <li>{t("stGateTax")}</li>
-              <li>{t("stGateStripe")}</li>
-              <li>{t("stGateDpa")}</li>
-            </ul>
-          </div>
-          {enabled ? (
-            <ConfirmActionButton
-              label={t("stDisableLabel")}
-              title={t("stDisableTitle")}
-              message={t("stDisableMessage")}
-              confirmLabel={t("stDisableLabel")}
-              action={setPaidCheckoutAction.bind(null, false)}
-              okMessage={t("stDisableOk")}
-              variant="danger"
-            />
-          ) : (
-            <ConfirmActionButton
-              label={t("stEnableLabel")}
-              title={t("stEnableTitle")}
-              message={t("stEnableMessage", { doc: LAUNCH_GATES_DOC })}
-              confirmLabel={t("stEnableConfirm")}
-              action={setPaidCheckoutAction.bind(null, true)}
-              okMessage={t("stEnableOk")}
-              variant="primary"
-            />
-          )}
-        </Card>
-
         <Card title={t("stPlanSync")} id="plan-sync">
           <p className="mb-3 text-sm">{mode ? t("stPlanSyncBody", { mode }) : t("stPlanSyncBodyNoStripe")}</p>
           <ConfirmActionButton
@@ -106,10 +71,6 @@ export default async function SettingsPage() {
           ) : <p className="text-sm text-idw-forest/70">{t("stOwnersOnly")}</p>}
         </Card>
 
-        <Card title={t("stExemption")} id="exempt" className="lg:col-span-2">
-          <p className="mb-3 max-w-2xl text-sm">{t("stExemptBody")}</p>
-          <div className="max-w-md"><SetExemptForm /></div>
-        </Card>
       </div>
     </>
   );

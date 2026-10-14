@@ -30,6 +30,10 @@ export type AdminActionResult = OpResult<unknown> | { ok: false; error: "unauthe
 const ACTION_ROLES: Partial<Record<AdminAction, readonly AdminRole[]>> = {
   "admin.grant": OWNER_ONLY,
   "admin.revoke": OWNER_ONLY,
+  // Platform-owner decisions (owner 2026-10-14): the paid-checkout launch switch and billing exemptions.
+  "settings.paid_checkout": OWNER_ONLY,
+  "subscription.exempt_set": OWNER_ONLY,
+  "subscription.exempt_clear": OWNER_ONLY,
 };
 
 async function authorise(action: AdminAction, ctx: { draft?: ReturnType<typeof draftOfRaw>; couponHasRedemptions?: boolean } = {}): Promise<{ ok: true; admin: AdminContext } | Extract<AdminActionResult, { ok: false }>> {

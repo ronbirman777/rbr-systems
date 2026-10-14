@@ -26,7 +26,7 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@/lib/billing/deps.server", () => ({ isStripeConfigured: () => false, getBillingDeps: () => { throw new Error("DATA:stripe"); } }));
 
-type Persona = { claims: Record<string, unknown> | null; row: { role: string; disabled_at: string | null } | null; factors: { status: string }[] };
+type Persona = { claims: Record<string, unknown> | null; row: { role: string; disabled_at: string | null } | null; factors: { status: string; created_at?: string }[] };
 let persona: Persona;
 const reads: string[] = [];
 const mfaCalls: string[] = [];
@@ -48,11 +48,15 @@ vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     from: (table: string) => {
       // Only the gate's own single-row lookup is answered; any other admin_users access counts as a data read.
-      if (table === "admin_users") return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: persona.row, error: null }), is: () => { reads.push("admin_users:list"); throw new Error("DATA:admin_users"); } }) }) };
+      if (table === "admin_users") return { select: () => ({ order: () => { reads.push("admin_users:list"); throw new Error("DATA:admin_users"); }, eq: () => ({ maybeSingle: async () => ({ data: persona.row, error: null }), is: () => { reads.push("admin_users:list"); throw new Error("DATA:admin_users"); } }) }) };
       reads.push(table);
       throw new Error(`DATA:${table}`);
     },
-    get auth() { reads.push("auth.admin"); throw new Error("DATA:auth.admin"); },
+    // The gate's own fresh factor read (Auth Admin API) is allowed; any other auth.admin call is a data read.
+    auth: { admin: new Proxy({}, { get: (_t, k) => {
+      if (k === "mfa") return { listFactors: async () => ({ data: { factors: persona.factors.map((f, i) => ({ id: `f${i}`, factor_type: "totp", status: f.status, created_at: f.created_at ?? "2026-01-01T00:00:00Z" })) }, error: null }) };
+      reads.push(`auth.admin.${String(k)}`); throw new Error(`DATA:auth.admin.${String(k)}`);
+    } }) },
     rpc: (fn: string) => { reads.push(`rpc:${fn}`); throw new Error(`DATA:rpc:${fn}`); },
   }),
 }));
@@ -74,10 +78,17 @@ const PERSONAS = {
   ownerAal1: { claims: aal1(), row: { role: "owner", disabled_at: null }, factors: VERIFIED },
   ownerNoFactor: { claims: aal1(), row: { role: "owner", disabled_at: null }, factors: [] },
   ownerStaleTotp: { claims: aal2(3600), row: { role: "owner", disabled_at: null }, factors: VERIFIED },
+  // AAL2 JWT still valid, but its factor was removed (none left) / replaced by a factor enrolled after the verification
+  ownerFactorRemoved: { claims: aal2(), row: { role: "owner", disabled_at: null }, factors: [] },
+  ownerFactorReplaced: { claims: aal2(), row: { role: "owner", disabled_at: null }, factors: [{ status: "verified", created_at: new Date(Date.now() + 60_000).toISOString() }] },
 } satisfies Record<string, Persona>;
 type PersonaName = keyof typeof PERSONAS;
 
-beforeEach(() => { reads.length = 0; mfaCalls.length = 0; });
+beforeEach(async () => {
+  reads.length = 0; mfaCalls.length = 0;
+  // personas share a user id: never let one persona's cached positive factor check leak into another
+  (await import("@/lib/billing/admin/auth")).__resetFactorCacheForTests();
+});
 
 /** Calls an entry point and classifies the outcome. Anything past the gate counts as allowed. */
 async function outcome(fn: () => unknown): Promise<string> {
@@ -124,6 +135,7 @@ const PAGES: { file: string; access: Access; load: () => Promise<{ default: (p: 
   { file: "(console)/backups/page.tsx", access: "owner_only", load: () => import("./(console)/backups/page") },
   { file: "(console)/alerts/page.tsx", access: "owner_only", load: () => import("./(console)/alerts/page") },
   { file: "(console)/costs/page.tsx", access: "owner_only", load: () => import("./(console)/costs/page") },
+  { file: "(console)/launch/page.tsx", access: "owner_only", load: () => import("./(console)/launch/page") },
   { file: "(console)/integrations/page.tsx", access: "owner_only", load: () => import("./(console)/integrations/page") },
 ];
 /** MFA screens + the chrome-free root layout have their own (documented) gates; checked separately below. */
@@ -139,6 +151,8 @@ const EXPECT_PAGE: Record<PersonaName, Record<Access, string>> = {
   ownerAal1: { any_admin: "NEXT_REDIRECT:/admin/mfa/verify", owner_only: "NEXT_REDIRECT:/admin/mfa/verify" },
   ownerNoFactor: { any_admin: "NEXT_REDIRECT:/admin/mfa/enroll", owner_only: "NEXT_REDIRECT:/admin/mfa/enroll" },
   ownerStaleTotp: { any_admin: "allowed", owner_only: "allowed" }, // pages need AAL2, not a fresh code
+  ownerFactorRemoved: { any_admin: "NEXT_REDIRECT:/admin/mfa/enroll", owner_only: "NEXT_REDIRECT:/admin/mfa/enroll" },
+  ownerFactorReplaced: { any_admin: "NEXT_REDIRECT:/admin/mfa/verify", owner_only: "NEXT_REDIRECT:/admin/mfa/verify" },
 };
 
 describe("every Admin page/layout file is in the matrix", () => {
@@ -194,9 +208,9 @@ const ACTIONS: Act[] = [
   { name: "setCouponActiveAction", stepUp: false, ownerOnly: false, call: (a) => a.setCouponActiveAction(ID, true) },
   { name: "syncCouponAction", stepUp: false, ownerOnly: false, call: (a) => a.syncCouponAction(ID) },
   { name: "syncPlanAction", stepUp: true, ownerOnly: false, call: (a) => a.syncPlanAction() },
-  { name: "setExemptAction", stepUp: true, ownerOnly: false, call: (a) => a.setExemptAction(ID, null, fd({ reason: "x" })) },
-  { name: "clearExemptAction", stepUp: true, ownerOnly: false, call: (a) => a.clearExemptAction(ID, null, fd({ reason: "x" })) },
-  { name: "setPaidCheckoutAction", stepUp: true, ownerOnly: false, call: (a) => a.setPaidCheckoutAction(false) },
+  { name: "setExemptAction", stepUp: true, ownerOnly: true, call: (a) => a.setExemptAction(ID, null, fd({ reason: "x" })) },
+  { name: "clearExemptAction", stepUp: true, ownerOnly: true, call: (a) => a.clearExemptAction(ID, null, fd({ reason: "x" })) },
+  { name: "setPaidCheckoutAction", stepUp: true, ownerOnly: true, call: (a) => a.setPaidCheckoutAction(false) },
   { name: "grantAdminAction", stepUp: true, ownerOnly: true, call: (a) => a.grantAdminAction(null, fd({ email: "x@example.test", role: "billing_admin" })) },
   { name: "revokeAdminAction", stepUp: true, ownerOnly: true, call: (a) => a.revokeAdminAction(ID) },
   { name: "resyncSubscriptionAction", stepUp: false, ownerOnly: false, call: (a) => a.resyncSubscriptionAction("sub_123") },
@@ -212,6 +226,7 @@ function expectAction(name: PersonaName, act: Act): string {
     case "owner": return "allowed";
     case "ownerAal1": case "ownerNoFactor": return "denied:mfa_required";
     case "ownerStaleTotp": return act.stepUp ? "denied:step_up_required" : "allowed";
+    case "ownerFactorRemoved": case "ownerFactorReplaced": return act.stepUp ? "denied:step_up_required" : "denied:mfa_required";
   }
 }
 
@@ -243,5 +258,32 @@ describe("MFA actions refuse anyone who is not an active admin before touching t
     expect(await outcome(() => m.stepUpVerifyAction(null, fd({ code: "123456" })))).toBe(want);
     expect(mfaCalls).toEqual([]);
     expect(reads).toEqual([]);
+  });
+});
+
+describe("backup authenticator enrolment needs a fresh step-up when a factor already exists", () => {
+  it("owner with a stale TOTP: ?add=1 page -> step-up redirect; enrol actions refused before any MFA API call", async () => {
+    persona = PERSONAS.ownerStaleTotp;
+    const page = (await import("./mfa/enroll/page")).default;
+    expect(await outcome(() => page({ searchParams: Promise.resolve({ add: "1" }) }))).toBe("NEXT_REDIRECT:/admin/mfa/verify?stepup=1");
+    expect(await outcome(() => page({ searchParams: Promise.resolve({}) }))).toBe("NEXT_REDIRECT:/admin");
+    const m = await import("./mfa/actions");
+    await expect(m.startMfaEnrollmentAction()).resolves.toEqual({ ok: false, error: "step_up_required" });
+    await expect(m.completeMfaEnrollmentAction(ID, null, fd({ code: "123456" }))).resolves.toEqual({ ok: false, error: "step_up_required" });
+    expect(mfaCalls).toEqual([]);
+  });
+  it("owner with a fresh TOTP may open the add page and start enrolling", async () => {
+    persona = PERSONAS.owner;
+    const page = (await import("./mfa/enroll/page")).default;
+    expect(await outcome(() => page({ searchParams: Promise.resolve({ add: "1" }) }))).toBe("allowed");
+    const m = await import("./mfa/actions");
+    expect(await outcome(() => m.startMfaEnrollmentAction())).toBe("allowed"); // reaches the (stubbed) enroll call
+    expect(mfaCalls).toContain("enroll");
+  });
+  it("a first enrolment (no verified factor yet) needs no step-up", async () => {
+    persona = PERSONAS.ownerNoFactor;
+    const m = await import("./mfa/actions");
+    expect(await outcome(() => m.startMfaEnrollmentAction())).toBe("allowed");
+    expect(mfaCalls).toContain("enroll");
   });
 });

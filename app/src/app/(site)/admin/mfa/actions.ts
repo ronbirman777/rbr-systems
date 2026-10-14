@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireAdminForMfaPages } from "@/lib/billing/admin/auth";
+import { AdminAuthError, requireAdminAction, requireAdminForMfaPages } from "@/lib/billing/admin/auth";
 import { createClient } from "@/lib/supabase/server";
 import { safeInternalRedirectPath } from "@/lib/safe-redirect";
 
@@ -17,8 +17,29 @@ export type VerifyState = { ok: false; error: string } | null;
 
 const code = z.string().trim().regex(/^\d{6}$/);
 
+/**
+ * Enrolling ANOTHER authenticator (a backup factor) when one is already verified is a sensitive change: it needs a
+ * fresh step-up (AAL2 + TOTP within 600 s + a factor that still exists), checked on the server. A first enrolment
+ * (no verified factor yet) needs only an active admin_users row, as before.
+ */
+async function enrollmentBlocked(): Promise<"step_up_required" | null> {
+  const supabase = await createClient();
+  const { data: factors, error } = await supabase.auth.mfa.listFactors();
+  if (error) return "step_up_required"; // fail closed
+  if (!(factors?.totp ?? []).some((f) => f.status === "verified")) return null;
+  try {
+    await requireAdminAction({ recentMfa: true });
+    return null;
+  } catch (e) {
+    if (e instanceof AdminAuthError) return "step_up_required";
+    throw e;
+  }
+}
+
 export async function startMfaEnrollmentAction(): Promise<EnrollState> {
   await requireAdminForMfaPages();
+  const blocked = await enrollmentBlocked();
+  if (blocked) return { ok: false, error: blocked };
   const supabase = await createClient();
   // A previous abandoned (unverified) enrolment would otherwise collide on the friendly name.
   const { data: factors } = await supabase.auth.mfa.listFactors();
@@ -33,6 +54,8 @@ export async function completeMfaEnrollmentAction(factorId: string, _prev: Verif
   await requireAdminForMfaPages();
   const parsed = code.safeParse(fd.get("code"));
   if (!parsed.success || !z.string().uuid().safeParse(factorId).success) return { ok: false, error: "invalid_code" };
+  const blocked = await enrollmentBlocked();
+  if (blocked) return { ok: false, error: blocked };
   const supabase = await createClient();
   const { error } = await supabase.auth.mfa.challengeAndVerify({ factorId, code: parsed.data });
   if (error) return { ok: false, error: "invalid_code" };

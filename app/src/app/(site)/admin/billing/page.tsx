@@ -25,7 +25,7 @@ function MoneyList({ by, locale }: { by: Record<string, number>; locale: Locale 
 }
 
 export default async function OverviewPage() {
-  await requireAdminPage();
+  const admin = await requireAdminPage();
   const c = await getAdminI18n();
   const { t, locale } = c;
   const o = await loadOverview(createAdminClient());
@@ -45,7 +45,9 @@ export default async function OverviewPage() {
 
       <h2 className="mb-2 font-ui text-lg text-idw-forest">{t("ovOperations")}</h2>
       <ul className="mb-8 flex flex-wrap gap-2" aria-label={t("ovOperationalAria")}>
-        <li><Link href="/admin/billing/settings" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm"><span>{t("ovPaidCheckout")}</span> <Badge tone={o.paidCheckoutEnabled ? "good" : "neutral"}>{o.paidCheckoutEnabled ? t("ovEnabled") : t("ovDisabled")}</Badge></Link></li>
+        <li>{admin.role === "owner"
+          ? <Link href="/admin/launch" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm"><span>{t("ovPaidCheckout")}</span> <Badge tone={o.paidCheckoutEnabled ? "good" : "neutral"}>{o.paidCheckoutEnabled ? t("ovEnabled") : t("ovDisabled")}</Badge></Link>
+          : <span className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm"><span>{t("ovPaidCheckout")}</span> <Badge tone={o.paidCheckoutEnabled ? "good" : "neutral"}>{o.paidCheckoutEnabled ? t("ovEnabled") : t("ovDisabled")}</Badge></span>}</li>
         <li className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm" title={cap("openCheckouts")}>{t("ovOpenCheckouts")} <Badge>{o.openCheckouts}</Badge></li>
         <li className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm" title={cap("failedEvents")}>{t("ovFailedEvents")} <Badge tone={o.failedEvents ? "bad" : "neutral"}>{o.failedEvents}</Badge></li>
         <li className="inline-flex min-h-11 items-center gap-2 rounded-full border border-idw-forest/20 bg-white/70 px-4 text-sm" title={cap("stuckCheckouts")}>{t("ovStuckCheckouts")} <Badge tone={o.stuckCheckouts ? "warn" : "neutral"}>{o.stuckCheckouts}</Badge></li>
@@ -65,6 +67,7 @@ export default async function OverviewPage() {
         <Stat label={t("ovPaidSpaces")} value={m.paidSpaces} caption={cap("paidSpaces")} />
         <Stat label={t("ovMrrList")} value={<MoneyList by={m.mrr.listMinor} locale={locale} />} caption={cap("mrrList")} />
         <Stat label={t("ovMrrCurrent")} value={<MoneyList by={m.mrr.currentMinor} locale={locale} />} caption={cap("mrrCurrent")} />
+        <Stat label={t("ovMrrUnknownCurrency")} value={m.mrrUnknownCurrency} caption={m.mrr.missingAmount ? `${cap("mrrUnknownCurrency")} ${t("ovMrrMissingAmount", { count: m.mrr.missingAmount })}` : cap("mrrUnknownCurrency")} tone={m.mrrUnknownCurrency || m.mrr.missingAmount ? "warn" : undefined} />
         <Stat label={t("ovDiscounted")} value={m.discounted} caption={cap("discounted")} />
         <Stat label={t("ovScheduledCancellations")} value={m.scheduledCancellations} caption={cap("scheduledCancellations")} tone={m.scheduledCancellations ? "warn" : undefined} />
       </div>

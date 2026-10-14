@@ -67,7 +67,7 @@ describe("sections, pages and gates agree", () => {
   it("every console sub-page (e.g. spaces/[id]) also gates itself first", () => {
     for (const f of files(join(ADMIN_APP, "(console)")).filter((x) => x.endsWith("page.tsx"))) {
       const body = read(f).slice(read(f).indexOf("export default async function"));
-      expect(body.indexOf("await "), relative(SRC, f)).toBe(body.search(/await requireAdminPage\(\{ roles: sectionRoles\("\w+"\) \}\)/));
+      expect(body.indexOf("await "), relative(SRC, f)).toBe(body.search(/await requireAdminPage\(\{ roles: (sectionRoles\("\w+"\)|OWNER_ONLY) \}\)/));
     }
   });
   it("owner-only sections are owner-only; billing keeps owner + billing_admin", () => {

@@ -4,7 +4,6 @@ import { MAX_METRIC_ROWS } from "@/lib/billing/admin/metrics";
 import { loadOverview } from "@/lib/billing/admin/queries";
 import { errorState, fromBoundedRead, noSource, notMeasured, ok, type MetricState, type MoneyMetric } from "../contracts/metric";
 import { getWatchdogStatus, type WatchdogSource, type WatchdogStatus } from "../watchdog/status";
-import { COUNT, exactCount } from "./count";
 import { countBillingSpaces, countPublishing, countSpaceTotals } from "./spaces";
 
 /**
@@ -21,7 +20,7 @@ export type ConsoleOverview = {
   paidSpaces: MetricState;
   /** Per-currency MRR (current discounted, list), or the state explaining why there is none. An empty map after a successful read = no paid subscriptions. */
   mrr: { current: MoneyMetric; list: MoneyMetric } | MetricState;
-  /** Paid subscriptions whose currency is null: the billing loader buckets them as USD; shown as a data-quality warning. */
+  /** Paid subscriptions whose currency is missing: EXCLUDED from every currency total (never assumed USD), counted here. */
   mrrCurrencyMissing: MetricState;
   netNewPaidMonth: MetricState;
   paymentFailures: MetricState;
@@ -56,15 +55,12 @@ export async function loadConsoleOverview(db: SupabaseClient, now: Date = new Da
       const o = await loadOverview(db, now);
       paidSpaces = ok(o.metrics.paidSubscriptions, { asOf: o.generatedAt, source: "billing_synced:space_subscriptions" });
       paymentFailures = ok(o.metrics.paymentFailures, { asOf: o.generatedAt, source: "billing_synced:space_subscriptions" });
+      mrrCurrencyMissing = ok(o.metrics.mrrUnknownCurrency, { asOf: o.generatedAt, source: "billing_synced:space_subscriptions" });
       mrr = { current: moneyFrom(o.metrics.mrr.currentMinor, o.metricsTruncated, o.generatedAt), list: moneyFrom(o.metrics.mrr.listMinor, o.metricsTruncated, o.generatedAt) };
     } catch (e) {
       const err = errorState("billing_synced:space_subscriptions", e instanceof Error ? e.message.slice(0, 200) : undefined);
-      paidSpaces = err; paymentFailures = err; mrr = err;
+      paidSpaces = err; paymentFailures = err; mrr = err; mrrCurrencyMissing = err;
     }
-    mrrCurrencyMissing = await exactCount(
-      db.from("space_subscriptions").select("id", COUNT).in("status", ["active", "trialing"]).is("currency", null),
-      { source: "billing_synced:space_subscriptions", asOf: now },
-    );
   }
 
   return {

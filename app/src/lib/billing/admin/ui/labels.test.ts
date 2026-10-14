@@ -24,6 +24,10 @@ describe("labels", () => {
   it("formats money and discounts", () => {
     expect(money(2500, "usd")).toBe("$25.00");
     expect(money(null, "usd")).toBe("-");
+    // never assumed to be USD: a missing currency shows the raw minor amount and says so
+    expect(money(2500, null)).toBe("2,500 (minor units, currency unknown)");
+    expect(money(2500, " ")).not.toContain("$");
+    expect(money(2500, null, "en", makeAdminCtx("de"))).toBe("2,500 (kleinste Einheit, unbekannte Währung)");
     expect(discountLabel({ discountType: "percent", percentOff: "50.00", amountOffMinor: null, currency: null }, c)).toBe("50% off");
     expect(discountLabel({ discountType: "percent", percentOff: 12.5, amountOffMinor: null, currency: null }, c)).toBe("12.5% off");
     expect(couponDiscountLabel({ discount_type: "fixed_amount", amount_off_minor: 500, currency: "USD" }, c)).toBe("$5.00 off");
