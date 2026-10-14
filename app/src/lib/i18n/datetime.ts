@@ -52,12 +52,20 @@ export function formatShortDateLocalized(dateIso: string, locale: Locale): strin
     return `${SHORT_WEEKDAYS_EN[d.getUTCDay()]} ${d.getUTCDate()} ${SHORT_MONTHS_EN[d.getUTCMonth()]}`;
   }
 
-  return new Intl.DateTimeFormat(LOCALE_TAG[locale], {
+  const parts = new Intl.DateTimeFormat(LOCALE_TAG[locale], {
     weekday: "short",
     day: "numeric",
     month: "short",
     timeZone: "UTC",
-  }).format(d);
+  }).formatToParts(d);
+  // TASK 033 D4: German ICU disagrees on the separator after the short
+  // weekday (Node ICU 78 "Mi., 14. Okt.", WebKit "Mi. 14. Okt."), which made
+  // every German Teach Guest page throw React #418 on WebKit. Pin the
+  // standard German form so server and every browser render the same text.
+  if (locale === "de" && parts[0]?.type === "weekday" && parts[1]?.type === "literal" && parts[1].value.trim() === "") {
+    parts[1] = { ...parts[1], value: ", " };
+  }
+  return parts.map((p) => p.value).join("");
 }
 
 /** "2026-10-14" -> "Tuesday 14 October" and its localized equivalents. */
@@ -223,10 +231,17 @@ export function formatDateRangeLocalized(startIso: string, endIso: string | null
     return `${formatDayMonthYearLocalized(startIso, locale)} ${dash} ${formatDayMonthYearLocalized(endIso as string, locale)}`;
   }
 
-  return new Intl.DateTimeFormat(LOCALE_TAG[locale], {
+  const parts = new Intl.DateTimeFormat(LOCALE_TAG[locale], {
     day: "numeric",
     month: "short",
     year: "numeric",
     timeZone: "UTC",
-  }).formatRange(a, b);
+  }).formatRangeToParts(a, b);
+  // TASK 033 D4: engines disagree on range output - Node ICU 78 puts thin
+  // spaces (U+2009) around the dash where browsers use plain spaces, and
+  // writes "03 gen" for Italian where browsers write "3 gen" (day: "numeric"
+  // never wants a leading zero). Normalise both so hydration matches.
+  return parts
+    .map((p) => (p.type === "day" ? p.value.replace(/^0(?=\d)/, "") : p.type === "literal" ? p.value.replace(/\u2009/g, " ") : p.value))
+    .join("");
 }

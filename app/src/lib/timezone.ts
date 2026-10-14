@@ -77,3 +77,34 @@ export function timezoneOptions(stored?: string | null): string[] {
   const selected = timezoneSelectValue(stored);
   return options.includes(selected) ? options : [...options, selected];
 }
+
+/**
+ * The option list for server render and hydration (TASK 033 D4): only "UTC"
+ * plus the selected value(s), none of which depend on ICU.
+ *
+ * `Intl.supportedValuesOf("timeZone")` differs between Node and browsers (Node
+ * lists legacy aliases such as Asia/Calcutta and no Etc/GMT±n, WebKit lists the
+ * canonical names and Etc/GMT±n), so rendering the full list on the server made
+ * WebKit throw React #418 on every Studio load. The full list is used only
+ * after mount - see useTimezoneOptions.
+ */
+export function hydrationSafeTimezoneOptions(...stored: (string | null | undefined)[]): string[] {
+  const out = [DEFAULT_TIMEZONE];
+  for (const value of stored) {
+    if (value === undefined) continue;
+    const selected = timezoneSelectValue(value);
+    if (!out.includes(selected)) out.push(selected);
+  }
+  return out;
+}
+
+/** The full list (after mount): timezoneOptions(primary) plus any further selected values. */
+export function fullTimezoneOptions(primary: string | null | undefined, ...extra: (string | null | undefined)[]): string[] {
+  const options = timezoneOptions(primary);
+  for (const value of extra) {
+    if (!value) continue;
+    const selected = timezoneSelectValue(value);
+    if (!options.includes(selected)) options.push(selected);
+  }
+  return options;
+}
