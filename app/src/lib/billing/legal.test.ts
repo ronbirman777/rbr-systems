@@ -3,11 +3,11 @@ import { LEGAL_VERSIONS } from "./legal";
 import { getLegalDocument } from "@/lib/legal/documents";
 
 describe("checkout acceptance versions", () => {
-  it("point at the published v1.0 documents of the legal registry", () => {
+  it("point at the currently published documents of the legal registry (v1.1 for Terms, Privacy, Billing)", () => {
     expect(LEGAL_VERSIONS).toEqual({
-      terms: "1.0-2026-10-14",
-      privacy: "1.0-2026-10-14",
-      billingTerms: "1.0-2026-10-14",
+      terms: "1.1-2026-10-14",
+      privacy: "1.1-2026-10-14",
+      billingTerms: "1.1-2026-10-14",
       consentText: "checkout-consent-1.0-2026-10-14",
     });
     expect(LEGAL_VERSIONS.terms).toBe(getLegalDocument("terms").versionId);
