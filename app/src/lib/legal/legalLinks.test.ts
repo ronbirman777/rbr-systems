@@ -61,6 +61,9 @@ describe("legal links across the site", () => {
   it("the pricing section links the Billing, Cancellation & Refund Policy", () => {
     const html = renderToStaticMarkup(createElement(PricingSection));
     expect(legalHrefs(html)).toEqual(["/legal/billing"]);
+    // Matches the Billing Policy v1.1 cancellation rule (no open-ended retention promise).
+    expect(html).toContain("your content stays saved for 30 days after that, ready to reactivate");
+    expect(html).not.toContain("whenever you return");
   });
 
   it("My Spaces' account area links only registered documents", () => {

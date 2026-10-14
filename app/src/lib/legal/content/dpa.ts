@@ -100,7 +100,7 @@ export const dpaBody: LegalDocumentBody = {
     ]),
     section("deletion-return", "14. Deletion and return", [
       p(
-        "You can retrieve Creator Content using the functionality available in the Service, or contact us for assistance, before you delete a Space or your Account. When you delete a Space or your Account, or after the Service ends, InnerDweS deletes Creator Personal Data from its active systems within approximately 30 days, unless the law requires it to keep the data. Residual copies may remain in backups until the applicable backup lifecycle expires, and are protected and not actively used in the meantime.",
+        `You can retrieve Creator Content using the functionality available in the Service, or contact us for assistance, before you delete a Space or your Account. When you delete a Space or your Account, or after the Service ends, InnerDweS deletes Creator Personal Data from its active systems within approximately 30 days, unless the law requires it to keep the data. If you cancel a paid subscription for a Space, the content of that Space, including Creator Personal Data in it, is instead preserved for 30 days after the end of the paid billing period, so that you can reactivate the Space, and then becomes eligible for deletion; if a payment fails, the failed-payment timeline in our ${L.billing} applies. Residual copies may remain in backups until the applicable backup lifecycle expires, and are protected and not actively used in the meantime.`,
       ),
     ]),
     section("audit", "15. Audit and information rights", [
