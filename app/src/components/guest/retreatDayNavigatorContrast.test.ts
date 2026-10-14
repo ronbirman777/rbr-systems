@@ -1,12 +1,12 @@
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { DAY_CHIP_COLORS, dayLabelTypography, RetreatDayHeader, RetreatDayNavigator } from "./retreat-day-navigator";
+import { DAY_CHIP_COLORS, RetreatDayHeader, RetreatDayNavigator } from "./retreat-day-navigator";
 import { buildRetreatDays } from "@/lib/schedule/retreatDays";
 import { deriveThemeVars } from "@/lib/theme/deriveTheme";
 import { contrastRatio, hexToRgb, mixHex } from "@/lib/theme/contrast";
 import { ATMOSPHERES, PALETTES, type BrandConfig } from "@/lib/theme/tokens";
-import { SUPPORTED_LOCALES, translate, type Locale } from "@/lib/i18n";
+import { SUPPORTED_LOCALES, type Locale } from "@/lib/i18n";
 
 /**
  * TASK 033 QA defect D3 - the Day Navigator's small labels (10px weekday,
@@ -18,6 +18,8 @@ import { SUPPORTED_LOCALES, translate, type Locale } from "@/lib/i18n";
  */
 
 const AA = 4.5;
+/** The minimum ratio over every pair below, measured on fix/033-studio-ux before the Teach chip match. */
+const MIN_BEFORE_TEACH_MATCH = 4.51; // measured 4.5115 (worst palette/custom colour)
 
 const CUSTOM_COLORS = [null, "#E0B0FF", "#FFD700", "#A38A6B", "#2D4A3E", "#C4785A", "#8FAF95", "#FFFFFF", "#000000"];
 
@@ -55,9 +57,9 @@ const ratio = (a: string, b: string) => contrastRatio(hexToRgb(a), hexToRgb(b));
 
 /** Every [text, surface] pair a chip or the single-day header paints. */
 const PAIRS: [string, keyof typeof DAY_CHIP_COLORS | string, keyof typeof DAY_CHIP_COLORS | string][] = [
-  ["unselected weekday / DAY n", "label", "surface"],
+  ["unselected weekday", "label", "surface"],
   ["unselected date number", "number", "surface"],
-  ["out-of-range weekday / DAY n", "label", "outOfRangeSurface"],
+  ["out-of-range weekday", "label", "outOfRangeSurface"],
   ["out-of-range date number", "number", "outOfRangeSurface"],
   ["selected chip text", "activeText", "activeSurface"],
   // RetreatDayHeader: the DAY n line and the date heading sit on cream; the
@@ -91,6 +93,11 @@ describe("Day Navigator text contrast (WCAG AA 4.5:1, small text)", () => {
     }
     expect(failures).toEqual([]);
     expect(min).toBeGreaterThanOrEqual(AA);
+    // UX follow-up (Teach chip match): the chip changed shape, not colour -
+    // every text/surface pair is the same token pair as before, so the
+    // minimum is pinned to the value measured before the change (equal or
+    // better, never worse).
+    expect(min).toBeGreaterThanOrEqual(MIN_BEFORE_TEACH_MATCH);
   });
 
   it("the default palette's unselected labels are now comfortably AA (was 3.94:1)", () => {
@@ -135,15 +142,11 @@ describe("Day Navigator markup uses only those solid tokens", () => {
     expect(chip).toContain("dashed");
   });
 
-  it('"DAY n" is at least 9px in every locale, 10px wherever the label fits', () => {
+  it("the chip shows no 9-10px \"DAY n\" line any more: its smallest text is the 10px weekday, in every locale", () => {
     for (const locale of SUPPORTED_LOCALES) {
-      for (const n of [1, 12, 60]) {
-        const label = translate(locale, "flow", "dayN", { n });
-        const size = Number.parseFloat(dayLabelTypography(label).fontSize);
-        expect(size, `${locale} ${label}`).toBeGreaterThanOrEqual(9);
-        if (label.length < 9) expect(size, `${locale} ${label}`).toBe(10);
-      }
+      const html = render(locale);
+      expect(html, locale).not.toMatch(/font-size:9px|text-\[9px\]/);
+      expect(html, locale).toContain("text-[10px]");
     }
-    expect(render("en")).toContain("font-size:10px");
   });
 });

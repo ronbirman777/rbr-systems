@@ -558,3 +558,29 @@ every phone is <= 430px.
 
 Guard test `guestDesktopShell.test.ts` was updated (480 -> 430, Flow tile 240 -> 215, Teach retreat cover 430).
 Not verified on a real iPad/iPhone.
+
+## 17. Guest shell: no 431-639px gap (commit `f95bf51`)
+
+The column used to start at 640px, so 431-639px windows got a full-width app. `GUEST_COLUMN_MIN_VIEWPORT` is now
+`GUEST_COLUMN_MAX_WIDTH + 1` = **431px** (`@media (min-width: 431px)` in globals.css): phones <= 430px stay full
+width, every wider window is the centred 430px column on the backdrop. Media `sizes` follow (derived media).
+Inside the column Teach's `@min-[40rem]` container queries can no longer fire at 431-639px (they did before).
+QA (`qa033/shell/gap/after-a/`, re-run on the navigator build in `after-b/`): Flow 4 tabs, Flow he Explore, Teach
+4 tabs, access-code, 404 x 320/390/430/431/480/600/639/640/768/1440 x Chromium + WebKit = 220 states, **0 problems**
+(column = 430 and centred with a painted backdrop above 430; = viewport at <= 430; no element escapes; no horizontal
+overflow; bottom nav inside the column and on screen after scrolling), 0 console errors.
+
+## 18. Flow Day Navigator chip = Teach chip
+
+Chips now use Teach's chip: 52px wide, `py-2`, 16px radius, filled cream surface with Teach's hairline (55% sand
+into cream = #E6DDCB vs Teach #E6DDCD), selected = filled navigation colour, 10px semibold caps weekday + 19px
+display date + 4px has-activities dot; no "DAY n" line. "Day n" lives in the date line under the strip
+("Wed 14 Oct · Day 2") and in each chip's accessible name. Kept: tablist/tab/tabpanel, roving tabindex, Home/End,
+mirrored RTL arrows, Today ring, exact start..end range, solid-token text colours (D3).
+Measured (`qa033/ux/nav2/compare.json`): Flow and Teach chips both 52x70, r=16, weekday 10px/600 caps, date 19px,
+at 320/390/430 in both engines; no overflow. Teach screenshots before/after: **0 differing pixels** at 320/390/430
+x Chromium/WebKit. Keyboard (both engines, reduced motion): forward arrow moves + focus follows, End/Home =
+last/first day, LTR ascending / he descending. axe: Flow 6 / he 6 / single 5 / Teach 21 `color-contrast` nodes,
+identical to before, 0 in the navigator. Contrast test: the worst text/surface pair is pinned at >= 4.51:1 (the
+value before the change; same token pairs). Composites: `qa033/ux/nav2/side-by-side-{chromium,webkit}-{320,390,430}.png`
+(Flow before | Flow after | Teach | Flow he after). Not verified on a real iPhone.

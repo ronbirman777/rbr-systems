@@ -12,11 +12,16 @@ import type { RetreatDay } from "@/lib/schedule/retreatDays";
  * ScheduleScreen) in Flow's own --rbr-* tokens: no image, and no class
  * count or booking semantics - a chip is a retreat DAY, never a slot.
  *
- * Each chip: localized short weekday, date number, "DAY n", and - as in
- * Teach - a dot when the day has something scheduled. TASK 033 addendum D
- * aligned the rest with the Teach strip: 20px edge padding, a 19px date
- * number, the selected chip kept in view without re-centring the strip,
- * and the selected day's date line under the strip (schedule-screen.tsx).
+ * Each chip is the Teach chip: localized short weekday, date number and -
+ * as in Teach - a dot when the day has something scheduled. TASK 033
+ * addendum D aligned the strip (20px edge padding, the selected chip kept
+ * in view without re-centring, the selected day's date line under the
+ * strip in schedule-screen.tsx); the UX follow-up ("continue the day
+ * navigator work") aligned the chip itself: 52px wide, py-2, filled cream
+ * surface with Teach's hairline (#E6DDCD-equivalent), selected = filled
+ * navigation colour, 10px weekday + 19px date, no "DAY n" line - "Day n"
+ * now lives only in the date line ("Wed 14 Oct · Day 2") and in each
+ * chip's accessible name.
  * Today (which Teach does not mark) is a solid text-colour ring on its
  * chip instead of the dot, so the dot means the same thing in both
  * products.
@@ -51,7 +56,7 @@ export type RetreatDayNavigatorProps = {
  * never opacity, so its contrast is exactly the token pair's (asserted for
  * every palette in retreatDayNavigatorContrast.test.ts):
  *
- *   unselected   weekday + "DAY n"  --rbr-text-subtle  on --rbr-cream
+ *   unselected   weekday            --rbr-text-subtle  on --rbr-cream
  *                date number        --rbr-text         on --rbr-cream
  *   out of range (unselected)       same text tokens on --rbr-background,
  *                                   with a dashed hairline - the "dimmed"
@@ -64,23 +69,18 @@ export type RetreatDayNavigatorProps = {
  */
 export const DAY_CHIP_COLORS = {
   surface: "var(--rbr-cream)",
+  /**
+   * The unselected chip's hairline: Teach's --tt-line (#E6DDCD) expressed in
+   * Flow's fixed base tokens (55% sand into cream = #E6DDCB). Decorative -
+   * the chip is identified by its text, not by this edge.
+   */
+  line: "color-mix(in srgb, var(--rbr-sand) 55%, var(--rbr-cream))",
   outOfRangeSurface: "var(--rbr-background)",
   label: "var(--rbr-text-subtle)",
   number: "var(--rbr-text)",
   activeSurface: "var(--rbr-navigation)",
   activeText: "var(--rbr-on-navigation)",
 } as const;
-
-/**
- * Font size of the "DAY n" line. 10px (was 8.5px) with light tracking fits
- * every locale's short label in the 54px inside of the 56px chip (measured
- * in DM Sans 600: "JOUR 12" 40.6px, "GÜN 12" 35.8px); the longest labels
- * (Italian "GIORNO 12" and up, 9+ characters) step down to 9px with no
- * tracking (about 46-52px) instead of overflowing the chip.
- */
-export function dayLabelTypography(label: string): { fontSize: string; letterSpacing: string } {
-  return label.length >= 9 ? { fontSize: "9px", letterSpacing: "0" } : { fontSize: "10px", letterSpacing: "0.04em" };
-}
 
 /** The weekday of a calendar date, computed in UTC so no device zone can shift it. */
 export function weekdayIndexOf(dateIso: string): number {
@@ -185,7 +185,6 @@ export function RetreatDayNavigator({
       {days.map((day, i) => {
         const active = i === selectedIndex;
         const today = showToday && day.isToday;
-        const dayLabel = day.dayNumber === null ? null : t("flow", "dayN", { n: day.dayNumber });
         const dimmed = day.outsideRange && !active;
         return (
           <button
@@ -204,7 +203,7 @@ export function RetreatDayNavigator({
             data-today={today ? "true" : undefined}
             data-has-activities={day.hasActivities ? "true" : undefined}
             onClick={() => onSelect(day.date)}
-            className="shrink-0 w-[56px] py-2 min-w-11 min-h-11 flex flex-col items-center justify-center gap-0.5 rounded-2xl transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="shrink-0 w-[52px] py-2 min-w-11 min-h-11 flex flex-col items-center gap-0.5 rounded-2xl transition-colors duration-150 motion-reduce:transition-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
             data-outside-range={dimmed ? "true" : undefined}
             style={{
               background: active ? DAY_CHIP_COLORS.activeSurface : dimmed ? DAY_CHIP_COLORS.outOfRangeSurface : DAY_CHIP_COLORS.surface,
@@ -213,7 +212,9 @@ export function RetreatDayNavigator({
                 ? "1px solid transparent"
                 : today
                   ? `1px solid ${DAY_CHIP_COLORS.number}`
-                  : `1px ${dimmed ? "dashed" : "solid"} color-mix(in srgb, var(--rbr-sand) ${dimmed ? 100 : 60}%, transparent)`,
+                  : dimmed
+                    ? "1px dashed var(--rbr-sand)"
+                    : `1px solid ${DAY_CHIP_COLORS.line}`,
               // Today while selected: a ring outside the chip, in the page
               // background then the selected surface, so it reads on any palette.
               boxShadow: active && today ? `0 0 0 2px var(--rbr-background), 0 0 0 3px ${DAY_CHIP_COLORS.activeSurface}` : undefined,
@@ -222,29 +223,18 @@ export function RetreatDayNavigator({
           >
             <span
               aria-hidden="true"
-              className="text-[10px] font-semibold tracking-wider uppercase leading-none"
+              className="text-[10px] font-semibold tracking-wider uppercase"
               style={{ fontFamily: "var(--rbr-font-ui)", color: active ? DAY_CHIP_COLORS.activeText : DAY_CHIP_COLORS.label }}
             >
               {shortWeekdayName(weekdayIndexOf(day.date), locale)}
             </span>
-            <span aria-hidden="true" className="text-[19px] leading-none" style={{ fontFamily: "var(--rbr-font-display)" }}>
+            <span aria-hidden="true" className="text-[19px]" style={{ fontFamily: "var(--rbr-font-display)" }}>
               {Number(day.date.slice(8, 10))}
             </span>
             <span
               aria-hidden="true"
-              className="font-semibold uppercase leading-none whitespace-nowrap"
-              style={{
-                fontFamily: "var(--rbr-font-ui)",
-                color: active ? DAY_CHIP_COLORS.activeText : DAY_CHIP_COLORS.label,
-                ...dayLabelTypography(dayLabel ?? ""),
-              }}
-            >
-              {dayLabel ?? " "}
-            </span>
-            <span
-              aria-hidden="true"
               data-activity-dot={day.hasActivities ? "true" : undefined}
-              className="w-1 h-1 rounded-full mt-0.5"
+              className="w-1 h-1 rounded-full"
               style={{ background: day.hasActivities ? (active ? "currentColor" : "var(--rbr-primary)") : "transparent" }}
             />
           </button>

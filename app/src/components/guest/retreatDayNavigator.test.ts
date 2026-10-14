@@ -68,21 +68,60 @@ describe("RetreatDayNavigator - semantics", () => {
     expect(selected).toContain('tabindex="0"');
   });
 
-  it("shows weekday, date number and DAY n, with a localized accessible name per chip", () => {
+  it("shows weekday and date number only (as Teach), with Day n in a localized accessible name per chip", () => {
     const html = nav();
     expect(html).toContain(">Thu<");
     expect(html).toContain(">14<");
-    expect(html).toContain("Day 1");
-    expect(html).toContain("Day 4");
+    // UX follow-up: no visible "DAY n" line on the chip any more - the
+    // visible text of the whole strip is weekdays and dates only.
+    const visible = html.replace(/<[^>]*>/g, " ");
+    expect(visible).not.toMatch(/Day \d/i);
+    expect(visible.trim().split(/\s+/)).toEqual(["Thu", "14", "Fri", "15", "Sat", "16", "Sun", "17"]);
     expect(html).toContain('aria-label="Thursday 14 October, day 1"');
+    expect(html).toContain('aria-label="Sunday 17 October, day 4"');
     expect(html).toContain('aria-label="Friday 15 October, day 2, today"');
   });
 
-  it("labels chips in every Space language", () => {
+  it("labels chips in every Space language (accessible name only)", () => {
     for (const [locale, word] of [["de", "Tag 2"], ["es", "Día 2"], ["fr", "Jour 2"], ["he", "יום 2"]] as const) {
-      expect(nav({ locale }), locale).toContain(word);
+      const html = nav({ locale });
+      expect(html.match(/aria-label="[^"]*"/g)?.join(" ").toLowerCase(), locale).toContain(word.toLowerCase());
+      expect(html.replace(/<[^>]*>/g, " ").toLowerCase(), locale).not.toContain(word.toLowerCase());
     }
     expect(dayAccessibleLabel(days[1], "de", true)).toBe("Freitag, 15. Oktober, Tag 2, heute");
+  });
+});
+
+describe("RetreatDayNavigator - chip matches the Teach day strip chip", () => {
+  it("52px wide, py-2, 16px radius, 10px caps weekday, 19px display date, 4px dot", () => {
+    const chips = tabs(nav());
+    for (const c of chips) {
+      expect(c).toContain("w-[52px]");
+      expect(c).toContain("py-2");
+      expect(c).toContain("rounded-2xl");
+      expect(c).not.toContain("w-[56px]");
+    }
+    const html = nav();
+    expect(html).toContain('class="text-[10px] font-semibold tracking-wider uppercase"');
+    expect(html).toContain('class="text-[19px]"');
+    expect(html).toContain('class="w-1 h-1 rounded-full"');
+    expect(html).not.toContain("leading-none");
+  });
+
+  it("filled treatment: unselected = cream with Teach's hairline, selected = filled navigation", () => {
+    const html = nav({ selected: "2027-10-16", showToday: false });
+    const unselected = tabs(html).find((t) => t.includes('data-date="2027-10-14"'))!;
+    expect(unselected).toContain("background:var(--rbr-cream)");
+    expect(unselected).toContain("border:1px solid color-mix(in srgb, var(--rbr-sand) 55%, var(--rbr-cream))");
+    const selected = tabs(html).find((t) => t.includes('aria-selected="true"'))!;
+    expect(selected).toContain("background:var(--rbr-navigation)");
+    expect(selected).toContain("border:1px solid transparent");
+  });
+
+  it("the date line under the strip carries Day n (\"Wed 14 Oct · Day 2\")", () => {
+    const html = screen({ retreatStartDate: "2027-10-14", retreatEndDate: "2027-10-17" });
+    const line = html.match(/<p[^>]*data-selected-day-line="true"[^>]*>(.*?)<\/p>/)?.[1].replace(/<!-- -->/g, "");
+    expect(line).toBe("Fri 15 Oct · Day 2");
   });
 });
 
@@ -208,7 +247,7 @@ describe("ScheduleScreen with the Day Navigator", () => {
   it("keeps the old behaviour for a schedule without dates: derived range, gaps filled", () => {
     const html = screen({ schedule: [item("2027-10-14"), item("2027-10-16")], todayIso: "2027-10-01" });
     expect(tabs(html)).toHaveLength(3);
-    expect(html).toContain("Day 3");
+    expect(html).toContain('aria-label="Saturday 16 October, day 3"');
   });
 });
 
