@@ -2,7 +2,8 @@
 
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { timezoneOptions, timezoneSelectValue } from "@/lib/timezone";
+import { timezoneSelectValue } from "@/lib/timezone";
+import { useTimezoneOptions } from "@/lib/useTimezoneOptions";
 import { computeClassTimes, resolveLocalTime } from "@/lib/teach/classTime";
 import { recurrenceProblem, recurrenceSummary, repeatPresetOf, validExceptions, validRule, weekdayOfDate, type RepeatPreset } from "@/lib/teach/recurrenceText";
 import { dstConflicts, upcomingOccurrenceDates, type DstConflict } from "@/lib/teach/recurrence";
@@ -336,7 +337,7 @@ export function IdentitySection({ api }: Props) {
   const { t } = createTranslator(api.locale);
   const profile = api.settings.teachProfile;
   const di = api.settings.dailyInspiration;
-  const timezones = useMemo(() => timezoneOptions(api.timezone), [api.timezone]);
+  const timezones = useTimezoneOptions(api.timezone);
   const [slugInput, setSlugInput] = useState(api.slug ?? "");
   const [slugStatus, setSlugStatus] = useState<string | null>(null);
   const [slugBusy, setSlugBusy] = useState(false);
@@ -1094,11 +1095,7 @@ function ClassEditor({ api, item, update, index }: { api: StudioApi; item: Edita
   const venue = m.venue;
   const setVenue = (patch: Partial<typeof venue>) => setM({ venue: { ...venue, ...patch } });
   const cta = buildRegistrationCta(api.name, item.title || t("teach", "classLabel"), m);
-  const timezones = useMemo(() => {
-    const options = timezoneOptions(api.timezone);
-    const own = timezoneSelectValue(m.timezone);
-    return m.timezone && !options.includes(own) ? [...options, own] : options;
-  }, [m.timezone, api.timezone]);
+  const timezones = useTimezoneOptions(api.timezone, m.timezone);
   // Live check of the canonical time model (the server re-checks on save).
   const times = useMemo(() => computeClassTimes(m, api.timezone), [m, api.timezone]);
   const timeIssues = times.ok ? times.warnings : times.issues;

@@ -66,7 +66,8 @@ import { visibleInspirations, type EditableInspirationItem } from "@/lib/modules
 import type { EditableFlowReading, EditableFlowTrack } from "@/lib/modules/flowLibrary";
 import { SOCIAL_PLATFORMS, socialPlatformLabel, isLikelyValidUrl, type SocialPlatform } from "@/lib/modules/socialLinks";
 import { IMPLEMENTED_OPTIONAL_MODULES, type OptionalModuleKey } from "@/lib/modules/catalog";
-import { todayInTimezone, currentTimeInTimezone, timezoneOptions, timezoneSelectValue, DEFAULT_TIMEZONE } from "@/lib/timezone";
+import { todayInTimezone, currentTimeInTimezone, timezoneSelectValue, DEFAULT_TIMEZONE } from "@/lib/timezone";
+import { useTimezoneOptions } from "@/lib/useTimezoneOptions";
 import { normalizeSlug, checkSlugLocally } from "@/lib/slug";
 import { createTranslator, DEFAULT_LOCALE, LOCALE_TAG, type Locale } from "@/lib/i18n";
 import { shortWeekdayName } from "@/lib/i18n/datetime";
@@ -1274,6 +1275,8 @@ export function RetreatConfigurator({
   const [step, setStep] = useState<StepKey>(initialStep ?? "identity");
   const [name, setName] = useState(initialName);
   const [timezone, setTimezone] = useState(initialTimezone || DEFAULT_TIMEZONE);
+  // ICU-independent until mount (TASK 033 D4: WebKit #418 on every load).
+  const timezoneChoices = useTimezoneOptions(timezone);
   // palette is now purely the fallback source for Primary/Accent (see
   // customPrimary/customSecondary below) - no UI writes to it directly
   // anymore, matching the approved Brand experience (8 presets + custom
@@ -2159,7 +2162,7 @@ export function RetreatConfigurator({
                   }}
                   className={STUDIO_INPUT_CLASS}
                 >
-                  {timezoneOptions(timezone).map((tz) => (
+                  {timezoneChoices.map((tz) => (
                     <option key={tz} value={tz}>
                       {tz}
                     </option>
