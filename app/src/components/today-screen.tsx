@@ -11,6 +11,7 @@ import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES, FLOW_LOGO_SIZES } from "./flow-media-sizes";
 import { mediaSrcSet } from "@/lib/media/cachePolicy";
 import { FlowBulletList } from "./guest/flow-screen-chrome";
+import { guestScrollRegion } from "./guest/guest-scroll-region";
 export type TodayScreenProps = {
   tenantName: string;
   brand: BrandConfig;
@@ -109,7 +110,7 @@ export function TodayScreen({
   const dateLabel = formatLongDateLocalized(todayIso, locale);
 
   return (
-    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={vars} {...guestScrollRegion(t("flow", "navToday"))} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       <div className="relative h-[280px]">
         {/* The Today hero is Flow's LCP element: eager, high fetch
             priority, and synchronously decoded. Everything else on the

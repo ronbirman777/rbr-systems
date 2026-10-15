@@ -6,6 +6,7 @@ import { SocialIcon } from "./guest/social-icon";
 import type { CSSProperties } from "react";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
+import { guestScrollRegion } from "./guest/guest-scroll-region";
 export type StayConnectedScreenProps = {
   brand: BrandConfig;
   stayConnected: StayConnected;
@@ -20,7 +21,7 @@ export function StayConnectedScreen({ brand, stayConnected, locale = DEFAULT_LOC
   const vars = deriveThemeVars(brand) as CSSProperties;
 
   return (
-    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={vars} {...guestScrollRegion(t("flow", "stayConnected"))} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       <div className="px-6 pt-7 pb-5">
         <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
           {t("flow", "eyebrowStayConnected")}

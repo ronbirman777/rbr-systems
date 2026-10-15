@@ -6,6 +6,7 @@ import type { CSSProperties } from "react";
 
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "./flow-media-sizes";
+import { guestScrollRegion } from "./guest/guest-scroll-region";
 export type CustomPageScreenProps = {
   brand: BrandConfig;
   page: DisplayCustomPage;
@@ -19,7 +20,7 @@ export function CustomPageScreen({ brand, page }: CustomPageScreenProps) {
   const vars = deriveThemeVars(brand) as CSSProperties;
 
   return (
-    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={vars} {...guestScrollRegion(page.title)} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       {page.imageUrl && (
         <div className="relative h-[180px]">
           <BrandImage
