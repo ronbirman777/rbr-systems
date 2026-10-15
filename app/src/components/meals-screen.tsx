@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "./flow-media-sizes";
+import { guestScrollRegion } from "./guest/guest-scroll-region";
 export type MealsScreenProps = {
   brand: BrandConfig;
   meals: DisplayMeal[];
@@ -41,7 +42,7 @@ export function MealsScreen({ brand, meals, intro, locale = DEFAULT_LOCALE }: Me
   const vars = deriveThemeVars(brand) as CSSProperties;
 
   return (
-    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={vars} {...guestScrollRegion(t("flow", "meals"))} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       <div className="px-6 pt-7 pb-5">
         <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
           {t("flow", "eyebrowMeals")}

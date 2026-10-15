@@ -365,3 +365,12 @@ body {
   outline: 2px solid var(--idw-clay);
   outline-offset: 2px;
 }
+
+/* QA O10: a Flow Guest screen's own scroll box is a focusable region so
+   keyboard-only guests can scroll it (guest-scroll-region.ts). The shell
+   clips anything outside the box, so its ring is drawn inset, in the
+   Space's primary colour - keyboard focus only, nothing when unfocused. */
+.guest-scroll-region:focus-visible {
+  outline-color: var(--rbr-primary, var(--idw-clay));
+  outline-offset: -2px;
+}

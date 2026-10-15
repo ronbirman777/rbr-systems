@@ -10,6 +10,7 @@ import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/core";
 import { buildRetreatDays, defaultRetreatDay } from "@/lib/schedule/retreatDays";
 import { formatDateRangeLocalized, formatShortDateLocalized } from "@/lib/i18n/datetime";
 import { dayTabId, RetreatDayHeader, RetreatDayNavigator } from "./guest/retreat-day-navigator";
+import { guestScrollRegion } from "./guest/guest-scroll-region";
 export type ScheduleScreenProps = {
   brand: BrandConfig;
   schedule: PublicScheduleItem[];
@@ -104,7 +105,7 @@ export function ScheduleScreen({
   const nextIndex = isToday ? items.findIndex((i) => i.startTime > nowTime) : -1;
 
   return (
-    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={vars} {...guestScrollRegion(t("flow", "navSchedule"))} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       {/* TASK 033 addendum D: the Teach schedule header - an eyebrow over a
           32px display title, 20px edges - with the retreat's own date
           range as the eyebrow (Teach shows "This week with {name}"). */}
