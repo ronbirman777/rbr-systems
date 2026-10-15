@@ -40,6 +40,7 @@ import type { CSSProperties, ReactElement } from "react";
 import { createTranslator, splitEmphasis, translate, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "@/components/flow-media-sizes";
+import { guestScrollRegion } from "./guest-scroll-region";
 export type ExploreScreenProps = {
   brand: BrandConfig;
   enabledModules: OptionalModuleKey[];
@@ -247,7 +248,7 @@ export function ExploreScreen({
   const nextTone = (): Tone => (toneIndex++ % 2 === 0 ? "primary" : "accent");
 
   return (
-    <div style={{ ...vars, background: "var(--rbr-background)" }} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={{ ...vars, background: "var(--rbr-background)" }} {...guestScrollRegion(t("flow", "navExplore"))} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       <div className="px-6 pt-8 pb-4">
         <p className="text-[10px] tracking-[0.22em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
           {t("flow", "navExplore")}

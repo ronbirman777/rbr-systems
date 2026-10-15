@@ -12,6 +12,7 @@ import { BrandImage } from "@/components/shared/brand-image";
 
 import { createTranslator, splitEmphasis, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { FLOW_SIZES } from "./flow-media-sizes";
+import { guestScrollRegion } from "./guest/guest-scroll-region";
 /** Facilitators' own established default - the exact numeric equivalent
  * of the CSS keyword "center top" (50% 0%) this replaces, preserved
  * deliberately rather than the shared component's true-center default
@@ -54,7 +55,7 @@ export function FacilitatorsScreen({ brand, facilitators, locale = DEFAULT_LOCAL
   const [expanded, setExpanded] = useState<number | null>(null);
 
   return (
-    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={vars} {...guestScrollRegion(t("flow", "facilitators"))} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       <div className="px-6 pt-8 pb-6">
         <p className="text-[10px] tracking-[0.22em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
           {t("flow", "yourGuides")}

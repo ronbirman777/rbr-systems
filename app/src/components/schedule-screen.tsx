@@ -7,6 +7,7 @@ import { hasActivityExtras, type PublicScheduleItem } from "@/lib/schedule/types
 import type { CSSProperties } from "react";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { guestScrollRegion } from "./guest/guest-scroll-region";
 export type ScheduleScreenProps = {
   brand: BrandConfig;
   schedule: PublicScheduleItem[];
@@ -83,7 +84,7 @@ export function ScheduleScreen({ brand, schedule, todayIso, nowTime, locale = DE
   const nextIndex = isToday ? items.findIndex((i) => i.startTime > nowTime) : -1;
 
   return (
-    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={vars} {...guestScrollRegion(t("flow", "navSchedule"))} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       <div className="px-6 pt-8 pb-5">
         <h1 className="text-[26px] font-normal" style={{ fontFamily: "var(--rbr-font-display)", color: "var(--rbr-text)" }}>
           {t("flow", "navSchedule")}

@@ -12,6 +12,7 @@ import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "@/components/flow-media-sizes";
 import { FlowBackButton, FlowEmptyNote, FlowScreenHeader } from "./flow-screen-chrome";
+import { guestScrollRegion } from "./guest-scroll-region";
 
 export type AudioScreenProps = {
   brand: BrandConfig;
@@ -49,7 +50,7 @@ export function AudioScreen({ brand, tracks, locale = DEFAULT_LOCALE }: AudioScr
   }
 
   return (
-    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={vars} {...guestScrollRegion(t("flow", "moduleAudio"))} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       <FlowScreenHeader eyebrow={t("flow", "eyebrowAudio")} title={t("flow", "moduleAudio")} />
 
       {categories.length > 1 && (
@@ -186,7 +187,7 @@ export function AudioPlayerScreen({
   const max = Math.max(1, Math.round(duration));
 
   return (
-    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={vars} {...guestScrollRegion(track.title)} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       <FlowBackButton label={t("flow", "moduleAudio")} onClick={onBack} />
 
       <div className="px-7 pt-2 flex flex-col items-center gap-5">

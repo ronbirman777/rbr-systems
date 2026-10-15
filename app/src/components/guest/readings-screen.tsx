@@ -13,6 +13,7 @@ import { BrandImage } from "@/components/shared/brand-image";
 import { FLOW_SIZES } from "@/components/flow-media-sizes";
 import { ChevronRightIcon } from "./icons";
 import { FlowBackButton, FlowEmptyNote, FlowScreenHeader } from "./flow-screen-chrome";
+import { guestScrollRegion } from "./guest-scroll-region";
 
 export type ReadingsScreenProps = {
   brand: BrandConfig;
@@ -53,7 +54,7 @@ export function ReadingsScreen({ brand, readings, locale = DEFAULT_LOCALE }: Rea
   const [featured, ...rest] = list;
 
   return (
-    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={vars} {...guestScrollRegion(t("flow", "readings"))} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       <FlowScreenHeader eyebrow={t("flow", "eyebrowReadings")} title={t("flow", "readings")} />
 
       {categories.length > 1 && (
@@ -248,7 +249,7 @@ export function ReadingDetailScreen({
   const mins = readingMinutes(reading.description);
 
   return (
-    <article style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <article style={vars} {...guestScrollRegion(reading.title, { landmark: false })} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       <FlowBackButton label={t("flow", "readings")} onClick={onBack} />
 
       {reading.imageUrl && (

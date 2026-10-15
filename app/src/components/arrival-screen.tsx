@@ -10,6 +10,7 @@ import { telUrl } from "@/lib/phone";
 import { whatsappUrl } from "@/lib/share/whatsapp";
 
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
+import { guestScrollRegion } from "./guest/guest-scroll-region";
 export type ArrivalScreenProps = {
   brand: BrandConfig;
   info: ArrivalInfo;
@@ -65,7 +66,7 @@ export function ArrivalScreen({ brand, info, locale = DEFAULT_LOCALE }: ArrivalS
   const hasAnyContent = hasStats || hasAddress || hasContact || visibleSections.length > 0;
 
   return (
-    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={vars} {...guestScrollRegion(t("flow", "arrivalInfo"))} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       <div className="px-6 pt-7 pb-5">
         <p className="text-[10px] tracking-[0.18em] uppercase font-medium mb-1" style={{ fontFamily: "var(--rbr-font-ui)", color: "var(--rbr-mist)" }}>
           {t("flow", "practicalInformation")}

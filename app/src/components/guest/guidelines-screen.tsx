@@ -4,6 +4,7 @@ import type { BrandConfig } from "@/lib/theme/tokens";
 import type { DisplayGuideline } from "@/lib/modules/guideline";
 import { createTranslator, DEFAULT_LOCALE, type Locale } from "@/lib/i18n";
 import { FlowEmptyNote, FlowScreenHeader } from "./flow-screen-chrome";
+import { guestScrollRegion } from "./guest-scroll-region";
 
 export type GuidelinesScreenProps = {
   brand: BrandConfig;
@@ -25,7 +26,7 @@ export function GuidelinesScreen({ brand, guidelines, locale = DEFAULT_LOCALE }:
   const vars = deriveThemeVars(brand) as CSSProperties;
 
   return (
-    <div style={vars} className="flex-1 overflow-y-auto no-scrollbar">
+    <div style={vars} {...guestScrollRegion(t("flow", "guidelines"))} className="flex-1 overflow-y-auto no-scrollbar guest-scroll-region">
       <FlowScreenHeader eyebrow={t("flow", "eyebrowGuidelines")} title={t("flow", "guidelines")} />
 
       {guidelines.length === 0 ? (
